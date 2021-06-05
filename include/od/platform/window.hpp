@@ -1,0 +1,18 @@
+#pragma once
+
+#include <od/platform/window.h>
+
+struct odWindow {
+	void* window_native;
+	bool is_open;
+	uint32_t next_frame_ms;
+	struct odWindowSettings settings;
+
+	OD_API_CPP odWindow();
+	OD_API_CPP odWindow(odWindow&& other);
+	OD_API_CPP odWindow& operator=(odWindow&& other);
+	OD_API_CPP ~odWindow();
+
+	odWindow(odWindow const&) = delete;
+	odWindow& operator=(const odWindow& other) = delete;
+};

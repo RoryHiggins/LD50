@@ -1,0 +1,92 @@
+{
+	"build_systems":
+	[
+		{
+			"name": "Generate debug",
+			"shell_cmd": "cmake -S . -B build -G\"Ninja\" -D CMAKE_BUILD_TYPE=DEBUG",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Build and run client",
+			"shell_cmd": "ninja -C build od_client.exe && .\\build\\od_client.exe",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Build and run tests",
+			"shell_cmd": "ninja -C build od_test.exe && .\\build\\od_test.exe --gtest_filter=*",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Build engine",
+			"cmd": "ninja -C build libod_engine.dll",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Rebuild",
+			"shell_cmd": "cmake --build build --clean-first",
+			"working_dir": "$project_path",
+		},
+		// {
+		// 	"name": "Run",
+		// 	"shell_cmd": ".\\build\\jengine_client.exe",
+		// 	"working_dir": "$project_path",
+		// },
+		// renamed find to gnu-find locally for windows, due to clash with win32 find
+		// {
+		// 	"name": "Clang format",
+		// 	"shell_cmd": "gnu-find ./client -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs clang-format -i -Werror --",
+		// 	"working_dir": "$project_path",
+		// },
+		// {
+		// 	"name": "Clang tidy",
+		// 	"shell_cmd": "gnu-find ./client -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs -I TIDY_INPUT clang-tidy TIDY_INPUT -- -Iclient/include -Iclient/src",
+		// 	"working_dir": "$project_path",
+		// },
+	],
+	"folders":
+	[
+		{
+			"path": ".",
+			"folder_exclude_patterns":
+			[
+				"build",
+				"tmp",
+				".vscode",
+			]
+		},
+		{
+			"path": "C:\\msys64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\10.2.0\\include"
+		},
+		{
+			"path": "C:\\msys64\\mingw64\\include\\SDL2"
+		},
+		{
+			"path": "C:\\msys64\\mingw64\\include\\GL"
+		},
+		{
+			"path": "C:\\msys64\\mingw64\\include",
+			"file_include_patterns":
+			[
+				"png.h",
+				"zlib.h"
+			],
+			"folder_include_patterns":
+			[
+				"<none>"
+			]
+		},
+		// {
+		// 	"path": "C:\\msys64\\mingw64\\include\\luajit-2.1"
+		// },
+		// {
+		// 	"path": "C:\\msys64\\mingw64\\include\\c++",
+		// 	"folder_exclude_patterns":
+		// 	[
+		// 		"tr1",
+		// 		"tr2",
+		// 		"experimental",
+		// 		"backward",
+		// 	],
+		// },
+	],
+}
