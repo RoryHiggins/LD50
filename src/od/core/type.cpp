@@ -18,7 +18,7 @@ void* odType_index(const odType* type, void* array, uint32_t i) {
 	return static_cast<void*>(static_cast<char*>(array) + (type->size * i));
 }
 const void* odType_index_const(const odType* type, const void* array, uint32_t i) {
-	return const_cast<void*>(odType_index(type, const_cast<void*>(array), i));
+	return odType_index(type, const_cast<void*>(array), i);
 }
 static void odType_char_default_construct_fn(void* ptr, uint32_t count) {
 	memset(ptr, 0, count);

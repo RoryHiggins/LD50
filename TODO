@@ -1,3 +1,11 @@
 
 Image
+- Empty image
+- From PNG
+
 Rendering
+- Vertex representation
+- Primitive to vertex conversion
+- Vertex rendering
+- Triangle-ifying primitives
+- Triangle sorting

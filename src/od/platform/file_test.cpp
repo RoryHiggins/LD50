@@ -42,7 +42,7 @@ static odString odFile_test_create_random_name() {
 TEST(odFile, open) {
 	odString file_name = odFile_test_create_random_name();
 	const char* file_name_str = odString_get_const(&file_name, 0);
-	ASSERT_TRUE(file_name_str != nullptr);
+	ASSERT_NE(file_name_str, nullptr);
 
 	const uint32_t write_modes_count = 6;
 	const char write_modes[write_modes_count][8] = {
@@ -91,8 +91,8 @@ TEST(odFile, write_read_delete) {
 	uint32_t read_size = 0;
 	char read_buffer[test_string_size] = {};
 	ASSERT_TRUE(odFile_read(&file, read_buffer, test_string_size, &read_size));
-	ASSERT_TRUE(read_size == test_string_size);
-	ASSERT_TRUE(strncmp(test_str, read_buffer, test_string_size) == 0);
+	ASSERT_EQ(read_size, test_string_size);
+	ASSERT_EQ(strncmp(test_str, read_buffer, test_string_size), 0);
 	odFile_close(&file);
 
 	ASSERT_TRUE(odFilePath_delete(file_name_str));
@@ -112,10 +112,10 @@ TEST(odFilePath, write_read_delete) {
 	uint32_t read_size = 0;
 
 	ASSERT_TRUE(odFilePath_read_all(file_name_str, "r", &read_allocation, &read_size));
-	ASSERT_TRUE(read_size == test_string_size);
+	ASSERT_EQ(read_size, test_string_size);
 	const char* read_allocation_str = static_cast<const char*>(odAllocation_get_const(&read_allocation));
-	ASSERT_TRUE(read_allocation_str != nullptr);
-	ASSERT_TRUE(strncmp(test_str, read_allocation_str, test_string_size) == 0);
+	ASSERT_NE(read_allocation_str, nullptr);
+	ASSERT_EQ(strncmp(test_str, read_allocation_str, test_string_size), 0);
 
 	ASSERT_TRUE(odFilePath_delete(file_name_str));
 }

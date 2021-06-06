@@ -2,10 +2,10 @@
 
 #include <od/core/string.h>
 
-#include <od/core/vector.hpp>
+#include <od/core/array.hpp>
 
 struct odString {
-	struct odVector vector;
+	struct odArray array;
 
 	OD_API_CPP odString();
 	OD_API_CPP odString(odString&& other);

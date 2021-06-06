@@ -8,8 +8,24 @@
 const odType* odString_get_type_constructor(void) {
 	return odType_get<odString>();
 }
+bool odString_copy(odString* string, const odString* src_string) {
+	if (string == nullptr) {
+		OD_ERROR("string=nullptr");
+		return false;
+	}
+
+	if (src_string == nullptr) {
+		OD_ERROR("src_string=nullptr");
+		return false;
+	}
+
+	if (!odString_set_count(string, 0)) {
+		return false;
+	}
+	return odString_push(string, odString_get_const(src_string, 0), odString_get_count(src_string));
+}
 void odString_swap(odString* string1, odString* string2) {
-	odVector_swap(&string1->vector, &string2->vector);
+	odArray_swap(&string1->array, &string2->array);
 }
 const char* odString_get_debug_string(const odString* string) {
 	if (string == nullptr) {
@@ -17,31 +33,31 @@ const char* odString_get_debug_string(const odString* string) {
 	}
 
 	return odDebugString_format(
-		"odString{this=%p, vector=%s}",
+		"odString{this=%p, array=%s}",
 		static_cast<const void*>(string),
-		odVector_get_debug_string(&string->vector)
+		odArray_get_debug_string(&string->array)
 	);
 }
 void odString_release(odString* string) {
-	odVector_release(&string->vector);
+	odArray_release(&string->array);
 }
 bool odString_set_capacity(odString* string, uint32_t new_capacity) {
-	return odVector_set_capacity(&string->vector, new_capacity);
+	return odArray_set_capacity(&string->array, new_capacity);
 }
 uint32_t odString_get_capacity(const odString* string) {
-	return odVector_get_capacity(&string->vector);
+	return odArray_get_capacity(&string->array);
 }
 bool odString_ensure_capacity(odString* string, uint32_t min_capacity) {
-	return odVector_ensure_capacity(&string->vector, min_capacity);
+	return odArray_ensure_capacity(&string->array, min_capacity);
 }
 bool odString_set_count(odString* string, uint32_t new_count) {
-	return odVector_set_count(&string->vector, new_count);
+	return odArray_set_count(&string->array, new_count);
 }
 uint32_t odString_get_count(const odString* string) {
-	return odVector_get_count(&string->vector);
+	return odArray_get_count(&string->array);
 }
 bool odString_push(odString* string, const char* str, uint32_t str_count) {
-	return odVector_push(&string->vector, const_cast<void*>(static_cast<const void*>(str)), str_count);
+	return odArray_push(&string->array, const_cast<void*>(static_cast<const void*>(str)), str_count);
 }
 bool odString_push_formatted_variadic(odString* string, const char* format_c_str, va_list args) {
 	if (string == nullptr) {
@@ -124,14 +140,14 @@ bool odString_get_null_terminated(const odString* string) {
 	return (*terminator_ptr == '\0');
 }
 char* odString_get(odString* string, uint32_t i) {
-	return static_cast<char*>(odVector_get(&string->vector, i));
+	return static_cast<char*>(odArray_get(&string->array, i));
 }
 const char* odString_get_const(const odString* string, uint32_t i) {
-	return static_cast<const char*>(odVector_get_const(&string->vector, i));
+	return static_cast<const char*>(odArray_get_const(&string->array, i));
 }
 
 odString::odString()
-: vector{odType_get_char()} {
+: array{odType_get_char()} {
 }
 odString::odString(odString&& other)
 : odString{} {
@@ -139,15 +155,14 @@ odString::odString(odString&& other)
 }
 OD_API_CPP odString::odString(const odString& other)
 : odString{} {
-	odString_push(this, odString_get_const(&other, 0), odString_get_count(&other));
+	odString_copy(this, &other);
 }
 odString& odString::operator=(odString&& other) {
 	odString_swap(this, &other);
 	return *this;
 }
 OD_API_CPP odString& odString::operator=(const odString& other) {
-	odString_set_count(this, 0);
-	odString_push(this, odString_get_const(&other, 0), odString_get_count(&other));
+	odString_copy(this, &other);
 
 	return *this;
 }

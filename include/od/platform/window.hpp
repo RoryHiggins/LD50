@@ -13,6 +13,6 @@ struct odWindow {
 	OD_API_CPP odWindow& operator=(odWindow&& other);
 	OD_API_CPP ~odWindow();
 
-	odWindow(odWindow const&) = delete;
+	odWindow(odWindow const& other) = delete;
 	odWindow& operator=(const odWindow& other) = delete;
 };

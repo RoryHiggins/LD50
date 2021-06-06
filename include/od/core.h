@@ -5,5 +5,5 @@
 #include <od/core/type.h>
 #include <od/core/allocation.h>
 #include <od/core/box.h>
-#include <od/core/vector.h>
+#include <od/core/array.h>
 #include <od/core/string.h>

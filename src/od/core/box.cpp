@@ -8,50 +8,50 @@
 const odType* odBox_get_type_constructor(void) {
 	return odType_get<odBox>();
 }
-void odBox_swap(odBox* ptr1, odBox* ptr2) {
-	if (ptr1 == nullptr) {
-		OD_ERROR("ptr1=nullptr");
+void odBox_swap(odBox* box1, odBox* box2) {
+	if (box1 == nullptr) {
+		OD_ERROR("box1=nullptr");
 		return;
 	}
 
-	if (ptr2 == nullptr) {
-		OD_ERROR("ptr2=nullptr");
+	if (box2 == nullptr) {
+		OD_ERROR("box2=nullptr");
 		return;
 	}
 
-	OD_TRACE("ptr1=%s, ptr2=%s", odBox_get_debug_string(ptr1), odBox_get_debug_string(ptr2));
+	OD_TRACE("box1=%s, box2=%s", odBox_get_debug_string(box1), odBox_get_debug_string(box2));
 
-	const odType* swap_type = ptr1->type;
+	const odType* swap_type = box1->type;
 
-	ptr1->type = ptr2->type;
+	box1->type = box2->type;
 
-	ptr2->type = swap_type;
+	box2->type = swap_type;
 
-	odAllocation_swap(&ptr1->allocation, &ptr2->allocation);
+	odAllocation_swap(&box1->allocation, &box2->allocation);
 }
-const char* odBox_get_debug_string(const odBox* ptr) {
-	if (ptr == nullptr) {
+const char* odBox_get_debug_string(const odBox* box) {
+	if (box == nullptr) {
 		return "odBox{this=nullptr}";
 	}
 
 	return odDebugString_format(
 		"odBox{this=%p, allocation=%s, type=%s}",
-		static_cast<const void*>(ptr),
-		odAllocation_get_debug_string(&ptr->allocation),
-		odType_get_debug_string(ptr->type)
+		static_cast<const void*>(box),
+		odAllocation_get_debug_string(&box->allocation),
+		odType_get_debug_string(box->type)
 	);
 }
-const odType* odBox_get_type(const odBox* ptr) {
-	if (ptr == nullptr) {
-		OD_ERROR("ptr=nullptr");
+const odType* odBox_get_type(const odBox* box) {
+	if (box == nullptr) {
+		OD_ERROR("box=nullptr");
 		return nullptr;
 	}
 
-	return ptr->type;
+	return box->type;
 }
-void odBox_set_type(odBox* ptr, const odType* type) {
-	if (ptr == nullptr) {
-		OD_ERROR("ptr=nullptr");
+void odBox_set_type(odBox* box, const odType* type) {
+	if (box == nullptr) {
+		OD_ERROR("box=nullptr");
 		return;
 	}
 
@@ -60,91 +60,96 @@ void odBox_set_type(odBox* ptr, const odType* type) {
 		return;
 	}
 
-	OD_TRACE("ptr=%s, type=%s", odBox_get_debug_string(ptr), odType_get_debug_string(type));
+	OD_TRACE("box=%s, type=%s", odBox_get_debug_string(box), odType_get_debug_string(type));
 
-	if (ptr->type == type) {
-		OD_TRACE("type already set, ptr=%s", odBox_get_debug_string(ptr));
+	if (box->type == type) {
+		OD_TRACE("type already set, box=%s", odBox_get_debug_string(box));
 		return;
 	}
 
-	if (odBox_get(ptr) != nullptr) {
+	if (odBox_get(box) != nullptr) {
 		OD_TRACE(
-			"releasing old allocation, ptr=%s, type=%s",
-			odBox_get_debug_string(ptr),
+			"releasing old allocation, box=%s, type=%s",
+			odBox_get_debug_string(box),
 			odType_get_debug_string(type)
 		);
-		odBox_release(ptr);
+		odBox_release(box);
 	}
 
-	ptr->type = type;
+	box->type = type;
 }
-bool odBox_allocate(odBox* ptr) {
-	if (ptr == nullptr) {
-		OD_ERROR("ptr=nullptr");
+bool odBox_allocate(odBox* box) {
+	if (box == nullptr) {
+		OD_ERROR("box=nullptr");
 		return false;
 	}
 
-	if (ptr->type == nullptr) {
-		OD_ERROR("type not set, ptr=%s", odBox_get_debug_string(ptr));
+	if (box->type == nullptr) {
+		OD_ERROR("type not set, box=%s", odBox_get_debug_string(box));
 		return false;
 	}
 
-	OD_TRACE("ptr=%s", odBox_get_debug_string(ptr));
+	OD_TRACE("box=%s", odBox_get_debug_string(box));
 
-	void* old_allocation_ptr = odAllocation_get(&ptr->allocation);
+	void* old_allocation_ptr = odAllocation_get(&box->allocation);
 	if (old_allocation_ptr != nullptr) {
-		OD_TRACE("releasing existing allocation, ptr=%s", odBox_get_debug_string(ptr));
-		ptr->type->destruct_fn(old_allocation_ptr, 1);
-		odBox_release(ptr);
+		OD_TRACE("releasing existing allocation, box=%s", odBox_get_debug_string(box));
+		box->type->destruct_fn(old_allocation_ptr, 1);
+		odBox_release(box);
 	}
 
-	if (!odAllocation_allocate(&ptr->allocation, ptr->type->size)) {
+	if (!odAllocation_allocate(&box->allocation, box->type->size)) {
 		return false;
 	}
 
-	void* new_allocation_ptr = odAllocation_get(&ptr->allocation);
+	void* new_allocation_ptr = odAllocation_get(&box->allocation);
 	if (new_allocation_ptr == nullptr) {
 		OD_ERROR("new_allocation_ptr=nullptr");
 		return false;
 	}
 
-	ptr->type->default_construct_fn(new_allocation_ptr, 1);
+	box->type->default_construct_fn(new_allocation_ptr, 1);
 
 	return true;
 }
-void odBox_release(odBox* ptr) {
-	if (ptr == nullptr) {
-		OD_ERROR("ptr=nullptr");
+void odBox_release(odBox* box) {
+	if (box == nullptr) {
+		OD_ERROR("box=nullptr");
 		return;
 	}
 
-	OD_TRACE("ptr=%s", odBox_get_debug_string(ptr));
+	OD_TRACE("box=%s", odBox_get_debug_string(box));
 
-	void* allocation_ptr = odAllocation_get(&ptr->allocation);
+	void* allocation_ptr = odAllocation_get(&box->allocation);
 
 	if (allocation_ptr == nullptr) {
 		return;
 	}
 
-	if (ptr->type == nullptr) {
-		OD_ERROR("allocated but type not set, ptr=%s", odBox_get_debug_string(ptr));
+	if (box->type == nullptr) {
+		OD_ERROR("allocated but type not set, box=%s", odBox_get_debug_string(box));
 		return;
 	}
 
-	ptr->type->destruct_fn(allocation_ptr, 1);
+	box->type->destruct_fn(allocation_ptr, 1);
 
-	odAllocation_release(&ptr->allocation);
+	odAllocation_release(&box->allocation);
 }
-void* odBox_get(odBox* ptr) {
-	if (ptr == nullptr) {
-		OD_ERROR("ptr=nullptr");
+void* odBox_get(odBox* box) {
+	if (box == nullptr) {
+		OD_ERROR("box=nullptr");
 		return nullptr;
 	}
 
-	return odAllocation_get(&ptr->allocation);
+	return odAllocation_get(&box->allocation);
 }
-const void* odBox_get_const(const odBox* ptr) {
-	return const_cast<void*>(odBox_get(const_cast<odBox*>(ptr)));
+const void* odBox_get_const(const odBox* box) {
+	if (box == nullptr) {
+		OD_ERROR("box=nullptr");
+		return nullptr;
+	}
+
+	return odBox_get(const_cast<odBox*>(box));
 }
 
 odBox::odBox()

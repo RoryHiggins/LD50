@@ -1,17 +1,18 @@
-// #pragma once
-// #include <od/platform/image.h>
+#pragma once
 
-// struct odImage {
-// 	struct odBox buffer;
-// 	uint32_t width;
-// 	uint32_t height;
+#include <od/platform/image.h>
 
-// #if OD_API_CPP_ENABLED
-// 	OD_API_CPP odImage();
-// 	OD_API_CPP odImage(odImage const&);
-// 	OD_API_CPP odImage(odImage&& other);
-// 	OD_API_CPP odImage& operator=(const odImage& other);
-// 	OD_API_CPP odImage& operator=(odImage&& other);
-// 	OD_API_CPP ~odImage();
-// #endif
-// };
+#include <od/core/allocation.hpp>
+
+struct odImage {
+	struct odAllocation allocation;
+	uint32_t width;
+	uint32_t height;
+
+	OD_API_CPP odImage();
+	OD_API_CPP odImage(odImage const& other);
+	OD_API_CPP odImage(odImage&& other);
+	OD_API_CPP odImage& operator=(const odImage& other);
+	OD_API_CPP odImage& operator=(odImage&& other);
+	OD_API_CPP ~odImage();
+};

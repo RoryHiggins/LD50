@@ -8,7 +8,7 @@
 		},
 		{
 			"name": "Build and run tests",
-			"shell_cmd": "ninja -C build od_test.exe && .\\build\\od_test.exe --gtest_filter=odFile.*",
+			"shell_cmd": "ninja -C build od_test.exe && .\\build\\od_test.exe --gtest_filter=*.*",
 			"working_dir": "$project_path",
 		},
 		{
@@ -60,7 +60,7 @@
 			]
 		},
 		{
-			"path": "C:\\msys64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\10.2.0\\include",
+			"path": "C:\\msys64\\mingw64\\lib\\gcc\\x86_64-w64-mingw32\\10.3.0\\include",
 			"file_exclude_patterns":
 			[
 				"*intrin.h"

@@ -69,7 +69,7 @@ odWindowSettings odWindowSettings_get_defaults() {
 	};
 }
 
-const odType* odWindow_get_type_constructor(void) {
+const odType* odWindow_get_type_constructor() {
 	return odType_get<odWindow>();
 }
 void odWindow_swap(odWindow* window1, odWindow* window2) {
@@ -150,6 +150,11 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 	return true;
 }
 void odWindow_close(odWindow* window) {
+	if (window == nullptr) {
+		OD_ERROR("window=nullptr");
+		return;
+	}
+
 	OD_TRACE("Closing window");
 
 	if (window->window_native != nullptr) {
@@ -160,9 +165,19 @@ void odWindow_close(odWindow* window) {
 	window->window_native = nullptr;
 }
 bool odWindow_get_open(const odWindow* window) {
+	if (window == nullptr) {
+		OD_ERROR("window=nullptr");
+		return false;
+	}
+
 	return window->is_open;
 }
 bool odWindow_set_visible(odWindow* window, bool is_visible) {
+	if (window == nullptr) {
+		OD_ERROR("window=nullptr");
+		return false;
+	}
+
 	if (window->window_native == nullptr) {
 		OD_ERROR("window->window_native == nullptr");
 		return false;
@@ -180,6 +195,11 @@ bool odWindow_set_visible(odWindow* window, bool is_visible) {
 	return true;
 }
 void odWindow_step(odWindow* window) {
+	if (window == nullptr) {
+		OD_ERROR("window=nullptr");
+		return;
+	}
+
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -228,6 +248,14 @@ void odWindow_step(odWindow* window) {
 		SDL_Delay(static_cast<Uint32>(wait_ms));
 	}
 	window->next_frame_ms += frame_duration_ms;
+}
+const odWindowSettings* odWindow_get_settings(const odWindow* window) {
+	if (window == nullptr) {
+		OD_ERROR("window=nullptr");
+		return nullptr;
+	}
+
+	return &window->settings;
 }
 
 odWindow::odWindow()

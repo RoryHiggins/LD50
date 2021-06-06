@@ -82,7 +82,7 @@ void* odAllocation_get(odAllocation* allocation) {
 	return static_cast<void*>(static_cast<char*>(allocation->ptr));
 }
 const void* odAllocation_get_const(const odAllocation* allocation) {
-	return const_cast<void*>(odAllocation_get(const_cast<odAllocation*>(allocation)));
+	return odAllocation_get(const_cast<odAllocation*>(allocation));
 }
 
 odAllocation::odAllocation()

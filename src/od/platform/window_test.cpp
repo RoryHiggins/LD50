@@ -24,5 +24,5 @@ TEST(odWindow, open) {
 	}
 
 	odWindow_close(&window);
-	ASSERT_TRUE(odWindow_get_open(&window) == false);
+	ASSERT_FALSE(odWindow_get_open(&window));
 }
