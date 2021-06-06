@@ -8,15 +8,15 @@
 const odType* odString_get_type_constructor(void) {
 	return odType_get<odString>();
 }
-void odString_swap(odString* string, odString* other) {
-	odVector_swap(&string->vector, &other->vector);
+void odString_swap(odString* string1, odString* string2) {
+	odVector_swap(&string1->vector, &string2->vector);
 }
 const char* odString_get_debug_string(const odString* string) {
 	if (string == nullptr) {
 		return "odString{this=nullptr}";
 	}
 
-	return odDebugString_create_formatted(
+	return odDebugString_format(
 		"odString{this=%p, vector=%s}",
 		static_cast<const void*>(string),
 		odVector_get_debug_string(&string->vector)

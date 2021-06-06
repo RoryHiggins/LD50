@@ -51,5 +51,5 @@ OD_API_C void odLog_log(struct odLogContext logger, uint32_t log_level, const ch
 OD_API_C bool odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
 
 OD_API_C char* odDebugString_allocate(uint32_t size);
-OD_API_C const char* odDebugString_create_formatted_variadic(const char* format_c_str, va_list args);
-OD_API_C const char* odDebugString_create_formatted(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+OD_API_C const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
+OD_API_C const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);

@@ -34,7 +34,7 @@ const char* odBox_get_debug_string(const odBox* ptr) {
 		return "odBox{this=nullptr}";
 	}
 
-	return odDebugString_create_formatted(
+	return odDebugString_format(
 		"odBox{this=%p, allocation=%s, type=%s}",
 		static_cast<const void*>(ptr),
 		odAllocation_get_debug_string(&ptr->allocation),

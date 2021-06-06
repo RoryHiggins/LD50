@@ -5,29 +5,26 @@
 #include <string.h>
 #include <errno.h>
 
-void odFile_construct(odFile* file) {
-	if (file == nullptr) {
-		OD_ERROR("file=nullptr");
-		return;
-	}
+#include <od/core/type.hpp>
 
-	file->native_file = nullptr;
+const odType* odFile_get_type_constructor(void) {
+	return odType_get<odFile>();
 }
-void odFile_destruct(odFile* file) {
-	if (file == nullptr) {
-		OD_ERROR("file=nullptr");
-		return;
-	}
+void odFile_swap(odFile* file1, odFile* file2) {
+	void* native_file_swap = file1->native_file;
 
-	if (file->native_file != nullptr) {
-		odFile_close(file);
-	}
+	file1->native_file = file2->native_file;
 
-	file->native_file = nullptr;
+	file2->native_file = native_file_swap;
 }
 bool odFile_open(odFile* file, const char* mode, const char* file_path) {
 	if (file == nullptr) {
 		OD_ERROR("file=nullptr");
+		return false;
+	}
+
+	if (mode == nullptr) {
+		OD_ERROR("mode=nullptr");
 		return false;
 	}
 
@@ -43,7 +40,7 @@ bool odFile_open(odFile* file, const char* mode, const char* file_path) {
 
 	file->native_file = static_cast<void*>(fopen(file_path, mode));
 	if (file->native_file == nullptr) {
-		OD_ERROR("failed to open file, file_path=%s, errno_str=%s", file_path, strerror(errno));
+		OD_ERROR("failed to open file, mode=%s, file_path=%s, errno_str=%s", mode, file_path, strerror(errno));
 		return false;
 	}
 
@@ -66,7 +63,7 @@ void odFile_close(odFile* file) {
 
 	file->native_file = nullptr;
 }
-bool odFile_read_size(odFile* file, uint64_t* out_size) {
+bool odFile_read_size(odFile* file, uint32_t* out_size) {
 	if (file == nullptr) {
 		OD_ERROR("file=nullptr");
 		return false;
@@ -77,7 +74,9 @@ bool odFile_read_size(odFile* file, uint64_t* out_size) {
 		return false;
 	}
 
-	if (fseek(static_cast<FILE*>(file->native_file), 0, SEEK_END) == EOF) {
+	long old_pos = ftell(static_cast<FILE*>(file->native_file));
+
+	if (fseek(static_cast<FILE*>(file->native_file), 0, SEEK_END) != 0) {
 		OD_ERROR("error seeking to end of file, errno_str=%s", strerror(errno));
 		return false;
 	}
@@ -88,45 +87,171 @@ bool odFile_read_size(odFile* file, uint64_t* out_size) {
 		return false;
 	}
 
+	if (fseek(static_cast<FILE*>(file->native_file), old_pos, SEEK_SET) != 0) {
+		OD_ERROR("error seeking back to original position file, errno_str=%s", strerror(errno));
+		return false;
+	}
+
 	*out_size = static_cast<uint32_t>(size);
 	return true;
 }
-// bool odFile_read(odFile* file, void *out_data, uint64_t size) {
-// 	if (file == nullptr) {
-// 		OD_ERROR("file=nullptr");
-// 		return false;
-// 	}
+bool odFile_read(odFile* file, void* out_buffer, uint32_t buffer_size, uint32_t* out_size) {
+	if (file == nullptr) {
+		OD_ERROR("file=nullptr");
+		return false;
+	}
 
-// 	if (out_data == nullptr) {
-// 		OD_ERROR("out_data_ptr=nullptr");
-// 		return false;
-// 	}
+	if (out_buffer == nullptr) {
+		OD_ERROR("out_buffer=nullptr");
+		return false;
+	}
 
-// 	if (file->native_file == nullptr) {
-// 		OD_ERROR("no file to read");
-// 		return false;
-// 	}
+	if (out_size == nullptr) {
+		OD_ERROR("out_size=nullptr");
+		return false;
+	}
 
-// 	if (fseek(static_cast<FILE*>(file->native_file), 0, SEEK_SET) == EOF) {
-// 		OD_ERROR("error seeking to beginning of file, errno_str=%s", strerror(errno));
-// 		return false;
-// 	}
+	if (file->native_file == nullptr) {
+		OD_ERROR("no file to read");
+		return false;
+	}
 
+	if (buffer_size == 0) {
+		return true;
+	}
 
-// }
-// bool odFile_write_all(struct odFile* file, const void *data) {
-// 	if (file == nullptr) {
-// 		OD_ERROR("file=nullptr");
-// 		return false;
-// 	}
+	// if (fseek(static_cast<FILE*>(file->native_file), 0, SEEK_SET) != 0) {
+	// 	OD_ERROR("error seeking to beginning of file, errno_str=%s", strerror(errno));
+	// 	return false;
+	// }
 
-// 	if (data == nullptr) {
-// 		OD_ERROR("out_data_ptr=nullptr");
-// 		return false;
-// 	}
+	FILE* native_file = static_cast<FILE*>(file->native_file);
+	*out_size = static_cast<uint32_t>(fread(out_buffer, 1, buffer_size, native_file));
 
-// }
-bool odFile_get_exists(const char* file_path) {
+	int read_error = ferror(native_file);
+	if (read_error != 0) {
+		OD_ERROR("Error reading from file, read_error=%d, err_str=%s", read_error, strerror(errno));
+		clearerr(native_file);
+		return false;
+	}
+
+	return true;
+}
+bool odFile_write(odFile* file, const void* buffer, uint32_t size) {
+	if (file == nullptr) {
+		OD_ERROR("file=nullptr");
+		return false;
+	}
+
+	if (buffer == nullptr) {
+		OD_ERROR("out_allocation=nullptr");
+		return false;
+	}
+
+	if (file->native_file == nullptr) {
+		OD_ERROR("no file to write");
+		return false;
+	}
+
+	uint32_t write_size = static_cast<uint32_t>(fwrite(buffer, size, 1, static_cast<FILE*>(file->native_file)));
+	if ((write_size != 1) && (size > 0)) {
+		OD_ERROR("failed to write to file, err_str=%s", strerror(errno));
+		return false;
+	}
+
+	return true;
+}
+
+bool odFilePath_read_all(const char* file_path, const char* mode, struct odAllocation* out_allocation, uint32_t* out_size) {
+	if (file_path == nullptr) {
+		OD_ERROR("file_path=nullptr");
+		return false;
+	}
+
+	if (mode == nullptr) {
+		OD_ERROR("mode=nullptr");
+		return false;
+	}
+
+	if (out_allocation == nullptr) {
+		OD_ERROR("out_allocation=nullptr");
+		return false;
+	}
+
+	if (out_size == nullptr) {
+		OD_ERROR("out_size=nullptr");
+		return false;
+	}
+
+	odFile file;
+	if (!odFile_open(&file, mode, file_path)) {
+		return false;
+	}
+
+	if (file.native_file == nullptr) {
+		OD_ERROR("no file to read");
+		return false;
+	}
+
+	uint32_t file_size = 0;
+	if (!odFile_read_size(&file, &file_size)) {
+		return false;
+	}
+
+	if (!odAllocation_allocate(out_allocation, file_size)) {
+		return false;
+	}
+
+	void* allocation_buffer = odAllocation_get(out_allocation);
+	if (allocation_buffer == nullptr) {
+		OD_ERROR("no buffer allocated");
+		return false;
+	}
+
+	if (fseek(static_cast<FILE*>(file.native_file), 0, SEEK_SET) != 0) {
+		OD_ERROR("error seeking to beginning of file, errno_str=%s", strerror(errno));
+		return false;
+	}
+
+	return odFile_read(&file, allocation_buffer, file_size, out_size);
+}
+bool odFilePath_write_all(const char* file_path, const char* mode, const void* buffer, uint32_t size) {
+	if (file_path == nullptr) {
+		OD_ERROR("file_path=nullptr");
+		return false;
+	}
+
+	if (mode == nullptr) {
+		OD_ERROR("mode=nullptr");
+		return false;
+	}
+
+	if (buffer == nullptr) {
+		OD_ERROR("out_allocation=nullptr");
+		return false;
+	}
+
+	odFile file;
+	if (!odFile_open(&file, mode, file_path)) {
+		return false;
+	}
+
+	if (file.native_file == nullptr) {
+		OD_ERROR("no file to write");
+		return false;
+	}
+
+	return odFile_write(&file, buffer, size);
+}
+bool odFilePath_delete(const char* file_path) {
+	if (remove(file_path) != 0) {
+		OD_ERROR("failed to delete file, file_path=%s, err_str=%s", file_path, strerror(errno));
+		return false;
+	}
+
+	return true;
+}
+bool odFilePath_get_exists(const char* file_path) {
 	if (file_path == nullptr) {
 		OD_WARN("file_path=nullptr");
 		return false;
@@ -138,4 +263,22 @@ bool odFile_get_exists(const char* file_path) {
 	}
 
 	return (file != nullptr);
+}
+
+odFile::odFile()
+: native_file{nullptr} {
+
+}
+odFile::odFile(odFile&& other)
+: odFile{} {
+	odFile_swap(this, &other);
+}
+odFile& odFile::operator=(odFile&& other) {
+	odFile_swap(this, &other);
+	return *this;
+}
+odFile::~odFile() {
+	if (native_file != nullptr) {
+		odFile_close(this);
+	}
 }

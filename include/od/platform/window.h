@@ -15,8 +15,7 @@ struct odWindowSettings {
 
 OD_API_C struct odWindowSettings odWindowSettings_get_defaults(void);
 
-OD_API_C void odWindow_construct(struct odWindow* window);
-OD_API_C void odWindow_destruct(struct odWindow* window);
+OD_API_C const struct odType* odWindow_get_type_constructor(void);
 OD_API_C void odWindow_swap(struct odWindow* window1, struct odWindow* window2);
 OD_API_C const char* odWindow_get_debug_string(const struct odWindow* window);
 OD_API_C bool odWindow_open(struct odWindow* window, const odWindowSettings* settings);

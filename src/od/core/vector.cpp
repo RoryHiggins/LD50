@@ -36,7 +36,7 @@ const char* odVector_get_debug_string(const odVector* vector) {
 		return "odVector{this=nullptr}";
 	}
 
-	return odDebugString_create_formatted(
+	return odDebugString_format(
 		"odVector{this=%p, type=%s, allocation=%s, capacity=%u, count=%u}",
 		static_cast<const void*>(vector),
 		odType_get_debug_string(vector->type),

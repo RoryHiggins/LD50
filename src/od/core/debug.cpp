@@ -131,11 +131,11 @@ odLogLevelScoped::~odLogLevelScoped() {
 }
 
 char* odDebugString_allocate(uint32_t size) {
-	const uint32_t alignment = 16;
+	const uint32_t alignment = 1;
 	static uint32_t currentSize = 0;
 	static char buffer[OD_TEMP_BUFFER_CAPACITY] = {0};
 
-	uint32_t allocated_size = size + alignment;
+	uint32_t allocated_size = size + alignment - 1;
 
 	if (allocated_size > OD_TEMP_BUFFER_CAPACITY) {
 		OD_ERROR("insufficient capacity, allocated_size=%u", allocated_size);
@@ -150,11 +150,12 @@ char* odDebugString_allocate(uint32_t size) {
 	currentSize += allocated_size;
 
 	uintptr_t allocation_uint = reinterpret_cast<uintptr_t>(allocation);
-	char* aligned_allocation = reinterpret_cast<char*>(((allocation_uint + alignment - 1) / alignment) * alignment);
+	uintptr_t aligned_allocation_uint = ((allocation_uint + alignment - 1) / alignment) * alignment;
+	char* aligned_allocation = reinterpret_cast<char*>(aligned_allocation_uint);
 
 	return aligned_allocation;
 }
-const char* odDebugString_create_formatted_variadic(const char* format_c_str, va_list args) {
+const char* odDebugString_format_variadic(const char* format_c_str, va_list args) {
 	if (format_c_str == nullptr) {
 		OD_ERROR("format_c_str=nullptr");
 		return "<format_c_str=nullptr>";
@@ -185,10 +186,10 @@ const char* odDebugString_create_formatted_variadic(const char* format_c_str, va
 
 	return allocation_str;
 }
-const char* odDebugString_create_formatted(const char* format_c_str, ...) {
+const char* odDebugString_format(const char* format_c_str, ...) {
 	va_list args;
 	va_start(args, format_c_str);
-	const char* result = odDebugString_create_formatted_variadic(format_c_str, args);
+	const char* result = odDebugString_format_variadic(format_c_str, args);
 	va_end(args);
 
 	return result;

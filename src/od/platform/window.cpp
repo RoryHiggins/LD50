@@ -9,6 +9,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include <od/core/type.hpp>
 
 struct odSDLInit {
 	bool is_initialized;
@@ -68,24 +69,8 @@ odWindowSettings odWindowSettings_get_defaults() {
 	};
 }
 
-void odWindow_construct(odWindow* window) {
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
-		return;
-	}
-
-	window->window_native = nullptr;
-	window->is_open = false;
-	window->next_frame_ms = 0;
-	window->settings = odWindowSettings_get_defaults();
-}
-void odWindow_destruct(odWindow* window) {
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
-		return;
-	}
-
-	odWindow_close(window);
+const odType* odWindow_get_type_constructor(void) {
+	return odType_get<odWindow>();
 }
 void odWindow_swap(odWindow* window1, odWindow* window2) {
 	if (window1 == nullptr) {
@@ -118,7 +103,7 @@ const char* odWindow_get_debug_string(const odWindow* window) {
 		return "odWindow{this=nullptr}";
 	}
 
-	return odDebugString_create_formatted(
+	return odDebugString_format(
 		"odWindow{this=%p, is_open=%s}",
 		static_cast<const void*>(window),
 		window->is_open ? "true" : "false"
@@ -245,8 +230,8 @@ void odWindow_step(odWindow* window) {
 	window->next_frame_ms += frame_duration_ms;
 }
 
-odWindow::odWindow() {
-	odWindow_construct(this);
+odWindow::odWindow()
+: window_native{nullptr}, is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()} {
 }
 odWindow::odWindow(odWindow&& other)
 : odWindow{} {
@@ -257,5 +242,5 @@ odWindow& odWindow::operator=(odWindow&& other) {
 	return *this;
 }
 odWindow::~odWindow() {
-	odWindow_destruct(this);
+	odWindow_close(this);
 }

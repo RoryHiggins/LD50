@@ -3,3 +3,5 @@ build/
 .vscode/
 
 *.sublime-workspace
+
+odFile_test_*

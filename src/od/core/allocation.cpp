@@ -31,7 +31,7 @@ const char* odAllocation_get_debug_string(const odAllocation* allocation) {
 		return "odAllocation{this=nullptr}";
 	}
 
-	return odDebugString_create_formatted(
+	return odDebugString_format(
 		"odAllocation{this=%p, ptr=%p}",
 		static_cast<const void*>(allocation),
 		static_cast<const void*>(allocation->ptr)
@@ -45,20 +45,19 @@ bool odAllocation_allocate(odAllocation* allocation, uint32_t size) {
 
 	OD_TRACE("allocation=%s, size=%u", odAllocation_get_debug_string(allocation), size);
 
-	if (allocation->ptr != nullptr) {
-		odAllocation_release(allocation);
-	}
-
 	if (size == 0) {
 		OD_TRACE("size=0, ptr=%s", odAllocation_get_debug_string(allocation));
+		odAllocation_release(allocation);
 		return true;
 	}
 
-	allocation->ptr = calloc(1, size);
-	if (allocation->ptr == nullptr) {
+	void* new_allocation_ptr = realloc(allocation->ptr, size);
+	if (new_allocation_ptr == nullptr) {
 		OD_ERROR("allocation failed, ptr=%s, size=%u", odAllocation_get_debug_string(allocation), size);
 		return false;
 	}
+
+	allocation->ptr = new_allocation_ptr;
 
 	return true;
 }
