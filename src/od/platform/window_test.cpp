@@ -1,11 +1,7 @@
-#include <od/core.h>
+#include <od/test.hpp>
 #include <od/platform/window.hpp>
 
-#include <gtest/gtest.h>
-
-odWindowSettings odWindowSettings_get_test_defaults();
-
-odWindowSettings odWindowSettings_get_test_defaults() {
+static odWindowSettings odWindowSettings_get_test_defaults() {
 	odWindowSettings test_defaults = odWindowSettings_get_defaults();
 	test_defaults.is_visible = false;
 	test_defaults.is_fps_limited = false;

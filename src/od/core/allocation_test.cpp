@@ -1,9 +1,4 @@
-#include <od/core.h>
-#include <od/core/allocation.hpp>
-
-#include <gtest/gtest.h>
-
-#include <od/core/debug.hpp>
+#include <od/test.hpp>
 
 TEST(odAllocation, swap) {
 	odAllocation allocation1;

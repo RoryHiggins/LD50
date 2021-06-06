@@ -1,12 +1,8 @@
-#include <od/core.h>
+#include <od/test.hpp>
 #include <od/platform/file.hpp>
 
 #include <stdlib.h>
 #include <time.h>
-
-#include <gtest/gtest.h>
-
-#include <od/core/string.hpp>
 
 static odString odFile_test_create_random_name() {
 	const char prefix[] = "./odFile_test_";

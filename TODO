@@ -1,11 +1,30 @@
 
-Image
-- Empty image
-- From PNG
-
 Rendering
-- Vertex representation
-- Primitive to vertex conversion
+- MVP gl render pipeline - color only
+- Texture creation and loading
+- Render pipeline texture sampling
+- Vertex array representation
 - Vertex rendering
-- Triangle-ifying primitives
-- Triangle sorting
+- Point to triangles converter
+- Line to triangles converter
+- Rect to triangles converter
+- Primitive to triangles converter
+- Triangle depth sorting
+
+
+Rendering high-level
+--------------------
+odVertex
+- sort_array()
+
+odTexture
+
+odRenderProgram
+- render_context  // void* AKA SDL_GlContext
+- build_default(render_context)
+- render(*vertices, *src_texture, *dest_texture, viewport)
+
+Window
+- sdl_gl_context
+- get_render_context()
+- ...

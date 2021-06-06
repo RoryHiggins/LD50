@@ -1,9 +1,6 @@
-#include <od/core.h>
-#include <od/core/debug.hpp>
+#include <od/test.hpp>
 
 #include <string.h>
-
-#include <gtest/gtest.h>
 
 TEST(odLog, get_level_name) {
 	const char* unknown_level_name = odLogLevel_get_name(OD_LOG_LEVEL_NONE);

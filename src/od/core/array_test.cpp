@@ -1,11 +1,6 @@
-#include <od/core.h>
-#include <od/core/array.hpp>
+#include <od/test.hpp>
 
 #include <string.h>
-
-#include <gtest/gtest.h>
-
-#include <od/core/debug.hpp>
 
 TEST(odArray, swap) {
 	odArray array1{odType_get_char()};
