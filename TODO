@@ -6,7 +6,50 @@ debug-mode integration with a backtrace lib (is boost backtrace isolated to boos
 
 debug-mode integration with tracy
 
-Rendering
+Rendering - plan
+----------------
+Opengl 3.1?  3.3?
+
+Textures needed: window texture (final dest), texture atlas (source/intermediate)
+
+Texture drawing steps:
+- prepare game texture for rendering - set fbo, clear texture to black
+- render game texture - uses texture atlas, game vertices, viewport
+- prepare window texture for rendering - set fbo, clear texture to black
+- render game to window texture - uses game texture
+	- upscaled w/ nearest neighbor, integer scaling, placed at window center
+- render gui to window gui texture - uses texture atlas
+	- texture-sized black quad at the start to clear the window texture
+	
+
+Rendering - high-level design
+-----------------------------
+odRenderVertex
+- sort_array()
+
+odRenderTexture
+
+odRenderPipeline
+- render_context  // void* AKA SDL_GlContext
+- vao
+- fbo
+- program
+- vert_shader
+- frag_shader
+
+odRenderPipeline2D
+- render_pipeline
+- render(*vertices, *dest_texture, *src_texture, viewport)
+- copy_texture(*dest_texture, *src_texture, viewport)
+
+odTextureAtlas
+- texture
+- allocate(w, h, *out_u, *out_v)
+- assign(*image, u, v, w, h)
+
+
+Rendering - roadmap
+-------------------
 - MVP gl render pipeline - color only
 	- enable calls for every render call, with glPushAttrib(GL_ENABLE_BIT)
 - Texture creation and loading
@@ -18,31 +61,3 @@ Rendering
 - Rect to triangles converter
 - Primitive to triangles converter
 - Triangle depth sorting
-
-
-Rendering high-level
---------------------
-odVertex
-- sort_array()
-
-odTexture
-
-odTextureAtlas
-- texture
-
-- assign(*image, width, height) -> uv
-- 
-
-odDefaultRenderer
-- render_context  // void* AKA SDL_GlContext
-- vao
-- program
-- vert_shader
-- frag_shader
-- build_default(render_context)
-- render(*vertices, *src_texture, *dest_texture, viewport)
-
-Window
-- sdl_gl_context
-- get_render_context()
-- ...

@@ -9,10 +9,10 @@ struct odImage {
 	uint32_t width;
 	uint32_t height;
 
-	OD_API_ENGINE_CPP odImage();
-	OD_API_ENGINE_CPP odImage(odImage const& other);
-	OD_API_ENGINE_CPP odImage(odImage&& other);
-	OD_API_ENGINE_CPP odImage& operator=(const odImage& other);
-	OD_API_ENGINE_CPP odImage& operator=(odImage&& other);
-	OD_API_ENGINE_CPP ~odImage();
+	OD_API_PLATFORM_CPP odImage();
+	OD_API_PLATFORM_CPP odImage(odImage const& other);
+	OD_API_PLATFORM_CPP odImage(odImage&& other);
+	OD_API_PLATFORM_CPP odImage& operator=(const odImage& other);
+	OD_API_PLATFORM_CPP odImage& operator=(odImage&& other);
+	OD_API_PLATFORM_CPP ~odImage();
 };

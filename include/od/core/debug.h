@@ -38,16 +38,16 @@ struct odLogContext {
 	uint32_t line;
 };
 
-OD_API_ENGINE_C const char* odLogLevel_get_name(uint32_t log_level);
-OD_API_ENGINE_C uint32_t odLogLevel_get_max(void);
-OD_API_ENGINE_C void odLogLevel_set_max(uint32_t log_level);
+OD_API_CORE_C const char* odLogLevel_get_name(uint32_t log_level);
+OD_API_CORE_C uint32_t odLogLevel_get_max(void);
+OD_API_CORE_C void odLogLevel_set_max(uint32_t log_level);
 
-OD_API_ENGINE_C struct odLogContext odLogContext_construct(const char* file, const char* function, uint32_t line);
+OD_API_CORE_C struct odLogContext odLogContext_construct(const char* file, const char* function, uint32_t line);
 
-OD_API_ENGINE_C void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const char* format_c_str, va_list args);
-OD_API_ENGINE_C void odLog_log(struct odLogContext logger, uint32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
-OD_API_ENGINE_C void odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
+OD_API_CORE_C void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const char* format_c_str, va_list args);
+OD_API_CORE_C void odLog_log(struct odLogContext logger, uint32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
+OD_API_CORE_C void odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
 
-OD_API_ENGINE_C char* odDebugString_allocate(uint32_t size);
-OD_API_ENGINE_C const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
-OD_API_ENGINE_C const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+OD_API_CORE_C char* odDebugString_allocate(uint32_t size);
+OD_API_CORE_C const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
+OD_API_CORE_C const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);

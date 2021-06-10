@@ -23,45 +23,46 @@ if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 	endif()
 endif()
 
-add_library(od_engine ${OD_LINK_MODE})
+add_library(od_engine_core ${OD_LINK_MODE})
 add_library(od_engine_debug_gui ${OD_LINK_MODE})
+add_library(od_engine_platform ${OD_LINK_MODE})
 
 add_executable(od_client)
 add_executable(od_test)
 
-set(od_engine_libs od_engine od_engine_debug_gui)
+set(od_engine_libs od_engine_core od_engine_debug_gui od_engine_platform)
 set(od_engine_binaries od_client od_test)
 set(od_targets ${od_engine_libs} ${od_engine_binaries})
 
 foreach (od_engine_lib ${od_engine_libs})
 	set_target_properties(${od_engine_lib} PROPERTIES LINKER_LANGUAGE CXX WINDOWS_EXPORT_ALL_SYMBOLS 0)
-	if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-		target_compile_definitions(${od_engine_lib} PUBLIC OD_BUILD_DEBUG_LOG=1)
-	endif()
 endforeach()
 if(OD_BUILD_DLL)
-	target_compile_definitions(od_engine PUBLIC OD_BUILD_DLL=1 PRIVATE OD_BUILD_MODULE_ENGINE=1)
-	target_compile_definitions(od_engine_debug_gui PUBLIC OD_BUILD_DLL=1 PRIVATE OD_BUILD_MODULE_ENGINE_DEBUG_GUI=1)
+	foreach (od_target ${od_targets})
+		target_compile_definitions(${od_target} PUBLIC OD_BUILD_DLL=1)
+	endforeach()
+	target_compile_definitions(od_engine_core PRIVATE OD_BUILD_DLL_ENGINE_CORE=1)
+	target_compile_definitions(od_engine_debug_gui PRIVATE OD_BUILD_DLL_ENGINE_DEBUG_GUI=1)
+	target_compile_definitions(od_engine_platform PRIVATE OD_BUILD_DLL_ENGINE_PLATFORM=1)
 endif()
 if(MINGW)
-	target_link_libraries(od_engine PRIVATE mingw32)
+	target_link_libraries(od_engine_platform PRIVATE mingw32)
 	target_link_libraries(od_engine_debug_gui PRIVATE gdi32 shell32 imm32 opengl32)
 endif()
-target_link_libraries(od_engine PRIVATE SDL2::SDL2main SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_debug_gui)
-target_link_libraries(od_engine_debug_gui PRIVATE SDL2::SDL2main SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew)
-target_include_directories(od_engine_debug_gui PUBLIC od_engine)
+target_link_libraries(od_engine_debug_gui PRIVATE SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew od_engine_core)
+target_link_libraries(od_engine_platform PRIVATE SDL2::SDL2main SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core od_engine_debug_gui)
 
-set_target_properties(od_client PROPERTIES LINKER_LANGUAGE CXX LINK_DEPENDS_NO_SHARED 1)
+foreach (od_engine_binary ${od_engine_binaries})
+	set_target_properties(${od_engine_binary} PROPERTIES LINKER_LANGUAGE CXX LINK_DEPENDS_NO_SHARED 1)
+endforeach()
 target_link_libraries(od_client PRIVATE ${od_engine_libs})
-
-set_target_properties(od_test PROPERTIES LINKER_LANGUAGE CXX LINK_DEPENDS_NO_SHARED 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
 target_link_libraries(od_test PRIVATE GTest::GTest GTest::Main ${od_engine_libs})
-target_compile_options(od_test PRIVATE -Wno-global-constructors)  # for gtest TEST macros
+target_compile_options(od_test PRIVATE "-Wno-global-constructors")  # for gtest TEST macros
 
 add_subdirectory(lib)
 add_subdirectory(include)
 add_subdirectory(src)
-
 
 # Optional gcc-specific warnings and static analysis tools
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

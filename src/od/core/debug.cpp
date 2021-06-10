@@ -79,9 +79,8 @@ void odLog_log(odLogContext logger, uint32_t log_level, const char* format_c_str
 void odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
 	if (!success) {
 		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Assertion failed: \"%s\"", expression_c_str);
+		exit(EXIT_FAILURE);
 	}
-
-	exit(EXIT_FAILURE);
 }
 const char* odLogLevel_get_name(uint32_t log_level) {
 	switch (log_level) {

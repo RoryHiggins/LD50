@@ -1,6 +1,7 @@
 #include <od/test.hpp>
 #include <od/platform/window.hpp>
 
+#if OD_ENABLE_SLOW_TESTS
 static odWindowSettings odWindowSettings_get_test_defaults() {
 	odWindowSettings test_defaults = odWindowSettings_get_defaults();
 	test_defaults.is_visible = false;
@@ -22,3 +23,4 @@ TEST(odWindow, open) {
 	odWindow_close(&window);
 	ASSERT_FALSE(odWindow_get_open(&window));
 }
+#endif
