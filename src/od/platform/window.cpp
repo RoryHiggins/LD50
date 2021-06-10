@@ -9,7 +9,9 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+
 #include <od/core/type.hpp>
+#include <od/platform/debug_gui/debug_gui.h>
 
 struct odSDLInit {
 	bool is_initialized;
@@ -130,13 +132,24 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		odWindow_close(window);
 	}
 
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
+#if defined(OD_BUILD_OPENGL_FORWARD_COMPATIBLE) && OD_BUILD_OPENGL_FORWARD_COMPATIBLE
+	// Try to create an OpenGL 3.2 context instead for RenderDoc
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
+
 	window->window_native = static_cast<void*>(SDL_CreateWindow(
 		settings->caption,
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_UNDEFINED,
+		SDL_WINDOWPOS_UNDEFINED,
 		static_cast<int>(settings->width),
 		static_cast<int>(settings->height),
-		settings->is_visible ? SDL_WINDOW_SHOWN : SDL_WINDOW_HIDDEN
+		static_cast<SDL_WindowFlags>(SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN)
 	));
 
 	if (window->window_native == nullptr) {
@@ -144,8 +157,18 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		return false;
 	}
 
+	window->render_context_native = static_cast<void*>(SDL_GL_CreateContext(static_cast<SDL_Window*>(window->window_native)));
+	if (window->render_context_native == nullptr) {
+		OD_ERROR("GL render context creation failed");
+		return false;
+	}
+
 	window->settings = *settings;
 	window->is_open = true;
+
+	if (settings->is_visible) {
+		SDL_ShowWindow(static_cast<SDL_Window*>(window->window_native));
+	}
 
 	return true;
 }
@@ -157,12 +180,17 @@ void odWindow_close(odWindow* window) {
 
 	OD_TRACE("Closing window");
 
+	if (window->render_context_native != nullptr) {
+		SDL_GL_DeleteContext(static_cast<SDL_GLContext>(window->render_context_native));
+		window->render_context_native = nullptr;
+	}
+
 	if (window->window_native != nullptr) {
 		SDL_DestroyWindow(static_cast<SDL_Window*>(window->window_native));
+		window->window_native = nullptr;
 	}
 
 	window->is_open = false;
-	window->window_native = nullptr;
 }
 bool odWindow_get_open(const odWindow* window) {
 	if (window == nullptr) {
@@ -200,8 +228,11 @@ void odWindow_step(odWindow* window) {
 		return;
 	}
 
+	odDebugGui* debug_gui = odDebugGui_get(odWindow_get_native_window(window), odWindow_get_native_render_context(window));
+
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
+		odDebugGui_event(debug_gui, static_cast<void*>(&event));
 		switch (event.type) {
 			case SDL_QUIT: {
 				OD_DEBUG("Quit event received");
@@ -223,6 +254,10 @@ void odWindow_step(odWindow* window) {
 			}
 		}
 	}
+
+	odDebugGui_draw(debug_gui);
+
+	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));
 
 	if (!window->settings.is_fps_limited) {
 		return;
@@ -256,6 +291,22 @@ const odWindowSettings* odWindow_get_settings(const odWindow* window) {
 	}
 
 	return &window->settings;
+}
+void* odWindow_get_native_window(odWindow* window) {
+	if (window == nullptr) {
+		OD_ERROR("window=nullptr");
+		return nullptr;
+	}
+
+	return window->window_native;
+}
+void* odWindow_get_native_render_context(odWindow* window) {
+	if (window == nullptr) {
+		OD_ERROR("window=nullptr");
+		return nullptr;
+	}
+
+	return window->render_context_native;
 }
 
 odWindow::odWindow()

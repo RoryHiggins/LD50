@@ -7,7 +7,7 @@
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
-static uint32_t odLogContextLevelMax = OD_BUILD_DEFAULT_LOG_LEVEL;
+static uint32_t odLogContextLevelMax = OD_LOG_LEVEL_WARN;
 
 static void od_error() {  // empty function for catching any error in a debugger
 }
@@ -76,15 +76,12 @@ void odLog_log(odLogContext logger, uint32_t log_level, const char* format_c_str
 	odLog_log_variadic(logger, log_level, format_c_str, args);
 	va_end(args);
 }
-bool odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
+void odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
 	if (!success) {
 		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Assertion failed: \"%s\"", expression_c_str);
 	}
 
-	if (OD_BUILD_FATAL_ASSERT) {
-		exit(EXIT_FAILURE);
-	}
-	return success;
+	exit(EXIT_FAILURE);
 }
 const char* odLogLevel_get_name(uint32_t log_level) {
 	switch (log_level) {

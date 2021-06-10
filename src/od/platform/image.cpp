@@ -24,7 +24,7 @@ bool odImage_copy(odImage* image, const odImage* src_image) {
 
 	odImage_release(image);
 
-	uint32_t size = sizeof(odColor) * src_image->width * src_image->height;
+	uint32_t size = static_cast<uint32_t>(sizeof(odColor)) * src_image->width * src_image->height;
 	if (size == 0) {
 		return true;
 	}
@@ -92,7 +92,7 @@ bool odImage_allocate(odImage* image, uint32_t width, uint32_t height) {
 
 	odImage_release(image);
 
-	uint32_t size = sizeof(odColor) * width * height;
+	uint32_t size = static_cast<uint32_t>(sizeof(odColor)) * width * height;
 	if (size == 0) {
 		return true;
 	}
@@ -164,7 +164,7 @@ bool odImage_read_png(odImage* image, const void* src_png, uint32_t src_png_size
 
 	uint32_t width = png.width;
 	uint32_t height = png.height;
-	if (!OD_ASSERT(PNG_IMAGE_SIZE(png) == (width * height * sizeof(odColor)))) {
+	if (PNG_IMAGE_SIZE(png) != (width * height * sizeof(odColor))) {
 		return false;
 	}
 	

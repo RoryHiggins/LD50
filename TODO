@@ -1,6 +1,14 @@
 
+debug-mode integration with imgui
+- api build gate defaults to OD_BUILD_DEBUG
+
+debug-mode integration with a backtrace lib (is boost backtrace isolated to boost core?)
+
+debug-mode integration with tracy
+
 Rendering
 - MVP gl render pipeline - color only
+	- enable calls for every render call, with glPushAttrib(GL_ENABLE_BIT)
 - Texture creation and loading
 - Render pipeline texture sampling
 - Vertex array representation
@@ -19,8 +27,18 @@ odVertex
 
 odTexture
 
-odRenderProgram
+odTextureAtlas
+- texture
+
+- assign(*image, width, height) -> uv
+- 
+
+odDefaultRenderer
 - render_context  // void* AKA SDL_GlContext
+- vao
+- program
+- vert_shader
+- frag_shader
 - build_default(render_context)
 - render(*vertices, *src_texture, *dest_texture, viewport)
 

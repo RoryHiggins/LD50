@@ -21,17 +21,15 @@
 #else
 #define OD_WARN(...)
 #define OD_ERROR(...)
-#define OD_ASSERT(EXPR) true
+#define OD_ASSERT(EXPR)
 #endif
 
 #if OD_BUILD_LOG && OD_BUILD_DEBUG_LOG
 #define OD_DEBUG(...) odLog_log(OD_LOG_CONTEXT_CONSTRUCT(), OD_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #define OD_TRACE(...) odLog_log(OD_LOG_CONTEXT_CONSTRUCT(), OD_LOG_LEVEL_TRACE, __VA_ARGS__)
-#define OD_DEBUG_ASSERT(EXPR) OD_ASSERT(EXPR)
 #else
 #define OD_TRACE(...)
 #define OD_DEBUG(...)
-#define OD_DEBUG_ASSERT(EXPR) true
 #endif
 
 struct odLogContext {
@@ -40,16 +38,16 @@ struct odLogContext {
 	uint32_t line;
 };
 
-OD_API_C const char* odLogLevel_get_name(uint32_t log_level);
-OD_API_C uint32_t odLogLevel_get_max(void);
-OD_API_C void odLogLevel_set_max(uint32_t log_level);
+OD_API_ENGINE_C const char* odLogLevel_get_name(uint32_t log_level);
+OD_API_ENGINE_C uint32_t odLogLevel_get_max(void);
+OD_API_ENGINE_C void odLogLevel_set_max(uint32_t log_level);
 
-OD_API_C struct odLogContext odLogContext_construct(const char* file, const char* function, uint32_t line);
+OD_API_ENGINE_C struct odLogContext odLogContext_construct(const char* file, const char* function, uint32_t line);
 
-OD_API_C void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const char* format_c_str, va_list args);
-OD_API_C void odLog_log(struct odLogContext logger, uint32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
-OD_API_C bool odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
+OD_API_ENGINE_C void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const char* format_c_str, va_list args);
+OD_API_ENGINE_C void odLog_log(struct odLogContext logger, uint32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
+OD_API_ENGINE_C void odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
 
-OD_API_C char* odDebugString_allocate(uint32_t size);
-OD_API_C const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
-OD_API_C const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+OD_API_ENGINE_C char* odDebugString_allocate(uint32_t size);
+OD_API_ENGINE_C const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
+OD_API_ENGINE_C const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);

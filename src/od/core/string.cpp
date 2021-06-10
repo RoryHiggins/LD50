@@ -153,7 +153,7 @@ odString::odString(odString&& other)
 : odString{} {
 	odString_swap(this, &other);
 }
-OD_API_CPP odString::odString(const odString& other)
+OD_API_ENGINE_CPP odString::odString(const odString& other)
 : odString{} {
 	odString_copy(this, &other);
 }
@@ -161,7 +161,7 @@ odString& odString::operator=(odString&& other) {
 	odString_swap(this, &other);
 	return *this;
 }
-OD_API_CPP odString& odString::operator=(const odString& other) {
+OD_API_ENGINE_CPP odString& odString::operator=(const odString& other) {
 	odString_copy(this, &other);
 
 	return *this;
