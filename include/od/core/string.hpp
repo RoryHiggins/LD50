@@ -7,10 +7,10 @@
 struct odString {
 	struct odArray array;
 
-	OD_API_CORE_CPP odString();
-	OD_API_CORE_CPP odString(odString&& other);
-	OD_API_CORE_CPP odString(const odString& other);
-	OD_API_CORE_CPP odString& operator=(odString&& other);
-	OD_API_CORE_CPP odString& operator=(const odString& other);
-	OD_API_CORE_CPP ~odString();
+	OD_ENGINE_CORE_MODULE odString();
+	OD_ENGINE_CORE_MODULE odString(odString&& other);
+	OD_ENGINE_CORE_MODULE odString(const odString& other);
+	OD_ENGINE_CORE_MODULE odString& operator=(odString&& other);
+	OD_ENGINE_CORE_MODULE odString& operator=(const odString& other);
+	OD_ENGINE_CORE_MODULE ~odString();
 };

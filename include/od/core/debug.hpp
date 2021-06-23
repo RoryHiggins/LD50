@@ -5,7 +5,7 @@
 struct odLogLevelScoped {
 	uint32_t backup_log_level;
 
-	OD_API_CORE_CPP odLogLevelScoped();
-	OD_API_CORE_CPP explicit odLogLevelScoped(uint32_t log_level);
-	OD_API_CORE_CPP ~odLogLevelScoped();
+	OD_ENGINE_CORE_MODULE odLogLevelScoped();
+	OD_ENGINE_CORE_MODULE explicit odLogLevelScoped(uint32_t log_level);
+	OD_ENGINE_CORE_MODULE ~odLogLevelScoped();
 };

@@ -10,11 +10,11 @@ struct odArray {
 	uint32_t capacity;
 	uint32_t count;
 
-	OD_API_CORE_CPP odArray();
-	OD_API_CORE_CPP explicit odArray(const odType* in_type);
-	OD_API_CORE_CPP odArray(odArray&& other);
-	OD_API_CORE_CPP odArray& operator=(odArray&& other);
-	OD_API_CORE_CPP ~odArray();
+	OD_ENGINE_CORE_MODULE odArray();
+	OD_ENGINE_CORE_MODULE explicit odArray(const odType* in_type);
+	OD_ENGINE_CORE_MODULE odArray(odArray&& other);
+	OD_ENGINE_CORE_MODULE odArray& operator=(odArray&& other);
+	OD_ENGINE_CORE_MODULE ~odArray();
 
 	odArray(const odArray& other) = delete;
 	odArray& operator=(const odArray& other) = delete;

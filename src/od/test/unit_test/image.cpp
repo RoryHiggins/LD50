@@ -1,5 +1,8 @@
-#include <od/test.hpp>
 #include <od/platform/image.hpp>
+
+#include <gtest/gtest.h>
+
+#include <od/core/debug.hpp>
 
 TEST(odImage, allocate_release) {
 	uint32_t allocated_width = -1u;

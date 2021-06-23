@@ -1,6 +1,11 @@
-#include <od/test.hpp>
+#include <od/core/string.hpp>
 
 #include <string.h>
+
+#include <gtest/gtest.h>
+
+#include <od/core/debug.hpp>
+#include <od/core/type.hpp>
 
 TEST(odString, copy) {
 	odString str1;

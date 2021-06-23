@@ -5,8 +5,8 @@
 struct odFile {
 	void* native_file;
 
-	OD_API_PLATFORM_CPP odFile();
-	OD_API_PLATFORM_CPP odFile(odFile&& other);
-	OD_API_PLATFORM_CPP odFile& operator=(odFile&& other);
-	OD_API_PLATFORM_CPP ~odFile();
+	OD_ENGINE_PLATFORM_MODULE odFile();
+	OD_ENGINE_PLATFORM_MODULE odFile(odFile&& other);
+	OD_ENGINE_PLATFORM_MODULE odFile& operator=(odFile&& other);
+	OD_ENGINE_PLATFORM_MODULE ~odFile();
 };

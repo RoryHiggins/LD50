@@ -1,6 +1,6 @@
 #pragma once
 
-#include <od/core/api.h>
+#include <od/core/module.h>
 
 struct odColor {
 	uint8_t r;

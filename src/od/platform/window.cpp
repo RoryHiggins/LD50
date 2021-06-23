@@ -1,17 +1,27 @@
-#include <od/core.h>
 #include <od/platform/window.hpp>
 
-#define GLEW_STATIC
-#define GL_GLEXT_PROTOTYPES 1
-#define GL3_PROTOTYPES 1
-#include <GL/glew.h>
-#include <GL/glu.h>
-
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
 
+#include <od/core/debug.h>
 #include <od/core/type.hpp>
-#include <od/platform/debug_gui/debug_gui.h>
+#include <od/platform/renderer.h>
+
+#if OD_BUILD_RENDERER == OD_RENDERER_OPENGL3
+	#define GLEW_STATIC
+	#define GL_GLEXT_PROTOTYPES 1
+	#define GL3_PROTOTYPES 1
+	#include <GL/glew.h>
+	#include <GL/glu.h>
+
+	#include <SDL2/SDL_opengl.h>
+#elif OD_BUILD_RENDERER == OD_RENDERER_OPENGLES2
+	#include <SDL2/SDL_opengles2.h>
+#endif
+
+
+#if OD_BUILD_DEBUG_GUI
+	#include <od/debug_gui/debug_gui.h>
+#endif
 
 struct odSDLInit {
 	bool is_initialized;
@@ -65,8 +75,9 @@ odWindowSettings odWindowSettings_get_defaults() {
 		/*caption*/ "",
 		/*width*/ 640,
 		/*height*/ 480,
-		/*fps_limit*/ 30,
-		/*is_fps_limited*/ true,
+		/*fps_limit*/ 60,
+		/*is_fps_limit_enabled*/ true,
+		/*is_vsync_enabled"*/ true,
 		/*is_visible*/ true,
 	};
 }
@@ -132,16 +143,22 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		odWindow_close(window);
 	}
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
-#if defined(OD_BUILD_OPENGL_FORWARD_COMPATIBLE) && OD_BUILD_OPENGL_FORWARD_COMPATIBLE
-	// Try to create an OpenGL 3.2 context instead for RenderDoc
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#endif
+	#if OD_BUILD_RENDERER == OD_RENDERER_OPENGL3
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	#elif OD_BUILD_RENDERER == OD_RENDERER_OPENGLES2
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	#else
+		#error
+	#endif
 
 	window->window_native = static_cast<void*>(SDL_CreateWindow(
 		settings->caption,
@@ -149,19 +166,49 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		SDL_WINDOWPOS_UNDEFINED,
 		static_cast<int>(settings->width),
 		static_cast<int>(settings->height),
-		static_cast<SDL_WindowFlags>(SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN)
-	));
+		static_cast<SDL_WindowFlags>(
+			SDL_WINDOW_OPENGL
+			| SDL_WINDOW_HIDDEN)
+		)
+	);
 
 	if (window->window_native == nullptr) {
-		OD_ERROR("Window creation failed");
+		OD_ERROR("SDL_CreateWindow failed, error=%s", SDL_GetError());
 		return false;
 	}
 
-	window->render_context_native = static_cast<void*>(SDL_GL_CreateContext(static_cast<SDL_Window*>(window->window_native)));
+	window->render_context_native = static_cast<void*>(
+		SDL_GL_CreateContext(static_cast<SDL_Window*>(window->window_native))
+	);
 	if (window->render_context_native == nullptr) {
-		OD_ERROR("GL render context creation failed");
+		OD_ERROR("SDL_GL_CreateContext failed, error=%s", SDL_GetError());
 		return false;
 	}
+
+	if (SDL_GL_MakeCurrent(
+		static_cast<SDL_Window*>(window->window_native),
+		static_cast<SDL_GLContext>(window->render_context_native)) != 0) {
+		OD_ERROR("SDL_GL_MakeCurrent failed, error=%s", SDL_GetError());
+		return false;
+	}
+
+	const int swapInterval = static_cast<int>(window->settings.is_vsync_enabled);
+	if (SDL_GL_SetSwapInterval(swapInterval) < 0) {
+		// non-fatal
+		OD_WARN(
+			"SDL_GL_SetSwapInterval failed, swapInterval=%d, error=%s",
+			swapInterval,
+			SDL_GetError()
+		);
+	}
+
+	#if OD_BUILD_RENDERER == OD_RENDERER_OPENGL3
+		glewExperimental = true;
+		if (glewInit() != GLEW_OK) {
+			OD_ERROR("glewInit failed");
+			return false;
+		}
+	#endif
 
 	window->settings = *settings;
 	window->is_open = true;
@@ -228,11 +275,15 @@ void odWindow_step(odWindow* window) {
 		return;
 	}
 
-	odDebugGui* debug_gui = odDebugGui_get(odWindow_get_native_window(window), odWindow_get_native_render_context(window));
+	#if OD_BUILD_DEBUG_GUI
+		odDebugGui* debug_gui = odDebugGui_get(odWindow_get_native_window(window), odWindow_get_native_render_context(window));
+	#endif
 
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		odDebugGui_event(debug_gui, static_cast<void*>(&event));
+		#if OD_BUILD_DEBUG_GUI
+			odDebugGui_event(debug_gui, static_cast<void*>(&event));
+		#endif
 		switch (event.type) {
 			case SDL_QUIT: {
 				OD_DEBUG("Quit event received");
@@ -255,11 +306,13 @@ void odWindow_step(odWindow* window) {
 		}
 	}
 
-	odDebugGui_draw(debug_gui);
+	#if OD_BUILD_DEBUG_GUI
+		odDebugGui_draw(debug_gui);
+	#endif
 
 	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));
 
-	if (!window->settings.is_fps_limited) {
+	if (!window->settings.is_fps_limit_enabled) {
 		return;
 	}
 
@@ -279,7 +332,7 @@ void odWindow_step(odWindow* window) {
 		window->next_frame_ms = time_ms;
 	}
 
-	if (wait_ms > 0) {
+	if (wait_ms >= 1) {
 		SDL_Delay(static_cast<Uint32>(wait_ms));
 	}
 	window->next_frame_ms += frame_duration_ms;

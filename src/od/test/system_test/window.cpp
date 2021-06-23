@@ -1,11 +1,14 @@
-#include <od/test.hpp>
 #include <od/platform/window.hpp>
 
-#if OD_ENABLE_SLOW_TESTS
+#include <gtest/gtest.h>
+
+#include <od/core/debug.hpp>
+
 static odWindowSettings odWindowSettings_get_test_defaults() {
 	odWindowSettings test_defaults = odWindowSettings_get_defaults();
 	test_defaults.is_visible = false;
-	test_defaults.is_fps_limited = false;
+	test_defaults.is_fps_limit_enabled = false;
+	test_defaults.is_vsync_enabled = false;
 	return test_defaults;
 }
 
@@ -23,4 +26,3 @@ TEST(odWindow, open) {
 	odWindow_close(&window);
 	ASSERT_FALSE(odWindow_get_open(&window));
 }
-#endif

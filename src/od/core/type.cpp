@@ -1,7 +1,8 @@
-#include <od/core.h>
 #include <od/core/type.hpp>
 
 #include <string.h>
+
+#include <od/core/debug.h>
 
 const char* odType_get_debug_string(const odType* type) {
 	if (type == nullptr) {

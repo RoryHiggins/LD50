@@ -1,8 +1,8 @@
-#include <od/core.h>
 #include <od/core/string.hpp>
 
 #include <stdio.h>
 
+#include <od/core/debug.h>
 #include <od/core/type.hpp>
 
 const odType* odString_get_type_constructor(void) {
@@ -153,7 +153,7 @@ odString::odString(odString&& other)
 : odString{} {
 	odString_swap(this, &other);
 }
-OD_API_CORE_CPP odString::odString(const odString& other)
+odString::odString(const odString& other)
 : odString{} {
 	odString_copy(this, &other);
 }
@@ -161,7 +161,7 @@ odString& odString::operator=(odString&& other) {
 	odString_swap(this, &other);
 	return *this;
 }
-OD_API_CORE_CPP odString& odString::operator=(const odString& other) {
+odString& odString::operator=(const odString& other) {
 	odString_copy(this, &other);
 
 	return *this;

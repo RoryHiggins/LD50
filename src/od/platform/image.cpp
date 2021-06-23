@@ -1,10 +1,10 @@
-#include <od/core.h>
 #include <od/platform/image.hpp>
 
 #include <string.h>
 
 #include <png.h>
 
+#include <od/core/debug.h>
 #include <od/core/type.hpp>
 #include <od/core/color.h>
 

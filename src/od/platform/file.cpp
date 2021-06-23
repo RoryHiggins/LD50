@@ -1,11 +1,12 @@
-#include <od/core.h>
 #include <od/platform/file.hpp>
 
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
+#include <od/core/debug.h>
 #include <od/core/type.hpp>
+#include <od/core/allocation.h>
 
 const odType* odFile_get_type_constructor(void) {
 	return odType_get<odFile>();
@@ -119,11 +120,6 @@ bool odFile_read(odFile* file, void* out_buffer, uint32_t buffer_size, uint32_t*
 	if (buffer_size == 0) {
 		return true;
 	}
-
-	// if (fseek(static_cast<FILE*>(file->native_file), 0, SEEK_SET) != 0) {
-	// 	OD_ERROR("error seeking to beginning of file, errno_str=%s", strerror(errno));
-	// 	return false;
-	// }
 
 	FILE* native_file = static_cast<FILE*>(file->native_file);
 	*out_size = static_cast<uint32_t>(fread(out_buffer, 1, buffer_size, native_file));

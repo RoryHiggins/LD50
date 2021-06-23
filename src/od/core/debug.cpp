@@ -1,4 +1,3 @@
-#include <od/core.h>
 #include <od/core/debug.hpp>
 
 #include <string.h>
@@ -7,7 +6,7 @@
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
-static uint32_t odLogContextLevelMax = OD_LOG_LEVEL_WARN;
+static uint32_t odLogContextLevelMax = OD_LOG_LEVEL_DEFAULT;
 
 static void od_error() {  // empty function for catching any error in a debugger
 }

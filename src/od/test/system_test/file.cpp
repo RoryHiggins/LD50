@@ -1,8 +1,13 @@
-#include <od/test.hpp>
 #include <od/platform/file.hpp>
 
+#include <string.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <gtest/gtest.h>
+
+#include <od/core/debug.hpp>
+#include <od/core/string.hpp>
 
 static odString odFile_test_create_random_name() {
 	const char prefix[] = "./odFile_test_";
@@ -17,7 +22,7 @@ static odString odFile_test_create_random_name() {
 
 	memcpy(name_ptr, prefix, prefix_size);
 
-	// good enough to mitigate collision risk from crashed tests / parallel test runs
+	// mitigate collision risk from parallel test runs
 	static bool random_seed_set = false;
 	if (!random_seed_set) {
 		unsigned seed = (
@@ -31,6 +36,8 @@ static odString odFile_test_create_random_name() {
 	for (uint32_t i = prefix_size; i < size; i++) {
 		name_ptr[i] = 'a' + static_cast<char>(rand() % 20);
 	}
+
+	OD_ASSERT(odString_ensure_null_terminated(&name));
 
 	return name;
 }

@@ -10,11 +10,11 @@ struct odBox {
 	struct odAllocation allocation;
 	const odType* type;
 
-	OD_API_CORE_CPP odBox();
-	OD_API_CORE_CPP explicit odBox(const odType* in_type);
-	OD_API_CORE_CPP odBox(odBox&& other);
-	OD_API_CORE_CPP odBox& operator=(odBox&& other);
-	OD_API_CORE_CPP ~odBox();
+	OD_ENGINE_CORE_MODULE odBox();
+	OD_ENGINE_CORE_MODULE explicit odBox(const odType* in_type);
+	OD_ENGINE_CORE_MODULE odBox(odBox&& other);
+	OD_ENGINE_CORE_MODULE odBox& operator=(odBox&& other);
+	OD_ENGINE_CORE_MODULE ~odBox();
 
 	odBox(const odBox& other) = delete;
 	odBox& operator=(const odBox& other) = delete;

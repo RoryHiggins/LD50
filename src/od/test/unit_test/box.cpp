@@ -1,5 +1,9 @@
-#include <od/test.hpp>
+#include <od/core/box.hpp>
 
+#include <gtest/gtest.h>
+
+#include <od/core/debug.hpp>
+#include <od/core/type.hpp>
 TEST(odBox, swap) {
 	odBox ptr1{odType_get_char()};
 	odBox ptr2{odType_get_char()};

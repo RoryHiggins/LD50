@@ -1,6 +1,6 @@
-#include <od/core.h>
 #include <od/core/array.hpp>
 
+#include <od/core/debug.h>
 #include <od/core/type.hpp>
 
 const odType* odArray_get_type_constructor(void) {
@@ -146,7 +146,8 @@ bool odArray_ensure_capacity(odArray* array, uint32_t min_capacity) {
 		return true;
 	}
 
-	uint32_t new_capacity = min_capacity;
+	// over-allocate by 1 to make space for sentinel values / null terminators
+	uint32_t new_capacity = min_capacity + 1;
 
 	if ((capacity * 2) >= min_capacity) {
 		new_capacity = capacity * 2;

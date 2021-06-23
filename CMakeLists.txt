@@ -1,6 +1,33 @@
 cmake_minimum_required(VERSION 3.19)
 
 project(overworld LANGUAGES CXX)
+
+set(OD_BUILD_LOG_DEFAULT 1)
+set(OD_BUILD_TESTS_DEFAULT 0)
+if(${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
+	set(OD_BUILD_DEBUG_LOG_DEFAULT 1)
+	set(OD_BUILD_DEBUG_GUI_DEFAULT 1)
+else()
+	set(OD_BUILD_DEBUG_LOG_DEFAULT 0)
+	set(OD_BUILD_DEBUG_GUI_DEFAULT 0)
+endif()
+if(${WIN32} AND (${CMAKE_BUILD_TYPE} STREQUAL DEBUG))
+	set(OD_BUILD_DLL_DEFAULT 1)
+else()
+	set(OD_BUILD_DLL_DEFAULT 0)
+endif()
+
+set(OD_BUILD_LOG ${OD_BUILD_LOG_DEFAULT} CACHE BOOL "Build logging")
+set(OD_BUILD_DEBUG_LOG ${OD_BUILD_DEBUG_LOG_DEFAULT} CACHE BOOL "Build debug logging")
+set(OD_BUILD_DEBUG_GUI ${OD_BUILD_DEBUG_GUI_DEFAULT} CACHE BOOL "Build debug gui")
+set(OD_BUILD_DLL ${OD_BUILD_DLL_DEFAULT} CACHE BOOL "Build engine DLLs")
+set(OD_BUILD_TESTS ${OD_BUILD_TESTS_DEFAULT} CACHE BOOL "Build tests")
+
+set(OD_BUILD_MODULE_LINKAGE "STATIC")
+if(${OD_BUILD_DLL})
+	set(OD_BUILD_MODULE_LINKAGE "SHARED")
+endif()
+
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
@@ -9,101 +36,128 @@ find_package(ZLIB REQUIRED)
 find_package(GTest REQUIRED)
 include(GoogleTest)
 
-enable_testing()
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED 1)
-set(CMAKE_CXX_EXTENSIONS 0)
-set(OD_BUILD_DLL 0)
-set(OD_LINK_MODE "STATIC")
+add_library(od_engine_core ${OD_BUILD_MODULE_LINKAGE})
+add_library(od_engine_debug_gui ${OD_BUILD_MODULE_LINKAGE})
+add_library(od_engine_platform ${OD_BUILD_MODULE_LINKAGE})
 
-if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-	if(WIN32)
-		set(OD_BUILD_DLL 1)
-		set(OD_LINK_MODE "SHARED")
-	endif()
-endif()
-
-add_library(od_engine_core ${OD_LINK_MODE})
-add_library(od_engine_debug_gui ${OD_LINK_MODE})
-add_library(od_engine_platform ${OD_LINK_MODE})
-
-add_executable(od_client)
 add_executable(od_test)
+add_executable(od_client)
 
-set(od_engine_libs od_engine_core od_engine_debug_gui od_engine_platform)
-set(od_engine_binaries od_client od_test)
-set(od_targets ${od_engine_libs} ${od_engine_binaries})
+set(od_libs od_engine_debug_gui od_engine_core od_engine_platform)
+set(od_binaries od_test od_client)
+set(od_targets ${od_libs} ${od_binaries})
 
-foreach (od_engine_lib ${od_engine_libs})
-	set_target_properties(${od_engine_lib} PROPERTIES LINKER_LANGUAGE CXX WINDOWS_EXPORT_ALL_SYMBOLS 0)
+foreach(od_target ${od_targets})
+	set_target_properties(
+		${od_target}
+		PROPERTIES
+		CXX_STANDARD 11
+		CXX_STANDARD_REQUIRED 1
+		CXX_EXTENSIONS 0
+		LINKER_LANGUAGE CXX
+		LINK_DEPENDS_NO_SHARED 1
+		WINDOWS_EXPORT_ALL_SYMBOLS 0
+		UNITY_BUILD 1)
+
+	target_compile_definitions(
+		${od_target}
+		PUBLIC
+		OD_BUILD_DLL=${OD_BUILD_DLL}
+		OD_BUILD_LOG=${OD_BUILD_LOG}
+		OD_BUILD_DEBUG_LOG=${OD_BUILD_DEBUG_LOG}
+		OD_BUILD_DEBUG_GUI=${OD_BUILD_DEBUG_GUI})
+
+	# Optional gcc-specific warnings and static analysis tools
+	if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
+		if(${OD_BUILD_DLL} AND (${od_target} IN_LIST od_libs))
+			foreach(od_target_inner ${od_targets})
+				string(TOUPPER ${od_target} od_target_uppercase)
+
+				if(${od_target_inner} STREQUAL ${od_target})
+					set(dod_target_linkage "__declspec(dllexport)")
+				else()
+					set(dod_target_linkage "__declspec(dllimport)")
+				endif()
+
+				target_compile_definitions(${od_target_inner} PRIVATE "${od_target_uppercase}_MODULE=${dod_target_linkage}")
+			endforeach()
+		endif()
+
+		target_compile_options(
+			${od_target}
+			PUBLIC
+			-Wall -Wextra -pedantic -Werror=vla -Winvalid-pch -fno-exceptions -fno-rtti
+			-Wold-style-cast -Wregister -Wshadow -Wvirtual-inheritance -Wnamespaces
+			-Wzero-as-null-pointer-constant -Wpacked -Wredundant-decls -Wvolatile -Wvla
+			-Wlarger-than=16777216 -Walloc-size-larger-than=16777216
+			-Walloc-zero -Warray-bounds=2 -Wcast-align=strict -Wconversion -Wundef
+			-Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
+			-Wdisabled-optimization -Wfloat-conversion -Wlogical-op -Winline -Wmultichar
+			-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual -Wstringop-overflow=4)
+
+		if(${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
+			target_compile_options(${od_target} PUBLIC -ggdb3)
+			target_compile_definitions(${od_target} PRIVATE _FORTIFY_SOURCE=2)
+
+			if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
+				target_compile_options(${od_target} PUBLIC -fanalyzer)
+			endif()
+
+			if(NOT ${WIN32})
+				target_compile_options(
+					${od_target}
+					PUBLIC
+					-fsanitize=address,leak,undefined -fsanitize-recover=address -fsanitize-address-use-after-scope -fstack-protector-all)
+			endif()
+		endif()
+
+		if(${CMAKE_BUILD_TYPE} STREQUAL RELEASE)
+			target_compile_options(${od_target} PUBLIC -Os -s -ffast-math -flto)
+			target_link_options(${od_target} PUBLIC -Os -s -flto -fwhole-program)
+
+			if(${WIN32})
+				target_link_options(${od_target} PUBLIC -mwindows)
+			endif()
+
+			if(${OD_BUILD_MODULE_LINKAGE} STREQUAL STATIC)
+				target_compile_options(${od_target} PUBLIC -static-libstdc++ -static-libgcc)
+				target_link_options(${od_target} PUBLIC -static-libstdc++ -static-libgcc)
+			endif()
+		endif()
+	endif()
 endforeach()
-if(OD_BUILD_DLL)
-	foreach (od_target ${od_targets})
-		target_compile_definitions(${od_target} PUBLIC OD_BUILD_DLL=1)
-	endforeach()
-	target_compile_definitions(od_engine_core PRIVATE OD_BUILD_DLL_ENGINE_CORE=1)
-	target_compile_definitions(od_engine_debug_gui PRIVATE OD_BUILD_DLL_ENGINE_DEBUG_GUI=1)
-	target_compile_definitions(od_engine_platform PRIVATE OD_BUILD_DLL_ENGINE_PLATFORM=1)
-endif()
-if(MINGW)
-	target_link_libraries(od_engine_platform PRIVATE mingw32)
-	target_link_libraries(od_engine_debug_gui PRIVATE gdi32 shell32 imm32 opengl32)
-endif()
-target_link_libraries(od_engine_debug_gui PRIVATE SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew od_engine_core)
-target_link_libraries(od_engine_platform PRIVATE SDL2::SDL2main SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core od_engine_debug_gui)
 
-foreach (od_engine_binary ${od_engine_binaries})
-	set_target_properties(${od_engine_binary} PROPERTIES LINKER_LANGUAGE CXX LINK_DEPENDS_NO_SHARED 1)
-endforeach()
-target_link_libraries(od_client PRIVATE ${od_engine_libs})
-set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
-target_link_libraries(od_test PRIVATE GTest::GTest GTest::Main ${od_engine_libs})
-target_compile_options(od_test PRIVATE "-Wno-global-constructors")  # for gtest TEST macros
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
+	target_compile_options(od_engine_debug_gui PUBLIC -Wno-old-style-cast -Wno-namespaces -Wno-redundant-decls -Wno-zero-as-null-pointer-constant -Wno-conversion -Wno-inline -Wno-format)
+endif()
+target_link_libraries(od_engine_debug_gui PRIVATE SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew)
+if(NOT ${OD_BUILD_DEBUG_GUI})
+	set_target_properties(od_engine_debug_gui PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+endif()
+if(${MINGW})
+	target_link_libraries(od_engine_debug_gui PRIVATE gdi32 shell32 imm32)
+endif()
+
+if(${MINGW})
+	target_link_libraries(od_engine_platform PRIVATE mingw32)  # mingw32 must be before sdl2main
+endif()
+target_link_libraries(od_engine_platform PRIVATE SDL2::SDL2main SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core)
+if(${OD_BUILD_DEBUG_GUI})
+	target_link_libraries(od_engine_platform PRIVATE od_engine_debug_gui)
+endif()
+
+set_target_properties(od_test PROPERTIES UNITY_BUILD 0)  # each test is extremely costly compile-time wise
+if(NOT ${OD_BUILD_TESTS})
+	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+endif()
+target_link_libraries(od_test PRIVATE GTest::GTest GTest::Main od_engine_core od_engine_platform)
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
+	target_compile_options(od_test PRIVATE -Wno-global-constructors -Wno-inline)
+endif()
+enable_testing()
+
+target_link_libraries(od_client PRIVATE od_engine_core od_engine_platform)
 
 add_subdirectory(lib)
 add_subdirectory(include)
 add_subdirectory(src)
-
-# Optional gcc-specific warnings and static analysis tools
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	function(od_add_compile_link_options)
-		foreach (od_target ${od_targets})
-			add_compile_options(${od_target} ${ARGV})
-			add_link_options(${od_target} ${ARGV})
-		endforeach()
-	endfunction()
-
-	od_add_compile_link_options(-Wall -Wextra -pedantic -Werror=vla -Winvalid-pch -fno-exceptions -fno-rtti)
-	od_add_compile_link_options(
-		-Wold-style-cast -Wregister -Wshadow -Wvirtual-inheritance -Wnamespaces
-		-Wzero-as-null-pointer-constant -Wpacked -Wredundant-decls -Wvolatile -Wvla)
-	od_add_compile_link_options(-Wlarger-than=16777216 -Walloc-size-larger-than=16777216)
-	od_add_compile_link_options(
-		-Walloc-zero -Warray-bounds=2 -Wcast-align=strict -Wconversion -Wundef
-		-Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
-		-Wdisabled-optimization -Wfloat-conversion -Wlogical-op -Winline -Wmultichar
-		-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual -Wstringop-overflow=4)
-
-	if (OD_LINK_MODE STREQUAL "STATIC")
-		od_add_compile_link_options(-static-libstdc++ -static-libgcc)
-	endif()
-
-	if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-		od_add_compile_link_options(-Og -ggdb3 -pg)
-
-		if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
-			od_add_compile_link_options(-fanalyzer)
-		endif()
-
-		if(NOT WIN32)
-			od_add_compile_link_options(-fsanitize=address,leak,undefined -fsanitize-recover=address -fsanitize-address-use-after-scope -fstack-protector)
-		endif()
-	endif()
-
-	if(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
-		od_add_compile_link_options(-Os -s -ffast-math -flto -fwhole-program)
-		if (WIN32)
-			od_add_compile_link_options(-mwindows)
-		endif()
-	endif()
-endif()

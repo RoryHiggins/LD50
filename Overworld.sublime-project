@@ -2,40 +2,30 @@
 	"build_systems":
 	[
 		{
-			"name": "Build and run client",
-			"shell_cmd": "ninja -C build od_client.exe && .\\build\\od_client.exe",
+			"name": "Debug iterative build and run",
+			"shell_cmd": "ninja -C .\\build\\DEBUG od_client.exe && .\\build\\DEBUG\\od_client.exe",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Build and run tests",
-			"shell_cmd": "ninja -C build od_test.exe && .\\build\\od_test.exe --gtest_filter=*.*",
+			"name": "Debug iterative build and run tests",
+			"shell_cmd": "ninja -C .\\build\\DEBUG od_test.exe && .\\build\\DEBUG\\od_test.exe --gtest_filter=*.*",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Build engine",
-			"cmd": "ninja -C build libod_engine.dll",
+			"name": "Debug full build",
+			"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Generate release",
-			"shell_cmd": "cmake -S . -B build -G\"Ninja\" -D CMAKE_BUILD_TYPE=RELEASE",
+			"name": "Release full build",
+			"shell_cmd": "rm -rf .\\build\\RELEASE && cmake -S . -B .\\build\\RELEASE -G\"Ninja\" -D CMAKE_BUILD_TYPE=RELEASE && cmake --build .\\build\\RELEASE",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Generate debug",
-			"shell_cmd": "cmake -S . -B build -G\"Ninja\" -D CMAKE_BUILD_TYPE=DEBUG",
+			"name": "Emscripten build and run",
+			"shell_cmd": "cd src/od/web_client && make && cmd /c start http://localhost:8000 && make host",
 			"working_dir": "$project_path",
 		},
-		{
-			"name": "Rebuild",
-			"shell_cmd": "cmake --build build --clean-first",
-			"working_dir": "$project_path",
-		},
-		// {
-		// 	"name": "Run",
-		// 	"shell_cmd": ".\\build\\jengine_client.exe",
-		// 	"working_dir": "$project_path",
-		// },
 		// renamed find to gnu-find locally for windows, due to clash with win32 find
 		// {
 		// 	"name": "Clang format",

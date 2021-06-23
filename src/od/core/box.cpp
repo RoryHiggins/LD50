@@ -1,8 +1,8 @@
-#include <od/core.h>
 #include <od/core/box.hpp>
 
 #include <stdlib.h>
 
+#include <od/core/debug.h>
 #include <od/core/type.hpp>
 
 const odType* odBox_get_type_constructor(void) {
