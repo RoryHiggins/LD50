@@ -1,4 +1,3 @@
 add_subdirectory(core)
 add_subdirectory(platform)
 add_subdirectory(client)
-add_subdirectory(test)
