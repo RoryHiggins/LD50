@@ -2,7 +2,6 @@ tmp/
 build/
 .vscode/
 gmon.out
-imgui.ini
 *.sublime-workspace
 
 odFile_test_*

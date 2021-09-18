@@ -6,10 +6,8 @@ set(OD_BUILD_LOG_DEFAULT 1)
 set(OD_BUILD_TESTS_DEFAULT 0)
 if(${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
 	set(OD_BUILD_DEBUG_LOG_DEFAULT 1)
-	set(OD_BUILD_DEBUG_GUI_DEFAULT 1)
 else()
 	set(OD_BUILD_DEBUG_LOG_DEFAULT 0)
-	set(OD_BUILD_DEBUG_GUI_DEFAULT 0)
 endif()
 if(${WIN32} AND (${CMAKE_BUILD_TYPE} STREQUAL DEBUG))
 	set(OD_BUILD_DLL_DEFAULT 1)
@@ -19,7 +17,6 @@ endif()
 
 set(OD_BUILD_LOG ${OD_BUILD_LOG_DEFAULT} CACHE BOOL "Build logging")
 set(OD_BUILD_DEBUG_LOG ${OD_BUILD_DEBUG_LOG_DEFAULT} CACHE BOOL "Build debug logging")
-set(OD_BUILD_DEBUG_GUI ${OD_BUILD_DEBUG_GUI_DEFAULT} CACHE BOOL "Build debug gui")
 set(OD_BUILD_DLL ${OD_BUILD_DLL_DEFAULT} CACHE BOOL "Build engine DLLs")
 set(OD_BUILD_TESTS ${OD_BUILD_TESTS_DEFAULT} CACHE BOOL "Build tests")
 
@@ -28,8 +25,6 @@ if(${OD_BUILD_DLL})
 	set(OD_BUILD_MODULE_LINKAGE "SHARED")
 endif()
 
-find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -37,13 +32,12 @@ find_package(GTest REQUIRED)
 include(GoogleTest)
 
 add_library(od_engine_core ${OD_BUILD_MODULE_LINKAGE})
-add_library(od_engine_debug_gui ${OD_BUILD_MODULE_LINKAGE})
 add_library(od_engine_platform ${OD_BUILD_MODULE_LINKAGE})
 
 add_executable(od_test)
 add_executable(od_client)
 
-set(od_libs od_engine_debug_gui od_engine_core od_engine_platform)
+set(od_libs od_engine_core od_engine_platform)
 set(od_binaries od_test od_client)
 set(od_targets ${od_libs} ${od_binaries})
 
@@ -64,8 +58,7 @@ foreach(od_target ${od_targets})
 		PUBLIC
 		OD_BUILD_DLL=${OD_BUILD_DLL}
 		OD_BUILD_LOG=${OD_BUILD_LOG}
-		OD_BUILD_DEBUG_LOG=${OD_BUILD_DEBUG_LOG}
-		OD_BUILD_DEBUG_GUI=${OD_BUILD_DEBUG_GUI})
+		OD_BUILD_DEBUG_LOG=${OD_BUILD_DEBUG_LOG})
 
 	# Optional gcc-specific warnings and static analysis tools
 	if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
@@ -127,26 +120,15 @@ foreach(od_target ${od_targets})
 	endif()
 endforeach()
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
-	target_compile_options(od_engine_debug_gui PUBLIC -Wno-old-style-cast -Wno-namespaces -Wno-redundant-decls -Wno-zero-as-null-pointer-constant -Wno-conversion -Wno-inline -Wno-format)
-endif()
-target_link_libraries(od_engine_debug_gui PRIVATE SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew)
-if(NOT ${OD_BUILD_DEBUG_GUI})
-	set_target_properties(od_engine_debug_gui PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
-endif()
-if(${MINGW})
-	target_link_libraries(od_engine_debug_gui PRIVATE gdi32 shell32 imm32)
-endif()
-
 if(${MINGW})
 	target_link_libraries(od_engine_platform PRIVATE mingw32)  # mingw32 must be before sdl2main
 endif()
-target_link_libraries(od_engine_platform PRIVATE SDL2::SDL2main SDL2::SDL2 OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core)
-if(${OD_BUILD_DEBUG_GUI})
-	target_link_libraries(od_engine_platform PRIVATE od_engine_debug_gui)
-endif()
+target_link_libraries(od_engine_platform PRIVATE SDL2::SDL2main SDL2::SDL2 PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core)
+# each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
+set_target_properties(od_engine_platform PROPERTIES UNITY_BUILD 0)
 
-set_target_properties(od_test PROPERTIES UNITY_BUILD 0)  # each test is extremely costly compile-time wise
+# gtest tests generate a lot of cruft; each test is extremely costly in compile-time
+set_target_properties(od_test PROPERTIES UNITY_BUILD 0)
 if(NOT ${OD_BUILD_TESTS})
 	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
 endif()
@@ -158,6 +140,5 @@ enable_testing()
 
 target_link_libraries(od_client PRIVATE od_engine_core od_engine_platform)
 
-add_subdirectory(lib)
 add_subdirectory(include)
 add_subdirectory(src)

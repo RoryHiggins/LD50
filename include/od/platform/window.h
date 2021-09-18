@@ -26,4 +26,3 @@ OD_API_C OD_ENGINE_PLATFORM_MODULE bool odWindow_set_visible(struct odWindow* wi
 OD_API_C OD_ENGINE_PLATFORM_MODULE bool odWindow_get_open(const struct odWindow* window);
 OD_API_C OD_ENGINE_PLATFORM_MODULE const struct odWindowSettings* odWindow_get_settings(const struct odWindow* window);
 OD_API_C OD_ENGINE_PLATFORM_MODULE void* odWindow_get_native_window(struct odWindow* window);
-OD_API_C OD_ENGINE_PLATFORM_MODULE void* odWindow_get_native_render_context(struct odWindow* window);

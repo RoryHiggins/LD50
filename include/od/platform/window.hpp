@@ -4,7 +4,7 @@
 
 struct odWindow {
 	void* window_native;
-	void* render_context_native;
+	void* renderer_native;
 	bool is_open;
 	uint32_t next_frame_ms;
 	struct odWindowSettings settings;

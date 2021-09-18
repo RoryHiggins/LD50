@@ -14,10 +14,6 @@
     #define OD_BUILD_DEBUG_LOG 1
 #endif
 
-#if !defined(OD_BUILD_DEBUG_GUI)
-    #define OD_BUILD_DEBUG_GUI 1
-#endif
-
 #if !defined(OD_BUILD_RENDERER)
     #define OD_BUILD_RENDERER /*OD_RENDERER_DEFAULT*/ 1
 #endif

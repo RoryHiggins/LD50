@@ -6,29 +6,25 @@
 #include <od/core/type.hpp>
 #include <od/platform/renderer.h>
 
-#if OD_BUILD_RENDERER == OD_RENDERER_OPENGL3
-	#define GLEW_STATIC
-	#define GL_GLEXT_PROTOTYPES 1
-	#define GL3_PROTOTYPES 1
-	#include <GL/glew.h>
-	#include <GL/glu.h>
-
-	#include <SDL2/SDL_opengl.h>
-#elif OD_BUILD_RENDERER == OD_RENDERER_OPENGLES2
-	#include <SDL2/SDL_opengles2.h>
-#endif
-
-
-#if OD_BUILD_DEBUG_GUI
-	#include <od/debug_gui/debug_gui.h>
-#endif
-
 struct odSDLInit {
 	bool is_initialized;
 
 	odSDLInit();
 	~odSDLInit();
 };
+
+static bool odSDLInit_ensure_initialized();
+
+odSDLInit::odSDLInit()
+: is_initialized{false} {
+}
+odSDLInit::~odSDLInit() {
+	if (is_initialized) {
+		SDL_Quit();
+	}
+
+	is_initialized = false;
+}
 
 static bool odSDLInit_ensure_initialized() {
 	static odSDLInit sdl;
@@ -41,11 +37,7 @@ static bool odSDLInit_ensure_initialized() {
 
 	const Uint32 sdl_init_flags = (
 		SDL_INIT_EVENTS
-		| SDL_INIT_TIMER
 		| SDL_INIT_VIDEO
-		// | SDL_INIT_JOYSTICK
-		// | SDL_INIT_HAPTIC
-		// | SDL_INIT_GAMECONTROLLER
 	);
 
 	OD_TRACE("SDL_Init");
@@ -57,17 +49,6 @@ static bool odSDLInit_ensure_initialized() {
 	OD_TRACE("is_initialized=%d", sdl.is_initialized);
 
 	return true;
-}
-
-odSDLInit::odSDLInit()
-: is_initialized{false} {
-}
-odSDLInit::~odSDLInit() {
-	if (is_initialized) {
-		SDL_Quit();
-	}
-
-	is_initialized = false;
 }
 
 odWindowSettings odWindowSettings_get_defaults() {
@@ -143,23 +124,6 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		odWindow_close(window);
 	}
 
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
-	#if OD_BUILD_RENDERER == OD_RENDERER_OPENGL3
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	#elif OD_BUILD_RENDERER == OD_RENDERER_OPENGLES2
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-	#else
-		#error
-	#endif
-
 	window->window_native = static_cast<void*>(SDL_CreateWindow(
 		settings->caption,
 		SDL_WINDOWPOS_UNDEFINED,
@@ -167,8 +131,8 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		static_cast<int>(settings->width),
 		static_cast<int>(settings->height),
 		static_cast<SDL_WindowFlags>(
-			SDL_WINDOW_OPENGL
-			| SDL_WINDOW_HIDDEN)
+			(settings->is_visible ? SDL_WINDOW_SHOWN : SDL_WINDOW_HIDDEN)
+			/*| SDL_WINDOW_OPENGL*/)
 		)
 	);
 
@@ -177,45 +141,19 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		return false;
 	}
 
-	window->render_context_native = static_cast<void*>(
-		SDL_GL_CreateContext(static_cast<SDL_Window*>(window->window_native))
-	);
-	if (window->render_context_native == nullptr) {
-		OD_ERROR("SDL_GL_CreateContext failed, error=%s", SDL_GetError());
-		return false;
-	}
-
-	if (SDL_GL_MakeCurrent(
+	window->renderer_native = static_cast<void*>(SDL_CreateRenderer(
 		static_cast<SDL_Window*>(window->window_native),
-		static_cast<SDL_GLContext>(window->render_context_native)) != 0) {
-		OD_ERROR("SDL_GL_MakeCurrent failed, error=%s", SDL_GetError());
+		/*index*/ -1,
+		/*flags*/ (settings->is_vsync_enabled ? SDL_RENDERER_PRESENTVSYNC : 0)
+	));
+
+	if (window->renderer_native == nullptr) {
+		OD_ERROR("SDL_CreateRenderer failed, error=%s", SDL_GetError());
 		return false;
 	}
-
-	const int swapInterval = static_cast<int>(window->settings.is_vsync_enabled);
-	if (SDL_GL_SetSwapInterval(swapInterval) < 0) {
-		// non-fatal
-		OD_WARN(
-			"SDL_GL_SetSwapInterval failed, swapInterval=%d, error=%s",
-			swapInterval,
-			SDL_GetError()
-		);
-	}
-
-	#if OD_BUILD_RENDERER == OD_RENDERER_OPENGL3
-		glewExperimental = true;
-		if (glewInit() != GLEW_OK) {
-			OD_ERROR("glewInit failed");
-			return false;
-		}
-	#endif
 
 	window->settings = *settings;
 	window->is_open = true;
-
-	if (settings->is_visible) {
-		SDL_ShowWindow(static_cast<SDL_Window*>(window->window_native));
-	}
 
 	return true;
 }
@@ -227,9 +165,9 @@ void odWindow_close(odWindow* window) {
 
 	OD_TRACE("Closing window");
 
-	if (window->render_context_native != nullptr) {
-		SDL_GL_DeleteContext(static_cast<SDL_GLContext>(window->render_context_native));
-		window->render_context_native = nullptr;
+	if (window->renderer_native != nullptr) {
+		SDL_DestroyRenderer(static_cast<SDL_Renderer*>(window->renderer_native));
+		window->renderer_native = nullptr;
 	}
 
 	if (window->window_native != nullptr) {
@@ -275,15 +213,8 @@ void odWindow_step(odWindow* window) {
 		return;
 	}
 
-	#if OD_BUILD_DEBUG_GUI
-		odDebugGui* debug_gui = odDebugGui_get(odWindow_get_native_window(window), odWindow_get_native_render_context(window));
-	#endif
-
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		#if OD_BUILD_DEBUG_GUI
-			odDebugGui_event(debug_gui, static_cast<void*>(&event));
-		#endif
 		switch (event.type) {
 			case SDL_QUIT: {
 				OD_DEBUG("Quit event received");
@@ -306,13 +237,13 @@ void odWindow_step(odWindow* window) {
 		}
 	}
 
-	#if OD_BUILD_DEBUG_GUI
-		odDebugGui_draw(debug_gui);
-	#endif
-
-	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));
+	SDL_RenderPresent(static_cast<SDL_Renderer*>(window->renderer_native));
 
 	if (!window->settings.is_fps_limit_enabled) {
+		return;
+	}
+
+	if (window->settings.is_vsync_enabled) {
 		return;
 	}
 
@@ -352,14 +283,6 @@ void* odWindow_get_native_window(odWindow* window) {
 	}
 
 	return window->window_native;
-}
-void* odWindow_get_native_render_context(odWindow* window) {
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
-		return nullptr;
-	}
-
-	return window->render_context_native;
 }
 
 odWindow::odWindow()

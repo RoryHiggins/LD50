@@ -13,9 +13,6 @@ Can we remove GLU from dependencies and headers?
 big tasks
 ---------
 
-debug-mode integration with imgui
-- api build gate defaults to OD_BUILD_DEBUG
-
 debug-mode integration with a backtrace lib (is boost backtrace isolated to boost core?)
 
 debug-mode integration with tracy
