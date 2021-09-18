@@ -1,8 +1,8 @@
 #include <od/core/debug.hpp>
 
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
@@ -24,21 +24,20 @@ odLogContext odLogContext_construct(const char* file, const char* function, uint
 void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const char* format_c_str, va_list args) {
 #if OD_BUILD_DEBUG_LOG
 	// preconditions without assertions/logs special case here:
-	// asserts can call this function, which might cause infinite recursion, so we play it safe and printf
-	if ((format_c_str == nullptr)
-		|| (logger.file == nullptr)
-		|| (logger.function == nullptr)
-		|| ((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
+	// asserts can call this function, which might cause infinite recursion, so we
+	// play it safe and printf
+	if ((format_c_str == nullptr) || (logger.file == nullptr) || (logger.function == nullptr) ||
+		((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
 
 		fprintf(
 			stdout,
-			"odLog_log_variadic() error during logging: log_level=%u, format_c_str=%p, file=%p, line=%u, function=%p",
+			"odLog_log_variadic() error during logging: log_level=%u, "
+			"format_c_str=%p, file=%p, line=%u, function=%p",
 			log_level,
 			static_cast<const void*>(format_c_str),
 			static_cast<const void*>(logger.file),
 			logger.line,
-			static_cast<const void*>(logger.function)
-		);
+			static_cast<const void*>(logger.function));
 		fputc('\n', stdout);
 		fflush(stdout);
 
@@ -51,14 +50,7 @@ void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const ch
 		return;
 	}
 
-	fprintf(
-		stdout,
-		"[%s %s:%u] %s() ",
-		odLogLevel_get_name(log_level),
-		logger.file,
-		logger.line,
-		logger.function
-	);
+	fprintf(stdout, "[%s %s:%u] %s() ", odLogLevel_get_name(log_level), logger.file, logger.line, logger.function);
 
 	vfprintf(stdout, format_c_str, args);
 
@@ -114,11 +106,9 @@ void odLogLevel_set_max(uint32_t log_level) {
 	odLogContextLevelMax = log_level;
 }
 
-odLogLevelScoped::odLogLevelScoped()
-: backup_log_level{odLogLevel_get_max()} {
+odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {
 }
-odLogLevelScoped::odLogLevelScoped(uint32_t log_level)
-: backup_log_level{odLogLevel_get_max()} {
+odLogLevelScoped::odLogLevelScoped(uint32_t log_level) : backup_log_level{odLogLevel_get_max()} {
 	odLogLevel_set_max(log_level);
 }
 odLogLevelScoped::~odLogLevelScoped() {
@@ -158,7 +148,8 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 
 	va_list compute_size_args;
 	va_copy(compute_size_args, args);
-	// passing a nullptr buffer to the sprintf-family of calls will only compute the output size
+	// passing a nullptr buffer to the sprintf-family of calls will only compute
+	// the output size
 	int required_count = vsnprintf(/*buffer*/ nullptr, /*bufsz*/ 0, format_c_str, compute_size_args);
 	va_end(compute_size_args);
 
@@ -167,12 +158,17 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 		return "<failed to parse debug format string>";
 	}
 
-	// sprintf-style calls always write null-terminated, but count in return value excludes null terminator
+	// sprintf-style calls always write null-terminated, but count in return value
+	// excludes null terminator
 	uint32_t required_capacity = static_cast<uint32_t>(required_count) + 1;
 
 	void* allocation = odDebugString_allocate(required_capacity);
 	if (allocation == nullptr) {
-		OD_ERROR("failed to allocate debug string, format_c_str=%s, required_capacity=%u", format_c_str, required_capacity);
+		OD_ERROR(
+			"failed to allocate debug string, format_c_str=%s, "
+			"required_capacity=%u",
+			format_c_str,
+			required_capacity);
 		return "<failed to allocate debug string>";
 	}
 

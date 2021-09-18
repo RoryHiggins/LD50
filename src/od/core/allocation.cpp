@@ -33,8 +33,7 @@ const char* odAllocation_get_debug_string(const odAllocation* allocation) {
 	return odDebugString_format(
 		"odAllocation{this=%p, ptr=%p}",
 		static_cast<const void*>(allocation),
-		static_cast<const void*>(allocation->ptr)
-	);
+		static_cast<const void*>(allocation->ptr));
 }
 bool odAllocation_allocate(odAllocation* allocation, uint32_t size) {
 	if (allocation == nullptr) {
@@ -84,11 +83,9 @@ const void* odAllocation_get_const(const odAllocation* allocation) {
 	return odAllocation_get(const_cast<odAllocation*>(allocation));
 }
 
-odAllocation::odAllocation()
-: ptr{nullptr} {
+odAllocation::odAllocation() : ptr{nullptr} {
 }
-odAllocation::odAllocation(odAllocation&& other)
-: odAllocation{} {
+odAllocation::odAllocation(odAllocation&& other) : odAllocation{} {
 	odAllocation_swap(this, &other);
 }
 odAllocation& odAllocation::operator=(odAllocation&& other) {

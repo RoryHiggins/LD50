@@ -4,9 +4,9 @@
 
 #include <png.h>
 
+#include <od/core/color.h>
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
-#include <od/core/color.h>
 
 const odType* odImage_get_type_constructor() {
 	return odType_get<odImage>();
@@ -81,8 +81,7 @@ const char* odImage_get_debug_string(const odImage* image) {
 		static_cast<const void*>(image),
 		odAllocation_get_debug_string(&image->allocation),
 		image->width,
-		image->height
-	);
+		image->height);
 }
 bool odImage_allocate(odImage* image, uint32_t width, uint32_t height) {
 	if (image == nullptr) {
@@ -167,7 +166,7 @@ bool odImage_read_png(odImage* image, const void* src_png, uint32_t src_png_size
 	if (PNG_IMAGE_SIZE(png) != (width * height * sizeof(odColor))) {
 		return false;
 	}
-	
+
 	if (!odImage_allocate(image, width, height)) {
 		return false;
 	}
@@ -178,7 +177,12 @@ bool odImage_read_png(odImage* image, const void* src_png, uint32_t src_png_size
 		return false;
 	}
 
-	if (png_image_finish_read(&png, /*background*/ nullptr, image_data, /*row_stride*/ 0, /*colormap*/ nullptr) == 0) {
+	if (png_image_finish_read(
+			&png,
+			/*background*/ nullptr,
+			image_data,
+			/*row_stride*/ 0,
+			/*colormap*/ nullptr) == 0) {
 		OD_ERROR("png_image_finish_read() failed");
 		return false;
 	}
@@ -200,15 +204,12 @@ const odColor* odImage_get_const(const odImage* image) {
 	return odImage_get(const_cast<odImage*>(image));
 }
 
-odImage::odImage()
-: allocation{}, width{0}, height{0} {
+odImage::odImage() : allocation{}, width{0}, height{0} {
 }
-odImage::odImage(odImage const& other)
-: odImage{} {
+odImage::odImage(odImage const& other) : odImage{} {
 	odImage_copy(this, &other);
 }
-odImage::odImage(odImage&& other)
-: odImage{} {
+odImage::odImage(odImage&& other) : odImage{} {
 	odImage_swap(this, &other);
 }
 odImage& odImage::operator=(const odImage& other) {

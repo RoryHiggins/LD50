@@ -1,7 +1,7 @@
 #include <od/platform/file.hpp>
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include <gtest/gtest.h>
@@ -25,10 +25,8 @@ static odString odFile_test_create_random_name() {
 	// mitigate collision risk from parallel test runs
 	static bool random_seed_set = false;
 	if (!random_seed_set) {
-		unsigned seed = (
-			static_cast<unsigned>(time(nullptr))
-			+ static_cast<unsigned>(reinterpret_cast<uintptr_t>(name_ptr))
-		);
+		unsigned seed =
+			(static_cast<unsigned>(time(nullptr)) + static_cast<unsigned>(reinterpret_cast<uintptr_t>(name_ptr)));
 		srand(seed);
 		random_seed_set = true;
 	}
@@ -48,26 +46,14 @@ TEST(odFile, open) {
 	ASSERT_NE(file_name_str, nullptr);
 
 	const uint32_t write_modes_count = 6;
-	const char write_modes[write_modes_count][8] = {
-		"w",
-		"wb",
-		"w+",
-		"wb+",
-		"a",
-		"a+"
-	};
+	const char write_modes[write_modes_count][8] = {"w", "wb", "w+", "wb+", "a", "a+"};
 	for (uint32_t mode = 0; mode < write_modes_count; mode++) {
 		odFile file;
 		ASSERT_TRUE(odFile_open(&file, write_modes[mode], file_name_str));
 	}
 
 	const uint32_t read_modes_count = 4;
-	const char read_modes[read_modes_count][8] = {
-		"r",
-		"rb",
-		"r+",
-		"rb+"
-	};
+	const char read_modes[read_modes_count][8] = {"r", "rb", "r+", "rb+"};
 	for (uint32_t mode = 0; mode < read_modes_count; mode++) {
 		odFile file;
 		ASSERT_TRUE(odFile_open(&file, read_modes[mode], file_name_str));
@@ -100,7 +86,6 @@ TEST(odFile, write_read_delete) {
 
 	ASSERT_TRUE(odFilePath_delete(file_name_str));
 }
-
 
 TEST(odFilePath, write_read_delete) {
 	odString file_name = odFile_test_create_random_name();

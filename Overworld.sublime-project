@@ -32,16 +32,16 @@
 			"working_dir": "$project_path",
 		},
 		// renamed find to gnu-find locally for windows, due to clash with win32 find
-		// {
-		// 	"name": "Clang format",
-		// 	"shell_cmd": "gnu-find ./client -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs clang-format -i -Werror --",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "Clang tidy",
-		// 	"shell_cmd": "gnu-find ./client -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs -I TIDY_INPUT clang-tidy TIDY_INPUT -- -Iclient/include -Iclient/src",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "Clang format",
+			"shell_cmd": "gnu-find ./include ./src -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs clang-format -i -Werror --",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Clang tidy",
+			"shell_cmd": "gnu-find ./include ./src -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs -I TIDY_INPUT clang-tidy TIDY_INPUT -- -I./include -Isrc",
+			"working_dir": "$project_path",
+		},
 	],
 	"folders":
 	[

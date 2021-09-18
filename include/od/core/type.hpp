@@ -4,25 +4,25 @@
 
 #include <new>
 
-template<typename T>
+template <typename T>
 void odType_default_construct_fn(void* ptr, uint32_t count) {
 	for (uint32_t i = 0; i < count; i++) {
-		new(static_cast<T*>(ptr) + i) T{};
+		new (static_cast<T*>(ptr) + i) T{};
 	}
 }
-template<typename T>
+template <typename T>
 void odType_move_assign_fn(void* ptr, void* src_ptr, uint32_t count) {
 	for (uint32_t i = 0; i < count; i++) {
-		new(static_cast<T*>(ptr) + i) T{static_cast<T&&>(static_cast<T*>(src_ptr)[i])};
+		new (static_cast<T*>(ptr) + i) T{static_cast<T&&>(static_cast<T*>(src_ptr)[i])};
 	}
 }
-template<typename T>
+template <typename T>
 void odType_destruct_fn(void* ptr, uint32_t count) {
 	for (uint32_t i = 0; i < count; i++) {
 		static_cast<T*>(ptr)[i].~T();
 	}
 }
-template<typename T>
+template <typename T>
 const odType* odType_get() {
 	static const odType type{
 		/*size*/ sizeof(T),

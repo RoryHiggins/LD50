@@ -23,11 +23,11 @@ TEST(odString, ensure_null_terminated) {
 	ASSERT_FALSE(odString_get_null_terminated(&str));
 	ASSERT_EQ(odString_get_count(&str), 0);
 	ASSERT_EQ(odString_get_capacity(&str), 0);
-	
+
 	ASSERT_TRUE(odString_ensure_null_terminated(&str));
 	ASSERT_TRUE(odString_get_null_terminated(&str));
 	ASSERT_EQ(odString_get_count(&str), 1);
-	
+
 	const char* str_data = odString_get_const(&str, 0);
 	ASSERT_NE(str_data, nullptr);
 	ASSERT_EQ(strncmp(str_data, "\0", 1), 0);

@@ -15,8 +15,7 @@ struct odSDLInit {
 
 static bool odSDLInit_ensure_initialized();
 
-odSDLInit::odSDLInit()
-: is_initialized{false} {
+odSDLInit::odSDLInit() : is_initialized{false} {
 }
 odSDLInit::~odSDLInit() {
 	if (is_initialized) {
@@ -35,10 +34,7 @@ static bool odSDLInit_ensure_initialized() {
 		return true;
 	}
 
-	const Uint32 sdl_init_flags = (
-		SDL_INIT_EVENTS
-		| SDL_INIT_VIDEO
-	);
+	const Uint32 sdl_init_flags = (SDL_INIT_EVENTS | SDL_INIT_VIDEO);
 
 	OD_TRACE("SDL_Init");
 	if (SDL_Init(sdl_init_flags) != 0) {
@@ -98,10 +94,7 @@ const char* odWindow_get_debug_string(const odWindow* window) {
 	}
 
 	return odDebugString_format(
-		"odWindow{this=%p, is_open=%s}",
-		static_cast<const void*>(window),
-		window->is_open ? "true" : "false"
-	);
+		"odWindow{this=%p, is_open=%s}", static_cast<const void*>(window), window->is_open ? "true" : "false");
 }
 bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 	if (window == nullptr) {
@@ -130,11 +123,8 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 		SDL_WINDOWPOS_UNDEFINED,
 		static_cast<int>(settings->width),
 		static_cast<int>(settings->height),
-		static_cast<SDL_WindowFlags>(
-			(settings->is_visible ? SDL_WINDOW_SHOWN : SDL_WINDOW_HIDDEN)
-			/*| SDL_WINDOW_OPENGL*/)
-		)
-	);
+		static_cast<SDL_WindowFlags>((settings->is_visible ? SDL_WINDOW_SHOWN : SDL_WINDOW_HIDDEN)
+									 /*| SDL_WINDOW_OPENGL*/)));
 
 	if (window->window_native == nullptr) {
 		OD_ERROR("SDL_CreateWindow failed, error=%s", SDL_GetError());
@@ -144,8 +134,7 @@ bool odWindow_open(odWindow* window, const odWindowSettings* settings) {
 	window->renderer_native = static_cast<void*>(SDL_CreateRenderer(
 		static_cast<SDL_Window*>(window->window_native),
 		/*index*/ -1,
-		/*flags*/ (settings->is_vsync_enabled ? SDL_RENDERER_PRESENTVSYNC : 0)
-	));
+		/*flags*/ (settings->is_vsync_enabled ? SDL_RENDERER_PRESENTVSYNC : 0)));
 
 	if (window->renderer_native == nullptr) {
 		OD_ERROR("SDL_CreateRenderer failed, error=%s", SDL_GetError());
@@ -286,10 +275,9 @@ void* odWindow_get_native_window(odWindow* window) {
 }
 
 odWindow::odWindow()
-: window_native{nullptr}, is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()} {
+	: window_native{nullptr}, is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()} {
 }
-odWindow::odWindow(odWindow&& other)
-: odWindow{} {
+odWindow::odWindow(odWindow&& other) : odWindow{} {
 	odWindow_swap(this, &other);
 }
 odWindow& odWindow::operator=(odWindow&& other) {

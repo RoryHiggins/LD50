@@ -42,8 +42,7 @@ const char* odArray_get_debug_string(const odArray* array) {
 		odType_get_debug_string(array->type),
 		odAllocation_get_debug_string(&array->allocation),
 		array->capacity,
-		array->count
-	);
+		array->count);
 }
 const odType* odArray_get_type(const odArray* array) {
 	if (array == nullptr) {
@@ -70,8 +69,7 @@ void odArray_set_type(odArray* array, const odType* type) {
 		OD_TRACE(
 			"releasing old allocation, array=%s, type=%s",
 			odArray_get_debug_string(array),
-			odType_get_debug_string(type)
-		);
+			odType_get_debug_string(type));
 		odArray_release(array);
 	}
 
@@ -234,8 +232,7 @@ bool odArray_expand(odArray* array, void** out_expand_dest, uint32_t expand_coun
 		"array=%s, out_expand_dest=%p, expand_count=%u",
 		odArray_get_debug_string(array),
 		static_cast<const void*>(out_expand_dest),
-		expand_count
-	);
+		expand_count);
 
 	*out_expand_dest = nullptr;
 
@@ -281,19 +278,14 @@ bool odArray_push(odArray* array, void* moved_src, uint32_t moved_count) {
 		"array=%s, moved_src=%p, moved_count=%u",
 		odArray_get_debug_string(array),
 		static_cast<const void*>(moved_src),
-		moved_count
-	);
+		moved_count);
 
 	void* push_dest = nullptr;
 	if (!odArray_expand(array, &push_dest, moved_count)) {
 		return false;
 	}
 
-	array->type->move_assign_fn(
-		push_dest,
-		moved_src,
-		moved_count * array->type->size
-	);
+	array->type->move_assign_fn(push_dest, moved_src, moved_count * array->type->size);
 
 	return true;
 }
@@ -334,11 +326,7 @@ bool odArray_swap_pop(odArray* array, uint32_t i) {
 		return false;
 	}
 
-	array->type->move_assign_fn(
-		odArray_get(array, i),
-		odArray_get(array, array->count - 1),
-		array->type->size
-	);
+	array->type->move_assign_fn(odArray_get(array, i), odArray_get(array, array->count - 1), array->type->size);
 
 	return true;
 }
@@ -365,15 +353,12 @@ const void* odArray_get_const(const odArray* array, uint32_t i) {
 	return odArray_get(const_cast<odArray*>(array), i);
 }
 
-odArray::odArray()
- : allocation{}, type{nullptr}, capacity{0}, count{0} {
+odArray::odArray() : allocation{}, type{nullptr}, capacity{0}, count{0} {
 }
-odArray::odArray(const odType* in_type)
-: odArray{} {
+odArray::odArray(const odType* in_type) : odArray{} {
 	odArray_set_type(this, in_type);
 }
-odArray::odArray(odArray&& other)
-: odArray{} {
+odArray::odArray(odArray&& other) : odArray{} {
 	odArray_swap(this, &other);
 }
 odArray& odArray::operator=(odArray&& other) {

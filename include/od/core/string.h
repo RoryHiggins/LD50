@@ -15,7 +15,8 @@ OD_API_C OD_ENGINE_CORE_MODULE bool odString_ensure_capacity(struct odString* st
 OD_API_C OD_ENGINE_CORE_MODULE bool odString_set_count(struct odString* string, uint32_t new_count);
 OD_API_C OD_ENGINE_CORE_MODULE uint32_t odString_get_count(const struct odString* string);
 OD_API_C OD_ENGINE_CORE_MODULE bool odString_push(struct odString* string, const char* str, uint32_t str_count);
-OD_API_C OD_ENGINE_CORE_MODULE bool odString_push_formatted_variadic(struct odString* string, const char* format_c_str, va_list args);
+OD_API_C OD_ENGINE_CORE_MODULE bool
+odString_push_formatted_variadic(struct odString* string, const char* format_c_str, va_list args);
 OD_API_C OD_ENGINE_CORE_MODULE bool odString_push_formatted(struct odString* string, const char* format_c_str, ...);
 OD_API_C OD_ENGINE_CORE_MODULE bool odString_ensure_null_terminated(struct odString* string);
 OD_API_C OD_ENGINE_CORE_MODULE bool odString_get_null_terminated(const struct odString* string);

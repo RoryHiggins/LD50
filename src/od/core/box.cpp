@@ -38,8 +38,7 @@ const char* odBox_get_debug_string(const odBox* box) {
 		"odBox{this=%p, allocation=%s, type=%s}",
 		static_cast<const void*>(box),
 		odAllocation_get_debug_string(&box->allocation),
-		odType_get_debug_string(box->type)
-	);
+		odType_get_debug_string(box->type));
 }
 const odType* odBox_get_type(const odBox* box) {
 	if (box == nullptr) {
@@ -69,10 +68,7 @@ void odBox_set_type(odBox* box, const odType* type) {
 
 	if (odBox_get(box) != nullptr) {
 		OD_TRACE(
-			"releasing old allocation, box=%s, type=%s",
-			odBox_get_debug_string(box),
-			odType_get_debug_string(type)
-		);
+			"releasing old allocation, box=%s, type=%s", odBox_get_debug_string(box), odType_get_debug_string(type));
 		odBox_release(box);
 	}
 
@@ -152,15 +148,12 @@ const void* odBox_get_const(const odBox* box) {
 	return odBox_get(const_cast<odBox*>(box));
 }
 
-odBox::odBox()
- : allocation{}, type{nullptr} {
+odBox::odBox() : allocation{}, type{nullptr} {
 }
-odBox::odBox(const odType* in_type)
-: odBox{} {
+odBox::odBox(const odType* in_type) : odBox{} {
 	odBox_set_type(this, in_type);
 }
-odBox::odBox(odBox&& other)
-: odBox{} {
+odBox::odBox(odBox&& other) : odBox{} {
 	odBox_swap(this, &other);
 }
 odBox& odBox::operator=(odBox&& other) {

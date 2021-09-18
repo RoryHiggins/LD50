@@ -33,10 +33,7 @@ const char* odString_get_debug_string(const odString* string) {
 	}
 
 	return odDebugString_format(
-		"odString{this=%p, array=%s}",
-		static_cast<const void*>(string),
-		odArray_get_debug_string(&string->array)
-	);
+		"odString{this=%p, array=%s}", static_cast<const void*>(string), odArray_get_debug_string(&string->array));
 }
 void odString_release(odString* string) {
 	odArray_release(&string->array);
@@ -72,13 +69,17 @@ bool odString_push_formatted_variadic(odString* string, const char* format_c_str
 
 	int required_count = vsnprintf(nullptr, 0, format_c_str, args);
 	if (required_count < 0) {
-		OD_ERROR("vsnprintf size estimation failed, string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str);
+		OD_ERROR(
+			"vsnprintf size estimation failed, string=%s, format_c_str=%s",
+			odString_get_debug_string(string),
+			format_c_str);
 		return false;
 	}
 
 	OD_TRACE("string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str);
 
-	// sprintf-style calls always write null-terminated, but count in return value excludes null terminator
+	// sprintf-style calls always write null-terminated, but count in return value
+	// excludes null terminator
 	uint32_t required_capacity = static_cast<uint32_t>(required_count) + 1;
 
 	uint32_t old_count = odString_get_count(string);
@@ -93,7 +94,10 @@ bool odString_push_formatted_variadic(odString* string, const char* format_c_str
 	}
 
 	if (written_count != required_count) {
-		OD_ERROR("less bytes written than expected, string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str);
+		OD_ERROR(
+			"less bytes written than expected, string=%s, format_c_str=%s",
+			odString_get_debug_string(string),
+			format_c_str);
 		return false;
 	}
 
@@ -146,15 +150,12 @@ const char* odString_get_const(const odString* string, uint32_t i) {
 	return static_cast<const char*>(odArray_get_const(&string->array, i));
 }
 
-odString::odString()
-: array{odType_get_char()} {
+odString::odString() : array{odType_get_char()} {
 }
-odString::odString(odString&& other)
-: odString{} {
+odString::odString(odString&& other) : odString{} {
 	odString_swap(this, &other);
 }
-odString::odString(const odString& other)
-: odString{} {
+odString::odString(const odString& other) : odString{} {
 	odString_copy(this, &other);
 }
 odString& odString::operator=(odString&& other) {

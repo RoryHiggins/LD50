@@ -1,12 +1,12 @@
 #include <od/platform/file.hpp>
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
+#include <od/core/allocation.h>
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
-#include <od/core/allocation.h>
 
 const odType* odFile_get_type_constructor(void) {
 	return odType_get<odFile>();
@@ -158,7 +158,8 @@ bool odFile_write(odFile* file, const void* buffer, uint32_t size) {
 	return true;
 }
 
-bool odFilePath_read_all(const char* file_path, const char* mode, struct odAllocation* out_allocation, uint32_t* out_size) {
+bool odFilePath_read_all(
+	const char* file_path, const char* mode, struct odAllocation* out_allocation, uint32_t* out_size) {
 	if (file_path == nullptr) {
 		OD_ERROR("file_path=nullptr");
 		return false;
@@ -261,12 +262,9 @@ bool odFilePath_get_exists(const char* file_path) {
 	return (file != nullptr);
 }
 
-odFile::odFile()
-: native_file{nullptr} {
-
+odFile::odFile() : native_file{nullptr} {
 }
-odFile::odFile(odFile&& other)
-: odFile{} {
+odFile::odFile(odFile&& other) : odFile{} {
 	odFile_swap(this, &other);
 }
 odFile& odFile::operator=(odFile&& other) {
