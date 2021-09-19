@@ -149,5 +149,4 @@ foreach(od_target ${od_targets})
 	endif()
 endforeach()
 
-add_subdirectory(include)
-add_subdirectory(src)
+add_subdirectory(client)
