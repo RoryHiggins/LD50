@@ -1,6 +1,6 @@
 #include <od/core/string.hpp>
 
-#include <string.h>
+#include <cstring>
 
 #include <gtest/gtest.h>
 

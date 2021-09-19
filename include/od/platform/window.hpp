@@ -6,7 +6,7 @@ struct odWindow {
 	void* window_native;
 	void* renderer_native;
 	bool is_open;
-	uint32_t next_frame_ms;
+	int32_t next_frame_ms;
 	struct odWindowSettings settings;
 
 	OD_ENGINE_PLATFORM_MODULE odWindow();

@@ -1,6 +1,6 @@
 #include <od/core/allocation.hpp>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <od/core/debug.hpp>
 #include <od/core/type.hpp>
@@ -35,13 +35,13 @@ const char* odAllocation_get_debug_string(const odAllocation* allocation) {
 		static_cast<const void*>(allocation),
 		static_cast<const void*>(allocation->ptr));
 }
-bool odAllocation_allocate(odAllocation* allocation, uint32_t size) {
+bool odAllocation_allocate(odAllocation* allocation, int32_t size) {
 	if (allocation == nullptr) {
 		OD_ERROR("allocation=nullptr");
 		return false;
 	}
 
-	OD_TRACE("allocation=%s, size=%u", odAllocation_get_debug_string(allocation), size);
+	OD_TRACE("allocation=%s, size=%d", odAllocation_get_debug_string(allocation), size);
 
 	if (size == 0) {
 		OD_TRACE("size=0, ptr=%s", odAllocation_get_debug_string(allocation));
@@ -49,9 +49,9 @@ bool odAllocation_allocate(odAllocation* allocation, uint32_t size) {
 		return true;
 	}
 
-	void* new_allocation_ptr = realloc(allocation->ptr, size);
+	void* new_allocation_ptr = realloc(allocation->ptr, static_cast<size_t>(size));
 	if (new_allocation_ptr == nullptr) {
-		OD_ERROR("allocation failed, ptr=%s, size=%u", odAllocation_get_debug_string(allocation), size);
+		OD_ERROR("allocation failed, ptr=%s, size=%d", odAllocation_get_debug_string(allocation), size);
 		return false;
 	}
 

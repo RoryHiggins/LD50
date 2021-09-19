@@ -1,17 +1,17 @@
 #include <od/core/debug.hpp>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
-static uint32_t odLogContextLevelMax = OD_LOG_LEVEL_DEFAULT;
+static int32_t odLogContextLevelMax = OD_LOG_LEVEL_DEFAULT;
 
 static void od_error() {  // empty function for catching any error in a debugger
 }
 
-odLogContext odLogContext_construct(const char* file, const char* function, uint32_t line) {
+odLogContext odLogContext_construct(const char* file, const char* function, int32_t line) {
 	if (file == nullptr) {
 		file = "<file=nullptr>";
 	}
@@ -21,7 +21,7 @@ odLogContext odLogContext_construct(const char* file, const char* function, uint
 
 	return odLogContext{file, function, line};
 }
-void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const char* format_c_str, va_list args) {
+void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args) {
 #if OD_BUILD_DEBUG_LOG
 	// preconditions without assertions/logs special case here:
 	// asserts can call this function, which might cause infinite recursion, so we
@@ -31,8 +31,8 @@ void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const ch
 
 		fprintf(
 			stdout,
-			"odLog_log_variadic() error during logging: log_level=%u, "
-			"format_c_str=%p, file=%p, line=%u, function=%p",
+			"odLog_log_variadic() error during logging: log_level=%d, "
+			"format_c_str=%p, file=%p, line=%d, function=%p",
 			log_level,
 			static_cast<const void*>(format_c_str),
 			static_cast<const void*>(logger.file),
@@ -50,7 +50,7 @@ void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const ch
 		return;
 	}
 
-	fprintf(stdout, "[%s %s:%u] %s() ", odLogLevel_get_name(log_level), logger.file, logger.line, logger.function);
+	fprintf(stdout, "[%s %s:%d] %s() ", odLogLevel_get_name(log_level), logger.file, logger.line, logger.function);
 
 	vfprintf(stdout, format_c_str, args);
 
@@ -61,8 +61,8 @@ void odLog_log_variadic(struct odLogContext logger, uint32_t log_level, const ch
 		od_error();
 	}
 }
-void odLog_log(odLogContext logger, uint32_t log_level, const char* format_c_str, ...) {
-	va_list args;
+void odLog_log(odLogContext logger, int32_t log_level, const char* format_c_str, ...) {
+	va_list args = {};
 	va_start(args, format_c_str);
 	odLog_log_variadic(logger, log_level, format_c_str, args);
 	va_end(args);
@@ -73,7 +73,7 @@ void odLog_assert(odLogContext logger, bool success, const char* expression_c_st
 		exit(EXIT_FAILURE);
 	}
 }
-const char* odLogLevel_get_name(uint32_t log_level) {
+const char* odLogLevel_get_name(int32_t log_level) {
 	switch (log_level) {
 		case OD_LOG_LEVEL_NONE: {
 			return "NONE ";
@@ -94,36 +94,45 @@ const char* odLogLevel_get_name(uint32_t log_level) {
 			return "trace";
 		}
 		default: {
-			OD_ERROR("unknown log level, log_level=%u", log_level);
 			return "<unknown log level>";
 		}
 	}
 }
-uint32_t odLogLevel_get_max(void) {
+int32_t odLogLevel_get_max(void) {
 	return odLogContextLevelMax;
 }
-void odLogLevel_set_max(uint32_t log_level) {
+void odLogLevel_set_max(int32_t log_level) {
+	if (log_level < OD_LOG_LEVEL_NONE) {
+		OD_ERROR("log_level < OD_LOG_LEVEL_NONE");
+		log_level = OD_LOG_LEVEL_NONE;
+	}
+
+	if (log_level > OD_LOG_LEVEL_LAST) {
+		OD_ERROR("log_level > OD_LOG_LEVEL_LAST");
+		log_level = OD_LOG_LEVEL_LAST;
+	}
+
 	odLogContextLevelMax = log_level;
 }
 
 odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {
 }
-odLogLevelScoped::odLogLevelScoped(uint32_t log_level) : backup_log_level{odLogLevel_get_max()} {
+odLogLevelScoped::odLogLevelScoped(int32_t log_level) : backup_log_level{odLogLevel_get_max()} {
 	odLogLevel_set_max(log_level);
 }
 odLogLevelScoped::~odLogLevelScoped() {
 	odLogLevel_set_max(backup_log_level);
 }
 
-char* odDebugString_allocate(uint32_t size) {
-	const uint32_t alignment = 1;
-	static uint32_t currentSize = 0;
+char* odDebugString_allocate(int32_t size) {
+	const int32_t alignment = 1;
+	static int32_t currentSize = 0;
 	static char buffer[OD_TEMP_BUFFER_CAPACITY] = {0};
 
-	uint32_t allocated_size = size + alignment - 1;
+	int32_t allocated_size = size + alignment - 1;
 
 	if (allocated_size > OD_TEMP_BUFFER_CAPACITY) {
-		OD_ERROR("insufficient capacity, allocated_size=%u", allocated_size);
+		OD_ERROR("insufficient capacity, allocated_size=%d", allocated_size);
 		return nullptr;
 	}
 
@@ -131,12 +140,14 @@ char* odDebugString_allocate(uint32_t size) {
 		currentSize = 0;
 	}
 	char* allocation = buffer + currentSize;
-	memset(static_cast<void*>(allocation), 0, allocated_size);
+	memset(static_cast<void*>(allocation), 0, static_cast<size_t>(allocated_size));
 	currentSize += allocated_size;
 
 	uintptr_t allocation_uint = reinterpret_cast<uintptr_t>(allocation);
 	uintptr_t aligned_allocation_uint = ((allocation_uint + alignment - 1) / alignment) * alignment;
-	char* aligned_allocation = reinterpret_cast<char*>(aligned_allocation_uint);
+	// calculate offset and add that to pointer instead of casting (performance-no-int-to-ptr)
+	uintptr_t aligned_offset_uint = aligned_allocation_uint - reinterpret_cast<uintptr_t>(allocation);
+	char* aligned_allocation = allocation + aligned_offset_uint;
 
 	return aligned_allocation;
 }
@@ -146,7 +157,7 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 		return "<format_c_str=nullptr>";
 	}
 
-	va_list compute_size_args;
+	va_list compute_size_args = {};
 	va_copy(compute_size_args, args);
 	// passing a nullptr buffer to the sprintf-family of calls will only compute
 	// the output size
@@ -160,13 +171,13 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 
 	// sprintf-style calls always write null-terminated, but count in return value
 	// excludes null terminator
-	uint32_t required_capacity = static_cast<uint32_t>(required_count) + 1;
+	int32_t required_capacity = static_cast<int32_t>(required_count) + 1;
 
 	void* allocation = odDebugString_allocate(required_capacity);
 	if (allocation == nullptr) {
 		OD_ERROR(
 			"failed to allocate debug string, format_c_str=%s, "
-			"required_capacity=%u",
+			"required_capacity=%d",
 			format_c_str,
 			required_capacity);
 		return "<failed to allocate debug string>";
@@ -178,7 +189,7 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 	return allocation_str;
 }
 const char* odDebugString_format(const char* format_c_str, ...) {
-	va_list args;
+	va_list args = {};
 	va_start(args, format_c_str);
 	const char* result = odDebugString_format_variadic(format_c_str, args);
 	va_end(args);

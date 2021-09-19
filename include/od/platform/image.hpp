@@ -6,8 +6,8 @@
 
 struct odImage {
 	struct odAllocation allocation;
-	uint32_t width;
-	uint32_t height;
+	int32_t width;
+	int32_t height;
 
 	OD_ENGINE_PLATFORM_MODULE odImage();
 	OD_ENGINE_PLATFORM_MODULE odImage(odImage const& other);

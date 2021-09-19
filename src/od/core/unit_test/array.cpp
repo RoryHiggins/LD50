@@ -1,6 +1,6 @@
 #include <od/core/array.hpp>
 
-#include <string.h>
+#include <cstring>
 
 #include <gtest/gtest.h>
 
@@ -37,10 +37,10 @@ TEST(odArray, release) {
 	ASSERT_EQ(odArray_get_capacity(&array), 0);
 }
 TEST(odArray, set_capacity) {
-	uint32_t testSizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
-	const uint32_t numTestSizes = (sizeof(testSizes) / sizeof(testSizes[0]));
+	int32_t testSizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
+	const int32_t numTestSizes = (sizeof(testSizes) / sizeof(testSizes[0]));
 
-	for (uint32_t i = 0; i < numTestSizes; i++) {
+	for (int32_t i = 0; i < numTestSizes; i++) {
 		odArray array{odType_get_char()};
 		ASSERT_TRUE(odArray_set_capacity(&array, testSizes[i]));
 		ASSERT_TRUE(odArray_get_capacity(&array) == testSizes[i]);
@@ -54,7 +54,7 @@ TEST(odArray, set_capacity_zero) {
 TEST(odArray, ensure_capacity) {
 	odArray array{odType_get_char()};
 
-	const uint32_t start_capacity = 2;
+	const int32_t start_capacity = 2;
 	ASSERT_TRUE(odArray_set_capacity(&array, start_capacity));
 	ASSERT_EQ(odArray_get_capacity(&array), start_capacity);
 	ASSERT_EQ(odArray_get_count(&array), 0);
@@ -85,7 +85,7 @@ TEST(odArray, set_count_expand) {
 
 	array_ptr[0] = '!';
 
-	const uint32_t final_count = 4;
+	const int32_t final_count = 4;
 	ASSERT_TRUE(odArray_set_count(&array, final_count));
 	ASSERT_GE(odArray_get_capacity(&array), final_count);
 	ASSERT_EQ(odArray_get_count(&array), final_count);
@@ -94,18 +94,18 @@ TEST(odArray, set_count_expand) {
 	array_ptr = static_cast<char*>(odArray_get(&array, 0));
 	ASSERT_NE(array_ptr, nullptr);
 	ASSERT_TRUE(array_ptr[0] == '!');
-	for (uint32_t i = 1; i < final_count; i++) {
+	for (int32_t i = 1; i < final_count; i++) {
 		array_ptr[i] = '\0';
 	}
 }
 TEST(odArray, set_count_truncate) {
 	odArray array{odType_get_char()};
-	const uint32_t start_count = 4;
+	const int32_t start_count = 4;
 	ASSERT_TRUE(odArray_set_count(&array, start_count));
 
 	char* array_ptr = static_cast<char*>(odArray_get(&array, 0));
 	ASSERT_NE(array_ptr, nullptr);
-	for (uint32_t i = 0; i < start_count; i++) {
+	for (int32_t i = 0; i < start_count; i++) {
 		array_ptr[i] = '!';
 	}
 
@@ -113,7 +113,7 @@ TEST(odArray, set_count_truncate) {
 	ASSERT_TRUE(odArray_set_count(&array, 4));
 	ASSERT_EQ(static_cast<char*>(odArray_get(&array, 0)), array_ptr);
 	ASSERT_TRUE(array_ptr[0] == '!');
-	for (uint32_t i = 1; i < start_count; i++) {
+	for (int32_t i = 1; i < start_count; i++) {
 		ASSERT_TRUE(array_ptr[i] == '\0');
 	}
 }

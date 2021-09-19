@@ -7,8 +7,8 @@
 struct odArray {
 	struct odAllocation allocation;
 	const struct odType* type;
-	uint32_t capacity;
-	uint32_t count;
+	int32_t capacity;
+	int32_t count;
 
 	OD_ENGINE_CORE_MODULE odArray();
 	OD_ENGINE_CORE_MODULE explicit odArray(const odType* in_type);

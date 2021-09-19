@@ -40,10 +40,10 @@ TEST(odAllocation, release) {
 	ASSERT_EQ(odAllocation_get(&allocation), nullptr);
 }
 TEST(odAllocation, allocate) {
-	uint32_t testSizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
-	const uint32_t numTestSizes = (sizeof(testSizes) / sizeof(testSizes[0]));
+	int32_t testSizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
+	const int32_t numTestSizes = (sizeof(testSizes) / sizeof(testSizes[0]));
 
-	for (uint32_t i = 0; i < numTestSizes; i++) {
+	for (int32_t i = 0; i < numTestSizes; i++) {
 		odAllocation allocation;
 		ASSERT_TRUE(odAllocation_allocate(&allocation, testSizes[i]));
 		ASSERT_NE(odAllocation_get(&allocation), nullptr);

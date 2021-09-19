@@ -1,6 +1,6 @@
 #include <od/platform/image.hpp>
 
-#include <string.h>
+#include <cstring>
 
 #include <png.h>
 
@@ -24,7 +24,7 @@ bool odImage_copy(odImage* image, const odImage* src_image) {
 
 	odImage_release(image);
 
-	uint32_t size = static_cast<uint32_t>(sizeof(odColor)) * src_image->width * src_image->height;
+	int32_t size = static_cast<int32_t>(sizeof(odColor)) * src_image->width * src_image->height;
 	if (size == 0) {
 		return true;
 	}
@@ -45,7 +45,7 @@ bool odImage_copy(odImage* image, const odImage* src_image) {
 		return false;
 	}
 
-	memcpy(image_data, src_image_data, size);
+	memcpy(image_data, src_image_data, static_cast<size_t>(size));
 	image->width = src_image->width;
 	image->height = src_image->height;
 
@@ -62,8 +62,8 @@ void odImage_swap(odImage* image1, odImage* image2) {
 		return;
 	}
 
-	uint32_t swap_width = image1->width;
-	uint32_t swap_height = image1->height;
+	int32_t swap_width = image1->width;
+	int32_t swap_height = image1->height;
 
 	image1->width = image2->width;
 	image1->height = image2->height;
@@ -77,21 +77,31 @@ const char* odImage_get_debug_string(const odImage* image) {
 	}
 
 	return odDebugString_format(
-		"odImage{this=%p, allocation=%s, width=%u, height=%u}",
+		"odImage{this=%p, allocation=%s, width=%d, height=%d}",
 		static_cast<const void*>(image),
 		odAllocation_get_debug_string(&image->allocation),
 		image->width,
 		image->height);
 }
-bool odImage_allocate(odImage* image, uint32_t width, uint32_t height) {
+bool odImage_allocate(odImage* image, int32_t width, int32_t height) {
 	if (image == nullptr) {
 		OD_ERROR("image=nullptr");
 		return false;
 	}
 
+	if (width < 0) {
+		OD_ERROR("width<0");
+		return false;
+	}
+
+	if (height < 0) {
+		OD_ERROR("height<0");
+		return false;
+	}
+
 	odImage_release(image);
 
-	uint32_t size = static_cast<uint32_t>(sizeof(odColor)) * width * height;
+	int32_t size = static_cast<int32_t>(sizeof(odColor)) * width * height;
 	if (size == 0) {
 		return true;
 	}
@@ -121,8 +131,8 @@ void odImage_release(odImage* image) {
 	image->width = 0;
 	odAllocation_release(&image->allocation);
 }
-void odImage_get_size(const odImage* image, uint32_t* out_opt_width, uint32_t* out_opt_height) {
-	uint32_t unused;
+void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
+	int32_t unused;
 	out_opt_width = (out_opt_width != nullptr) ? out_opt_width : &unused;
 	out_opt_height = (out_opt_height != nullptr) ? out_opt_height : &unused;
 
@@ -134,7 +144,7 @@ void odImage_get_size(const odImage* image, uint32_t* out_opt_width, uint32_t* o
 	*out_opt_width = image->width;
 	*out_opt_height = image->height;
 }
-bool odImage_read_png(odImage* image, const void* src_png, uint32_t src_png_size) {
+bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size) {
 	if (image == nullptr) {
 		OD_ERROR("image=nullptr");
 		return false;
@@ -145,8 +155,8 @@ bool odImage_read_png(odImage* image, const void* src_png, uint32_t src_png_size
 		return false;
 	}
 
-	if (src_png_size == 0) {
-		OD_ERROR("src_png_size=0");
+	if (src_png_size <= 0) {
+		OD_ERROR("src_png_size<=0");
 		return false;
 	}
 
@@ -161,9 +171,9 @@ bool odImage_read_png(odImage* image, const void* src_png, uint32_t src_png_size
 
 	png.format = PNG_FORMAT_RGBA;
 
-	uint32_t width = png.width;
-	uint32_t height = png.height;
-	if (PNG_IMAGE_SIZE(png) != (width * height * sizeof(odColor))) {
+	int32_t width = static_cast<int32_t>(png.width);
+	int32_t height = static_cast<int32_t>(png.height);
+	if (PNG_IMAGE_SIZE(png) != static_cast<unsigned>(width * height * static_cast<int32_t>(sizeof(odColor)))) {
 		return false;
 	}
 

@@ -1,6 +1,6 @@
 #include <od/core/box.hpp>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>

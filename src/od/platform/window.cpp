@@ -75,7 +75,7 @@ void odWindow_swap(odWindow* window1, odWindow* window2) {
 
 	void* window_native_swap = window1->window_native;
 	bool is_open_swap = window1->is_open;
-	uint32_t next_frame_ms_swap = window1->next_frame_ms;
+	int32_t next_frame_ms_swap = window1->next_frame_ms;
 	odWindowSettings settings_swap = window1->settings;
 
 	window1->window_native = window2->window_native;
@@ -236,9 +236,9 @@ void odWindow_step(odWindow* window) {
 		return;
 	}
 
-	uint32_t frame_duration_ms = 1000 / window->settings.fps_limit;
-	uint32_t time_ms = static_cast<uint32_t>(SDL_GetTicks());
-	uint32_t wait_ms = window->next_frame_ms - time_ms;
+	int32_t frame_duration_ms = 1000 / window->settings.fps_limit;
+	int32_t time_ms = static_cast<int32_t>(SDL_GetTicks());
+	int32_t wait_ms = window->next_frame_ms - time_ms;
 
 	// guard against wait_ms underflowing
 	if (time_ms > window->next_frame_ms) {

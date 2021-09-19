@@ -1,8 +1,8 @@
 #include <od/platform/file.hpp>
 
 #include <errno.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <od/core/allocation.h>
 #include <od/core/debug.h>
@@ -64,7 +64,7 @@ void odFile_close(odFile* file) {
 
 	file->native_file = nullptr;
 }
-bool odFile_read_size(odFile* file, uint32_t* out_size) {
+bool odFile_read_size(odFile* file, int32_t* out_size) {
 	if (file == nullptr) {
 		OD_ERROR("file=nullptr");
 		return false;
@@ -93,10 +93,10 @@ bool odFile_read_size(odFile* file, uint32_t* out_size) {
 		return false;
 	}
 
-	*out_size = static_cast<uint32_t>(size);
+	*out_size = static_cast<int32_t>(size);
 	return true;
 }
-bool odFile_read(odFile* file, void* out_buffer, uint32_t buffer_size, uint32_t* out_size) {
+bool odFile_read(odFile* file, void* out_buffer, int32_t buffer_size, int32_t* out_size) {
 	if (file == nullptr) {
 		OD_ERROR("file=nullptr");
 		return false;
@@ -117,12 +117,13 @@ bool odFile_read(odFile* file, void* out_buffer, uint32_t buffer_size, uint32_t*
 		return false;
 	}
 
-	if (buffer_size == 0) {
-		return true;
+	if (buffer_size <= 0) {
+		OD_ERROR("buffer_size<=0");
+		return false;
 	}
 
 	FILE* native_file = static_cast<FILE*>(file->native_file);
-	*out_size = static_cast<uint32_t>(fread(out_buffer, 1, buffer_size, native_file));
+	*out_size = static_cast<int32_t>(fread(out_buffer, 1, static_cast<size_t>(buffer_size), native_file));
 
 	int read_error = ferror(native_file);
 	if (read_error != 0) {
@@ -133,7 +134,7 @@ bool odFile_read(odFile* file, void* out_buffer, uint32_t buffer_size, uint32_t*
 
 	return true;
 }
-bool odFile_write(odFile* file, const void* buffer, uint32_t size) {
+bool odFile_write(odFile* file, const void* buffer, int32_t size) {
 	if (file == nullptr) {
 		OD_ERROR("file=nullptr");
 		return false;
@@ -144,13 +145,18 @@ bool odFile_write(odFile* file, const void* buffer, uint32_t size) {
 		return false;
 	}
 
+	if (size <= 0) {
+		OD_ERROR("size<=0");
+		return false;
+	}
+
 	if (file->native_file == nullptr) {
 		OD_ERROR("no file to write");
 		return false;
 	}
 
-	uint32_t write_size = static_cast<uint32_t>(fwrite(buffer, size, 1, static_cast<FILE*>(file->native_file)));
-	if ((write_size != 1) && (size > 0)) {
+	int32_t writes = static_cast<int32_t>(fwrite(buffer, static_cast<size_t>(size), 1, static_cast<FILE*>(file->native_file)));
+	if (writes != 1) {
 		OD_ERROR("failed to write to file, err_str=%s", strerror(errno));
 		return false;
 	}
@@ -159,7 +165,7 @@ bool odFile_write(odFile* file, const void* buffer, uint32_t size) {
 }
 
 bool odFilePath_read_all(
-	const char* file_path, const char* mode, struct odAllocation* out_allocation, uint32_t* out_size) {
+	const char* file_path, const char* mode, struct odAllocation* out_allocation, int32_t* out_size) {
 	if (file_path == nullptr) {
 		OD_ERROR("file_path=nullptr");
 		return false;
@@ -190,7 +196,7 @@ bool odFilePath_read_all(
 		return false;
 	}
 
-	uint32_t file_size = 0;
+	int32_t file_size = 0;
 	if (!odFile_read_size(&file, &file_size)) {
 		return false;
 	}
@@ -212,7 +218,7 @@ bool odFilePath_read_all(
 
 	return odFile_read(&file, allocation_buffer, file_size, out_size);
 }
-bool odFilePath_write_all(const char* file_path, const char* mode, const void* buffer, uint32_t size) {
+bool odFilePath_write_all(const char* file_path, const char* mode, const void* buffer, int32_t size) {
 	if (file_path == nullptr) {
 		OD_ERROR("file_path=nullptr");
 		return false;
@@ -225,6 +231,11 @@ bool odFilePath_write_all(const char* file_path, const char* mode, const void* b
 
 	if (buffer == nullptr) {
 		OD_ERROR("out_allocation=nullptr");
+		return false;
+	}
+
+	if (size <= 0) {
+		OD_ERROR("size<=0");
 		return false;
 	}
 

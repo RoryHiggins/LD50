@@ -17,8 +17,13 @@
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Debug full build",
+			"name": "Debug generate and rebuild",
 			"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Debug generate and rebuild with clang-tidy",
+			"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -DCMAKE_CXX_CLANG_TIDY=clang-tidy -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
 			"working_dir": "$project_path",
 		},
 		{
@@ -37,11 +42,11 @@
 			"shell_cmd": "gnu-find ./include ./src -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs clang-format -i -Werror --",
 			"working_dir": "$project_path",
 		},
-		{
-			"name": "Clang tidy",
-			"shell_cmd": "gnu-find ./include ./src -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs -I TIDY_INPUT clang-tidy TIDY_INPUT -- -I./include -Isrc",
-			"working_dir": "$project_path",
-		},
+		// {
+		// 	"name": "Clang tidy",
+		// 	"shell_cmd": "gnu-find ./include ./src -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs -I TIDY_INPUT clang-tidy TIDY_INPUT -- -I./include -Isrc",
+		// 	"working_dir": "$project_path",
+		// },
 	],
 	"folders":
 	[

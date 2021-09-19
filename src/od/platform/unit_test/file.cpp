@@ -1,7 +1,7 @@
 #include <od/platform/file.hpp>
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <time.h>
 
 #include <gtest/gtest.h>
@@ -11,9 +11,9 @@
 
 static odString odFile_test_create_random_name() {
 	const char prefix[] = "./odFile_test_";
-	const uint32_t prefix_size = sizeof(prefix) - 1;
-	const uint32_t random_size = 16;
-	const uint32_t size = prefix_size + random_size;
+	const int32_t prefix_size = sizeof(prefix) - 1;
+	const int32_t random_size = 16;
+	const int32_t size = prefix_size + random_size;
 	odString name;
 	OD_ASSERT(odString_set_count(&name, size));
 
@@ -31,7 +31,7 @@ static odString odFile_test_create_random_name() {
 		random_seed_set = true;
 	}
 
-	for (uint32_t i = prefix_size; i < size; i++) {
+	for (int32_t i = prefix_size; i < size; i++) {
 		name_ptr[i] = 'a' + static_cast<char>(rand() % 20);
 	}
 
@@ -45,16 +45,16 @@ TEST(odFile, open) {
 	const char* file_name_str = odString_get_const(&file_name, 0);
 	ASSERT_NE(file_name_str, nullptr);
 
-	const uint32_t write_modes_count = 6;
+	const int32_t write_modes_count = 6;
 	const char write_modes[write_modes_count][8] = {"w", "wb", "w+", "wb+", "a", "a+"};
-	for (uint32_t mode = 0; mode < write_modes_count; mode++) {
+	for (int32_t mode = 0; mode < write_modes_count; mode++) {
 		odFile file;
 		ASSERT_TRUE(odFile_open(&file, write_modes[mode], file_name_str));
 	}
 
-	const uint32_t read_modes_count = 4;
+	const int32_t read_modes_count = 4;
 	const char read_modes[read_modes_count][8] = {"r", "rb", "r+", "rb+"};
-	for (uint32_t mode = 0; mode < read_modes_count; mode++) {
+	for (int32_t mode = 0; mode < read_modes_count; mode++) {
 		odFile file;
 		ASSERT_TRUE(odFile_open(&file, read_modes[mode], file_name_str));
 	}
@@ -67,7 +67,7 @@ TEST(odFile, write_read_delete) {
 	const char* file_name_str = odString_get_const(&file_name, 0);
 
 	const char test_str[] = "hello";
-	const uint32_t test_string_size = sizeof(test_str);
+	const int32_t test_string_size = sizeof(test_str);
 
 	odFile file;
 	ASSERT_TRUE(odFile_open(&file, "w", file_name_str));
@@ -77,7 +77,7 @@ TEST(odFile, write_read_delete) {
 	odFile_close(&file);
 	ASSERT_TRUE(odFile_open(&file, "r", file_name_str));
 
-	uint32_t read_size = 0;
+	int32_t read_size = 0;
 	char read_buffer[test_string_size] = {};
 	ASSERT_TRUE(odFile_read(&file, read_buffer, test_string_size, &read_size));
 	ASSERT_EQ(read_size, test_string_size);
@@ -92,12 +92,12 @@ TEST(odFilePath, write_read_delete) {
 	const char* file_name_str = odString_get_const(&file_name, 0);
 
 	const char test_str[] = "hello";
-	const uint32_t test_string_size = sizeof(test_str);
+	const int32_t test_string_size = sizeof(test_str);
 
 	ASSERT_TRUE(odFilePath_write_all(file_name_str, "w", test_str, test_string_size));
 
 	odAllocation read_allocation;
-	uint32_t read_size = 0;
+	int32_t read_size = 0;
 
 	ASSERT_TRUE(odFilePath_read_all(file_name_str, "r", &read_allocation, &read_size));
 	ASSERT_EQ(read_size, test_string_size);

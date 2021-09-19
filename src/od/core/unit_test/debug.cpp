@@ -6,7 +6,7 @@ TEST(odLog, get_level_name) {
 	const char* unknown_level_name = odLogLevel_get_name(OD_LOG_LEVEL_NONE);
 	ASSERT_NE(unknown_level_name, nullptr);
 
-	for (uint32_t level = OD_LOG_LEVEL_FIRST; level <= OD_LOG_LEVEL_LAST; level++) {
+	for (int32_t level = OD_LOG_LEVEL_FIRST; level <= OD_LOG_LEVEL_LAST; level++) {
 
 		const char* level_name = "";
 		{

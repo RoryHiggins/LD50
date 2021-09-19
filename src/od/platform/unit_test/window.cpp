@@ -18,7 +18,7 @@ TEST(odWindow, open) {
 	ASSERT_TRUE(odWindow_open(&window, &window_settings));
 	ASSERT_TRUE(odWindow_get_open(&window));
 
-	for (uint32_t i = 0; i < 10; i++) {
+	for (int32_t i = 0; i < 10; i++) {
 		odWindow_step(&window);
 		ASSERT_TRUE(odWindow_get_open(&window));
 	}
