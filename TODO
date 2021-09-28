@@ -4,11 +4,7 @@ build improvements
 
 variable to conditionally enable tests
 
-reduce apis macros to one per module, defaulting to an empty value
-- hide DLL logic from impl, moving it to cmake
-- make OD_API_C a _separate_ macro, defined by cmake and defaulting to empty value
-
-Can we remove GLU from dependencies and headers?
+Can GLU be removed from dependencies and headers?
 
 big tasks
 ---------

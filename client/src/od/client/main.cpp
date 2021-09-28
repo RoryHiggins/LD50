@@ -1,36 +1,55 @@
 #include <od/platform/window.hpp>
 
+bool odClient_run(void);
+bool odClient_init(void);
+bool odClient_step(void);
+
+static odWindow odClient_window;
+
+bool odClient_init(void) {
+	odWindowSettings window_settings{odWindowSettings_get_defaults()};
+	return odWindow_open(&odClient_window, &window_settings);
+}
+bool odClient_step(void) {
+	odWindow_step(&odClient_window);
+	return odWindow_get_open(&odClient_window);
+}
+
 #if OD_BUILD_EMSCRIPTEN
 #include <emscripten.h>
 
-static void odClient_step_emscripten(void* window_raw) {
-	odWindow* window = static_cast<odWindow*>(window_raw);
+void odClient_step_emscripten(void);
 
-	if (!odWindow_get_open(window)) {
+void odClient_step_emscripten(void) {
+	static bool is_initialized = false;
+	if (!is_initialized) {
+		if (!odClient_init()) {
+			emscripten_cancel_main_loop();
+		}
+		is_initialized = true;
+	}
+
+	if (!odWindow_get_open(&odClient_window) || !odClient_step()) {
 		emscripten_cancel_main_loop();
 	}
-
-	odWindow_step(window);
 }
-static void odClient_run(odWindow* window) {
-	emscripten_set_main_loop_arg(odClient_step_emscripten, static_cast<void*>(window), 0, true);
+bool odClient_run(void) {
+	emscripten_set_main_loop(odClient_step_emscripten, 0, true);
+	return true;
 }
 #else
-static void odClient_run(odWindow* window) {
-	while (odWindow_get_open(window)) {
-		odWindow_step(window);
+bool odClient_run(void) {
+	if (!odClient_init()) {
+		return false;
 	}
+
+	while (odClient_step()) {
+	}
+
+	return true;
 }
 #endif
 
 int main(int, char**) {
-	odWindowSettings window_settings{odWindowSettings_get_defaults()};
-	odWindow window;
-	if (!odWindow_open(&window, &window_settings)) {
-		return 1;
-	}
-
-	odClient_run(&window);
-
-	return 0;
+	return odClient_run() ? 0 : 1;
 }

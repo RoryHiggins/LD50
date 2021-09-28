@@ -1,11 +1,11 @@
 {
 	"build_systems":
 	[
-		{
-			"name": "Headless run engine",
-			"shell_cmd": "luajit module\\engine\\main.lua",
-			"working_dir": "$project_path",
-		},
+		// {
+		// 	"name": "Headless run engine",
+		// 	"shell_cmd": "luajit module\\engine\\main.lua",
+		// 	"working_dir": "$project_path",
+		// },
 		{
 			"name": "Debug iterative build client",
 			"shell_cmd": "ninja -C .\\build\\DEBUG od_client.exe",
@@ -26,6 +26,21 @@
 			"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
 			"working_dir": "$project_path",
 		},
+		{
+			"name": "Emscripten debug generate and rebuild",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN && emcmake cmake -S . -B .\\build\\DEBUG_EMSCRIPTEN -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Emscripten debug iterative build",
+			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Emscripten debug host",
+			"shell_cmd": "cmd /c start http://localhost:8000 && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN",
+			"working_dir": "$project_path",
+		},
 		// {
 		// 	"name": "Debug generate and rebuild with clang-tidy",
 		// 	"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -DCMAKE_CXX_CLANG_TIDY=clang-tidy -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
@@ -34,11 +49,6 @@
 		// {
 		// 	"name": "Release full build",
 		// 	"shell_cmd": "rm -rf .\\build\\RELEASE && cmake -S . -B .\\build\\RELEASE -G\"Ninja\" -D CMAKE_BUILD_TYPE=RELEASE && cmake --build .\\build\\RELEASE",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "Emscripten build and run",
-		// 	"shell_cmd": "cd src/od/web_client && make && cmd /c start http://localhost:8000 && make host",
 		// 	"working_dir": "$project_path",
 		// },
 		// renamed find to gnu-find locally for windows, due to clash with win32 find
