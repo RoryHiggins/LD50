@@ -4,7 +4,6 @@
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
-#include <od/platform/renderer.h>
 
 struct odSDLInit {
 	bool is_initialized;

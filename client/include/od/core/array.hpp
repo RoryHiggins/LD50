@@ -2,6 +2,7 @@
 
 #include <od/core/array.h>
 
+#include <od/core/type.hpp>
 #include <od/core/allocation.hpp>
 
 struct odArray {

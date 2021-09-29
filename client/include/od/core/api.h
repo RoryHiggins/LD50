@@ -11,15 +11,7 @@
 #endif
 
 #if !defined(OD_BUILD_DEBUG_LOG)
-#define OD_BUILD_DEBUG_LOG 1
-#endif
-
-#if !defined(OD_BUILD_RENDERER)
-#define OD_BUILD_RENDERER /*OD_RENDERER_DEFAULT*/ 1
-#endif
-
-#if !defined(OD_BUILD_EMSCRIPTEN)
-#define OD_BUILD_EMSCRIPTEN 0
+#define OD_BUILD_DEBUG_LOG 0
 #endif
 
 // Api decorators

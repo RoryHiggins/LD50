@@ -23,22 +23,7 @@
 		},
 		{
 			"name": "Debug generate and rebuild",
-			"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
-			"working_dir": "$project_path",
-		},
-		{
-			"name": "Emscripten debug generate and rebuild",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN && emcmake cmake -S . -B .\\build\\DEBUG_EMSCRIPTEN -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN",
-			"working_dir": "$project_path",
-		},
-		{
-			"name": "Emscripten debug iterative build",
-			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN",
-			"working_dir": "$project_path",
-		},
-		{
-			"name": "Emscripten debug host",
-			"shell_cmd": "cmd /c start http://localhost:8000 && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN",
+			"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -D BUILD_SHARED_LIBS=1 -D CMAKE_BUILD_TYPE=DEBUG -D OD_BUILD_DEBUG_LOG=1 && cmake --build .\\build\\DEBUG",
 			"working_dir": "$project_path",
 		},
 		// {
