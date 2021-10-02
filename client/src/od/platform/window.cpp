@@ -6,25 +6,37 @@
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 
-struct odSDLInit {
-	bool is_initialized;
+static int32_t odSDL_init_counter = 0;
 
-	odSDLInit();
-	~odSDLInit();
-};
+static bool odSDL_init_reentrant() {
+	OD_TRACE("odSDL_init_counter=%d", odSDL_init_counter);
 
-odSDLInit::odSDLInit() : is_initialized{false} {
-}
-odSDLInit::~odSDLInit() {
-	OD_TRACE("is_initialized=%d", is_initialized);
+	if (odSDL_init_counter == 0) {
+		OD_TRACE("SDL_Init");
 
-	if (is_initialized) {
-		OD_TRACE("performing SDL teardown");
-
-		SDL_Quit();
+		const Uint32 flags = (SDL_INIT_EVENTS | SDL_INIT_TIMER | SDL_INIT_VIDEO);
+		int init_result = SDL_Init(flags);
+		if (init_result != 0) {
+			OD_ERROR("SDL_Init failed, init_result=%d", init_result);
+			return false;
+		}
 	}
 
-	is_initialized = false;
+	odSDL_init_counter++;
+	return true;
+}
+static void odSDL_destroy_reentrant() {
+	if (odSDL_init_counter <= 0) {
+		OD_WARN("odSDL_destroy_reentrant with no matching odSDL_init_reentrant");
+		return;
+	}
+
+	odSDL_init_counter--;
+
+	if (odSDL_init_counter == 0) {
+		OD_TRACE("SDL_Quit");
+		SDL_Quit();
+	}
 }
 
 odWindowSettings odWindowSettings_get_defaults() {
@@ -46,29 +58,6 @@ odWindowSettings odWindowSettings_get_headless_defaults() {
 	return headless_defaults;
 }
 
-static bool odWindow_sdl_ensure_initialized() {
-	static odSDLInit odSDL;
-
-	OD_TRACE("is_initialized=%d", odSDL.is_initialized);
-
-	if (odSDL.is_initialized) {
-		return true;
-	}
-
-	const Uint32 sdl_init_flags = (SDL_INIT_EVENTS | SDL_INIT_TIMER | SDL_INIT_VIDEO);
-
-	OD_TRACE("SDL_Init");
-	if (SDL_Init(sdl_init_flags) != 0) {
-		OD_ERROR("SDL_Init() failed with error=%s", SDL_GetError());
-		return false;
-	}
-
-	odSDL.is_initialized = true;
-
-	OD_TRACE("is_initialized=%d", odSDL.is_initialized);
-
-	return true;
-}
 const odType* odWindow_get_type_constructor() {
 	return odType_get<odWindow>();
 }
@@ -120,7 +109,8 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 
 	window->settings = settings;
 
-	if (!odWindow_sdl_ensure_initialized()) {
+	window->is_sdl_init = odSDL_init_reentrant();
+	if (!window->is_sdl_init) {
 		return false;
 	}
 
@@ -148,7 +138,7 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 		static_cast<SDL_WindowFlags>(
 			(window->settings.is_visible ? SDL_WINDOW_SHOWN : SDL_WINDOW_HIDDEN)
 			| SDL_WINDOW_OPENGL
-			/*| SDL_WINDOW_RESIZABLE*/)));
+			| SDL_WINDOW_RESIZABLE)));
 
 	if (window->window_native == nullptr) {
 		OD_ERROR("SDL_CreateWindow failed, error=%s", SDL_GetError());
@@ -211,6 +201,11 @@ void odWindow_destroy(odWindow* window) {
 
 		SDL_DestroyWindow(static_cast<SDL_Window*>(window->window_native));
 		window->window_native = nullptr;
+	}
+
+	if (window->is_sdl_init) {
+		odSDL_destroy_reentrant();
+		window->is_sdl_init = false;
 	}
 
 	window->is_open = false;
@@ -325,17 +320,10 @@ const odWindowSettings* odWindow_get_settings(const odWindow* window) {
 
 	return &window->settings;
 }
-void* odWindow_get_native_window(odWindow* window) {
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
-		return nullptr;
-	}
-
-	return window->window_native;
-}
 
 odWindow::odWindow()
-	: window_native{nullptr}, is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()} {
+	: window_native{nullptr}, render_context_native{nullptr}, is_sdl_init{false},
+	  is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()} {
 }
 odWindow::odWindow(odWindow&& other) : odWindow{} {
 	odWindow_swap(this, &other);
@@ -346,4 +334,5 @@ odWindow& odWindow::operator=(odWindow&& other) {
 }
 odWindow::~odWindow() {
 	odWindow_destroy(this);
+	SDL_Quit();
 }

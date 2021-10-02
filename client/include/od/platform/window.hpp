@@ -9,6 +9,7 @@ struct odWindow {
 	odRenderer renderer;
 	void* window_native;
 	void* render_context_native;
+	bool is_sdl_init;
 	bool is_open;
 	int32_t next_frame_ms;
 	struct odWindowSettings settings;
