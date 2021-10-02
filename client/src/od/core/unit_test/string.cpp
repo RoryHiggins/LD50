@@ -34,9 +34,9 @@ TEST(odString, ensure_null_terminated) {
 }
 TEST(odString, push_formatted) {
 	odString str;
-	ASSERT_TRUE(odString_push_formatted(&str, "%d%s", 1, "yep"));
+	ASSERT_TRUE(odString_push_formatted(&str, "%s %d", "yep", 123));
 
 	const char* str_data = odString_get_const(&str, 0);
 	ASSERT_NE(str_data, nullptr);
-	ASSERT_EQ(strncmp(str_data, "1yep", 4), 0);
+	ASSERT_EQ(strncmp(str_data, "yep 123", 7), 0);
 }

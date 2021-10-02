@@ -11,7 +11,7 @@
 #endif
 
 #if !defined(OD_BUILD_DEBUG_LOG)
-#define OD_BUILD_DEBUG_LOG 0
+#define OD_BUILD_DEBUG_LOG 1
 #endif
 
 // Api decorators

@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.16)
 project(overworld LANGUAGES CXX)
 
 find_package(SDL2 REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(GTest REQUIRED)
@@ -9,7 +11,13 @@ include(GoogleTest)
 enable_testing()
 
 set(OD_BUILD_LOG 1 CACHE BOOL "Build with logging")
-set(OD_BUILD_DEBUG_LOG 0 CACHE BOOL "Build with debug logging")
+set(OD_BUILD_DEBUG_LOG 1 CACHE BOOL "Build with debug logging")
+
+if ("${SDL2_LIBRARIES}" STREQUAL "")
+	set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
+else()
+	set(OD_SDL2_LIBRARIES "${SDL2_LIBRARIES}")
+endif()
 
 # od_engine_core
 # ----------
@@ -23,7 +31,7 @@ add_library(od_engine_platform)
 if("${MINGW}" EQUAL 1)
 	target_link_libraries(od_engine_platform PRIVATE mingw32)
 endif()
-target_link_libraries(od_engine_platform PRIVATE SDL2::SDL2main SDL2::SDL2 PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core)
+target_link_libraries(od_engine_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core)
 # each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
 set_target_properties(od_engine_platform PROPERTIES UNITY_BUILD 0)
 
@@ -40,7 +48,7 @@ target_link_libraries(od_test PRIVATE GTest::GTest GTest::Main)
 set_target_properties(od_test PROPERTIES UNITY_BUILD 0 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
 # gtest tests autogenerate some code which doesnt fit well with the preferred set of warnings
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(od_test PRIVATE -Wno-global-constructors -Wno-inline)
+	target_compile_options(od_test PRIVATE -Wno-inline)
 endif()
 
 # shared parameters
@@ -90,29 +98,12 @@ endif()
 
 # optional gcc-specific warnings and static analysis tools
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	# If building a dll, define for each module whether to import or export:
-	if("${BUILD_SHARED_LIBS}" EQUAL 1)
-		foreach(od_lib ${od_libs})
-			foreach(od_target ${od_targets})
-				if("${od_target}" STREQUAL "${od_lib}")
-					set(od_target_linkage "__declspec(dllexport)")
-				else()
-					set(od_target_linkage "__declspec(dllimport)")
-				endif()
-
-				string(TOUPPER ${od_lib} od_target_uppercase)
-				target_compile_definitions(
-					${od_target} PRIVATE "${od_target_uppercase}_MODULE=${od_target_linkage}")
-			endforeach()
-		endforeach()
-	endif()
-
 	foreach(od_target ${od_targets})
 		target_compile_options(
 			${od_target} PUBLIC
 			-Wall -Wextra -pedantic -Werror=vla -Winvalid-pch -fno-exceptions -fno-rtti
 			-Wold-style-cast -Wregister -Wshadow -Wvirtual-inheritance -Wnamespaces
-			-Wzero-as-null-pointer-constant -Wpacked -Wredundant-decls -Wvolatile -Wvla
+			-Wzero-as-null-pointer-constant -Wpacked -Wredundant-decls -Wvla
 			-Wlarger-than=16777216 -Walloc-size-larger-than=16777216 -Wstringop-overflow=4
 			-Walloc-zero -Warray-bounds=2 -Wcast-align=strict -Wconversion -Wundef
 			-Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
@@ -120,7 +111,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual)
 
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
-			target_compile_options(${od_target} PUBLIC -ggdb3)
+			target_compile_options(${od_target} PUBLIC -O0 -ggdb3)
 			target_compile_definitions(${od_target} PRIVATE _FORTIFY_SOURCE=2)
 
 			if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
@@ -128,10 +119,13 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			endif()
 
 			if(NOT ("${MINGW}" EQUAL 1))
-				target_compile_options(
-					${od_target} PUBLIC
+				set(
+					od_sanitizer_options
 					-fsanitize=address,leak,undefined -fsanitize-recover=address
-					-fsanitize-address-use-after-scope -fstack-protector-all)
+					-fsanitize-address-use-after-scope -fstack-protector-all
+				)
+				target_compile_options(${od_target} PUBLIC ${od_sanitizer_options})
+				target_link_options(${od_target} PUBLIC ${od_sanitizer_options})
 			endif()
 		endif()
 
@@ -144,8 +138,9 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			endif()
 
 			if("${BUILD_SHARED_LIBS}" EQUAL 1)
-				target_compile_options(${od_target} PUBLIC -static-libstdc++ -static-libgcc)
-				target_link_options(${od_target} PUBLIC -static-libstdc++ -static-libgcc)
+				set(od_static_link_options -static-libstdc++ -static-libgcc)
+				target_compile_options(${od_target} PUBLIC ${od_static_link_options})
+				target_link_options(${od_target} PUBLIC ${od_static_link_options})
 			endif()
 		endif()
 	endforeach()

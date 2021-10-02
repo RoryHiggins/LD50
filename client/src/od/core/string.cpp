@@ -67,7 +67,10 @@ bool odString_push_formatted_variadic(odString* string, const char* format_c_str
 		return false;
 	}
 
-	int required_count = vsnprintf(nullptr, 0, format_c_str, args);
+	va_list args_copy = {};
+	va_copy(args_copy, args);
+	int required_count = vsnprintf(nullptr, 0, format_c_str, args_copy);
+	va_end(args_copy);
 	if (required_count < 0) {
 		OD_ERROR(
 			"vsnprintf size estimation failed, string=%s, format_c_str=%s",

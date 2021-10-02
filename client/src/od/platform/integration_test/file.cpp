@@ -32,7 +32,7 @@ static odString odFile_test_create_random_name() {
 	}
 
 	for (int32_t i = prefix_size; i < size; i++) {
-		name_ptr[i] = 'a' + static_cast<char>(rand() % 20);
+		name_ptr[i] = static_cast<char>(static_cast<int>('a') + (rand() % 20));
 	}
 
 	OD_ASSERT(odString_ensure_null_terminated(&name));

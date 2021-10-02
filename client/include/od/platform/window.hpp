@@ -2,9 +2,13 @@
 
 #include <od/platform/window.h>
 
+#include <od/platform/renderer.hpp>
+
+struct odGLRenderer;
 struct odWindow {
+	odRenderer renderer;
 	void* window_native;
-	void* renderer_native;
+	void* render_context_native;
 	bool is_open;
 	int32_t next_frame_ms;
 	struct odWindowSettings settings;

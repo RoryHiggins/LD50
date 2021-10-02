@@ -10,15 +10,15 @@
 #define OD_LOG_LEVEL_TRACE 5
 #define OD_LOG_LEVEL_FIRST 1
 #define OD_LOG_LEVEL_LAST 6
-#define OD_LOG_LEVEL_DEFAULT OD_LOG_LEVEL_WARN
+#define OD_LOG_LEVEL_DEFAULT OD_LOG_LEVEL_DEBUG
 
-#define OD_LOG_CONTEXT_CONSTRUCT() odLogContext_construct(__FILE__, __func__, static_cast<int32_t>(__LINE__))
+#define OD_LOGGER() odLogContext_construct(__FILE__, __func__, static_cast<int32_t>(__LINE__))
 
 #if OD_BUILD_LOG
-#define OD_ERROR(...) odLog_log(OD_LOG_CONTEXT_CONSTRUCT(), OD_LOG_LEVEL_ERROR, __VA_ARGS__)
-#define OD_WARN(...) odLog_log(OD_LOG_CONTEXT_CONSTRUCT(), OD_LOG_LEVEL_WARN, __VA_ARGS__)
-#define OD_INFO(...) odLog_log(OD_LOG_CONTEXT_CONSTRUCT(), OD_LOG_LEVEL_INFO, __VA_ARGS__)
-#define OD_ASSERT(EXPR) odLog_assert(OD_LOG_CONTEXT_CONSTRUCT(), EXPR, #EXPR)
+#define OD_ERROR(...) odLog_log(OD_LOGGER(), OD_LOG_LEVEL_ERROR, __VA_ARGS__)
+#define OD_WARN(...) odLog_log(OD_LOGGER(), OD_LOG_LEVEL_WARN, __VA_ARGS__)
+#define OD_INFO(...) odLog_log(OD_LOGGER(), OD_LOG_LEVEL_INFO, __VA_ARGS__)
+#define OD_ASSERT(EXPR) odLog_assert(OD_LOGGER(), EXPR, #EXPR)
 #else
 #define OD_WARN(...)
 #define OD_ERROR(...)
@@ -26,8 +26,8 @@
 #endif
 
 #if OD_BUILD_LOG && OD_BUILD_DEBUG_LOG
-#define OD_DEBUG(...) odLog_log(OD_LOG_CONTEXT_CONSTRUCT(), OD_LOG_LEVEL_DEBUG, __VA_ARGS__)
-#define OD_TRACE(...) odLog_log(OD_LOG_CONTEXT_CONSTRUCT(), OD_LOG_LEVEL_TRACE, __VA_ARGS__)
+#define OD_DEBUG(...) odLog_log(OD_LOGGER(), OD_LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define OD_TRACE(...) odLog_log(OD_LOGGER(), OD_LOG_LEVEL_TRACE, __VA_ARGS__)
 #else
 #define OD_TRACE(...)
 #define OD_DEBUG(...)

@@ -2,6 +2,8 @@
 
 #include <od/platform/module.h>
 
+struct odType;
+
 struct odWindow;
 
 struct odWindowSettings {
@@ -15,12 +17,13 @@ struct odWindowSettings {
 };
 
 OD_API_C OD_ENGINE_PLATFORM_MODULE struct odWindowSettings odWindowSettings_get_defaults(void);
+OD_API_C OD_ENGINE_PLATFORM_MODULE struct odWindowSettings odWindowSettings_get_headless_defaults(void);
 
 OD_API_C OD_ENGINE_PLATFORM_MODULE const struct odType* odWindow_get_type_constructor(void);
 OD_API_C OD_ENGINE_PLATFORM_MODULE void odWindow_swap(struct odWindow* window1, struct odWindow* window2);
 OD_API_C OD_ENGINE_PLATFORM_MODULE const char* odWindow_get_debug_string(const struct odWindow* window);
-OD_API_C OD_ENGINE_PLATFORM_MODULE bool odWindow_open(struct odWindow* window, const struct odWindowSettings* settings);
-OD_API_C OD_ENGINE_PLATFORM_MODULE void odWindow_close(struct odWindow* window);
+OD_API_C OD_ENGINE_PLATFORM_MODULE bool odWindow_init(struct odWindow* window, struct odWindowSettings settings);
+OD_API_C OD_ENGINE_PLATFORM_MODULE void odWindow_destroy(struct odWindow* window);
 OD_API_C OD_ENGINE_PLATFORM_MODULE void odWindow_step(struct odWindow* window);
 OD_API_C OD_ENGINE_PLATFORM_MODULE bool odWindow_set_visible(struct odWindow* window, bool is_visible);
 OD_API_C OD_ENGINE_PLATFORM_MODULE bool odWindow_get_open(const struct odWindow* window);
