@@ -12,6 +12,7 @@
 #include <SDL2/SDL_opengl.h>
 
 #include <od/core/debug.h>
+#include <od/core/color.h>
 #include <od/core/vertex.h>
 #include <od/core/type.hpp>
 
@@ -43,7 +44,6 @@ static const char odRenderer_fragment_shader[] = R"(
 
 	void main() {
 		gl_FragColor = texture2D(src_texture, uv).rgba * col;
-		gl_FragColor = (col * 1.0) + (gl_FragColor * 0.01);
 	}
 )";
 
@@ -329,6 +329,17 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 
 	glGenTextures(1, &renderer->src_texture);
 	glBindTexture(GL_TEXTURE_2D, renderer->src_texture);
+	const odColor default_texture{0xFF, 0xFF, 0xFF,0xFF};
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGBA,
+		1,
+		1,
+		0,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		&default_texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
