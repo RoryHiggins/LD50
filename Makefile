@@ -32,7 +32,7 @@ test: $(TEST)
 run_gdb: $(CLIENT)
 	gdb -ex 'break main' --ex run --args $(CLIENT) --trace
 test_gdb: $(CLIENT)
-	gdb -ex 'break main' --ex run --args $(TEST) --trace
+	gdb -ex 'break main' --ex run --args $(TEST)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:

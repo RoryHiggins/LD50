@@ -4,11 +4,11 @@
 
 struct odRenderer {
 	void* render_context_native;
+	uint32_t vbo;
+	uint32_t vao;
 	uint32_t vertex_shader;
 	uint32_t fragment_shader;
 	uint32_t program;
-	uint32_t vbo;
-	uint32_t vao;
 	uint32_t src_texture;
 
 	OD_ENGINE_PLATFORM_MODULE odRenderer();

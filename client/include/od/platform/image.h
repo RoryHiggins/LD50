@@ -8,6 +8,7 @@ struct odImage;
 OD_API_C OD_ENGINE_PLATFORM_MODULE const struct odType* odImage_get_type_constructor(void);
 OD_API_C OD_ENGINE_PLATFORM_MODULE bool odImage_copy(struct odImage* image, const struct odImage* src_image);
 OD_API_C OD_ENGINE_PLATFORM_MODULE void odImage_swap(struct odImage* image1, struct odImage* image2);
+OD_API_C OD_ENGINE_PLATFORM_MODULE bool odImage_get_valid(const struct odImage* image);
 OD_API_C OD_ENGINE_PLATFORM_MODULE const char* odImage_get_debug_string(const struct odImage* image);
 OD_API_C OD_ENGINE_PLATFORM_MODULE bool odImage_allocate(struct odImage* image, int32_t width, int32_t height);
 OD_API_C OD_ENGINE_PLATFORM_MODULE void odImage_release(struct odImage* image);

@@ -4,12 +4,38 @@
 
 #include <od/core/debug.h>
 
+bool odType_get_valid(const odType* type) {
+	if (type == nullptr) {
+		return false;
+	}
+
+	if (type->default_construct_fn == nullptr) {
+		return false;
+	}
+
+	if (type->move_assign_fn == nullptr) {
+		return false;
+	}
+
+	if (type->destruct_fn == nullptr) {
+		return false;
+	}
+
+	return true;
+}
 const char* odType_get_debug_string(const odType* type) {
 	if (type == nullptr) {
 		return "odType{this=nullptr}";
 	}
 
-	return odDebugString_format("odType{this=%p, size=%d}", static_cast<const void*>(type), type->size);
+	return odDebugString_format(
+		"odType{this=%p, size=%d, default_construct_fn=%p, move_assign_fn=%p, destruct_fn=%p}",
+		static_cast<const void*>(type),
+		type->size,
+		reinterpret_cast<const void*>(type->default_construct_fn),
+		reinterpret_cast<const void*>(type->move_assign_fn),
+		reinterpret_cast<const void*>(type->destruct_fn)
+	);
 }
 void* odType_index(const odType* type, void* array, int32_t i) {
 	return static_cast<void*>(static_cast<char*>(array) + (type->size * i));

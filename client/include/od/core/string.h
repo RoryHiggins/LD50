@@ -7,6 +7,7 @@ struct odString;
 OD_API_C OD_ENGINE_CORE_MODULE const struct odType* odString_get_type_constructor(void);
 OD_API_C OD_ENGINE_CORE_MODULE bool odString_copy(struct odString* string, const struct odString* src_string);
 OD_API_C OD_ENGINE_CORE_MODULE void odString_swap(struct odString* string1, struct odString* string2);
+OD_API_C OD_ENGINE_CORE_MODULE bool odString_get_valid(const struct odString* string);
 OD_API_C OD_ENGINE_CORE_MODULE const char* odString_get_debug_string(const struct odString* string);
 OD_API_C OD_ENGINE_CORE_MODULE void odString_release(struct odString* string);
 OD_API_C OD_ENGINE_CORE_MODULE bool odString_set_capacity(struct odString* string, int32_t new_capacity);

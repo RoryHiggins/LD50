@@ -23,7 +23,6 @@ TEST(odRenderer, init_destroy_with_window) {
 	// test double destroy
 	odRenderer_destroy(&renderer);
 }
-
 TEST(odRenderer, destroy_after_window_destroy) {
 	odWindow window;
 	ASSERT_TRUE(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
@@ -39,7 +38,6 @@ TEST(odRenderer, destroy_after_window_destroy) {
 		odRenderer_destroy(&renderer_2);
 	}
 }
-
 TEST(odRenderer, init_invalid_context_fails) {
 	odRenderer renderer;
 
@@ -48,7 +46,6 @@ TEST(odRenderer, init_invalid_context_fails) {
 		ASSERT_FALSE(odRenderer_init(&renderer, nullptr));
 	}
 }
-
 TEST(odRenderer, destroy_without_window) {
 	odRenderer renderer;
 	odRenderer_destroy(&renderer);

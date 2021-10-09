@@ -3,17 +3,23 @@
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 
+#define OD_ARRAY_ERROR(ARRAY, ...) \
+	OD_ERROR("%s", odArray_get_debug_string(ARRAY)); \
+	OD_ERROR(__VA_ARGS__)
+
 const odType* odArray_get_type_constructor(void) {
 	return odType_get<odArray>();
 }
 void odArray_swap(odArray* array1, odArray* array2) {
+	OD_TRACE("array1=%s, array2=%s", odArray_get_debug_string(array1), odArray_get_debug_string(array2));
+
 	if (array1 == nullptr) {
-		OD_ERROR("array1=nullptr");
+		OD_ARRAY_ERROR(array1, "array1=nullptr");
 		return;
 	}
 
 	if (array2 == nullptr) {
-		OD_ERROR("array2=nullptr");
+		OD_ARRAY_ERROR(array2, "array2=nullptr");
 		return;
 	}
 
@@ -31,6 +37,29 @@ void odArray_swap(odArray* array1, odArray* array2) {
 
 	odAllocation_swap(&array1->allocation, &array2->allocation);
 }
+bool odArray_get_valid(const odArray* array) {
+	if (array == nullptr) {
+		return false;
+	}
+
+	if (array->count < 0) {
+		return false;
+	}
+
+	if (array->capacity < 0) {
+		return false;
+	}
+
+	if (!odType_get_valid(array->type)) {
+		return false;
+	}
+
+	if (!odAllocation_get_valid(&array->allocation)) {
+		return false;
+	}
+
+	return true;
+}
 const char* odArray_get_debug_string(const odArray* array) {
 	if (array == nullptr) {
 		return "odArray{this=nullptr}";
@@ -46,76 +75,71 @@ const char* odArray_get_debug_string(const odArray* array) {
 }
 const odType* odArray_get_type(const odArray* array) {
 	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+		OD_ARRAY_ERROR(array, "array=nullptr");
 		return nullptr;
 	}
 
 	return array->type;
 }
 void odArray_set_type(odArray* array, const odType* type) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
-		return;
-	}
-
-	if (type == nullptr) {
-		OD_ERROR("type=nullptr");
-		return;
-	}
-
 	OD_TRACE("array=%s, type=%s", odArray_get_debug_string(array), odType_get_debug_string(type));
 
+	if (array == nullptr) {
+		OD_ARRAY_ERROR(array, "array=nullptr");
+		return;
+	}
+
+	if (!odType_get_valid(type)) {
+		OD_ARRAY_ERROR(array, "type not valid, type=%s", odType_get_debug_string(type));
+		return;
+	}
+
 	if (array->capacity > 0) {
-		OD_TRACE(
-			"releasing old allocation, array=%s, type=%s",
-			odArray_get_debug_string(array),
-			odType_get_debug_string(type));
 		odArray_release(array);
 	}
 
 	array->type = type;
 }
 int32_t odArray_get_capacity(const odArray* array) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return 0;
 	}
 
 	return array->capacity;
 }
 bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
-		return false;
-	}
+	OD_TRACE("array=%s, new_capacity=%d", odArray_get_debug_string(array), new_capacity);
 
-	if (array->type == nullptr) {
-		OD_ERROR("No type associated with array, cannot allocate");
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return false;
 	}
 
 	if (new_capacity < 0) {
-		OD_WARN("new_capacity < 0, defaulting to 0");
-		new_capacity = 0;
+		OD_ARRAY_ERROR(array, "new_capacity < 0");
+		return false;
 	}
 
 	int32_t new_count = (new_capacity < array->count) ? new_capacity : array->count;
-
-	OD_TRACE("array=%s, new_capacity=%d, new_count=%d", odArray_get_debug_string(array), new_capacity, new_count);
+	OD_TRACE("new_count=%d", new_count);
 
 	odAllocation new_allocation;
 	if (!odAllocation_allocate(&new_allocation, new_capacity * array->type->size)) {
+		OD_ARRAY_ERROR(array, "new allocation failed");
+		return false;
+	}
+	OD_TRACE("new_allocation=%s", odAllocation_get_debug_string(&new_allocation));
+
+	void* new_allocation_ptr = odAllocation_get(&new_allocation);
+	if ((new_allocation_ptr == nullptr) && (new_capacity > 0)) {
+		OD_ARRAY_ERROR(array, "new_allocation_ptr=nullptr for nonzero capacity, uncaught allocation failure");
 		return false;
 	}
 
 	void* old_allocation_ptr = odAllocation_get(&array->allocation);
 	if ((old_allocation_ptr == nullptr) && (array->capacity > 0)) {
-		OD_ERROR("old_allocation_ptr=nullptr for nonzero capacity");
-	}
-
-	void* new_allocation_ptr = odAllocation_get(&new_allocation);
-	if ((new_allocation_ptr == nullptr) && (new_capacity > 0)) {
-		OD_ERROR("new_allocation_ptr=nullptr for nonzero capacity");
+		OD_ARRAY_ERROR(array, "old_allocation_ptr=nullptr for nonzero capacity, likely memory leak");
 	}
 
 	if ((new_allocation_ptr != nullptr) && (new_capacity > 0)) {
@@ -137,74 +161,68 @@ bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 	return true;
 }
 bool odArray_ensure_capacity(odArray* array, int32_t min_capacity) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+	OD_TRACE("array=%s, min_capacity=%d", odArray_get_debug_string(array), min_capacity);
+
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return false;
 	}
-
-	OD_TRACE("array=%s, min_capacity=%d", odArray_get_debug_string(array), min_capacity);
 
 	int32_t capacity = odArray_get_capacity(array);
 	if (capacity >= min_capacity) {
 		return true;
 	}
 
-	// over-allocate by 1 to make space for sentinel values / null terminators
-	int32_t new_capacity = min_capacity + 1;
+	int32_t new_capacity = 0;
 
-	if ((capacity * 2) >= min_capacity) {
-		new_capacity = capacity * 2;
-	}
-
-	const int32_t start_capacity = min_capacity;
+	const int32_t start_capacity = 16;
 	if (min_capacity <= start_capacity) {
 		new_capacity = start_capacity;
+	} else if ((capacity * 2) >= min_capacity) {
+		new_capacity = capacity * 2;
+	} else {
+		new_capacity = min_capacity;
 	}
 
 	return odArray_set_capacity(array, new_capacity);
 }
 void odArray_release(odArray* array) {
+	OD_TRACE("array=%s", odArray_get_debug_string(array));
+
 	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+		OD_ARRAY_ERROR(array, "array=nullptr");
 		return;
 	}
-
-	OD_TRACE("array=%s", odArray_get_debug_string(array));
 
 	array->count = 0;
 	array->capacity = 0;
 	odAllocation_release(&array->allocation);
 }
 int32_t odArray_get_count(const odArray* array) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return 0;
 	}
 
 	return array->count;
 }
 bool odArray_set_count(odArray* array, int32_t new_count) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
-		return false;
-	}
+	OD_TRACE("array=%s, new_count=%d", odArray_get_debug_string(array), new_count);
 
-	if (array->type == nullptr) {
-		OD_ERROR("No type associated with array");
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return false;
 	}
 
 	if (new_count < 0) {
-		OD_WARN("new_count < 0, defaulting to 0");
-		new_count = 0;
-	}
-
-	if (!odArray_ensure_capacity(array, new_count)) {
-		OD_ERROR("Failed to ensure capacity, new_count=%d", new_count);
+		OD_ARRAY_ERROR(array, "new_count < 0");
 		return false;
 	}
 
-	OD_TRACE("array=%s, new_count=%d", odArray_get_debug_string(array), new_count);
+	if (!odArray_ensure_capacity(array, new_count)) {
+		OD_ARRAY_ERROR(array, "Failed to ensure capacity, new_count=%d", new_count);
+		return false;
+	}
 
 	if (new_count < array->count) {
 		int32_t default_count = array->count - new_count;
@@ -218,131 +236,116 @@ bool odArray_set_count(odArray* array, int32_t new_count) {
 	return true;
 }
 bool odArray_expand(odArray* array, void** out_expand_dest, int32_t expand_count) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
-		return false;
-	}
-
-	if (out_expand_dest == nullptr) {
-		OD_ERROR("out_expand_dest=nullptr");
-		return false;
-	}
-
-	if (array->type == nullptr) {
-		OD_ERROR("No type associated with array");
-		return false;
-	}
-
-	if (expand_count <= 0) {
-		OD_ERROR("expand_count<=0");
-		return false;
-	}
-
 	OD_TRACE(
 		"array=%s, out_expand_dest=%p, expand_count=%d",
 		odArray_get_debug_string(array),
 		static_cast<const void*>(out_expand_dest),
 		expand_count);
 
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
+		return false;
+	}
+
+	if (out_expand_dest == nullptr) {
+		OD_ARRAY_ERROR(array, "out_expand_dest=nullptr");
+		return false;
+	}
+
+	if (expand_count < 0) {
+		OD_ARRAY_ERROR(array, "expand_count<=0");
+		return false;
+	}
+
 	*out_expand_dest = nullptr;
 
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+	if (expand_count == 0) {
+		return true;
+	}
+
+	int32_t offset = array->count;
+	if (!odArray_set_count(array, array->count + expand_count)) {
+		OD_ARRAY_ERROR(array, "failed to expand");
 		return false;
 	}
 
-	int32_t start_count = array->count;
-	if (!odArray_set_count(array, start_count + expand_count)) {
-		return false;
-	}
-
-	*out_expand_dest = odArray_get(array, start_count);
+	*out_expand_dest = odArray_get(array, offset);
 	if (*out_expand_dest == nullptr) {
+		OD_ARRAY_ERROR(array, "failed to get start of new array elements");
 		return false;
 	}
 
 	return true;
 }
 bool odArray_push(odArray* array, void* moved_src, int32_t moved_count) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
-		return false;
-	}
-
-	if (array->type == nullptr) {
-		OD_ERROR("No type associated with array");
-		return false;
-	}
-
-	if (moved_src == nullptr) {
-		OD_ERROR("moved_src == nullptr");
-		return false;
-	}
-
-	if (moved_count <= 0) {
-		OD_ERROR("moved_count<=0");
-		return false;
-	}
-
 	OD_TRACE(
 		"array=%s, moved_src=%p, moved_count=%d",
 		odArray_get_debug_string(array),
 		static_cast<const void*>(moved_src),
 		moved_count);
 
-	void* push_dest = nullptr;
-	if (!odArray_expand(array, &push_dest, moved_count)) {
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return false;
 	}
+
+	if (moved_src == nullptr) {
+		OD_ARRAY_ERROR(array, "moved_src == nullptr");
+		return false;
+	}
+
+	if (moved_count <= 0) {
+		OD_ARRAY_ERROR(array, "moved_count<=0");
+		return false;
+	}
+
+	void* push_dest = nullptr;
+	if (!odArray_expand(array, &push_dest, moved_count)) {
+		OD_ARRAY_ERROR(array, "failed to expand array");
+		return false;
+	}
+
+	OD_TRACE("push_dest=%p", static_cast<const void*>(push_dest));
 
 	array->type->move_assign_fn(push_dest, moved_src, moved_count * array->type->size);
 
 	return true;
 }
-bool odArray_pop(odArray* array, int32_t count) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+bool odArray_shrink(odArray* array, int32_t count) {
+	OD_TRACE("array=%s, count=%d", odArray_get_debug_string(array), count);
+
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return false;
 	}
 
 	if (count <= 0) {
-		OD_ERROR("count<=0");
+		OD_ARRAY_ERROR(array, "count<=0");
 		return false;
 	}
 
 	if (array->count < count) {
-		OD_ERROR("array too small, count=%d, array->count=%d", count, array->count);
+		OD_ARRAY_ERROR(array, "array too small, count=%d, array->count=%d", count, array->count);
 		return false;
 	}
 
 	if (!odArray_set_count(array, array->count - count)) {
+		OD_ARRAY_ERROR(array, "failed to set count");
 		return false;
 	}
-
-	OD_TRACE("array=%s, count=%d", odArray_get_debug_string(array), count);
 
 	return true;
 }
 bool odArray_swap_pop(odArray* array, int32_t i) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
-		return false;
-	}
-
-	if (i < 0) {
-		OD_ERROR("i < 0");
-		return false;
-	}
-
 	OD_TRACE("array=%s, i=%d", odArray_get_debug_string(array), i);
 
-	if (array->type == nullptr) {
-		OD_ERROR("No type associated with array");
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return false;
 	}
 
-	if (i >= array->count) {
-		OD_ERROR("outside bounds, i=%d", i);
+	if ((i < 0) || (i >= array->count)) {
+		OD_ARRAY_ERROR(array, "outside bounds, i=%d", i);
 		return false;
 	}
 
@@ -351,24 +354,19 @@ bool odArray_swap_pop(odArray* array, int32_t i) {
 	return true;
 }
 void* odArray_get(odArray* array, int32_t i) {
-	if (array == nullptr) {
-		OD_ERROR("array=nullptr");
+	if (!odArray_get_valid(array)) {
+		OD_ARRAY_ERROR(array, "not valid");
 		return nullptr;
 	}
 
-	if (i < 0) {
-		OD_ERROR("i < 0");
+	if ((i < 0) || (i >= array->count)) {
+		OD_ARRAY_ERROR(array, "outside bounds, i=%d", i);
 		return nullptr;
 	}
 
 	void* elements = odAllocation_get(&array->allocation);
 	if (elements == nullptr) {
-		OD_ERROR("not allocated, ptr=%s, i=%d", odArray_get_debug_string(array), i);
-		return nullptr;
-	}
-
-	if (i >= array->count) {
-		OD_ERROR("out of bounds, array=%s, i=%d", odArray_get_debug_string(array), i);
+		OD_ARRAY_ERROR(array, "not allocated, i=%d", i);
 		return nullptr;
 	}
 

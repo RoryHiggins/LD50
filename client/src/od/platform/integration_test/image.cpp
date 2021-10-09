@@ -29,7 +29,6 @@ TEST(odImage, allocate_release) {
 	ASSERT_EQ(allocated_width, 0);
 	ASSERT_EQ(allocated_height, 0);
 }
-
 TEST(odImage, read_png) {
 	// 69-byte 1x1 png to verify
 	const uint8_t png[] = {0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48,
@@ -49,7 +48,6 @@ TEST(odImage, read_png) {
 	ASSERT_EQ(allocated_width, 1);
 	ASSERT_EQ(allocated_height, 1);
 }
-
 TEST(odImage, read_invalid_png_fails) {
 	const uint8_t invalid_png[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A};
 	const int32_t invalid_png_size = sizeof(invalid_png);

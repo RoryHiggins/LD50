@@ -22,8 +22,8 @@
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Debug iterative build and run tests",
-			"shell_cmd": "ninja -C .\\build\\DEBUG od_test.exe && .\\build\\DEBUG\\od_test.exe --gtest_filter=*.*",
+			"name": "Debug iterative build and run tests + client",
+			"shell_cmd": "ninja -C .\\build\\DEBUG od_test.exe od_client.exe && .\\build\\DEBUG\\od_test.exe --gtest_filter=*.* && .\\build\\DEBUG\\od_client.exe",
 			"working_dir": "$project_path",
 		},
 		{
@@ -32,7 +32,7 @@
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Debug run tests with gdb and trace logging",
+			"name": "Debug run tests with gdb",
 			"shell_cmd": "start make test_gdb",
 			"working_dir": "$project_path",
 		},

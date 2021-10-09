@@ -117,12 +117,12 @@ TEST(odArray, set_count_truncate) {
 		ASSERT_TRUE(array_ptr[i] == '\0');
 	}
 }
-TEST(odArray, pop) {
+TEST(odArray, shrink) {
 	odArray array{odType_get_char()};
 	ASSERT_TRUE(odArray_set_count(&array, 1));
 	ASSERT_EQ(odArray_get_count(&array), 1);
 
-	ASSERT_TRUE(odArray_pop(&array, 1));
+	ASSERT_TRUE(odArray_shrink(&array, 1));
 	ASSERT_EQ(odArray_get_count(&array), 0);
 }
 TEST(odArray, swap_pop) {

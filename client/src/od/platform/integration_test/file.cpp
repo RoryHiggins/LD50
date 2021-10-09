@@ -61,7 +61,6 @@ TEST(odFile, open) {
 
 	ASSERT_TRUE(odFilePath_delete(file_name_str));
 }
-
 TEST(odFile, write_read_delete) {
 	odString file_name = odFile_test_create_random_name();
 	const char* file_name_str = odString_get_const(&file_name, 0);
@@ -86,7 +85,6 @@ TEST(odFile, write_read_delete) {
 
 	ASSERT_TRUE(odFilePath_delete(file_name_str));
 }
-
 TEST(odFilePath, write_read_delete) {
 	odString file_name = odFile_test_create_random_name();
 	const char* file_name_str = odString_get_const(&file_name, 0);

@@ -5,27 +5,42 @@
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 
+#define OD_STRING_ERROR(STRING, ...) \
+	OD_ERROR("%s", odString_get_debug_string(STRING)); \
+	OD_ERROR(__VA_ARGS__)
+
 const odType* odString_get_type_constructor(void) {
 	return odType_get<odString>();
 }
 bool odString_copy(odString* string, const odString* src_string) {
-	if (string == nullptr) {
-		OD_ERROR("string=nullptr");
+	OD_TRACE("string=%s, src_string=%s", odString_get_debug_string(string), odString_get_debug_string(src_string));
+
+	if (!odString_get_valid(string)) {
+		OD_STRING_ERROR(string, "not valid");
 		return false;
 	}
 
-	if (src_string == nullptr) {
-		OD_ERROR("src_string=nullptr");
+	if (!odString_get_valid(src_string)) {
+		OD_STRING_ERROR(src_string, "not valid");
 		return false;
 	}
 
 	if (!odString_set_count(string, 0)) {
+		OD_STRING_ERROR(string, "failed to set count");
 		return false;
 	}
+
 	return odString_push(string, odString_get_const(src_string, 0), odString_get_count(src_string));
 }
 void odString_swap(odString* string1, odString* string2) {
 	odArray_swap(&string1->array, &string2->array);
+}
+bool odString_get_valid(const odString* string) {
+	if (string == nullptr) {
+		return false;
+	}
+
+	return odArray_get_valid(&string->array);
 }
 const char* odString_get_debug_string(const odString* string) {
 	if (string == nullptr) {
@@ -57,13 +72,15 @@ bool odString_push(odString* string, const char* str, int32_t str_count) {
 	return odArray_push(&string->array, const_cast<void*>(static_cast<const void*>(str)), str_count);
 }
 bool odString_push_formatted_variadic(odString* string, const char* format_c_str, va_list args) {
-	if (string == nullptr) {
-		OD_ERROR("string=nullptr");
+	OD_TRACE("string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str ? format_c_str : "<nullptr>");
+
+	if (!odString_get_valid(string)) {
+		OD_STRING_ERROR(string, "not valid");
 		return false;
 	}
 
 	if (format_c_str == nullptr) {
-		OD_ERROR("format_c_str=nullptr");
+		OD_STRING_ERROR(string, "format_c_str=nullptr");
 		return false;
 	}
 
@@ -72,14 +89,9 @@ bool odString_push_formatted_variadic(odString* string, const char* format_c_str
 	int required_count = vsnprintf(nullptr, 0, format_c_str, args_copy);
 	va_end(args_copy);
 	if (required_count < 0) {
-		OD_ERROR(
-			"vsnprintf size estimation failed, string=%s, format_c_str=%s",
-			odString_get_debug_string(string),
-			format_c_str);
+		OD_STRING_ERROR(string, "vsnprintf size estimation failed, format_c_str=%s", format_c_str);
 		return false;
 	}
-
-	OD_TRACE("string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str);
 
 	// sprintf-style calls always write null-terminated, but count in return value
 	// excludes null terminator
@@ -92,15 +104,12 @@ bool odString_push_formatted_variadic(odString* string, const char* format_c_str
 
 	int written_count = vsnprintf(dest_str, static_cast<size_t>(required_capacity), format_c_str, args);
 	if (written_count < 0) {
-		OD_ERROR("vsnprintf failed, string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str);
+		OD_STRING_ERROR(string, "vsnprintf failed, format_c_str=%s", format_c_str);
 		return false;
 	}
 
 	if (written_count != required_count) {
-		OD_ERROR(
-			"less bytes written than expected, string=%s, format_c_str=%s",
-			odString_get_debug_string(string),
-			format_c_str);
+		OD_STRING_ERROR(string,  "less bytes written than expected, format_c_str=%s", format_c_str);
 		return false;
 	}
 
@@ -115,12 +124,12 @@ bool odString_push_formatted(odString* string, const char* format_c_str, ...) {
 	return result;
 }
 bool odString_ensure_null_terminated(odString* string) {
-	if (string == nullptr) {
-		OD_ERROR("string=nullptr");
+	OD_TRACE("string=%s", odString_get_debug_string(string));
+
+	if (!odString_get_valid(string)) {
+		OD_STRING_ERROR(string, "not valid");
 		return false;
 	}
-
-	OD_TRACE("string=%s", odString_get_debug_string(string));
 
 	if (odString_get_null_terminated(string)) {
 		return true;
@@ -129,8 +138,10 @@ bool odString_ensure_null_terminated(odString* string) {
 	return odString_push(string, "\0", 1);
 }
 bool odString_get_null_terminated(const odString* string) {
+	OD_TRACE("string=%s", odString_get_debug_string(string));
+
 	if (string == nullptr) {
-		OD_ERROR("string=nullptr");
+		OD_STRING_ERROR(string, "string=nullptr");
 		return false;
 	}
 

@@ -71,6 +71,25 @@ void odImage_swap(odImage* image1, odImage* image2) {
 	image2->width = swap_width;
 	image2->height = swap_height;
 }
+bool odImage_get_valid(const odImage* image) {
+	if (image == nullptr) {
+		return false;
+	}
+
+	if (!odAllocation_get_valid(&image->allocation)) {
+		return false;
+	}
+
+	if (image->width < 0) {
+		return false;
+	}
+
+	if (image->height < 0) {
+		return false;
+	}
+
+	return true;
+}
 const char* odImage_get_debug_string(const odImage* image) {
 	if (image == nullptr) {
 		return "odImage{this=nullptr}";
@@ -132,14 +151,13 @@ void odImage_release(odImage* image) {
 	odAllocation_release(&image->allocation);
 }
 void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
+	if (!odImage_get_valid(image)) {
+		OD_ERROR("not valid");
+	}
+
 	int32_t unused;
 	out_opt_width = (out_opt_width != nullptr) ? out_opt_width : &unused;
 	out_opt_height = (out_opt_height != nullptr) ? out_opt_height : &unused;
-
-	if (image == nullptr) {
-		OD_ERROR("image=nullptr");
-		return;
-	}
 
 	*out_opt_width = image->width;
 	*out_opt_height = image->height;
@@ -203,8 +221,8 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 	return true;
 }
 odColor* odImage_get(odImage* image) {
-	if (image == nullptr) {
-		OD_ERROR("image=nullptr");
+	if (!odImage_get_valid(image)) {
+		OD_ERROR("not valid");
 		return nullptr;
 	}
 

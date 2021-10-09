@@ -12,6 +12,7 @@
 #include <SDL2/SDL_opengl.h>
 
 #include <od/core/debug.h>
+#include <od/core/vertex.h>
 #include <od/core/type.hpp>
 
 /*https://www.khronos.org/registry/OpenGL/specs/gl/glspec21.pdf*/
@@ -19,12 +20,7 @@
 static const char odRenderer_vertex_shader[] = R"(
 	#version 120
 
-	// Transform from world (+/- windowSize) to normalized device coords (-1.0 to 1.0)
-	uniform vec3 scale_xyz;
-	// Convert to normalized texture coords (0.0 to 1.0)
-	uniform vec2 scale_uv;
-
-	attribute vec4 src_pos;
+	attribute vec3 src_pos;
 	attribute vec4 src_col;
 	attribute vec2 src_uv;
 
@@ -32,9 +28,9 @@ static const char odRenderer_vertex_shader[] = R"(
 	varying vec2 uv;
 
 	void main() {
-		gl_Position = vec4(src_pos.xyz * scale_xyz, 1);
+		gl_Position = vec4(src_pos, 1);
 		col = src_col;
-		uv = src_uv * scale_uv;
+		uv = src_uv;
 	}
 )";
 static const char odRenderer_fragment_shader[] = R"(
@@ -47,6 +43,7 @@ static const char odRenderer_fragment_shader[] = R"(
 
 	void main() {
 		gl_FragColor = texture2D(src_texture, uv).rgba * col;
+		gl_FragColor = (col * 1.0) + (gl_FragColor * 0.01);
 	}
 )";
 
@@ -70,7 +67,7 @@ static void odRenderer_gl_message_callback(
 		OD_DEBUG("%s", message);
 	}
 }
-static bool odRenderer_glew_ensure_initialized() {
+static bool odRenderer_glew_init() {
 	static bool is_initialized = false;
 
 	OD_TRACE("is_initialized=%d", is_initialized);
@@ -135,7 +132,7 @@ const char* odRenderer_get_debug_string(const odRenderer* renderer) {
 		renderer->src_texture
 	);
 }
-static bool jeGl_getOk(odLogContext logger) {
+static bool odGl_getOk(odLogContext logger) {
 	bool ok = true;
 	GLenum gl_error = GL_NO_ERROR;
 
@@ -155,7 +152,7 @@ static bool jeGl_getOk(odLogContext logger) {
 
 	return ok;
 }
-static bool jeGl_getShaderOk(odLogContext logger, GLuint shader) {
+static bool odGl_getShaderOk(odLogContext logger, GLuint shader) {
 	GLint compile_status = GL_FALSE;
 
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
@@ -168,6 +165,7 @@ static bool jeGl_getShaderOk(odLogContext logger, GLuint shader) {
 			msg_max_size = OD_RENDERER_MESSAGE_BUFFER_SIZE;
 		}
 
+		memset(static_cast<void*>(odRenderer_message_buffer), 0, static_cast<size_t>(msg_max_size));
 		glGetShaderInfoLog(shader, msg_max_size, nullptr, odRenderer_message_buffer);
 
 		odLog_log(
@@ -183,7 +181,7 @@ static bool jeGl_getShaderOk(odLogContext logger, GLuint shader) {
 
 	return true;
 }
-static bool jeGl_getProgramOk(odLogContext logger, GLuint program) {
+static bool odGl_getProgramOk(odLogContext logger, GLuint program) {
 	GLint link_status = GL_FALSE;
 
 	glGetProgramiv(program, GL_LINK_STATUS, &link_status);
@@ -196,6 +194,7 @@ static bool jeGl_getProgramOk(odLogContext logger, GLuint program) {
 			msg_max_size = OD_RENDERER_MESSAGE_BUFFER_SIZE;
 		}
 
+		memset(static_cast<void*>(odRenderer_message_buffer), 0, static_cast<size_t>(msg_max_size));
 		glGetProgramInfoLog(program, msg_max_size, nullptr, odRenderer_message_buffer);
 
 		odLog_log(
@@ -223,69 +222,17 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 	}
 
 	if (SDL_GL_GetCurrentContext() != render_context_native) {
-		OD_ERROR("render_context_native not set");
+		OD_ERROR("render_context_native doesn't match what is set");
 		return false;
 	}
 
-	OD_TRACE("renderer=%s", odRenderer_get_debug_string(renderer));
+	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));
 
 	odRenderer_destroy(renderer);
 
 	renderer->render_context_native = render_context_native;
 
-	odRenderer_glew_ensure_initialized();
-
-	OD_TRACE("creating shader program, renderer=%s", odRenderer_get_debug_string(renderer));
-	
-	static const GLchar* vertex_shader_ptr = static_cast<const GLchar*>(odRenderer_vertex_shader);
-	static const GLint vertex_shader_size = sizeof(odRenderer_vertex_shader);
-	renderer->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(renderer->vertex_shader, 1, &vertex_shader_ptr, &vertex_shader_size);
-	glCompileShader(renderer->vertex_shader);
-
-	if (!jeGl_getOk(OD_LOGGER()) || !jeGl_getShaderOk(OD_LOGGER(), renderer->vertex_shader)) {
-		OD_ERROR("OpenGL error when creating vertex shader, renderer=%s", odRenderer_get_debug_string(renderer));
-		return false;
-	}
-
-	static const GLchar* fragment_shader_ptr = static_cast<const GLchar*>(odRenderer_fragment_shader);
-	static const GLint fragment_shader_size = sizeof(odRenderer_fragment_shader);
-	renderer->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(renderer->fragment_shader, 1, &fragment_shader_ptr, &fragment_shader_size);
-	glCompileShader(renderer->fragment_shader);
-
-	if (!jeGl_getOk(OD_LOGGER()) || !jeGl_getShaderOk(OD_LOGGER(), renderer->fragment_shader)) {
-		OD_ERROR("OpenGL error when creating fragment shader, renderer=%s", odRenderer_get_debug_string(renderer));
-		return false;
-	}
-
-	renderer->program = glCreateProgram();
-	glAttachShader(renderer->program, renderer->vertex_shader);
-	glAttachShader(renderer->program, renderer->fragment_shader);
-
-	glBindAttribLocation(renderer->program, 0, "src_pos");
-	glBindAttribLocation(renderer->program, 1, "src_col");
-	glBindAttribLocation(renderer->program, 2, "src_uv");
-
-	glLinkProgram(renderer->program);
-	glUseProgram(renderer->program);
-
-	if (!jeGl_getOk(OD_LOGGER()) || !jeGl_getProgramOk(OD_LOGGER(), renderer->program)) {
-		OD_ERROR("OpenGL error when creating program, renderer=%s", odRenderer_get_debug_string(renderer));
-		return false;
-	}
-
-	OD_TRACE("creating texture, renderer=%s", odRenderer_get_debug_string(renderer));
-
-	glGenTextures(1, &renderer->src_texture);
-	glBindTexture(GL_TEXTURE_2D, renderer->src_texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	if (!jeGl_getOk(OD_LOGGER())) {
-		OD_ERROR("OpenGL error when creating texture, renderer=%s", odRenderer_get_debug_string(renderer));
-		return false;
-	}
+	odRenderer_glew_init();
 
 	OD_TRACE("creating vertex array, renderer=%s", odRenderer_get_debug_string(renderer));
 
@@ -296,23 +243,121 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 	glBindVertexArray(renderer->vao);
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
 
-	if (!jeGl_getOk(OD_LOGGER())) {
+	OD_TRACE("creating shader program, renderer=%s", odRenderer_get_debug_string(renderer));
+	
+	static const GLchar* vertex_shader_ptr = static_cast<const GLchar*>(odRenderer_vertex_shader);
+	static const GLint vertex_shader_size = sizeof(odRenderer_vertex_shader);
+	renderer->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(renderer->vertex_shader, 1, &vertex_shader_ptr, &vertex_shader_size);
+	glCompileShader(renderer->vertex_shader);
+
+	if (!odGl_getOk(OD_LOGGER()) || !odGl_getShaderOk(OD_LOGGER(), renderer->vertex_shader)) {
+		OD_ERROR("OpenGL error when creating vertex shader, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	static const GLchar* fragment_shader_ptr = static_cast<const GLchar*>(odRenderer_fragment_shader);
+	static const GLint fragment_shader_size = sizeof(odRenderer_fragment_shader);
+	renderer->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(renderer->fragment_shader, 1, &fragment_shader_ptr, &fragment_shader_size);
+	glCompileShader(renderer->fragment_shader);
+
+	if (!odGl_getOk(OD_LOGGER()) || !odGl_getShaderOk(OD_LOGGER(), renderer->fragment_shader)) {
+		OD_ERROR("OpenGL error when creating fragment shader, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	renderer->program = glCreateProgram();
+	glAttachShader(renderer->program, renderer->vertex_shader);
+	glAttachShader(renderer->program, renderer->fragment_shader);
+
+	glLinkProgram(renderer->program);
+	glUseProgram(renderer->program);
+
+	if (!odGl_getOk(OD_LOGGER()) || !odGl_getProgramOk(OD_LOGGER(), renderer->program)) {
+		OD_ERROR("OpenGL error when creating program, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	OD_TRACE("configuring shader attributes, renderer=%s", odRenderer_get_debug_string(renderer));
+
+	glBindAttribLocation(renderer->program, 0, "src_pos");
+	glBindAttribLocation(renderer->program, 1, "src_col");
+	glBindAttribLocation(renderer->program, 2, "src_uv");
+
+	if (!odGl_getOk(OD_LOGGER())) {
+		OD_ERROR("OpenGL error when configuring shader attributes, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	GLuint src_pos_attrib = static_cast<GLuint>(glGetAttribLocation(renderer->program, "src_pos"));
+	GLuint src_col_attrib = static_cast<GLuint>(glGetAttribLocation(renderer->program, "src_col"));
+	GLuint src_uv_attrib = static_cast<GLuint>(glGetAttribLocation(renderer->program, "src_uv"));
+	OD_TRACE("renderer=%s, src_pos_attrib=%u, src_col_attrib=%u, src_uv_attrib=%u",
+		odRenderer_get_debug_string(renderer), src_pos_attrib, src_col_attrib, src_uv_attrib);
+
+	if (!odGl_getOk(OD_LOGGER())) {
+		OD_ERROR("OpenGL error when configuring shader attributes, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	if (!odGl_getOk(OD_LOGGER())) {
+		OD_ERROR("OpenGL error when configuring shader attributes, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	glEnableVertexAttribArray(src_pos_attrib);
+	glEnableVertexAttribArray(src_col_attrib);
+	glEnableVertexAttribArray(src_uv_attrib);
+
+	const GLvoid* offset = static_cast<const GLvoid*>(nullptr);
+	glVertexAttribPointer(src_pos_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(odVertex), offset);
+	offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (3 * sizeof(GLfloat)));
+
+	glVertexAttribPointer(src_col_attrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(odVertex), offset);
+	offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (4 * sizeof(GLubyte)));
+
+	glVertexAttribPointer(src_uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(odVertex), reinterpret_cast<const GLvoid*>(8 * sizeof(GLfloat)));
+	offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (2 * sizeof(GLfloat)));
+
+	if (!odGl_getOk(OD_LOGGER())) {
+		OD_ERROR("OpenGL error when configuring shader attributes, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	OD_TRACE("creating texture, renderer=%s", odRenderer_get_debug_string(renderer));
+
+	glGenTextures(1, &renderer->src_texture);
+	glBindTexture(GL_TEXTURE_2D, renderer->src_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	if (!odGl_getOk(OD_LOGGER())) {
+		OD_ERROR("OpenGL error when creating texture, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	if (!odGl_getOk(OD_LOGGER())) {
 		OD_ERROR("OpenGL error when vertex array, renderer=%s", odRenderer_get_debug_string(renderer));
 		return false;
 	}
 
 	OD_TRACE("configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
+	// glEnable(GL_BLEND);
+	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glDepthMask(GL_TRUE);
+	// glEnable(GL_DEPTH_TEST);
+	// glDepthFunc(GL_LEQUAL);
+	// glDepthMask(GL_TRUE);
+	glDisable(GL_DEPTH_TEST);
 
 	glDisable(GL_CULL_FACE);
 
-	if (!jeGl_getOk(OD_LOGGER())) {
+	glBindVertexArray(0);
+
+	if (!odGl_getOk(OD_LOGGER())) {
 		OD_ERROR("OpenGL error when configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
 		return false;
 	}
@@ -331,24 +376,6 @@ void odRenderer_destroy(odRenderer* renderer) {
 	}
 
 	OD_TRACE("renderer=%s", odRenderer_get_debug_string(renderer));
-
-	if (renderer->vao != 0) {
-		OD_TRACE("deleting vao=%u", renderer->vao);
-
-		glBindVertexArray(renderer->vao);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDeleteVertexArrays(1, &renderer->vao);
-		renderer->vao = 0;
-
-		glBindVertexArray(0);
-	}
-
-	if (renderer->vbo != 0) {
-		OD_TRACE("deleting vbo=%u", renderer->vbo);
-
-		glDeleteBuffers(1, &renderer->vbo);
-		renderer->vbo = 0;
-	}
 
 	if (renderer->src_texture != 0) {
 		OD_TRACE("deleting src_texture=%u", renderer->src_texture);
@@ -384,13 +411,77 @@ void odRenderer_destroy(odRenderer* renderer) {
 		glDeleteShader(renderer->vertex_shader);
 		renderer->vertex_shader = 0;
 	}
+
+	if (renderer->vao != 0) {
+		OD_TRACE("deleting vao=%u", renderer->vao);
+
+		glBindVertexArray(renderer->vao);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDeleteVertexArrays(1, &renderer->vao);
+		renderer->vao = 0;
+
+		glBindVertexArray(0);
+	}
+
+	if (renderer->vbo != 0) {
+		OD_TRACE("deleting vbo=%u", renderer->vbo);
+
+		glDeleteBuffers(1, &renderer->vbo);
+		renderer->vbo = 0;
+	}
 }
-// static bool odRenderer_set_src_texture(odRenderer* renderer, ...)
-// static bool odRenderer_draw(odRenderer* renderer, odRenderTarget...) {
-// 	glViewport(0, 0, width, height);
-// }
+// static bool odRenderer_update_src_texture(odRenderer* renderer, ...)
+bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t vertices_count /*, odRenderTarget *target*/) {
+	if (renderer == nullptr) {
+		OD_ERROR("renderer=nullptr");
+		return false;
+	}
+
+	if (vertices == nullptr) {
+		OD_ERROR("vertices == nullptr");
+		return false;
+	}
+
+	if (vertices_count < 0) {
+		OD_ERROR("vertices_count < 0");
+		return false;
+	}
+
+	if (SDL_GL_GetCurrentContext() != renderer->render_context_native) {
+		OD_ERROR("render_context_native doesn't match what is set");
+		return false;
+	}
+
+	OD_TRACE("renderer=%s, vertices_count=%d", odRenderer_get_debug_string(renderer), vertices_count);
+
+	glUseProgram(renderer->program);
+	glBindVertexArray(renderer->vao);
+
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glBufferData(
+		GL_ARRAY_BUFFER,
+		static_cast<GLsizeiptr>(static_cast<size_t>(vertices_count) * sizeof(odVertex)),
+		vertices,
+		GL_DYNAMIC_DRAW);
+	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices_count));
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+
+	if (!odGl_getOk(OD_LOGGER())) {
+		OD_ERROR("OpenGL error when configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
+	return true;
+}
 odRenderer::odRenderer()
-	: render_context_native{nullptr}, vertex_shader{0}, fragment_shader{0}, program{0}, vbo{0}, vao{0}, src_texture{0} {
+	: render_context_native{nullptr}, vbo{0}, vao{0}, vertex_shader{0}, fragment_shader{0}, program{0}, src_texture{0} {
 }
 odRenderer::odRenderer(odRenderer&& other) {
 	odRenderer_swap(this, &other);

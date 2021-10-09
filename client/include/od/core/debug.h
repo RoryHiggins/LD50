@@ -10,7 +10,7 @@
 #define OD_LOG_LEVEL_TRACE 5
 #define OD_LOG_LEVEL_FIRST 1
 #define OD_LOG_LEVEL_LAST 6
-#define OD_LOG_LEVEL_DEFAULT OD_LOG_LEVEL_DEBUG
+#define OD_LOG_LEVEL_DEFAULT OD_LOG_LEVEL_INFO
 
 #define OD_LOGGER() odLogContext_construct(__FILE__, __func__, static_cast<int32_t>(__LINE__))
 
