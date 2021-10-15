@@ -408,14 +408,15 @@ bool odWindow_step(odWindow* window) {
 		}
 	}
 
-	glViewport(0, 0, window->settings.width, window->settings.height);
+	struct odViewport viewport{0, 0, window->settings.width, window->settings.height};
+	const float test_size = 64.0f;
 	const odVertex test_vertices[] = {
-		{-0.5f,-0.5f,0.0f,  0,0xff,0,0xff,  0.0f,0.0f},
-		{-0.5f, 0.5f,0.0f,  0,0xff,0,0xff,  0.0f,0.0f},
-		{ 0.5f,-0.5f,0.0f,  0,0xff,0,0xff,  0.0f,0.0f},
+		{0,0,0,         0,0xff,0,0xff,  0,0},
+		{0,test_size,0, 0,0xff,0,0xff,  0,0},
+		{test_size,0,0, 0,0xff,0,0xff,  0,0},
 	};
 	const int32_t test_vertices_count = 3;
-	if (!odRenderer_draw(&window->renderer, test_vertices, test_vertices_count)) {
+	if (!odRenderer_draw(&window->renderer, test_vertices, test_vertices_count, viewport)) {
 		OD_ERROR("failed drawing");
 		return false;
 	}

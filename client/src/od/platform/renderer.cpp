@@ -21,6 +21,10 @@
 static const char odRenderer_vertex_shader[] = R"(
 	#version 120
 
+	// there is no model space: all inputs are required to be in world space
+	uniform mat4 view;
+	uniform mat4 projection;
+
 	attribute vec3 src_pos;
 	attribute vec4 src_col;
 	attribute vec2 src_uv;
@@ -29,7 +33,7 @@ static const char odRenderer_vertex_shader[] = R"(
 	varying vec2 uv;
 
 	void main() {
-		gl_Position = vec4(src_pos, 1);
+		gl_Position = projection * view * vec4(src_pos, 1);
 		col = src_col;
 		uv = src_uv;
 	}
@@ -61,10 +65,17 @@ static void odRenderer_gl_message_callback(
 	const void* /*userParam*/) {
 	if (severity == GL_DEBUG_SEVERITY_HIGH) {
 		OD_ERROR("%s", message);
-	} else if ((severity == GL_DEBUG_SEVERITY_MEDIUM) || severity == GL_DEBUG_SEVERITY_LOW) {
+		return;
+	}
+
+	if ((severity == GL_DEBUG_SEVERITY_MEDIUM) || severity == GL_DEBUG_SEVERITY_LOW) {
 		OD_WARN("%s", message);
-	} else if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+		return;
+	}
+
+	if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
 		OD_DEBUG("%s", message);
+		return;
 	}
 }
 static bool odRenderer_glew_init() {
@@ -355,13 +366,9 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 
 	OD_TRACE("configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
 
-	glDisable(GL_BLEND);
-	// glEnable(GL_BLEND);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// glEnable(GL_DEPTH_TEST);
-	// glDepthFunc(GL_LEQUAL);
-	// glDepthMask(GL_TRUE);
 	glDisable(GL_DEPTH_TEST);
 
 	glDisable(GL_CULL_FACE);
@@ -442,7 +449,7 @@ void odRenderer_destroy(odRenderer* renderer) {
 	}
 }
 // static bool odRenderer_update_src_texture(odRenderer* renderer, ...)
-bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t vertices_count /*, odRenderTarget *target*/) {
+bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t vertices_count, odViewport viewport /*, odRenderTarget *target*/) {
 	if (renderer == nullptr) {
 		OD_ERROR("renderer=nullptr");
 		return false;
@@ -459,14 +466,40 @@ bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t ver
 	}
 
 	if (SDL_GL_GetCurrentContext() != renderer->render_context_native) {
-		OD_ERROR("render_context_native doesn't match what is set");
+		OD_ERROR("rendererer context doesn't match current context");
 		return false;
 	}
 
-	OD_TRACE("renderer=%s, vertices_count=%d", odRenderer_get_debug_string(renderer), vertices_count);
-
 	glUseProgram(renderer->program);
 	glBindVertexArray(renderer->vao);
+
+	GLuint view_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "view"));
+	GLuint projection_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "projection"));
+
+	const GLfloat translate_x = -1.0f;
+	const GLfloat translate_y = 1.0f;
+	GLfloat scale_x = 1.0f / static_cast<GLfloat>(viewport.w);
+	GLfloat scale_y = -1.0f / static_cast<GLfloat>(viewport.h);
+	// depths +/- 2^20; near the precise int limit for float32
+	const GLfloat scale_z = 1.0f / static_cast<GLfloat>(1 << 20);
+
+	GLfloat view[16] = {
+		scale_x, 0, 0, 0,
+		0, scale_y, 0, 0,
+		0, 0, scale_z, 0,
+		translate_x, translate_y, 0, 1
+	};
+	const GLfloat projection[16] = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	};
+
+	glUniformMatrix4fv(view_uniform, 1, false, view);
+	glUniformMatrix4fv(projection_uniform, 1, false, projection);
+
+	glViewport(viewport.x, -viewport.y, viewport.w, viewport.h);
 
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -485,7 +518,7 @@ bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t ver
 	glUseProgram(0);
 
 	if (!odGl_getOk(OD_LOGGER())) {
-		OD_ERROR("OpenGL error when configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
+		OD_ERROR("OpenGL error when drawing, renderer=%s", odRenderer_get_debug_string(renderer));
 		return false;
 	}
 
