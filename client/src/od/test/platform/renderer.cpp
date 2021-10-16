@@ -8,8 +8,7 @@ OD_TEST_FILTERED(odRenderer, init_destroy_with_window, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_get_open(&window));
 
-	odRenderer& renderer = window.renderer;
-	odRenderer_destroy(&renderer);
+	odRenderer renderer;
 
 	OD_ASSERT(odRenderer_init(&renderer, window.render_context_native));
 
@@ -26,23 +25,20 @@ OD_TEST_FILTERED(odRenderer, destroy_after_window_destroy, OD_TEST_FILTER_SLOW) 
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_get_open(&window));
 
-	odRenderer renderer_2;
-	OD_ASSERT(odRenderer_init(&renderer_2, window.render_context_native));
-
-	odWindow_destroy(&window);
-
 	{
 		odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
+		odRenderer renderer_2;
+		OD_ASSERT(odRenderer_init(&renderer_2, window.render_context_native));
+
+		odWindow_destroy(&window);
+	
 		odRenderer_destroy(&renderer_2);
 	}
 }
-OD_TEST_FILTERED(odRenderer, init_invalid_context_fails, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odRenderer, init_without_context_fails, OD_TEST_FILTER_SLOW) {
+	odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
 	odRenderer renderer;
-
-	{
-		odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
-		OD_ASSERT(!odRenderer_init(&renderer, nullptr));
-	}
+	OD_ASSERT(!odRenderer_init(&renderer, nullptr));
 }
 OD_TEST_FILTERED(odRenderer, destroy_without_window, OD_TEST_FILTER_SLOW) {
 	odRenderer renderer;

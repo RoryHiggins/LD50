@@ -50,7 +50,7 @@ bool odAllocation_allocate(odAllocation* allocation, int32_t size) {
 		return true;
 	}
 
-	void* new_allocation_ptr = realloc(allocation->ptr, static_cast<size_t>(size));
+	void* new_allocation_ptr = calloc(1, static_cast<size_t>(size));
 	if (!OD_CHECK(new_allocation_ptr != nullptr)) {
 		return false;
 	}

@@ -4,7 +4,9 @@
 #include <SDL2/SDL_opengl.h>
 
 #include <od/core/debug.h>
+#include <od/core/color.h>
 #include <od/core/vertex.h>
+#include <od/core/viewport.h>
 #include <od/core/type.hpp>
 
 static int32_t odSDL_init_counter = 0;
@@ -395,12 +397,13 @@ bool odWindow_step(odWindow* window) {
 		}
 	}
 
-	struct odRenderViewport viewport{0, 0, window->settings.width, window->settings.height};
-	const float test_size = 64.0f;
+	struct odViewport viewport{0, 0, window->settings.width, window->settings.height};
+	const int32_t test_offset = 64;
+	const int32_t test_size = 64;
 	const odVertex test_vertices[] = {
-		{0,0,0,         0,0xff,0,0xff,  0,0},
-		{0,test_size,0, 0,0xff,0,0xff,  0,0},
-		{test_size,0,0, 0,0xff,0,0xff,  0,0},
+		{test_offset,test_offset,0,           0x00,0xff,0x00,0xff,  0,0},
+		{test_offset,test_offset+test_size,0, 0x00,0xff,0x00,0xff,  0,0},
+		{test_offset+test_size,test_offset,0, 0x00,0xff,0x00,0xff,  0,0},
 	};
 	const int32_t test_vertices_count = 3;
 	if (!OD_CHECK(odRenderer_draw(&window->renderer, test_vertices, test_vertices_count, viewport))) {

@@ -22,8 +22,13 @@
 			"working_dir": "$project_path",
 		},
 		// {
-		// 	"name": "Debug run client with gdb and trace logging",
-		// 	"shell_cmd": "start make run_gdb CLIENT_ARGS='--trace'",
+		// 	"name": "Debug run tests + client with gdb and trace logging",
+		// 	"shell_cmd": "start make gdb CLIENT_ARGS='--test --trace'",
+		// 	"working_dir": "$project_path",
+		// },
+		// {
+		// 	"name": "Run client",
+		// 	"shell_cmd": "ninja -C .\\build\\DEBUG od_client.exe && .\\build\\DEBUG\\od_client.exe",
 		// 	"working_dir": "$project_path",
 		// },
 		// {
@@ -36,11 +41,11 @@
 		// 	"shell_cmd": "rm -rf .\\build\\DEBUG && cmake -S . -B .\\build\\DEBUG -G\"Ninja\" -DCMAKE_CXX_CLANG_TIDY=clang-tidy -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
 		// 	"working_dir": "$project_path",
 		// },
-		{
-			"name": "Release generate and rebuild",
-			"shell_cmd": "rm -rf .\\build\\RELEASE && make TARGET=RELEASE",
-			"working_dir": "$project_path",
-		},
+		// {
+		// 	"name": "Release generate and rebuild",
+		// 	"shell_cmd": "rm -rf .\\build\\RELEASE && make TARGET=RELEASE",
+		// 	"working_dir": "$project_path",
+		// },
 		// renamed find to gnu-find locally for windows, due to clash with win32 find
 		// {
 		// 	"name": "Clang format",

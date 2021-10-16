@@ -5,17 +5,17 @@
 struct odColor;
 
 struct odVertex {
-	float x;
-	float y;
-	float z;
+	int32_t x;
+	int32_t y;
+	int32_t z;
 
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
 	uint8_t a;
 
-	float u;
-	float v;
+	int32_t u;
+	int32_t v;
 };
 
 OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
