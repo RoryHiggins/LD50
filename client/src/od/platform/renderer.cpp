@@ -81,7 +81,7 @@ static void odRenderer_gl_message_callback(
 static bool odRenderer_glew_init() {
 	static bool is_initialized = false;
 
-	OD_TRACE("is_initialized=%d", is_initialized);
+	OD_DEBUG("is_initialized=%d", is_initialized);
 
 	if (is_initialized) {
 		return true;
@@ -366,6 +366,11 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 
 	OD_TRACE("configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
 
+	if (odLogLevel_get_max() >= OD_LOG_LEVEL_DEBUG) {
+		// technically requires opengl 4.1 but we asked for 3.2; it's okay for this call to fail.
+		glEnable(GL_DEBUG_OUTPUT);
+	}
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -393,7 +398,7 @@ void odRenderer_destroy(odRenderer* renderer) {
 		return;
 	}
 
-	OD_TRACE("renderer=%s", odRenderer_get_debug_string(renderer));
+	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));
 
 	if (renderer->src_texture != 0) {
 		OD_TRACE("deleting src_texture=%u", renderer->src_texture);

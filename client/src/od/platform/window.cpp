@@ -10,11 +10,9 @@
 static int32_t odSDL_init_counter = 0;
 
 static bool odSDL_init_reentrant() {
-	OD_TRACE("odSDL_init_counter=%d", odSDL_init_counter);
+	OD_DEBUG("odSDL_init_counter=%d", odSDL_init_counter);
 
 	if (odSDL_init_counter == 0) {
-		OD_TRACE("SDL_Init");
-
 		const Uint32 flags = (SDL_INIT_EVENTS | SDL_INIT_TIMER | SDL_INIT_VIDEO);
 		int init_result = SDL_Init(flags);
 		if (init_result != 0) {
@@ -27,6 +25,8 @@ static bool odSDL_init_reentrant() {
 	return true;
 }
 static void odSDL_destroy_reentrant() {
+	OD_DEBUG("odSDL_init_counter=%d", odSDL_init_counter);
+
 	if (odSDL_init_counter <= 0) {
 		OD_WARN("odSDL_destroy_reentrant with no matching odSDL_init_reentrant");
 		return;
@@ -35,7 +35,6 @@ static void odSDL_destroy_reentrant() {
 	odSDL_init_counter--;
 
 	if (odSDL_init_counter == 0) {
-		OD_TRACE("SDL_Quit");
 		SDL_Quit();
 	}
 }
@@ -115,21 +114,17 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 		return false;
 	}
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
-#if OD_BUILD_DEBUG_LOG
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-#endif
-
-#define OD_BUILD_OPENGL_FORWARD_COMPATIBLE 1
-#if defined(OD_BUILD_OPENGL_FORWARD_COMPATIBLE) && OD_BUILD_OPENGL_FORWARD_COMPATIBLE
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	// Use OpenGL 2.1 code with OpenGL 3.2 compatible context, for RenderDoc support
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#endif
+
+	if (odLogLevel_get_max() >= OD_LOG_LEVEL_ERROR) {
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+	}
 
 	window->window_native = static_cast<void*>(SDL_CreateWindow(
 		window->settings.caption,
@@ -182,9 +177,7 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 	return true;
 }
 void odWindow_destroy(odWindow* window) {
-	OD_TRACE("window=%s", odWindow_get_debug_string(window));
-
-	OD_DEBUG("Window closed");
+	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
 	if (window == nullptr) {
 		OD_ERROR("window=nullptr");
@@ -239,7 +232,7 @@ bool odWindow_set_visible(odWindow* window, bool is_visible) {
 		return false;
 	}
 
-	OD_TRACE("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
+	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
 
 	if (window->settings.is_visible == is_visible) {
 		return true;
@@ -261,7 +254,7 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 		return false;
 	}
 
-	OD_TRACE("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
+	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
 
 	if ((width == window->settings.width) && (height == window->settings.height)) {
 		return true;
@@ -399,7 +392,7 @@ bool odWindow_step(odWindow* window) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (!odWindow_handle_event(window, &event)) {
-			OD_ERROR("failed handling SDL event");
+			OD_ERROR("odWindow_handle_event failed");
 			return false;
 		}
 
@@ -417,7 +410,7 @@ bool odWindow_step(odWindow* window) {
 	};
 	const int32_t test_vertices_count = 3;
 	if (!odRenderer_draw(&window->renderer, test_vertices, test_vertices_count, viewport)) {
-		OD_ERROR("failed drawing");
+		OD_ERROR("odRenderer_draw failed");
 		return false;
 	}
 	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));

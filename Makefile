@@ -4,6 +4,8 @@
 # - RELEASE
 # - DEBUG
 TARGET := DEBUG
+# client input arguments 
+CLIENT_ARGS :=
 
 # Dependencies
 # ---
@@ -26,11 +28,11 @@ $(CLIENT):
 $(TEST): $(CLIENT)
 	$(CMAKE) --build $(BUILD) --target od_test
 run: $(CLIENT)
-	$(CLIENT)
+	$(CLIENT) $(CLIENT_ARGS)
 test: $(TEST)
 	$(TEST)
 run_gdb: $(CLIENT)
-	gdb -ex 'break main' --ex run --args $(CLIENT) --trace
+	gdb -ex 'break main' --ex run --args $(CLIENT) $(CLIENT_ARGS)
 test_gdb: $(CLIENT)
 	gdb -ex 'break main' --ex run --args $(TEST)
 profile: gmon.out

@@ -28,7 +28,7 @@
 		},
 		{
 			"name": "Debug run client with gdb and trace logging",
-			"shell_cmd": "start make run_gdb",
+			"shell_cmd": "start make run_gdb CLIENT_ARGS='--trace'",
 			"working_dir": "$project_path",
 		},
 		{
@@ -47,16 +47,16 @@
 		// 	"working_dir": "$project_path",
 		// },
 		// renamed find to gnu-find locally for windows, due to clash with win32 find
-		// {
-		// 	"name": "Clang format",
-		// 	"shell_cmd": "gnu-find ./include ./src -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs clang-format -i -Werror --",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "Clang tidy",
-		// 	"shell_cmd": "gnu-find ./include ./src -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | xargs -I TIDY_INPUT clang-tidy TIDY_INPUT -- -I./include -Isrc",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "Clang format",
+			"shell_cmd": "make format",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Clang tidy",
+			"shell_cmd": "make tidy",
+			"working_dir": "$project_path",
+		},
 	],
 	"folders":
 	[

@@ -31,6 +31,10 @@ int main(int argc, char** argv) {
 			odLogLevel_set_max(OD_LOG_LEVEL_TRACE);
 			continue;
 		}
+		if (strncmp(argv[i], "--debug", MAX_ARG_SIZE) == 0) {
+			odLogLevel_set_max(OD_LOG_LEVEL_DEBUG);
+			continue;
+		}
 		if (i > 0) {
 			OD_ERROR("Unknown argument \"%s\"", argv[i]);
 			return 1;
