@@ -21,4 +21,4 @@ OD_API_C OD_ENGINE_PLATFORM_MODULE
 const char* odRenderer_get_debug_string(const struct odRenderer* renderer);
 OD_API_C OD_ENGINE_PLATFORM_MODULE bool odRenderer_init(struct odRenderer* renderer, void* render_context_native);
 OD_API_C OD_ENGINE_PLATFORM_MODULE void odRenderer_destroy(struct odRenderer* renderer);
-OD_API_C OD_ENGINE_PLATFORM_MODULE bool odRenderer_draw(struct odRenderer* renderer, const odVertex* vertices, int32_t vertices_count, struct odViewport viewport);
+OD_API_C OD_ENGINE_PLATFORM_MODULE bool odRenderer_draw(struct odRenderer* renderer, const struct odVertex* vertices, int32_t vertices_count, struct odViewport viewport);

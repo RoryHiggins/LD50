@@ -20,8 +20,9 @@
 #define OD_INFO(...) odLog_log(OD_LOGGER(), OD_LOG_LEVEL_INFO, __VA_ARGS__)
 #define OD_ASSERT(EXPR) odLog_assert(OD_LOGGER(), EXPR, #EXPR)
 #else
-#define OD_WARN(...)
 #define OD_ERROR(...)
+#define OD_WARN(...)
+#define OD_INFO(...)
 #define OD_ASSERT(EXPR)
 #endif
 

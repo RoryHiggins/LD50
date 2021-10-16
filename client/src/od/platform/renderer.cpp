@@ -51,6 +51,7 @@ static const char odRenderer_fragment_shader[] = R"(
 	}
 )";
 
+#if OD_BUILD_DEBUG_LOG
 #define OD_RENDERER_MESSAGE_BUFFER_SIZE 4096
 
 static GLchar odRenderer_message_buffer[OD_RENDERER_MESSAGE_BUFFER_SIZE];
@@ -78,6 +79,7 @@ static void odRenderer_gl_message_callback(
 		return;
 	}
 }
+#endif
 static bool odRenderer_glew_init() {
 	static bool is_initialized = false;
 
@@ -95,10 +97,12 @@ static bool odRenderer_glew_init() {
 		return false;
 	}
 
+#if OD_BUILD_DEBUG_LOG
 	if (GLEW_ARB_debug_output) {
 		OD_DEBUG("GLEW_ARB_debug_output=true, registering gl debug log callback");
 		glDebugMessageCallbackARB(odRenderer_gl_message_callback, nullptr);
 	}
+#endif
 
 	is_initialized = true;
 

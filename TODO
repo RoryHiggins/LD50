@@ -1,4 +1,6 @@
 
+OD_ENGINE -> OD_CLIENT - engine should refer to lua, client to c++
+
 Rendering - plan
 ----------------
 - OpenGL 2.1

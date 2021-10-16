@@ -6,12 +6,11 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(GTest REQUIRED)
-include(GoogleTest)
 enable_testing()
 
 set(OD_BUILD_LOG 1 CACHE BOOL "Build with logging")
 set(OD_BUILD_DEBUG_LOG 1 CACHE BOOL "Build with debug logging")
+set(OD_BUILD_TESTS 1 CACHE BOOL "Build with tests")
 
 if ("${SDL2_LIBRARIES}" STREQUAL "")
 	set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
@@ -35,31 +34,27 @@ target_link_libraries(od_engine_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL
 # each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
 set_target_properties(od_engine_platform PROPERTIES UNITY_BUILD 0)
 
+# od_test
+# ----------
+add_library(od_test)
+set_target_properties(od_test PROPERTIES UNITY_BUILD 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+target_link_libraries(od_test PRIVATE od_engine_core od_engine_platform)
+
 # od_client
 # ----------
 add_executable(od_client)
 set_target_properties(od_client PROPERTIES UNITY_BUILD 1)
-
-# od_test
-# ----------
-add_executable(od_test)
-target_link_libraries(od_test PRIVATE GTest::GTest GTest::Main)
-# gtest tests generate a lot of cruft; each test is extremely costly in compile-time
-set_target_properties(od_test PROPERTIES UNITY_BUILD 0 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
-# gtest tests autogenerate some code which doesnt fit well with the preferred set of warnings
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(od_test PRIVATE -Wno-inline)
+target_link_libraries(od_client PRIVATE od_engine_core od_engine_platform)
+if (${OD_BUILD_TESTS})
+	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 0 EXCLUDE_FROM_DEFAULT_BUILD 0)
+	target_link_libraries(od_client PRIVATE od_test)
 endif()
 
 # shared parameters
 # ----------
-set(od_libs od_engine_core od_engine_platform)
-set(od_binaries od_client od_test)
+set(od_libs od_engine_core od_engine_platform od_test)
+set(od_binaries od_client)
 set(od_targets ${od_libs} ${od_binaries})
-
-foreach(od_binary ${od_binaries})
-	target_link_libraries(${od_binary} PRIVATE ${od_libs})
-endforeach()
 
 foreach(od_target ${od_targets})
 	set_target_properties(
@@ -75,7 +70,9 @@ foreach(od_target ${od_targets})
 
 	target_compile_definitions(
 		${od_target} PUBLIC
-		OD_BUILD_LOG=${OD_BUILD_LOG} OD_BUILD_DEBUG_LOG=${OD_BUILD_DEBUG_LOG})
+		OD_BUILD_LOG=${OD_BUILD_LOG}
+		OD_BUILD_DEBUG_LOG=${OD_BUILD_DEBUG_LOG}
+		OD_BUILD_TESTS=${OD_BUILD_TESTS})
 endforeach()
 
 # decorate module api macros with dllimport/dllexport if building dlls for windows

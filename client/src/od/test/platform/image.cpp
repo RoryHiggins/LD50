@@ -1,35 +1,33 @@
 #include <od/platform/image.hpp>
 
-#include <gtest/gtest.h>
+#include <od/test/test.hpp>
 
-#include <od/core/debug.hpp>
-
-TEST(odImage, allocate_release) {
-	int32_t allocated_width = -1u;
-	int32_t allocated_height = -1u;
+OD_TEST(odImage, allocate_release) {
+	int32_t allocated_width = -1;
+	int32_t allocated_height = -1;
 
 	odImage image;
-	ASSERT_EQ(odImage_get(&image), nullptr);
+	OD_ASSERT(odImage_get(&image) == nullptr);
 	odImage_get_size(&image, &allocated_width, &allocated_height);
-	ASSERT_EQ(allocated_width, 0);
-	ASSERT_EQ(allocated_height, 0);
+	OD_ASSERT(allocated_width == 0);
+	OD_ASSERT(allocated_height == 0);
 
 	const int32_t width = 4;
 	const int32_t height = 4;
-	ASSERT_TRUE(odImage_allocate(&image, width, height));
-	ASSERT_NE(odImage_get(&image), nullptr);
+	OD_ASSERT(odImage_allocate(&image, width, height));
+	OD_ASSERT(odImage_get(&image) != nullptr);
 
 	odImage_get_size(&image, &allocated_width, &allocated_height);
-	ASSERT_EQ(allocated_width, width);
-	ASSERT_EQ(allocated_height, height);
+	OD_ASSERT(allocated_width == width);
+	OD_ASSERT(allocated_height == height);
 
 	odImage_release(&image);
-	ASSERT_EQ(odImage_get(&image), nullptr);
+	OD_ASSERT(odImage_get(&image) == nullptr);
 	odImage_get_size(&image, &allocated_width, &allocated_height);
-	ASSERT_EQ(allocated_width, 0);
-	ASSERT_EQ(allocated_height, 0);
+	OD_ASSERT(allocated_width == 0);
+	OD_ASSERT(allocated_height == 0);
 }
-TEST(odImage, read_png) {
+OD_TEST(odImage, read_png) {
 	// 69-byte 1x1 png to verify
 	const uint8_t png[] = {0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48,
 						   0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00,
@@ -39,22 +37,22 @@ TEST(odImage, read_png) {
 	const int32_t png_size = sizeof(png);
 
 	odImage image;
-	ASSERT_TRUE(odImage_read_png(&image, static_cast<const void*>(png), png_size));
-	ASSERT_NE(odImage_get(&image), nullptr);
+	OD_ASSERT(odImage_read_png(&image, static_cast<const void*>(png), png_size));
+	OD_ASSERT(odImage_get(&image) != nullptr);
 
 	int32_t allocated_width = 0;
 	int32_t allocated_height = 0;
 	odImage_get_size(&image, &allocated_width, &allocated_height);
-	ASSERT_EQ(allocated_width, 1);
-	ASSERT_EQ(allocated_height, 1);
+	OD_ASSERT(allocated_width == 1);
+	OD_ASSERT(allocated_height == 1);
 }
-TEST(odImage, read_invalid_png_fails) {
+OD_TEST(odImage, read_invalid_png_fails) {
 	const uint8_t invalid_png[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A};
 	const int32_t invalid_png_size = sizeof(invalid_png);
 
 	odImage image;
 	{
 		odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
-		ASSERT_FALSE(odImage_read_png(&image, static_cast<const void*>(invalid_png), invalid_png_size));
+		OD_ASSERT(!odImage_read_png(&image, static_cast<const void*>(invalid_png), invalid_png_size));
 	}
 }

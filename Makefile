@@ -15,7 +15,6 @@ CMAKE := cmake
 # ---
 BUILD := build/$(TARGET)
 CLIENT := $(BUILD)/od_client
-TEST := $(BUILD)/od_test
 
 # Commands
 # ---
@@ -23,24 +22,20 @@ TEST := $(BUILD)/od_test
 .DEFAULT_GOAL := $(CLIENT)
 
 $(CLIENT):
-	$(CMAKE) -S . -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" -D BUILD_SHARED_LIBS=1 -D OD_BUILD_DEBUG_LOG=1
+	$(CMAKE) -S . -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" -D BUILD_SHARED_LIBS=1
 	$(CMAKE) --build $(BUILD)
-$(TEST): $(CLIENT)
-	$(CMAKE) --build $(BUILD) --target od_test
 run: $(CLIENT)
 	$(CLIENT) $(CLIENT_ARGS)
-test: $(TEST)
-	$(TEST)
-run_gdb: $(CLIENT)
+test: $(CLIENT)
+	$(CLIENT) --test $(CLIENT_ARGS)
+gdb: $(CLIENT)
 	gdb -ex 'break main' --ex run --args $(CLIENT) $(CLIENT_ARGS)
-test_gdb: $(CLIENT)
-	gdb -ex 'break main' --ex run --args $(TEST)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:
-	find ./client -name '*.c' -or -name '*.h' | xargs -I TIDY_INPUT clang-tidy TIDY_INPUT -- -Iclient/include -Iclient/src
+	clang-tidy $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))") -- -Iclient/include -Iclient/src
 format:
-	find ./client -name '*.c' -or -name '*.h' | xargs clang-format -i -Werror --
+	clang-format -i -Werror -- $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))")
 clean:
 	rm -rf build
 

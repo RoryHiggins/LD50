@@ -19,6 +19,18 @@ odLogContext odLogContext_construct(const char* file, const char* function, int3
 		function = "<function=nullptr>";
 	}
 
+	const int32_t file_prefixes_count = 2;
+	const char* file_prefixes[file_prefixes_count] = {
+		"client/src/",
+		"client/include/"
+	};
+	for (int32_t i = 0; i < file_prefixes_count; i++) {
+		const char* file_relative = strstr(file, file_prefixes[i]);
+		if (file_relative) {
+			file = file_relative + strlen(file_prefixes[i]);
+		}
+	}
+
 	return odLogContext{file, function, line};
 }
 void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args) {
