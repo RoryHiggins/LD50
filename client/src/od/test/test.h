@@ -7,6 +7,10 @@
 #define OD_TEST_FILTER_SLOW 1
 
 #if OD_BUILD_TESTS
-OD_API_C OD_ENGINE_TEST_MODULE void odTest_add(const char* suite, const char* name, void (*fn)(), int32_t filters);
-OD_API_C OD_ENGINE_TEST_MODULE void odTest_run(int32_t filters);
+OD_API_C OD_ENGINE_TEST_MODULE
+void odTest_add(const char* suite, const char* name, void (*fn)(), int32_t filters);
+
+OD_API_C OD_ENGINE_TEST_MODULE OD_API_NODISCARD
+bool odTest_run(int32_t filters);
+
 #endif

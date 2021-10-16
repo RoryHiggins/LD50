@@ -5,19 +5,10 @@
 #include <od/core/debug.h>
 
 bool odType_get_valid(const odType* type) {
-	if (type == nullptr) {
-		return false;
-	}
-
-	if (type->default_construct_fn == nullptr) {
-		return false;
-	}
-
-	if (type->move_assign_fn == nullptr) {
-		return false;
-	}
-
-	if (type->destruct_fn == nullptr) {
+	if ((type == nullptr)
+		|| (type->default_construct_fn == nullptr)
+		|| (type->move_assign_fn == nullptr)
+		|| (type->destruct_fn == nullptr)) {
 		return false;
 	}
 

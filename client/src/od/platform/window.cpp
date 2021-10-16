@@ -15,7 +15,7 @@ static bool odSDL_init_reentrant() {
 	if (odSDL_init_counter == 0) {
 		const Uint32 flags = (SDL_INIT_EVENTS | SDL_INIT_TIMER | SDL_INIT_VIDEO);
 		int init_result = SDL_Init(flags);
-		if (init_result != 0) {
+		if (!OD_CHECK(init_result == 0)) {
 			OD_ERROR("SDL_Init failed, init_result=%d", init_result);
 			return false;
 		}
@@ -62,13 +62,8 @@ const odType* odWindow_get_type_constructor() {
 	return odType_get<odWindow>();
 }
 void odWindow_swap(odWindow* window1, odWindow* window2) {
-	if (window1 == nullptr) {
-		OD_ERROR("window1=nullptr");
-		return;
-	}
-
-	if (window2 == nullptr) {
-		OD_ERROR("window2=nullptr");
+	if (!OD_DEBUG_CHECK(window1 != nullptr)
+		|| !OD_DEBUG_CHECK(window2 != nullptr)) {
 		return;
 	}
 
@@ -98,12 +93,11 @@ const char* odWindow_get_debug_string(const odWindow* window) {
 		window->is_open);
 }
 bool odWindow_init(odWindow* window, odWindowSettings settings) {
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
+	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
+
+	if (!OD_DEBUG_CHECK(window != nullptr)) {
 		return false;
 	}
-
-	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
 	odWindow_destroy(window);
 
@@ -137,7 +131,7 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 			| SDL_WINDOW_OPENGL
 			| SDL_WINDOW_RESIZABLE)));
 
-	if (window->window_native == nullptr) {
+	if (!OD_CHECK(window->window_native != nullptr)) {
 		OD_ERROR("SDL_CreateWindow failed, error=%s", SDL_GetError());
 		return false;
 	}
@@ -145,28 +139,27 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 	window->render_context_native = static_cast<void*>(
 		SDL_GL_CreateContext(static_cast<SDL_Window*>(window->window_native))
 	);
-	if (window->render_context_native == nullptr) {
+	if (!OD_CHECK(window->render_context_native != nullptr)) {
 		OD_ERROR("SDL_GL_CreateContext failed, error=%s", SDL_GetError());
 		return false;
 	}
 
-	if (SDL_GL_MakeCurrent(
+	if (!OD_CHECK(SDL_GL_MakeCurrent(
 		static_cast<SDL_Window*>(window->window_native),
-		static_cast<SDL_GLContext*>(window->render_context_native))
-		!= 0) {
+		static_cast<SDL_GLContext*>(window->render_context_native)) == 0)) {
 		OD_ERROR("SDL_GL_MakeCurrent failed, error=%s", SDL_GetError());
 		return false;
 	}
 
 	if (window->settings.is_vsync_enabled) {
 		if (SDL_GL_SetSwapInterval(1) < 0) {
-			OD_ERROR("SDL_GL_SetSwapInterval failed, error=%s; disabling vsync", SDL_GetError());
+			OD_ERROR("SDL_GL_SetSwapInterval failed, error=%s; disabling vsync and continuing", SDL_GetError());
 			// Lack of vsync support is not fatal; we have a frame timer as backup
 			window->settings.is_vsync_enabled = false;
 		}
 	}
 
-	if (!odRenderer_init(&window->renderer, window->render_context_native)) {
+	if (!OD_CHECK(odRenderer_init(&window->renderer, window->render_context_native))) {
 		return false;
 	}
 
@@ -179,8 +172,7 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 void odWindow_destroy(odWindow* window) {
 	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
+	if (!OD_DEBUG_CHECK(window != nullptr)) {
 		return;
 	}
 
@@ -210,8 +202,7 @@ void odWindow_destroy(odWindow* window) {
 	window->is_open = false;
 }
 bool odWindow_get_open(const odWindow* window) {
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
+	if (!OD_DEBUG_CHECK(window != nullptr)) {
 		return false;
 	}
 
@@ -219,20 +210,18 @@ bool odWindow_get_open(const odWindow* window) {
 		return false;
 	}
 
-	if (window->window_native == nullptr) {
-		OD_ERROR("window->window_native=nullptr");
+	if (!OD_DEBUG_CHECK(window->window_native != nullptr)) {
 		return false;
 	}
 
 	return true;
 }
 bool odWindow_set_visible(odWindow* window, bool is_visible) {
-	if (!odWindow_get_open(window)) {
-		OD_ERROR("!odWindow_get_open(), window=%s", odWindow_get_debug_string(window));
+	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
+
+	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
 		return false;
 	}
-
-	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
 
 	if (window->settings.is_visible == is_visible) {
 		return true;
@@ -249,12 +238,11 @@ bool odWindow_set_visible(odWindow* window, bool is_visible) {
 	return true;
 }
 bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
-	if (!odWindow_get_open(window)) {
-		OD_ERROR("!odWindow_get_open(), window=%s", odWindow_get_debug_string(window));
+	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
+
+	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
 		return false;
 	}
-
-	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
 
 	if ((width == window->settings.width) && (height == window->settings.height)) {
 		return true;
@@ -266,6 +254,10 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 	return true;
 }
 static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
+	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
+		return false;
+	}
+
 	switch (event->type) {
 		case SDL_QUIT: {
 			OD_DEBUG("Quit event received");
@@ -353,6 +345,10 @@ static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
 	return true;
 }
 static bool odWindow_wait_step(odWindow* window) {
+	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
+		return false;
+	}
+
 	if (!window->settings.is_fps_limit_enabled) {
 		return true;
 	}
@@ -384,15 +380,13 @@ static bool odWindow_wait_step(odWindow* window) {
 	return true;
 }
 bool odWindow_step(odWindow* window) {
-	if (!odWindow_get_open(window)) {
-		OD_ERROR("!window->is_open");
+	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
 		return false;
 	}
 
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		if (!odWindow_handle_event(window, &event)) {
-			OD_ERROR("odWindow_handle_event failed");
+		if (!OD_CHECK(odWindow_handle_event(window, &event))) {
 			return false;
 		}
 
@@ -409,14 +403,12 @@ bool odWindow_step(odWindow* window) {
 		{test_size,0,0, 0,0xff,0,0xff,  0,0},
 	};
 	const int32_t test_vertices_count = 3;
-	if (!odRenderer_draw(&window->renderer, test_vertices, test_vertices_count, viewport)) {
-		OD_ERROR("odRenderer_draw failed");
+	if (!OD_CHECK(odRenderer_draw(&window->renderer, test_vertices, test_vertices_count, viewport))) {
 		return false;
 	}
 	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));
 
-	if (!odWindow_wait_step(window)) {
-		OD_ERROR("failed waiting for next step");
+	if (!OD_CHECK(odWindow_wait_step(window))) {
 		return false;
 	}
 
@@ -444,5 +436,4 @@ odWindow& odWindow::operator=(odWindow&& other) {
 }
 odWindow::~odWindow() {
 	odWindow_destroy(this);
-	SDL_Quit();
 }

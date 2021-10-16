@@ -21,13 +21,14 @@ static bool odClient_run() {
 	OD_INFO("Running client");
 
 	odWindow window;
-	if (!odWindow_init(&window, odWindowSettings_get_defaults())) {
-		OD_ERROR("odWindow_init failed");
+	if (!OD_CHECK(odWindow_init(&window, odWindowSettings_get_defaults()))) {
 		return false;
 	}
 
 	while (odWindow_get_open(&window)) {
-		odWindow_step(&window);
+		if (!OD_CHECK(odWindow_step(&window))) {
+			return false;
+		}
 	}
 
 	OD_INFO("Client exited normally");
@@ -95,7 +96,10 @@ int main(int argc, char** argv) {
 
 	if (run_tests) {
 #if (OD_BUILD_TESTS)
-		odTest_run(test_filter);
+		if (!odTest_run(test_filter)) {
+			OD_ERROR("tests failed");
+			return 1;
+		}
 #else
 		OD_ERROR("tests excluded from build");
 		return 1;
@@ -104,6 +108,7 @@ int main(int argc, char** argv) {
 
 	if (run_client) {
 		if (!odClient_run()) {
+			OD_ERROR("client ended with error");
 			return 1;
 		}
 	}

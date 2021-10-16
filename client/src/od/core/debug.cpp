@@ -6,7 +6,8 @@
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
-static int32_t odLogContextLevelMax = OD_LOG_LEVEL_DEFAULT;
+static int32_t odLogContext_level_max = OD_LOG_LEVEL_DEFAULT;
+static int32_t odLog_logged_error_count = 0;
 
 static void od_error() {  // empty function for catching any error in a debugger
 }
@@ -58,8 +59,12 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 	}
 #endif
 
-	if (log_level > odLogContextLevelMax) {
+	if ((log_level > odLogContext_level_max) || log_level <= OD_LOG_LEVEL_NONE) {
 		return;
+	}
+
+	if (log_level <= OD_LOG_LEVEL_WARN) {
+		odLog_logged_error_count++;
 	}
 
 	fprintf(stdout, "[%s %s:%d] %s() ", odLogLevel_get_name(log_level), logger.file, logger.line, logger.function);
@@ -79,11 +84,20 @@ void odLog_log(odLogContext logger, int32_t log_level, const char* format_c_str,
 	odLog_log_variadic(logger, log_level, format_c_str, args);
 	va_end(args);
 }
+bool odLog_check(odLogContext logger, bool success, const char* expression_c_str) {
+	if (!success) {
+		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Check failed: \"%s\"", expression_c_str);
+	}
+	return success;
+}
 void odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
 	if (!success) {
 		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Assertion failed: \"%s\"", expression_c_str);
 		exit(EXIT_FAILURE);
 	}
+}
+int32_t odLog_get_logged_error_count() {
+	return odLog_logged_error_count;
 }
 const char* odLogLevel_get_name(int32_t log_level) {
 	switch (log_level) {
@@ -106,12 +120,12 @@ const char* odLogLevel_get_name(int32_t log_level) {
 			return "trace";
 		}
 		default: {
-			return "<unknown log level>";
+			return "<log_level_unknown>";
 		}
 	}
 }
-int32_t odLogLevel_get_max(void) {
-	return odLogContextLevelMax;
+int32_t odLogLevel_get_max() {
+	return odLogContext_level_max;
 }
 void odLogLevel_set_max(int32_t log_level) {
 	if (log_level < OD_LOG_LEVEL_NONE) {
@@ -124,7 +138,7 @@ void odLogLevel_set_max(int32_t log_level) {
 		log_level = OD_LOG_LEVEL_LAST;
 	}
 
-	odLogContextLevelMax = log_level;
+	odLogContext_level_max = log_level;
 }
 
 odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {
@@ -143,8 +157,7 @@ char* odDebugString_allocate(int32_t size) {
 
 	int32_t allocated_size = size + alignment - 1;
 
-	if (allocated_size > OD_TEMP_BUFFER_CAPACITY) {
-		OD_ERROR("insufficient capacity, allocated_size=%d", allocated_size);
+	if (!OD_CHECK(allocated_size <= OD_TEMP_BUFFER_CAPACITY)) {
 		return nullptr;
 	}
 
@@ -164,9 +177,8 @@ char* odDebugString_allocate(int32_t size) {
 	return aligned_allocation;
 }
 const char* odDebugString_format_variadic(const char* format_c_str, va_list args) {
-	if (format_c_str == nullptr) {
-		OD_ERROR("format_c_str=nullptr");
-		return "<format_c_str=nullptr>";
+	if (!OD_CHECK(format_c_str != nullptr)) {
+		return "<format_str_null>";
 	}
 
 	va_list compute_size_args = {};
@@ -176,9 +188,8 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 	int required_count = vsnprintf(/*buffer*/ nullptr, /*bufsz*/ 0, format_c_str, compute_size_args);
 	va_end(compute_size_args);
 
-	if (required_count < 0) {
-		OD_ERROR("failed to parse debug format string, format_c_str=%s", format_c_str);
-		return "<failed to parse debug format string>";
+	if (!OD_CHECK(required_count >= 0)) {
+		return "<debug_str_format_failed>";
 	}
 
 	// sprintf-style calls always write null-terminated, but count in return value
@@ -186,13 +197,8 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 	int32_t required_capacity = static_cast<int32_t>(required_count) + 1;
 
 	void* allocation = odDebugString_allocate(required_capacity);
-	if (allocation == nullptr) {
-		OD_ERROR(
-			"failed to allocate debug string, format_c_str=%s, "
-			"required_capacity=%d",
-			format_c_str,
-			required_capacity);
-		return "<failed to allocate debug string>";
+	if (!OD_CHECK(allocation != nullptr)) {
+		return "<debug_str_allocation_failed>";
 	}
 
 	char* allocation_str = static_cast<char*>(allocation);

@@ -26,7 +26,7 @@ void odTest_add(const char* suite, const char* name, void (*fn)(), int32_t filte
 	odTest_test_count++;
 }
 
-void odTest_run(int32_t filters) {
+bool odTest_run(int32_t filters) {
 	OD_INFO("Running tests");
 	if (filters & OD_TEST_FILTER_SLOW) {
 		OD_INFO("Skipping slow tests");
@@ -41,13 +41,22 @@ void odTest_run(int32_t filters) {
 
 		OD_DEBUG("Starting test %s.%s", odTest_tests[i].suite, odTest_tests[i].name);
 
+		int32_t logged_errors_before = odLog_get_logged_error_count();
 		odTest_tests[i].fn();
 		run_test_count++;
+		int32_t logged_errors_after = odLog_get_logged_error_count();
+		int32_t new_errors = logged_errors_after - logged_errors_before;
 
-		OD_DEBUG("Completed test %s.%s", odTest_tests[i].suite, odTest_tests[i].name);
+		if (new_errors) {
+			OD_ERROR("Failed test %s.%s", odTest_tests[i].suite, odTest_tests[i].name);
+			return false;
+		}
+
+		OD_DEBUG("Completed test successfully %s.%s", odTest_tests[i].suite, odTest_tests[i].name);
 	}
 
 	OD_INFO("Tests run successfully, %d run of %d", run_test_count, odTest_test_count);
+	return true;
 }
 
 odTestInstantiator::odTestInstantiator(const char* suite, const char* name, void (*fn)(), int32_t filters) {

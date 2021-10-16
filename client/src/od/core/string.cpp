@@ -5,28 +5,18 @@
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 
-#define OD_STRING_ERROR(STRING, ...) \
-	OD_ERROR("%s", odString_get_debug_string(STRING)); \
-	OD_ERROR(__VA_ARGS__)
-
 const odType* odString_get_type_constructor(void) {
 	return odType_get<odString>();
 }
 bool odString_copy(odString* string, const odString* src_string) {
 	OD_TRACE("string=%s, src_string=%s", odString_get_debug_string(string), odString_get_debug_string(src_string));
 
-	if (!odString_get_valid(string)) {
-		OD_STRING_ERROR(string, "not valid");
+	if (!OD_DEBUG_CHECK(odString_get_valid(string))
+		|| !OD_DEBUG_CHECK(odString_get_valid(src_string))) {
 		return false;
 	}
 
-	if (!odString_get_valid(src_string)) {
-		OD_STRING_ERROR(src_string, "not valid");
-		return false;
-	}
-
-	if (!odString_set_count(string, 0)) {
-		OD_STRING_ERROR(string, "failed to set count");
+	if (!OD_CHECK(odString_set_count(string, 0))) {
 		return false;
 	}
 
@@ -74,42 +64,41 @@ bool odString_push(odString* string, const char* str, int32_t str_count) {
 bool odString_push_formatted_variadic(odString* string, const char* format_c_str, va_list args) {
 	OD_TRACE("string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str ? format_c_str : "<nullptr>");
 
-	if (!odString_get_valid(string)) {
-		OD_STRING_ERROR(string, "not valid");
-		return false;
-	}
-
-	if (format_c_str == nullptr) {
-		OD_STRING_ERROR(string, "format_c_str=nullptr");
+	if (!OD_DEBUG_CHECK(odString_get_valid(string))
+		|| !OD_DEBUG_CHECK(format_c_str != nullptr)) {
 		return false;
 	}
 
 	va_list args_copy = {};
 	va_copy(args_copy, args);
-	int required_count = vsnprintf(nullptr, 0, format_c_str, args_copy);
+	int32_t added_required_count = static_cast<int32_t>(vsnprintf(nullptr, 0, format_c_str, args_copy));
 	va_end(args_copy);
-	if (required_count < 0) {
-		OD_STRING_ERROR(string, "vsnprintf size estimation failed, format_c_str=%s", format_c_str);
+	if (!OD_CHECK(added_required_count >= 0)) {
 		return false;
 	}
 
 	// sprintf-style calls always write null-terminated, but count in return value
 	// excludes null terminator
-	int32_t required_capacity = static_cast<int32_t>(required_count) + 1;
-
+	int32_t added_required_capacity = added_required_count + 1;
 	int32_t old_count = odString_get_count(string);
-	odString_ensure_capacity(string, old_count + required_capacity);
-	odString_set_count(string, old_count + static_cast<int32_t>(required_count));
+	int32_t new_required_capacity = old_count + added_required_capacity;
+	if (!OD_CHECK(odString_ensure_capacity(string, new_required_capacity))) {
+		return false;
+	}
+	
+	int32_t new_required_count = old_count + added_required_count;
+	if (!OD_CHECK(odString_set_count(string, new_required_count))) {
+		return false;
+	}
+	
 	char* dest_str = odString_get(string, old_count);
 
-	int written_count = vsnprintf(dest_str, static_cast<size_t>(required_capacity), format_c_str, args);
-	if (written_count < 0) {
-		OD_STRING_ERROR(string, "vsnprintf failed, format_c_str=%s", format_c_str);
+	int32_t written_count = static_cast<int32_t>(vsnprintf(dest_str, static_cast<size_t>(added_required_capacity), format_c_str, args));
+	if (!OD_CHECK(written_count >= 0)) {
 		return false;
 	}
 
-	if (written_count != required_count) {
-		OD_STRING_ERROR(string,  "less bytes written than expected, format_c_str=%s", format_c_str);
+	if (!OD_CHECK(written_count == added_required_count)) {
 		return false;
 	}
 
@@ -126,8 +115,7 @@ bool odString_push_formatted(odString* string, const char* format_c_str, ...) {
 bool odString_ensure_null_terminated(odString* string) {
 	OD_TRACE("string=%s", odString_get_debug_string(string));
 
-	if (!odString_get_valid(string)) {
-		OD_STRING_ERROR(string, "not valid");
+	if (!OD_DEBUG_CHECK(odString_get_valid(string))) {
 		return false;
 	}
 
@@ -140,13 +128,11 @@ bool odString_ensure_null_terminated(odString* string) {
 bool odString_get_null_terminated(const odString* string) {
 	OD_TRACE("string=%s", odString_get_debug_string(string));
 
-	if (string == nullptr) {
-		OD_STRING_ERROR(string, "string=nullptr");
+	if (!OD_DEBUG_CHECK(odString_get_valid(string))) {
 		return false;
 	}
 
 	if (odString_get_count(string) == 0) {
-		OD_TRACE("empty string, string=%s", odString_get_debug_string(string));
 		return false;
 	}
 
@@ -170,14 +156,14 @@ odString::odString(odString&& other) : odString{} {
 	odString_swap(this, &other);
 }
 odString::odString(const odString& other) : odString{} {
-	odString_copy(this, &other);
+	OD_ASSERT(odString_copy(this, &other));
 }
 odString& odString::operator=(odString&& other) {
 	odString_swap(this, &other);
 	return *this;
 }
 odString& odString::operator=(const odString& other) {
-	odString_copy(this, &other);
+	OD_ASSERT(odString_copy(this, &other));
 
 	return *this;
 }

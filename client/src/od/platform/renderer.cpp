@@ -91,7 +91,7 @@ static bool odRenderer_glew_init() {
 	OD_TRACE("glewInit");
 	glewExperimental = true;
 	GLenum glewResult = glewInit();
-	if (glewResult != GLEW_OK) {
+	if (!OD_CHECK(glewResult == GLEW_OK)) {
 		OD_ERROR("glewInit() failed with error: %s", glewGetErrorString(glewResult));
 		return false;
 	}
@@ -112,13 +112,8 @@ const struct odType* odRenderer_get_type_constructor() {
 	return odType_get<odRenderer>();
 }
 void odRenderer_swap(odRenderer* renderer1, odRenderer* renderer2) {
-	if (renderer1 == nullptr) {
-		OD_ERROR("renderer1=nullptr");
-		return;
-	}
-
-	if (renderer2 == nullptr) {
-		OD_ERROR("renderer2=nullptr");
+	if (!OD_DEBUG_CHECK(renderer1 != nullptr)
+		|| !OD_DEBUG_CHECK(renderer2 != nullptr)) {
 		return;
 	}
 
@@ -223,22 +218,13 @@ static bool odGl_getProgramOk(odLogContext logger, GLuint program) {
 	return true;
 }
 bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
-	if (renderer == nullptr) {
-		OD_ERROR("renderer=nullptr");
-		return false;
-	}
-
-	if (render_context_native == nullptr) {
-		OD_ERROR("render_context_native=nullptr");
-		return false;
-	}
-
-	if (SDL_GL_GetCurrentContext() != render_context_native) {
-		OD_ERROR("render_context_native doesn't match what is set");
-		return false;
-	}
-
 	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));
+
+	if (!OD_DEBUG_CHECK(renderer != nullptr)
+		|| !OD_DEBUG_CHECK(render_context_native != nullptr)
+		|| !OD_DEBUG_CHECK(SDL_GL_GetCurrentContext() == render_context_native)) {
+		return false;
+	}
 
 	odRenderer_destroy(renderer);
 
@@ -367,8 +353,8 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 
 	OD_TRACE("configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
 
-	if (odLogLevel_get_max() >= OD_LOG_LEVEL_DEBUG) {
-		// technically requires opengl 4.1 but we asked for 3.2; it's okay for this call to fail.
+	if (OD_BUILD_DEBUG) {
+		// technically requires opengl 4.1 but we asked for 3.2. it's okay for this call to fail.
 		glEnable(GL_DEBUG_OUTPUT);
 	}
 
@@ -389,17 +375,15 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 	return true;
 }
 void odRenderer_destroy(odRenderer* renderer) {
-	if (renderer == nullptr) {
-		OD_ERROR("renderer=nullptr");
+	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));
+
+	if (!OD_DEBUG_CHECK(renderer != nullptr)) {
 		return;
 	}
 
 	if (SDL_GL_GetCurrentContext() != renderer->render_context_native) {
-		OD_TRACE("render_context_native not set, renderer=%s", odRenderer_get_debug_string(renderer));
 		return;
 	}
-
-	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));
 
 	if (renderer->src_texture != 0) {
 		OD_TRACE("deleting src_texture=%u", renderer->src_texture);
@@ -456,23 +440,10 @@ void odRenderer_destroy(odRenderer* renderer) {
 }
 // static bool odRenderer_update_src_texture(odRenderer* renderer, ...)
 bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t vertices_count, odRenderViewport viewport /*, odRenderTarget *target*/) {
-	if (renderer == nullptr) {
-		OD_ERROR("renderer=nullptr");
-		return false;
-	}
-
-	if (vertices == nullptr) {
-		OD_ERROR("vertices == nullptr");
-		return false;
-	}
-
-	if (vertices_count < 0) {
-		OD_ERROR("vertices_count < 0");
-		return false;
-	}
-
-	if (SDL_GL_GetCurrentContext() != renderer->render_context_native) {
-		OD_ERROR("rendererer context doesn't match current context");
+	if (!OD_DEBUG_CHECK(renderer != nullptr)
+		|| !OD_DEBUG_CHECK(vertices != nullptr)
+		|| !OD_DEBUG_CHECK(vertices_count >= 0)
+		|| !OD_DEBUG_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return false;
 	}
 
