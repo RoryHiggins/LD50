@@ -16,6 +16,8 @@
 #include <od/core/vertex.h>
 #include <od/core/type.hpp>
 
+#define OD_RENDERER_MESSAGE_BUFFER_SIZE 4096
+
 /*https://www.khronos.org/registry/OpenGL/specs/gl/glspec21.pdf*/
 /*https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.20.pdf*/
 static const char odRenderer_vertex_shader[] = R"(
@@ -51,10 +53,7 @@ static const char odRenderer_fragment_shader[] = R"(
 	}
 )";
 
-#if OD_BUILD_DEBUG_LOG
-#define OD_RENDERER_MESSAGE_BUFFER_SIZE 4096
-
-static GLchar odRenderer_message_buffer[OD_RENDERER_MESSAGE_BUFFER_SIZE];
+static GLchar odRenderer_message_buffer[OD_RENDERER_MESSAGE_BUFFER_SIZE] = {};
 
 static void odRenderer_gl_message_callback(
 	GLenum /*source*/,
@@ -79,7 +78,7 @@ static void odRenderer_gl_message_callback(
 		return;
 	}
 }
-#endif
+
 static bool odRenderer_glew_init() {
 	static bool is_initialized = false;
 
@@ -97,12 +96,10 @@ static bool odRenderer_glew_init() {
 		return false;
 	}
 
-#if OD_BUILD_DEBUG_LOG
-	if (GLEW_ARB_debug_output) {
+	if (OD_BUILD_DEBUG && GLEW_ARB_debug_output) {
 		OD_DEBUG("GLEW_ARB_debug_output=true, registering gl debug log callback");
 		glDebugMessageCallbackARB(odRenderer_gl_message_callback, nullptr);
 	}
-#endif
 
 	is_initialized = true;
 
@@ -458,7 +455,7 @@ void odRenderer_destroy(odRenderer* renderer) {
 	}
 }
 // static bool odRenderer_update_src_texture(odRenderer* renderer, ...)
-bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t vertices_count, odViewport viewport /*, odRenderTarget *target*/) {
+bool odRenderer_draw(odRenderer* renderer, const odVertex* vertices, int32_t vertices_count, odRenderViewport viewport /*, odRenderTarget *target*/) {
 	if (renderer == nullptr) {
 		OD_ERROR("renderer=nullptr");
 		return false;

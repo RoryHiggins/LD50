@@ -401,7 +401,7 @@ bool odWindow_step(odWindow* window) {
 		}
 	}
 
-	struct odViewport viewport{0, 0, window->settings.width, window->settings.height};
+	struct odRenderViewport viewport{0, 0, window->settings.width, window->settings.height};
 	const float test_size = 64.0f;
 	const odVertex test_vertices[] = {
 		{0,0,0,         0,0xff,0,0xff,  0,0},

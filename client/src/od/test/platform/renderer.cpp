@@ -3,7 +3,7 @@
 #include <od/platform/window.hpp>
 #include <od/test/test.hpp>
 
-OD_TEST(odRenderer, init_destroy_with_window) {
+OD_TEST_FILTERED(odRenderer, init_destroy_with_window, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_get_open(&window));
@@ -21,7 +21,7 @@ OD_TEST(odRenderer, init_destroy_with_window) {
 	// test double destroy
 	odRenderer_destroy(&renderer);
 }
-OD_TEST(odRenderer, destroy_after_window_destroy) {
+OD_TEST_FILTERED(odRenderer, destroy_after_window_destroy, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_get_open(&window));
@@ -36,7 +36,7 @@ OD_TEST(odRenderer, destroy_after_window_destroy) {
 		odRenderer_destroy(&renderer_2);
 	}
 }
-OD_TEST(odRenderer, init_invalid_context_fails) {
+OD_TEST_FILTERED(odRenderer, init_invalid_context_fails, OD_TEST_FILTER_SLOW) {
 	odRenderer renderer;
 
 	{
@@ -44,7 +44,7 @@ OD_TEST(odRenderer, init_invalid_context_fails) {
 		OD_ASSERT(!odRenderer_init(&renderer, nullptr));
 	}
 }
-OD_TEST(odRenderer, destroy_without_window) {
+OD_TEST_FILTERED(odRenderer, destroy_without_window, OD_TEST_FILTER_SLOW) {
 	odRenderer renderer;
 	odRenderer_destroy(&renderer);
 }

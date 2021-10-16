@@ -37,8 +37,7 @@ static odString odFile_test_create_random_name() {
 
 	return name;
 }
-
-OD_TEST(odFile, open) {
+OD_TEST_FILTERED(odFile, open, OD_TEST_FILTER_SLOW) {
 	odString file_name = odFile_test_create_random_name();
 	const char* file_name_str = odString_get_const(&file_name, 0);
 	OD_ASSERT(file_name_str != nullptr);
@@ -59,7 +58,7 @@ OD_TEST(odFile, open) {
 
 	OD_ASSERT(odFilePath_delete(file_name_str));
 }
-OD_TEST(odFile, write_read_delete) {
+OD_TEST_FILTERED(odFile, write_read_delete, OD_TEST_FILTER_SLOW) {
 	odString file_name = odFile_test_create_random_name();
 	const char* file_name_str = odString_get_const(&file_name, 0);
 
@@ -83,7 +82,7 @@ OD_TEST(odFile, write_read_delete) {
 
 	OD_ASSERT(odFilePath_delete(file_name_str));
 }
-OD_TEST(odFilePath, write_read_delete) {
+OD_TEST_FILTERED(odFilePath, write_read_delete, OD_TEST_FILTER_SLOW) {
 	odString file_name = odFile_test_create_random_name();
 	const char* file_name_str = odString_get_const(&file_name, 0);
 

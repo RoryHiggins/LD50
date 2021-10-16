@@ -1,10 +1,12 @@
 #pragma once
 
 #include <od/test/module.h>
-
-#if OD_BUILD_TESTS
 #include <od/core/debug.h>
 
-OD_API_C OD_ENGINE_TEST_MODULE void odTest_add(const char* suite, const char* name, void (*fn)());
-OD_API_C OD_ENGINE_TEST_MODULE void odTest_run_all(void);
+#define OD_TEST_FILTER_NONE 0
+#define OD_TEST_FILTER_SLOW 1
+
+#if OD_BUILD_TESTS
+OD_API_C OD_ENGINE_TEST_MODULE void odTest_add(const char* suite, const char* name, void (*fn)(), int32_t filters);
+OD_API_C OD_ENGINE_TEST_MODULE void odTest_run(int32_t filters);
 #endif

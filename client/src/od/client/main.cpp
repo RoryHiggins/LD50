@@ -37,6 +37,7 @@ static bool odClient_run() {
 int main(int argc, char** argv) {
 	bool run_tests = false;
 	bool run_client = true;
+	int32_t test_filter = OD_TEST_FILTER_NONE;
 
 	const uint32_t MAX_ARG_SIZE = 64;
 	if (argv == nullptr) {
@@ -48,7 +49,7 @@ int main(int argc, char** argv) {
 			OD_ERROR("Unexpected empty argument");
 			return 1;
 		}
-		if (OD_BUILD_DEBUG_LOG) {
+		if (OD_BUILD_DEBUG) {
 			if (strncmp(argv[i], "--trace", MAX_ARG_SIZE) == 0) {
 				odLogLevel_set_max(OD_LOG_LEVEL_TRACE);
 				continue;
@@ -58,8 +59,28 @@ int main(int argc, char** argv) {
 				continue;
 			}
 		}
+		if (strncmp(argv[i], "--no-log", MAX_ARG_SIZE) == 0) {
+				odLogLevel_set_max(OD_LOG_LEVEL_NONE);
+				continue;
+			}
 		if (strncmp(argv[i], "--test", MAX_ARG_SIZE) == 0) {
 			run_tests = true;
+			continue;
+		}
+		if (strncmp(argv[i], "--no-test", MAX_ARG_SIZE) == 0) {
+			run_tests = false;
+			continue;
+		}
+		if (strncmp(argv[i], "--slow-test", MAX_ARG_SIZE) == 0) {
+			test_filter = test_filter & ~OD_TEST_FILTER_SLOW;
+			continue;
+		}
+		if (strncmp(argv[i], "--no-slow-test", MAX_ARG_SIZE) == 0) {
+			test_filter = test_filter | OD_TEST_FILTER_SLOW;
+			continue;
+		}
+		if (strncmp(argv[i], "--client", MAX_ARG_SIZE) == 0) {
+			run_client = true;
 			continue;
 		}
 		if (strncmp(argv[i], "--no-client", MAX_ARG_SIZE) == 0) {
@@ -74,7 +95,7 @@ int main(int argc, char** argv) {
 
 	if (run_tests) {
 #if (OD_BUILD_TESTS)
-		odTest_run_all();
+		odTest_run(test_filter);
 #else
 		OD_ERROR("tests excluded from build");
 		return 1;

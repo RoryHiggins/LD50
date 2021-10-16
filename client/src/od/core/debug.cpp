@@ -34,7 +34,7 @@ odLogContext odLogContext_construct(const char* file, const char* function, int3
 	return odLogContext{file, function, line};
 }
 void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args) {
-#if OD_BUILD_DEBUG_LOG
+#if OD_BUILD_DEBUG
 	// preconditions without assertions/logs special case here:
 	// asserts can call this function, which might cause infinite recursion, so we
 	// play it safe and printf

@@ -8,9 +8,15 @@ find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 enable_testing()
 
-set(OD_BUILD_LOG 1 CACHE BOOL "Build with logging")
-set(OD_BUILD_DEBUG_LOG 1 CACHE BOOL "Build with debug logging")
-set(OD_BUILD_TESTS 1 CACHE BOOL "Build with tests")
+
+set(OD_BUILD_DEBUG_DEFAULT 1)
+if(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
+	set(OD_BUILD_DEBUG_DEFAULT 0)
+else()
+endif()
+set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build for debugging")
+set(OD_BUILD_LOG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with logging")
+set(OD_BUILD_TESTS ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with tests")
 
 if ("${SDL2_LIBRARIES}" STREQUAL "")
 	set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
@@ -71,7 +77,7 @@ foreach(od_target ${od_targets})
 	target_compile_definitions(
 		${od_target} PUBLIC
 		OD_BUILD_LOG=${OD_BUILD_LOG}
-		OD_BUILD_DEBUG_LOG=${OD_BUILD_DEBUG_LOG}
+		OD_BUILD_DEBUG=${OD_BUILD_DEBUG}
 		OD_BUILD_TESTS=${OD_BUILD_TESTS})
 endforeach()
 

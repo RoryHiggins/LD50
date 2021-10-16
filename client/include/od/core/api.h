@@ -10,8 +10,8 @@
 #define OD_BUILD_LOG 1
 #endif
 
-#if !defined(OD_BUILD_DEBUG_LOG)
-#define OD_BUILD_DEBUG_LOG 1
+#if !defined(OD_BUILD_DEBUG)
+#define OD_BUILD_DEBUG 1
 #endif
 
 #if !defined(OD_BUILD_TESTS)
@@ -29,13 +29,4 @@
 #define OD_API_C extern "C"
 #else
 #define OD_API_C
-#endif
-
-// Sanity checks
-#if OD_BUILD_DEBUG_LOG && !OD_BUILD_LOG
-#error Cannot build debug logging without logging
-#endif
-
-#if OD_BUILD_TESTS && !OD_BUILD_LOG
-#error Cannot build tests without logging
 #endif
