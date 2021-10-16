@@ -14,6 +14,7 @@
 
 #define OD_LOGGER() odLogContext_construct(__FILE__, __func__, static_cast<int32_t>(__LINE__))
 
+#define OD_CHECK(EXPR) odLog_check(OD_LOGGER(), EXPR, #EXPR)
 #define OD_ASSERT(EXPR) odLog_assert(OD_LOGGER(), EXPR, #EXPR)
 
 #if OD_BUILD_LOG
@@ -37,9 +38,11 @@
 #endif
 
 #if OD_BUILD_DEBUG
-#define OD_DEBUG_ASSERT(EXPR) odLog_assert(OD_LOGGER(), EXPR, #EXPR)
+#define OD_DEBUG_ASSERT(EXPR) OD_ASSERT(EXPR)
+#define OD_DEBUG_CHECK(EXPR) OD_CHECK(EXPR)
 #else
 #define OD_DEBUG_ASSERT(EXPR)
+#define OD_DEBUG_CHECK(EXPR) true
 #endif
 
 struct odLogContext {
@@ -48,20 +51,39 @@ struct odLogContext {
 	int32_t line;
 };
 
-OD_API_C OD_ENGINE_CORE_MODULE const char* odLogLevel_get_name(int32_t log_level);
-OD_API_C OD_ENGINE_CORE_MODULE int32_t odLogLevel_get_max(void);
-OD_API_C OD_ENGINE_CORE_MODULE void odLogLevel_set_max(int32_t log_level);
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+const char* odLogLevel_get_name(int32_t log_level);
 
-OD_API_C OD_ENGINE_CORE_MODULE struct odLogContext
-odLogContext_construct(const char* file, const char* function, int32_t line);
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+int32_t odLogLevel_get_max(void);
 
-OD_API_C OD_ENGINE_CORE_MODULE void
-odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args);
-OD_API_C OD_ENGINE_CORE_MODULE void
-odLog_log(struct odLogContext logger, int32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
-OD_API_C OD_ENGINE_CORE_MODULE void
-odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+int32_t odLog_get_logged_error_count(void);
 
-OD_API_C OD_ENGINE_CORE_MODULE char* odDebugString_allocate(int32_t size);
-OD_API_C OD_ENGINE_CORE_MODULE const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
-OD_API_C OD_ENGINE_CORE_MODULE const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+OD_API_C OD_ENGINE_CORE_MODULE
+void odLogLevel_set_max(int32_t log_level);
+
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+struct odLogContext odLogContext_construct(const char* file, const char* function, int32_t line);
+
+OD_API_C OD_ENGINE_CORE_MODULE
+void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args);
+
+OD_API_C OD_ENGINE_CORE_MODULE
+void odLog_log(struct odLogContext logger, int32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
+
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+bool odLog_check(struct odLogContext logger, bool success, const char* expression_c_str);
+
+OD_API_C OD_ENGINE_CORE_MODULE
+void odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
+
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+char* odDebugString_allocate(int32_t size);
+
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
+
+OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+

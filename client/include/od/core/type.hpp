@@ -23,7 +23,7 @@ void odType_destruct_fn(void* ptr, int32_t count) {
 	}
 }
 template <typename T>
-const odType* odType_get() {
+OD_API_NODISCARD const odType* odType_get() {
 	static const odType type{
 		/*size*/ sizeof(T),
 		/*default_construct_fn*/ odType_default_construct_fn<T>,

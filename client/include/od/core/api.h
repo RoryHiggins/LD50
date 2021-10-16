@@ -18,15 +18,28 @@
 #define OD_BUILD_TESTS 1
 #endif
 
+
 // Api decorators
+#if defined(__cplusplus)
+#define OD_API_C extern "C"
+#else
+#define OD_API_C
+#endif
+
 #if defined(__clang__) || defined(__GNUC__)
 #define OD_API_PRINTF(FORMAT_ARG, VA_ARG) __attribute__((format(printf, FORMAT_ARG, VA_ARG)))
 #else
 #define OD_API_PRINTF(FORMAT_ARG, VA_ARG)
 #endif
 
-#if defined(__cplusplus)
-#define OD_API_C extern "C"
+#if __cplusplus >= 201703L
+#define OD_API_NODISCARD [[nodiscard]]
+#elif defined(__clang__) || defined(__GNUC__)
+#define OD_API_NODISCARD __attribute__((warn_unused_result))
 #else
-#define OD_API_C
+#define OD_API_NODISCARD
 #endif
+
+
+// Common decorators
+#define OD_MAYBE_UNUSED(EXPR) static_cast<void>(EXPR)
