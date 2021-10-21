@@ -3,11 +3,12 @@
 #include <od/core/module.h>
 
 #define OD_LOG_LEVEL_NONE 0
-#define OD_LOG_LEVEL_ERROR 1
-#define OD_LOG_LEVEL_WARN 2
-#define OD_LOG_LEVEL_INFO 3
-#define OD_LOG_LEVEL_DEBUG 4
-#define OD_LOG_LEVEL_TRACE 5
+#define OD_LOG_LEVEL_FATAL 1
+#define OD_LOG_LEVEL_ERROR 2
+#define OD_LOG_LEVEL_WARN 3
+#define OD_LOG_LEVEL_INFO 4
+#define OD_LOG_LEVEL_DEBUG 5
+#define OD_LOG_LEVEL_TRACE 6
 #define OD_LOG_LEVEL_FIRST 1
 #define OD_LOG_LEVEL_LAST 6
 #define OD_LOG_LEVEL_DEFAULT OD_LOG_LEVEL_INFO
@@ -51,19 +52,19 @@ struct odLogContext {
 	int32_t line;
 };
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 const char* odLogLevel_get_name(int32_t log_level);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 int32_t odLogLevel_get_max(void);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 int32_t odLog_get_logged_error_count(void);
 
 OD_API_C OD_ENGINE_CORE_MODULE
 void odLogLevel_set_max(int32_t log_level);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 struct odLogContext odLogContext_construct(const char* file, const char* function, int32_t line);
 
 OD_API_C OD_ENGINE_CORE_MODULE
@@ -72,18 +73,18 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 OD_API_C OD_ENGINE_CORE_MODULE
 void odLog_log(struct odLogContext logger, int32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 bool odLog_check(struct odLogContext logger, bool success, const char* expression_c_str);
 
 OD_API_C OD_ENGINE_CORE_MODULE
 void odLog_assert(struct odLogContext logger, bool success, const char* expression_c_str);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 char* odDebugString_allocate(int32_t size);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 const char* odDebugString_format_variadic(const char* format_c_str, va_list args);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
 

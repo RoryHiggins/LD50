@@ -18,7 +18,7 @@ struct odVertex {
 	int32_t v;
 };
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_API_NODISCARD
+OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 const char* odVertex_get_debug_string(const struct odVertex* vertex);
 
 OD_API_C OD_ENGINE_CORE_MODULE

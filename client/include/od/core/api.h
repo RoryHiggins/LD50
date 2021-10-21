@@ -32,14 +32,14 @@
 #define OD_API_PRINTF(FORMAT_ARG, VA_ARG)
 #endif
 
-#if __cplusplus >= 201703L
-#define OD_API_NODISCARD [[nodiscard]]
-#elif defined(__clang__) || defined(__GNUC__)
-#define OD_API_NODISCARD __attribute__((warn_unused_result))
-#else
-#define OD_API_NODISCARD
-#endif
-
 
 // Common decorators
-#define OD_MAYBE_UNUSED(EXPR) static_cast<void>(EXPR)
+#if __cplusplus >= 201703L
+#define OD_NO_DISCARD [[nodiscard]]
+#elif defined(__clang__) || defined(__GNUC__)
+#define OD_NO_DISCARD __attribute__((warn_unused_result))
+#else
+#define OD_NO_DISCARD
+#endif
+
+#define OD_MAYBE_UNUSED(LVALUE) static_cast<void>(LVALUE)

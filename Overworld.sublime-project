@@ -21,11 +21,11 @@
 			"shell_cmd": "ninja -C .\\build\\DEBUG od_client.exe && .\\build\\DEBUG\\od_client.exe --test",
 			"working_dir": "$project_path",
 		},
-		// {
-		// 	"name": "Debug run tests + client with gdb and trace logging",
-		// 	"shell_cmd": "start make gdb CLIENT_ARGS='--test --trace'",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "Debug run tests + client with gdb",
+			"shell_cmd": "start make gdb CLIENT_ARGS='--test --debug'",
+			"working_dir": "$project_path",
+		},
 		// {
 		// 	"name": "Run client",
 		// 	"shell_cmd": "ninja -C .\\build\\DEBUG od_client.exe && .\\build\\DEBUG\\od_client.exe",
