@@ -11,7 +11,7 @@
 
 static int32_t odSDL_init_counter = 0;
 
-static bool odSDL_init_reentrant() {
+OD_NO_DISCARD static bool odSDL_init_reentrant() {
 	OD_DEBUG("odSDL_init_counter=%d", odSDL_init_counter);
 
 	if (odSDL_init_counter == 0) {
@@ -203,7 +203,7 @@ void odWindow_destroy(odWindow* window) {
 
 	window->is_open = false;
 }
-bool odWindow_get_open(const odWindow* window) {
+bool odWindow_get_valid(const odWindow* window) {
 	if (!OD_DEBUG_CHECK(window != nullptr)) {
 		return false;
 	}
@@ -221,7 +221,7 @@ bool odWindow_get_open(const odWindow* window) {
 bool odWindow_set_visible(odWindow* window, bool is_visible) {
 	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
 
-	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
+	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
 		return false;
 	}
 
@@ -242,7 +242,7 @@ bool odWindow_set_visible(odWindow* window, bool is_visible) {
 bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
 
-	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
+	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
 		return false;
 	}
 
@@ -255,8 +255,8 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 
 	return true;
 }
-static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
-	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
+OD_NO_DISCARD static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
+	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
 		return false;
 	}
 
@@ -346,8 +346,8 @@ static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
 	}
 	return true;
 }
-static bool odWindow_wait_step(odWindow* window) {
-	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
+OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
+	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
 		return false;
 	}
 
@@ -382,7 +382,7 @@ static bool odWindow_wait_step(odWindow* window) {
 	return true;
 }
 bool odWindow_step(odWindow* window) {
-	if (!OD_DEBUG_CHECK(odWindow_get_open(window))) {
+	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
 		return false;
 	}
 
@@ -392,20 +392,24 @@ bool odWindow_step(odWindow* window) {
 			return false;
 		}
 
-		if (!odWindow_get_open(window)) {
+		if (!odWindow_get_valid(window)) {
 			return true;
 		}
+	}
+
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, odColor_white))) {
+		return false;
 	}
 
 	struct odViewport viewport{0, 0, window->settings.width, window->settings.height};
 	const int32_t test_offset = 64;
 	const int32_t test_size = 64;
-	const odVertex test_vertices[] = {
-		{test_offset,test_offset,0,           0x00,0xff,0x00,0xff,  0,0},
+	const int32_t test_vertices_count = 3;
+	const odVertex test_vertices[test_vertices_count] = {
+		{test_offset,test_offset,0, 0x00,0xff,0x00,0xff,  0,0},
 		{test_offset,test_offset+test_size,0, 0x00,0xff,0x00,0xff,  0,0},
 		{test_offset+test_size,test_offset,0, 0x00,0xff,0x00,0xff,  0,0},
 	};
-	const int32_t test_vertices_count = 3;
 	if (!OD_CHECK(odRenderer_draw(&window->renderer, test_vertices, test_vertices_count, viewport))) {
 		return false;
 	}

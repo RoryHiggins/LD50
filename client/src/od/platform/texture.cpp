@@ -20,6 +20,15 @@ void odTexture_swap(odTexture* texture1, odTexture* texture2) {
 	memcpy(static_cast<void*>(texture1), static_cast<void*>(texture2), sizeof(odTexture));
 	memcpy(static_cast<void*>(texture2), static_cast<void*>(&texture_swap), sizeof(odTexture));
 }
+bool odTexture_get_valid(const odTexture* texture) {
+	if ((texture == nullptr)
+		|| (texture->render_context_native == nullptr)
+		|| (texture->texture == 0)) {
+		return false;
+	}
+
+	return true;
+}
 const char* odTexture_get_debug_string(const odTexture* texture) {
 	if (texture == nullptr) {
 		return "odTexture{this=nullptr}";
@@ -63,6 +72,11 @@ bool odTexture_init(odTexture* texture, void* render_context_native, const odCol
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	if (!odGl_check_ok(OD_LOGGER())) {
+		OD_ERROR("OpenGL error creating texture, texture=%s", odTexture_get_debug_string(texture));
+		return false;
+	}
+
 	return true;
 }
 bool odTexture_init_blank(struct odTexture* texture, void* render_context_native) {
@@ -70,18 +84,17 @@ bool odTexture_init_blank(struct odTexture* texture, void* render_context_native
 	return odTexture_init(texture, render_context_native, &default_texture, 1, 1);
 }
 void odTexture_destroy(odTexture* texture) {
-	if (!OD_DEBUG_CHECK(texture != nullptr)
-		|| (!OD_CHECK((texture->render_context_native == nullptr)
-					  || (SDL_GL_GetCurrentContext() == texture->render_context_native)))) {
+	if (!OD_DEBUG_CHECK(texture != nullptr)) {
 		return;
 	}
 
-	if (texture->texture != 0) {
-		OD_TRACE("deleting texture=%u", texture->texture);
+	bool context_current = (
+		(texture->render_context_native != nullptr) && OD_CHECK(SDL_GL_GetCurrentContext() == texture->render_context_native));
 
+	if (context_current && (texture->texture != 0)) {
 		glDeleteTextures(1, &texture->texture);
-		texture->texture = 0;
 	}
+	texture->texture = 0;
 
 	texture->render_context_native = nullptr;
 }
@@ -101,8 +114,15 @@ void odTexture_get_size(const odTexture* texture, int32_t* out_opt_width, int32_
 
 	int width = 0;
 	int height = 0;
+	glBindTexture(GL_TEXTURE_2D, texture->texture);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, /*mipLevel*/ 0, GL_TEXTURE_WIDTH, &width);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, /*mipLevel*/ 0, GL_TEXTURE_HEIGHT, &height);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (!odGl_check_ok(OD_LOGGER())) {
+		OD_ERROR("OpenGL error creating texture, texture=%s", odTexture_get_debug_string(texture));
+		return;
+	}
 
 	*out_opt_width = static_cast<int32_t>(width);
 	*out_opt_height = static_cast<int32_t>(height);

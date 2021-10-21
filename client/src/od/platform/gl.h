@@ -8,3 +8,16 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+
+#include <od/platform/module.h>
+
+struct odLogContext;
+
+OD_API_C OD_ENGINE_PLATFORM_MODULE OD_NO_DISCARD
+bool odGl_check_ok(struct odLogContext logger);
+
+OD_API_C OD_ENGINE_PLATFORM_MODULE OD_NO_DISCARD
+bool odGl_check_shader_ok(struct odLogContext logger, GLuint shader);
+
+OD_API_C OD_ENGINE_PLATFORM_MODULE OD_NO_DISCARD
+bool odGl_check_program_ok(struct odLogContext logger, GLuint program);

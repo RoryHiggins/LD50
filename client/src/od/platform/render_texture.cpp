@@ -21,6 +21,15 @@ void odRenderTexture_swap(odRenderTexture* render_texture1, odRenderTexture* ren
 	memcpy(static_cast<void*>(render_texture1), static_cast<void*>(render_texture2), sizeof(odTexture));
 	memcpy(static_cast<void*>(render_texture2), static_cast<void*>(&render_texture_swap), sizeof(odTexture));
 }
+bool odRenderTexture_get_valid(const odRenderTexture* render_texture) {
+	if ((render_texture == nullptr)
+		|| (!odTexture_get_valid(&render_texture->texture))
+		|| (render_texture->fbo == 0)) {
+		return false;
+	}
+
+	return true;
+}
 const char* odRenderTexture_get_debug_string(const odRenderTexture* render_texture) {
 	if (render_texture == nullptr) {
 		return "odTexture{this=nullptr}";

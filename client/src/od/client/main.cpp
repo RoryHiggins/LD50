@@ -17,7 +17,7 @@ const char* __asan_default_options() {
 			":detect_leaks=1");
 }
 
-static bool odClient_run() {
+OD_NO_DISCARD static bool odClient_run() {
 	OD_INFO("Running client");
 
 	odWindow window;
@@ -25,7 +25,7 @@ static bool odClient_run() {
 		return false;
 	}
 
-	while (odWindow_get_open(&window)) {
+	while (odWindow_get_valid(&window)) {
 		if (!OD_CHECK(odWindow_step(&window))) {
 			return false;
 		}

@@ -59,7 +59,7 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 	}
 #endif
 
-	if ((log_level > odLogContext_level_max) || log_level <= OD_LOG_LEVEL_NONE) {
+	if ((log_level > odLogContext_level_max) || (log_level <= OD_LOG_LEVEL_NONE)) {
 		return;
 	}
 
@@ -92,7 +92,7 @@ bool odLog_check(odLogContext logger, bool success, const char* expression_c_str
 }
 void odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
 	if (!success) {
-		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Assertion failed: \"%s\"", expression_c_str);
+		odLog_log(logger, OD_LOG_LEVEL_FATAL, "Assertion failed: \"%s\"", expression_c_str);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -103,6 +103,9 @@ const char* odLogLevel_get_name(int32_t log_level) {
 	switch (log_level) {
 		case OD_LOG_LEVEL_NONE: {
 			return "NONE ";
+		}
+		case OD_LOG_LEVEL_FATAL: {
+			return "FATAL";
 		}
 		case OD_LOG_LEVEL_ERROR: {
 			return "ERROR";
