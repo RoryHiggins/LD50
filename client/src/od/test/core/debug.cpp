@@ -12,7 +12,7 @@ OD_TEST(odLog, get_level_name) {
 
 		const char* level_name = "";
 		{
-			odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
+			odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 			level_name = odLogLevel_get_name(level);
 		}
 		OD_ASSERT(level_name != nullptr);

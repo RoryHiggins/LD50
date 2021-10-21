@@ -60,7 +60,7 @@ OD_TEST(odAllocation, get) {
 OD_TEST(odAllocation, get_unallocated_fails) {
 	odAllocation allocation;
 	{
-		odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
+		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 		OD_ASSERT(odAllocation_get(&allocation) == nullptr);
 	}
 }

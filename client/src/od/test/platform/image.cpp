@@ -52,7 +52,7 @@ OD_TEST(odImage, read_invalid_png_fails) {
 
 	odImage image;
 	{
-		odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
+		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 		OD_ASSERT(!odImage_read_png(&image, static_cast<const void*>(invalid_png), invalid_png_size));
 	}
 }

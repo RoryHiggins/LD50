@@ -142,7 +142,7 @@ OD_TEST(odArray, get_out_of_bounds_fails) {
 	OD_ASSERT(odArray_set_count(&array, 2));
 	OD_ASSERT(odArray_get(&array, 0) != nullptr);
 	{
-		odLogLevelScoped suppress_logs{OD_LOG_LEVEL_NONE};
+		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 		OD_ASSERT(odArray_get(&array, 2) == nullptr);
 	}
 }
