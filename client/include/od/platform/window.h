@@ -8,8 +8,10 @@ struct odWindow;
 
 struct odWindowSettings {
 	const char* caption;
-	int32_t width;
-	int32_t height;
+	int32_t window_width;
+	int32_t window_height;
+	int32_t game_width;
+	int32_t game_height;
 	int32_t fps_limit;
 	bool is_fps_limit_enabled;
 	bool is_vsync_enabled;

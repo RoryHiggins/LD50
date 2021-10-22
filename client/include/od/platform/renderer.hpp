@@ -11,7 +11,6 @@ struct odRenderer {
 	uint32_t vertex_shader;
 	uint32_t fragment_shader;
 	uint32_t program;
-	odTexture src_texture;
 
 	OD_ENGINE_PLATFORM_MODULE odRenderer();
 	OD_ENGINE_PLATFORM_MODULE odRenderer(odRenderer&& other);

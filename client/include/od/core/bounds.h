@@ -2,9 +2,9 @@
 
 #include <od/core/module.h>
 
-struct odViewport {
+struct odBounds {
 	int32_t x;
 	int32_t y;
-	int32_t w;
-	int32_t h;
+	int32_t width;
+	int32_t height;
 };

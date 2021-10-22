@@ -5,9 +5,14 @@
 
 #include <od/core/debug.h>
 #include <od/core/color.h>
+#include <od/core/bounds.h>
+#include <od/core/transform.h>
 #include <od/core/vertex.h>
-#include <od/core/viewport.h>
 #include <od/core/type.hpp>
+#include <od/platform/texture.h>
+#include <od/platform/render_texture.h>
+#include <od/platform/render_state.h>
+#include <od/platform/renderer.h>
 
 static int32_t odSDL_init_counter = 0;
 
@@ -44,8 +49,10 @@ static void odSDL_destroy_reentrant() {
 odWindowSettings odWindowSettings_get_defaults() {
 	return odWindowSettings{
 		/*caption*/ "",
-		/*width*/ 640,
-		/*height*/ 480,
+		/*window_width*/ 640,
+		/*window_height*/ 480,
+		/*game_width*/ 160,
+		/*game_height*/ 120,
 		/*fps_limit*/ 60,
 		/*is_fps_limit_enabled*/ true,
 		/*is_vsync_enabled"*/ true,
@@ -126,8 +133,8 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 		window->settings.caption,
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
-		static_cast<int>(window->settings.width),
-		static_cast<int>(window->settings.height),
+		static_cast<int>(window->settings.window_width),
+		static_cast<int>(window->settings.window_height),
 		static_cast<SDL_WindowFlags>(
 			(window->settings.is_visible ? SDL_WINDOW_SHOWN : SDL_WINDOW_HIDDEN)
 			| SDL_WINDOW_OPENGL
@@ -165,6 +172,14 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 		return false;
 	}
 
+	if (!OD_CHECK(odTexture_init_blank(&window->texture, window->render_context_native))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odRenderTexture_init(&window->game_render_texture, window->render_context_native, window->settings.game_width, window->settings.game_height))) {
+		return false;
+	}
+
 	window->is_open = true;
 
 	OD_DEBUG("Window opened");
@@ -177,6 +192,14 @@ void odWindow_destroy(odWindow* window) {
 	if (!OD_DEBUG_CHECK(window != nullptr)) {
 		return;
 	}
+
+	OD_TRACE("Destroying render texture");
+
+	odRenderTexture_destroy(&window->game_render_texture);
+
+	OD_TRACE("Destroying texture");
+
+	odTexture_destroy(&window->texture);
 
 	OD_TRACE("Destroying renderer");
 
@@ -246,12 +269,12 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 		return false;
 	}
 
-	if ((width == window->settings.width) && (height == window->settings.height)) {
+	if ((width == window->settings.window_width) && (height == window->settings.window_height)) {
 		return true;
 	}
 
-	window->settings.width = width;
-	window->settings.height = height;
+	window->settings.window_width = width;
+	window->settings.window_height = height;
 
 	return true;
 }
@@ -397,22 +420,50 @@ bool odWindow_step(odWindow* window) {
 		}
 	}
 
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, odColor_white))) {
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, odColor_white, &window->game_render_texture))) {
 		return false;
 	}
 
-	struct odViewport viewport{0, 0, window->settings.width, window->settings.height};
-	const int32_t test_offset = 64;
-	const int32_t test_size = 64;
-	const int32_t test_vertices_count = 3;
-	const odVertex test_vertices[test_vertices_count] = {
-		{test_offset,test_offset,0, 0x00,0xff,0x00,0xff,  0,0},
-		{test_offset,test_offset+test_size,0, 0x00,0xff,0x00,0xff,  0,0},
-		{test_offset+test_size,test_offset,0, 0x00,0xff,0x00,0xff,  0,0},
-	};
-	if (!OD_CHECK(odRenderer_draw(&window->renderer, test_vertices, test_vertices_count, viewport))) {
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, odColor_white, nullptr))) {
 		return false;
 	}
+
+	const int32_t test_offset = 0;
+	const int32_t test_width = window->settings.game_width;
+	const int32_t test_height = window->settings.game_height;
+	const int32_t test_vertices_count = 3;
+	const odVertex test_vertices[test_vertices_count] = {
+		{test_offset,test_offset,0, 0xff,0x00,0x00,0xff,  0,0},
+		{test_offset,test_offset+test_height,0, 0xff,0x00,0x00,0xff,  0,0},
+		{test_offset+test_width,test_offset,0, 0xff,0x00,0x00,0xff,  0,0}
+	};
+
+	odRenderState view_state{
+		odTransform_create_view_transform(window->settings.game_width, window->settings.game_height),
+		odTransform_identity,
+		odBounds{0, 0, window->settings.game_width, window->settings.game_height},
+		&window->texture,
+		&window->game_render_texture
+	};
+	if (!OD_CHECK(odRenderer_draw_vertices(&window->renderer, view_state, test_vertices, test_vertices_count))) {
+		return false;
+	}
+
+	odRenderState window_state{
+		odTransform_create_view_transform(window->settings.game_width, window->settings.game_height),
+		odTransform_identity,
+		odBounds{0, 0, window->settings.window_width, window->settings.window_height},
+		odRenderTexture_get_texture(&window->game_render_texture),
+		nullptr
+	};
+	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, window_state, nullptr))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odRenderer_flush(&window->renderer))) {
+		return false;
+	}
+
 	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));
 
 	if (!OD_CHECK(odWindow_wait_step(window))) {
@@ -432,7 +483,8 @@ const odWindowSettings* odWindow_get_settings(const odWindow* window) {
 
 odWindow::odWindow()
 	: window_native{nullptr}, render_context_native{nullptr}, is_sdl_init{false},
-	  is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()} {
+	  is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()},
+	  texture{}, game_render_texture{} {
 }
 odWindow::odWindow(odWindow&& other) : odWindow{} {
 	odWindow_swap(this, &other);
