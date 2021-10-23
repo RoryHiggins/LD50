@@ -1,14 +1,20 @@
-#include <od/platform/renderer.hpp>
+#include <od/platform/rendering.hpp>
 
 #include <cstring>
+
+#define GLEW_STATIC
+#define GL_GLEXT_PROTOTYPES 1
+#define GL3_PROTOTYPES 1
+#include <GL/glew.h>
+#include <GL/glu.h>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 
 #include <od/core/debug.h>
 #include <od/core/primitive.h>
 #include <od/core/containers.hpp>
-#include <od/platform/gl.h>
-#include <od/platform/texture.hpp>
-#include <od/platform/render_texture.hpp>
-#include <od/platform/render_state.h>
+
 
 #define OD_RENDERER_MESSAGE_BUFFER_SIZE 4096
 
@@ -16,6 +22,7 @@ struct odRendererScope {
 	odRendererScope(struct odRenderer* renderer);
 	~odRendererScope();
 };
+
 
 /*https://www.khronos.org/registry/OpenGL/specs/gl/glspec21.pdf*/
 /*https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.20.pdf*/
@@ -52,8 +59,8 @@ static const char odRenderer_fragment_shader[] = R"(
 		gl_FragColor = texture2D(src_texture, uv).rgba * col;
 	}
 )";
-
 static GLchar odRenderer_message_buffer[OD_RENDERER_MESSAGE_BUFFER_SIZE] = {};
+
 
 static void odRenderer_gl_message_callback(
 	GLenum /*source*/,
@@ -78,6 +85,339 @@ static void odRenderer_gl_message_callback(
 		return;
 	}
 }
+OD_NO_DISCARD static bool odGl_check_ok(odLogContext logger) {
+	bool ok = true;
+	GLenum gl_error = GL_NO_ERROR;
+
+	for (gl_error = glGetError(); gl_error != GL_NO_ERROR; gl_error = glGetError()) {
+		if (OD_BUILD_LOG) {
+			odLog_log(
+				logger,
+				OD_LOG_LEVEL_ERROR,
+				"OpenGL error, gl_error=%u, message=%s",
+				gl_error,
+				gluErrorString(gl_error));
+		}
+		ok = false;
+	}
+
+	OD_MAYBE_UNUSED(logger);
+
+	return ok;
+}
+OD_NO_DISCARD static bool odGl_check_shader_ok(odLogContext logger, GLuint shader) {
+	if (!odGl_check_ok(logger)) {
+		return false;
+	}
+
+	GLint compile_status = GL_FALSE;
+
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
+
+	if (compile_status == GL_FALSE) {
+		if (OD_BUILD_LOG) {
+			GLsizei msg_max_size = 0;
+			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &msg_max_size);
+			if (msg_max_size > OD_RENDERER_MESSAGE_BUFFER_SIZE) {
+				msg_max_size = OD_RENDERER_MESSAGE_BUFFER_SIZE;
+			}
+
+			memset(static_cast<void*>(odRenderer_message_buffer), 0, static_cast<size_t>(msg_max_size));
+			glGetShaderInfoLog(shader, msg_max_size, nullptr, odRenderer_message_buffer);
+
+			odLog_log(
+				logger,
+				OD_LOG_LEVEL_ERROR,
+				"OpenGL shader compilation failed, error=\n%s",
+				static_cast<const char*>(odRenderer_message_buffer));
+		}
+		return false;
+	}
+
+	OD_MAYBE_UNUSED(logger);
+
+	return true;
+}
+OD_NO_DISCARD static bool odGl_check_program_ok(odLogContext logger, GLuint program) {
+	if (!odGl_check_ok(logger)) {
+		return false;
+	}
+
+	GLint link_status = GL_FALSE;
+
+	glGetProgramiv(program, GL_LINK_STATUS, &link_status);
+
+	if (link_status == GL_FALSE) {
+		if (OD_BUILD_LOG) {
+			GLsizei msg_max_size = 0;
+			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &msg_max_size);
+			if (msg_max_size > OD_RENDERER_MESSAGE_BUFFER_SIZE) {
+				msg_max_size = OD_RENDERER_MESSAGE_BUFFER_SIZE;
+			}
+
+			memset(static_cast<void*>(odRenderer_message_buffer), 0, static_cast<size_t>(msg_max_size));
+			glGetProgramInfoLog(program, msg_max_size, nullptr, odRenderer_message_buffer);
+
+			odLog_log(
+				logger,
+				OD_LOG_LEVEL_ERROR,
+				"OpenGL program linking failed, error=\n%s",
+				static_cast<const char*>(odRenderer_message_buffer));
+		}
+		return false;
+	}
+
+	OD_MAYBE_UNUSED(logger);
+
+	return true;
+}
+
+
+const struct odType* odTexture_get_type_constructor() {
+	return odType_get<odTexture>();
+}
+void odTexture_swap(odTexture* texture1, odTexture* texture2) {
+	if (!OD_DEBUG_CHECK(texture1 != nullptr)
+		|| !OD_DEBUG_CHECK(texture2 != nullptr)) {
+		return;
+	}
+
+	odTexture texture_swap;
+	memcpy(static_cast<void*>(&texture_swap), static_cast<void*>(texture1), sizeof(odTexture));
+	memcpy(static_cast<void*>(texture1), static_cast<void*>(texture2), sizeof(odTexture));
+	memcpy(static_cast<void*>(texture2), static_cast<void*>(&texture_swap), sizeof(odTexture));
+}
+bool odTexture_get_valid(const odTexture* texture) {
+	if ((texture == nullptr)
+		|| (texture->render_context_native == nullptr)
+		|| (texture->texture == 0)) {
+		return false;
+	}
+
+	return true;
+}
+const char* odTexture_get_debug_string(const odTexture* texture) {
+	if (texture == nullptr) {
+		return "odTexture{this=nullptr}";
+	}
+
+	return odDebugString_format(
+		"odTexture{this=%p, render_context_native=%p, texture=%u}",
+		static_cast<const void*>(texture),
+		static_cast<const void*>(texture->render_context_native),
+		texture->texture
+	);
+}
+bool odTexture_init(odTexture* texture, void* render_context_native, const odColor* opt_pixels, int32_t width, int32_t height) {
+	if (!OD_DEBUG_CHECK(texture != nullptr)
+		|| !OD_DEBUG_CHECK(width >= 0)
+		|| !OD_DEBUG_CHECK(height >= 0)
+		|| !OD_CHECK(render_context_native != nullptr)
+		|| !OD_CHECK(SDL_GL_GetCurrentContext() == render_context_native)) {
+		return false;
+	}
+
+	odTexture_destroy(texture);
+
+	texture->render_context_native = render_context_native;
+
+	glGenTextures(1, &texture->texture);
+	glBindTexture(GL_TEXTURE_2D, texture->texture);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		/*level*/ 0,
+		/*internalformat*/ GL_RGBA,
+		static_cast<GLsizei>(width),
+		static_cast<GLsizei>(height),
+		/*border*/ 0,
+		/*format*/ GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		opt_pixels
+	);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (!odGl_check_ok(OD_LOGGER())) {
+		OD_ERROR("OpenGL error creating texture, texture=%s", odTexture_get_debug_string(texture));
+		return false;
+	}
+
+	return true;
+}
+bool odTexture_init_blank(struct odTexture* texture, void* render_context_native) {
+	const odColor default_texture = {0xFF, 0xFF, 0xFF,0xFF};
+	return odTexture_init(texture, render_context_native, &default_texture, 1, 1);
+}
+void odTexture_destroy(odTexture* texture) {
+	if (!OD_DEBUG_CHECK(texture != nullptr)) {
+		return;
+	}
+
+	bool context_current = (
+		(texture->render_context_native != nullptr) && OD_CHECK(SDL_GL_GetCurrentContext() == texture->render_context_native));
+
+	if (context_current && (texture->texture != 0)) {
+		glDeleteTextures(1, &texture->texture);
+	}
+	texture->texture = 0;
+
+	texture->render_context_native = nullptr;
+}
+void odTexture_get_size(const odTexture* texture, int32_t* out_opt_width, int32_t* out_opt_height) {
+	int32_t unused;
+	out_opt_width = (out_opt_width != nullptr) ? out_opt_width : &unused;
+	out_opt_height = (out_opt_height != nullptr) ? out_opt_height : &unused;
+
+	*out_opt_width = 0;
+	*out_opt_height = 0;
+
+	if (!OD_DEBUG_CHECK(texture != nullptr)
+		|| !OD_DEBUG_CHECK(texture->texture != 0)
+		|| !OD_CHECK(SDL_GL_GetCurrentContext() == texture->render_context_native)) {
+		return;
+	}
+
+	int width = 0;
+	int height = 0;
+	glBindTexture(GL_TEXTURE_2D, texture->texture);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, /*mipLevel*/ 0, GL_TEXTURE_WIDTH, &width);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, /*mipLevel*/ 0, GL_TEXTURE_HEIGHT, &height);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (!odGl_check_ok(OD_LOGGER())) {
+		OD_ERROR("OpenGL error creating texture, texture=%s", odTexture_get_debug_string(texture));
+		return;
+	}
+
+	*out_opt_width = static_cast<int32_t>(width);
+	*out_opt_height = static_cast<int32_t>(height);
+}
+
+odTexture::odTexture()
+	: render_context_native{nullptr}, texture{0} {
+}
+odTexture::odTexture(odTexture&& other) {
+	odTexture_swap(this, &other);
+}
+odTexture& odTexture::operator=(odTexture&& other) {
+	odTexture_swap(this, &other);
+	return *this;
+}
+odTexture::~odTexture() {
+	odTexture_destroy(this);
+}
+
+
+const struct odType* odRenderTexture_get_type_constructor() {
+	return odType_get<odRenderTexture>();
+}
+void odRenderTexture_swap(odRenderTexture* render_texture1, odRenderTexture* render_texture2) {
+	if (!OD_DEBUG_CHECK(render_texture1 != nullptr)
+		|| !OD_DEBUG_CHECK(render_texture2 != nullptr)) {
+		return;
+	}
+
+	odTexture render_texture_swap;
+	memcpy(static_cast<void*>(&render_texture_swap), static_cast<void*>(render_texture1), sizeof(odTexture));
+	memcpy(static_cast<void*>(render_texture1), static_cast<void*>(render_texture2), sizeof(odTexture));
+	memcpy(static_cast<void*>(render_texture2), static_cast<void*>(&render_texture_swap), sizeof(odTexture));
+}
+bool odRenderTexture_get_valid(const odRenderTexture* render_texture) {
+	if ((render_texture == nullptr)
+		|| (!odTexture_get_valid(&render_texture->texture))
+		|| (render_texture->fbo == 0)) {
+		return false;
+	}
+
+	return true;
+}
+const char* odRenderTexture_get_debug_string(const odRenderTexture* render_texture) {
+	if (render_texture == nullptr) {
+		return "odTexture{this=nullptr}";
+	}
+
+	return odDebugString_format(
+		"odTexture{this=%p, texture=%s, fbo=%u}",
+		static_cast<const void*>(render_texture),
+		odTexture_get_debug_string(&render_texture->texture),
+		render_texture->fbo
+	);
+}
+bool odRenderTexture_init(odRenderTexture* render_texture, void* render_context_native, int32_t width, int32_t height) {
+	if (!OD_DEBUG_CHECK(render_texture != nullptr)
+		|| !OD_DEBUG_CHECK(width >= 0)
+		|| !OD_DEBUG_CHECK(height >= 0)
+		|| !OD_CHECK(render_context_native != nullptr)
+		|| !OD_CHECK(SDL_GL_GetCurrentContext() == render_context_native)) {
+		return false;
+	}
+
+	odRenderTexture_destroy(render_texture);
+
+	// allocate
+	int32_t texture_pixels_count = width * height;
+	odArray texture_pixels_buffer{odType_get<odColor>()};
+	if (!OD_CHECK(odArray_set_count(&texture_pixels_buffer, texture_pixels_count))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odTexture_init(&render_texture->texture, render_context_native, nullptr, width, height))) {
+		return false;
+	}
+
+	glGenFramebuffers(1, &render_texture->fbo);
+
+	glBindTexture(GL_TEXTURE_2D, render_texture->texture.texture);
+	glBindFramebuffer(GL_FRAMEBUFFER, render_texture->fbo);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_texture->texture.texture, 0);  
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return true;
+}
+void odRenderTexture_destroy(odRenderTexture* render_texture) {
+	if (!OD_DEBUG_CHECK(render_texture != nullptr)) {
+		return;
+	}
+
+	if (render_texture->fbo != 0) {
+		glDeleteFramebuffers(1, &render_texture->fbo);
+
+		render_texture->fbo = 0;
+	}
+
+	odTexture_destroy(&render_texture->texture);
+}
+struct odTexture* odRenderTexture_get_texture(odRenderTexture* render_texture) {
+	if (!OD_DEBUG_CHECK(render_texture != nullptr)
+		|| !OD_DEBUG_CHECK(render_texture->fbo != 0)) {
+		return nullptr;
+	}
+
+	return &render_texture->texture;
+}
+const struct odTexture* odRenderTexture_get_texture_const(const odRenderTexture* render_texture) {
+	return odRenderTexture_get_texture(const_cast<odRenderTexture*>(render_texture));
+}
+
+odRenderTexture::odRenderTexture()
+	: texture{}, fbo{0} {
+}
+odRenderTexture::odRenderTexture(odRenderTexture&& other) {
+	odRenderTexture_swap(this, &other);
+}
+odRenderTexture& odRenderTexture::operator=(odRenderTexture&& other) {
+	odRenderTexture_swap(this, &other);
+	return *this;
+}
+odRenderTexture::~odRenderTexture() {
+	odRenderTexture_destroy(this);
+}
+
 
 OD_NO_DISCARD static bool odRenderer_glew_init() {
 	static bool is_initialized = false;
@@ -107,7 +447,6 @@ OD_NO_DISCARD static bool odRenderer_glew_init() {
 
 	return true;
 }
-
 const odType* odRenderer_get_type_constructor() {
 	return odType_get<odRenderer>();
 }
@@ -151,92 +490,6 @@ const char* odRenderer_get_debug_string(const odRenderer* renderer) {
 		renderer->vbo,
 		renderer->vao
 	);
-}
-bool odGl_check_ok(odLogContext logger) {
-	bool ok = true;
-	GLenum gl_error = GL_NO_ERROR;
-
-	for (gl_error = glGetError(); gl_error != GL_NO_ERROR; gl_error = glGetError()) {
-		if (OD_BUILD_LOG) {
-			odLog_log(
-				logger,
-				OD_LOG_LEVEL_ERROR,
-				"OpenGL error, gl_error=%u, message=%s",
-				gl_error,
-				gluErrorString(gl_error));
-		}
-		ok = false;
-	}
-
-	OD_MAYBE_UNUSED(logger);
-
-	return ok;
-}
-bool odGl_check_shader_ok(odLogContext logger, GLuint shader) {
-	if (!odGl_check_ok(logger)) {
-		return false;
-	}
-
-	GLint compile_status = GL_FALSE;
-
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
-
-	if (compile_status == GL_FALSE) {
-		if (OD_BUILD_LOG) {
-			GLsizei msg_max_size = 0;
-			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &msg_max_size);
-			if (msg_max_size > OD_RENDERER_MESSAGE_BUFFER_SIZE) {
-				msg_max_size = OD_RENDERER_MESSAGE_BUFFER_SIZE;
-			}
-
-			memset(static_cast<void*>(odRenderer_message_buffer), 0, static_cast<size_t>(msg_max_size));
-			glGetShaderInfoLog(shader, msg_max_size, nullptr, odRenderer_message_buffer);
-
-			odLog_log(
-				logger,
-				OD_LOG_LEVEL_ERROR,
-				"OpenGL shader compilation failed, error=\n%s",
-				static_cast<const char*>(odRenderer_message_buffer));
-		}
-		return false;
-	}
-
-	OD_MAYBE_UNUSED(logger);
-
-	return true;
-}
-bool odGl_check_program_ok(odLogContext logger, GLuint program) {
-	if (!odGl_check_ok(logger)) {
-		return false;
-	}
-
-	GLint link_status = GL_FALSE;
-
-	glGetProgramiv(program, GL_LINK_STATUS, &link_status);
-
-	if (link_status == GL_FALSE) {
-		if (OD_BUILD_LOG) {
-			GLsizei msg_max_size = 0;
-			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &msg_max_size);
-			if (msg_max_size > OD_RENDERER_MESSAGE_BUFFER_SIZE) {
-				msg_max_size = OD_RENDERER_MESSAGE_BUFFER_SIZE;
-			}
-
-			memset(static_cast<void*>(odRenderer_message_buffer), 0, static_cast<size_t>(msg_max_size));
-			glGetProgramInfoLog(program, msg_max_size, nullptr, odRenderer_message_buffer);
-
-			odLog_log(
-				logger,
-				OD_LOG_LEVEL_ERROR,
-				"OpenGL program linking failed, error=\n%s",
-				static_cast<const char*>(odRenderer_message_buffer));
-		}
-		return false;
-	}
-
-	OD_MAYBE_UNUSED(logger);
-
-	return true;
 }
 bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));

@@ -2,9 +2,7 @@
 
 #include <od/platform/window.h>
 
-#include <od/platform/renderer.hpp>
-#include <od/platform/texture.hpp>
-#include <od/platform/render_texture.hpp>
+#include <od/platform/rendering.hpp>
 
 struct odGLRenderer;
 struct odWindow {

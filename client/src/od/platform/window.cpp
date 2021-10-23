@@ -6,10 +6,7 @@
 #include <od/core/debug.h>
 #include <od/core/primitive.h>
 #include <od/core/containers.hpp>
-#include <od/platform/texture.h>
-#include <od/platform/render_texture.h>
-#include <od/platform/render_state.h>
-#include <od/platform/renderer.h>
+#include <od/platform/rendering.h>
 
 static int32_t odSDL_init_counter = 0;
 
