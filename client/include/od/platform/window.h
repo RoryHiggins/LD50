@@ -39,6 +39,9 @@ bool odWindow_init(struct odWindow* window, struct odWindowSettings settings);
 OD_API_C OD_ENGINE_PLATFORM_MODULE
 void odWindow_destroy(struct odWindow* window);
 
+OD_API_C OD_ENGINE_PLATFORM_MODULE
+void* odWindow_prepare_render_context(struct odWindow* window);
+
 OD_API_C OD_ENGINE_PLATFORM_MODULE OD_NO_DISCARD
 bool odWindow_step(struct odWindow* window);
 

@@ -58,6 +58,9 @@ const char* odLogLevel_get_name(int32_t log_level);
 OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 int32_t odLogLevel_get_max(void);
 
+OD_API_C OD_ENGINE_CORE_MODULE
+void odLog_on_error(void);
+
 OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 int32_t odLog_get_logged_error_count(void);
 
@@ -87,4 +90,3 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 
 OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
 const char* odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
-

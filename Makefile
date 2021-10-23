@@ -29,7 +29,7 @@ run: $(CLIENT)
 test: $(CLIENT)
 	$(CLIENT) --test $(CLIENT_ARGS)
 gdb: $(CLIENT)
-	gdb -ex 'break main' --ex run --args $(CLIENT) $(CLIENT_ARGS)
+	gdb -ex 'break main' -ex 'break odLog_on_error' --ex run --args $(CLIENT) $(CLIENT_ARGS)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:

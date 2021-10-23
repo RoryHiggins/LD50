@@ -9,7 +9,7 @@
 static int32_t odLogContext_level_max = OD_LOG_LEVEL_DEFAULT;
 static int32_t odLog_logged_error_count = 0;
 
-static void od_error() {  // empty function for catching any error in a debugger
+void odLog_on_error() {
 }
 
 odLogContext odLogContext_construct(const char* file, const char* function, int32_t line) {
@@ -41,6 +41,7 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 	// play it safe and printf
 	if ((format_c_str == nullptr) || (logger.file == nullptr) || (logger.function == nullptr) ||
 		((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
+		odLog_on_error();
 
 		fprintf(
 			stdout,
@@ -54,7 +55,6 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 		fputc('\n', stdout);
 		fflush(stdout);
 
-		od_error();
 		return;
 	}
 #endif
@@ -75,7 +75,7 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 	fflush(stdout);
 
 	if (log_level <= OD_LOG_LEVEL_ERROR) {
-		od_error();
+		odLog_on_error();
 	}
 }
 void odLog_log(odLogContext logger, int32_t log_level, const char* format_c_str, ...) {

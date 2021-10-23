@@ -12,9 +12,11 @@ OD_TEST_FILTERED(odWindow, init_destroy, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_get_valid(&window));
 
 	odWindow_destroy(&window);
+	OD_ASSERT(!odWindow_get_valid(&window));
 
 	// test double destroy
 	odWindow_destroy(&window);
+	OD_ASSERT(!odWindow_get_valid(&window));
 }
 OD_TEST_FILTERED(odWindow, step, OD_TEST_FILTER_SLOW) {
 	odWindow window;
@@ -63,6 +65,29 @@ OD_TEST_FILTERED(odWindow, get_open, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_get_valid(&window));
 
+	odWindow_destroy(&window);
+	OD_ASSERT(!odWindow_get_valid(&window));
+}
+OD_TEST_FILTERED(odWindow, init_multiple_windows, OD_TEST_FILTER_SLOW) {
+	odWindow window;
+	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
+	OD_ASSERT(odWindow_get_valid(&window));
+
+	odWindow window2;
+	OD_ASSERT(odWindow_init(&window2, odWindowSettings_get_headless_defaults()));
+	OD_ASSERT(odWindow_get_valid(&window2));
+
+	odWindow_destroy(&window);
+	OD_ASSERT(!odWindow_get_valid(&window));
+	OD_ASSERT(odWindow_get_valid(&window2));
+
+	odWindow_destroy(&window2);
+	OD_ASSERT(!odWindow_get_valid(&window2));
+}
+
+OD_TEST(odWindow, destroy_invalid) {
+	odWindow window;
+	OD_ASSERT(!odWindow_get_valid(&window));
 	odWindow_destroy(&window);
 	OD_ASSERT(!odWindow_get_valid(&window));
 }

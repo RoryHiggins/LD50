@@ -193,6 +193,10 @@ void odWindow_destroy(odWindow* window) {
 		return;
 	}
 
+	if (!OD_CHECK(!odWindow_get_valid(window) || odWindow_prepare_render_context(window))) {
+		return;
+	}
+
 	OD_TRACE("Destroying render texture");
 
 	odRenderTexture_destroy(&window->game_render_texture);
@@ -226,6 +230,17 @@ void odWindow_destroy(odWindow* window) {
 
 	window->is_open = false;
 }
+void* odWindow_prepare_render_context(odWindow* window) {
+	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
+		return nullptr;
+	}
+
+	if (!OD_CHECK(SDL_GL_MakeCurrent(static_cast<SDL_Window*>(window->window_native), static_cast<SDL_GLContext*>(window->render_context_native)) == 0)) {
+		return nullptr;
+	}
+
+	return window->render_context_native;
+}
 bool odWindow_get_valid(const odWindow* window) {
 	if (!OD_DEBUG_CHECK(window != nullptr)) {
 		return false;
@@ -235,7 +250,8 @@ bool odWindow_get_valid(const odWindow* window) {
 		return false;
 	}
 
-	if (!OD_DEBUG_CHECK(window->window_native != nullptr)) {
+	if (!OD_DEBUG_CHECK(window->window_native != nullptr)
+		|| !OD_DEBUG_CHECK(window->render_context_native != nullptr)) {
 		return false;
 	}
 
@@ -418,6 +434,10 @@ bool odWindow_step(odWindow* window) {
 		if (!odWindow_get_valid(window)) {
 			return true;
 		}
+	}
+
+	if (!OD_CHECK(odWindow_prepare_render_context(window))) {
+		return false;
 	}
 
 	if (!OD_CHECK(odRenderer_clear(&window->renderer, odColor_white, &window->game_render_texture))) {
