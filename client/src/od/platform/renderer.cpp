@@ -5,7 +5,7 @@
 #include <od/core/type.hpp>
 #include <od/core/debug.h>
 #include <od/core/color.h>
-#include <od/core/transform.h>
+#include <od/core/math.h>
 #include <od/core/vertex.h>
 #include <od/core/bounds.h>
 #include <od/platform/gl.h>
