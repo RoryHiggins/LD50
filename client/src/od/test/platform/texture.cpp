@@ -3,8 +3,8 @@
 #include <cstring>
 
 #include <od/core/type.hpp>
-#include <od/core/array.hpp>
 #include <od/core/primitive.h>
+#include <od/core/containers.hpp>
 #include <od/platform/window.hpp>
 #include <od/test/test.hpp>
 
