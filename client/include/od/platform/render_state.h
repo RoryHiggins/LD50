@@ -2,8 +2,7 @@
 
 #include <od/platform/module.h>
 
-#include <od/core/bounds.h>
-#include <od/core/math.h>
+#include <od/core/primitive.h>
 
 struct odTexture;
 struct odRenderTexture;

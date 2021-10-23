@@ -4,7 +4,7 @@
 
 #include <png.h>
 
-#include <od/core/color.h>
+#include <od/core/primitive.h>
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 

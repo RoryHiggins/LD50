@@ -1,9 +1,6 @@
 #include <od/platform/renderer.hpp>
 
-#include <od/core/color.h>
-#include <od/core/math.h>
-#include <od/core/bounds.h>
-#include <od/core/vertex.h>
+#include <od/core/primitive.h>
 #include <od/platform/window.hpp>
 #include <od/platform/texture.hpp>
 #include <od/platform/render_texture.hpp>

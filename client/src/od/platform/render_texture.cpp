@@ -1,7 +1,7 @@
 #include <od/platform/render_texture.hpp>
 
 #include <od/core/debug.h>
-#include <od/core/color.h>
+#include <od/core/primitive.h>
 #include <od/core/array.hpp>
 #include <od/core/type.hpp>
 #include <od/platform/gl.h>

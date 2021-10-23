@@ -4,7 +4,7 @@
 
 #include <od/core/type.hpp>
 #include <od/core/array.hpp>
-#include <od/core/color.h>
+#include <od/core/primitive.h>
 #include <od/platform/window.hpp>
 #include <od/test/test.hpp>
 
