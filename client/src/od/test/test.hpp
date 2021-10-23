@@ -6,7 +6,7 @@
 #include <od/core/debug.hpp>
 
 struct odTestInstantiator {
-	OD_ENGINE_TEST_MODULE odTestInstantiator(const char* suite, const char* name, void (*fn)(), int32_t filters);
+	OD_TEST_MODULE odTestInstantiator(const char* suite, const char* name, void (*fn)(), int32_t filters);
 };
 
 #define OD_TEST_FILTERED(TEST_SUITE, TEST_NAME, TEST_FILTERS) \

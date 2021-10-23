@@ -84,7 +84,6 @@ OD_TEST_FILTERED(odWindow, init_multiple_windows, OD_TEST_FILTER_SLOW) {
 	odWindow_destroy(&window2);
 	OD_ASSERT(!odWindow_get_valid(&window2));
 }
-
 OD_TEST(odWindow, destroy_invalid) {
 	odWindow window;
 	OD_ASSERT(!odWindow_get_valid(&window));

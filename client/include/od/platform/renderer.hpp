@@ -12,10 +12,10 @@ struct odRenderer {
 	uint32_t fragment_shader;
 	uint32_t program;
 
-	OD_ENGINE_PLATFORM_MODULE odRenderer();
-	OD_ENGINE_PLATFORM_MODULE odRenderer(odRenderer&& other);
-	OD_ENGINE_PLATFORM_MODULE odRenderer& operator=(odRenderer&& other);
-	OD_ENGINE_PLATFORM_MODULE ~odRenderer();
+	OD_PLATFORM_MODULE odRenderer();
+	OD_PLATFORM_MODULE odRenderer(odRenderer&& other);
+	OD_PLATFORM_MODULE odRenderer& operator=(odRenderer&& other);
+	OD_PLATFORM_MODULE ~odRenderer();
 
 	odRenderer(odRenderer const& other) = delete;
 	odRenderer& operator=(const odRenderer& other) = delete;

@@ -3,6 +3,6 @@
 #include <od/core/api.h>
 
 // Module settings
-#if !defined(OD_TEST_MODULE)
-#define OD_TEST_MODULE
+#if !defined(OD_ENGINE_MODULE)
+#define OD_ENGINE_MODULE
 #endif

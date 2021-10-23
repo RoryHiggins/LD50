@@ -24,33 +24,39 @@ else()
 	set(OD_SDL2_LIBRARIES "${SDL2_LIBRARIES}")
 endif()
 
-# od_engine_core
+# od_core
 # ----------
-add_library(od_engine_core)
-set_target_properties(od_engine_core PROPERTIES UNITY_BUILD 1)
+add_library(od_core)
+set_target_properties(od_core PROPERTIES UNITY_BUILD 1)
 
-# od_engine_platform
+# od_platform
 # ----------
-add_library(od_engine_platform)
+add_library(od_platform)
 # mingw32 must be before sdl2main
 if("${MINGW}" EQUAL 1)
-	target_link_libraries(od_engine_platform PRIVATE mingw32)
+	target_link_libraries(od_platform PRIVATE mingw32)
 endif()
-target_link_libraries(od_engine_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_engine_core)
+target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_core)
 # each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
-set_target_properties(od_engine_platform PROPERTIES UNITY_BUILD 0)
+set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
+
+# od_engine
+# ----------
+add_library(od_engine)
+set_target_properties(od_engine PROPERTIES UNITY_BUILD 1)
+target_link_libraries(od_engine PRIVATE od_core od_platform)
 
 # od_test
 # ----------
 add_library(od_test)
 set_target_properties(od_test PROPERTIES UNITY_BUILD 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
-target_link_libraries(od_test PRIVATE od_engine_core od_engine_platform)
+target_link_libraries(od_test PRIVATE od_core od_platform od_engine)
 
 # od_client
 # ----------
 add_executable(od_client)
 set_target_properties(od_client PROPERTIES UNITY_BUILD 1)
-target_link_libraries(od_client PRIVATE od_engine_core od_engine_platform)
+target_link_libraries(od_client PRIVATE od_core od_platform)
 if (${OD_BUILD_TESTS})
 	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 0 EXCLUDE_FROM_DEFAULT_BUILD 0)
 	target_link_libraries(od_client PRIVATE od_test)
@@ -58,7 +64,7 @@ endif()
 
 # shared parameters
 # ----------
-set(od_libs od_engine_core od_engine_platform od_test)
+set(od_libs od_core od_platform od_engine od_test)
 set(od_binaries od_client)
 set(od_targets ${od_libs} ${od_binaries})
 
@@ -88,7 +94,7 @@ if(("${BUILD_SHARED_LIBS}" EQUAL 1) AND ("${WIN32}" EQUAL 1))
 
 		foreach(od_target_compare ${od_libs})
 			string(TOUPPER ${od_target_compare} od_target_compare_uppercase)
-			set(od_target_compare_macro "${od_target_compare_uppercase}_MODULE") # e.g. OD_ENGINE_CORE_MODULE
+			set(od_target_compare_macro "${od_target_compare_uppercase}_MODULE") # e.g. OD_CORE_MODULE
 
 			if ("${od_target}" STREQUAL "${od_target_compare}")
 				target_compile_definitions(${od_target} PRIVATE "${od_target_compare_macro}=__declspec(dllexport)")

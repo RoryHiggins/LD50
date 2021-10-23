@@ -18,10 +18,10 @@ struct odWindow {
 	odTexture texture;
 	odRenderTexture game_render_texture;
 
-	OD_ENGINE_PLATFORM_MODULE odWindow();
-	OD_ENGINE_PLATFORM_MODULE odWindow(odWindow&& other);
-	OD_ENGINE_PLATFORM_MODULE odWindow& operator=(odWindow&& other);
-	OD_ENGINE_PLATFORM_MODULE ~odWindow();
+	OD_PLATFORM_MODULE odWindow();
+	OD_PLATFORM_MODULE odWindow(odWindow&& other);
+	OD_PLATFORM_MODULE odWindow& operator=(odWindow&& other);
+	OD_PLATFORM_MODULE ~odWindow();
 
 	odWindow(odWindow const& other) = delete;
 	odWindow& operator=(const odWindow& other) = delete;

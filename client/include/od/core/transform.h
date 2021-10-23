@@ -6,7 +6,7 @@ struct odTransform {
 	float matrix[16];
 };
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 struct odTransform odTransform_create(
 	float scale_x,
 	float scale_y,
@@ -15,7 +15,7 @@ struct odTransform odTransform_create(
 	float translate_y,
 	float translate_z);
 
-OD_API_C OD_ENGINE_CORE_MODULE OD_NO_DISCARD
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 struct odTransform odTransform_create_view_transform(int32_t width, int32_t height);
 
 static const struct odTransform odTransform_identity = {{
