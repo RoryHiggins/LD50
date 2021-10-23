@@ -6,7 +6,7 @@
 
 #include <od/core/primitive.h>
 #include <od/core/debug.h>
-#include <od/core/type.hpp>
+#include <od/core/containers.hpp>
 
 const odType* odImage_get_type_constructor() {
 	return odType_get<odImage>();

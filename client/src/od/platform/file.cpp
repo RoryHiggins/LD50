@@ -4,9 +4,8 @@
 #include <cstdio>
 #include <cstring>
 
-#include <od/core/type.hpp>
 #include <od/core/debug.h>
-#include <od/core/containers.h>
+#include <od/core/containers.hpp>
 
 #define OD_FILE_ERROR(FILE, ...) \
 	OD_ERROR("%s", odFile_get_debug_string(FILE)); \

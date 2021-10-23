@@ -2,7 +2,6 @@
 
 #include <od/core/debug.h>
 #include <od/core/primitive.h>
-#include <od/core/type.hpp>
 #include <od/core/containers.hpp>
 #include <od/platform/gl.h>
 #include <od/platform/texture.hpp>

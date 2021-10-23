@@ -2,7 +2,6 @@
 
 #include <cstring>
 
-#include <od/core/type.hpp>
 #include <od/test/test.hpp>
 
 OD_TEST(odAllocation, swap) {
