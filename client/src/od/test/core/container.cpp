@@ -1,14 +1,25 @@
-#include <od/core/containers.hpp>
+#include <od/core/container.hpp>
 
 #include <cstring>
 
 #include <od/test/test.hpp>
 
+template struct odArrayT<int32_t>;
+template OD_NO_DISCARD const odType* odType_get<int32_t>();
+
+OD_TEST(odType, index) {
+	 const int32_t array_size = 4;
+	 int32_t array[array_size];
+	 OD_ASSERT(
+	 	static_cast<int32_t*>(odType_index(odType_get<int32_t>(), static_cast<void*>(array), array_size))
+	 	== (array + array_size));
+}
+
 OD_TEST(odAllocation, swap) {
 	odAllocation allocation1;
 	odAllocation allocation2;
-	OD_ASSERT(odAllocation_allocate(&allocation1, 1));
-	OD_ASSERT(odAllocation_allocate(&allocation2, 2));
+	OD_ASSERT(odAllocation_init(&allocation1, 1));
+	OD_ASSERT(odAllocation_init(&allocation2, 2));
 	OD_ASSERT(odAllocation_get(&allocation1) != nullptr);
 	OD_ASSERT(odAllocation_get(&allocation2) != nullptr);
 
@@ -22,7 +33,7 @@ OD_TEST(odAllocation, swap) {
 OD_TEST(odAllocation, swap_unallocated) {
 	odAllocation allocation1;
 	odAllocation allocation2;
-	OD_ASSERT(odAllocation_allocate(&allocation1, 1));
+	OD_ASSERT(odAllocation_init(&allocation1, 1));
 	OD_ASSERT(odAllocation_get(&allocation1) != nullptr);
 	OD_ASSERT(odAllocation_get(&allocation2) == nullptr);
 
@@ -30,33 +41,38 @@ OD_TEST(odAllocation, swap_unallocated) {
 	OD_ASSERT(odAllocation_get(&allocation1) == nullptr);
 	OD_ASSERT(odAllocation_get(&allocation2) != nullptr);
 }
-OD_TEST(odAllocation, release) {
+OD_TEST(odAllocation, init_destroy) {
 	odAllocation allocation;
 
-	OD_ASSERT(odAllocation_allocate(&allocation, 1));
+	OD_ASSERT(odAllocation_init(&allocation, 1));
 	OD_ASSERT(odAllocation_get(&allocation) != nullptr);
 
-	odAllocation_release(&allocation);
-	OD_ASSERT(odAllocation_get(&allocation) == nullptr);
-}
-OD_TEST(odAllocation, allocate) {
-	int32_t testSizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
-	const int32_t numTestSizes = (sizeof(testSizes) / sizeof(testSizes[0]));
+	// test multiple init
+	OD_ASSERT(odAllocation_init(&allocation, 1));
+	OD_ASSERT(odAllocation_get(&allocation) != nullptr);
 
-	for (int32_t i = 0; i < numTestSizes; i++) {
-		odAllocation allocation;
-		OD_ASSERT(odAllocation_allocate(&allocation, testSizes[i]));
+	odAllocation_destroy(&allocation);
+	OD_ASSERT(odAllocation_get(&allocation) == nullptr);
+
+	// test multiple destroy
+	odAllocation_destroy(&allocation);
+	OD_ASSERT(odAllocation_get(&allocation) == nullptr);
+
+	// test varying sizes
+	int32_t test_sizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
+	for (int32_t test_size: test_sizes) {
+		OD_ASSERT(odAllocation_init(&allocation, test_size));
 		OD_ASSERT(odAllocation_get(&allocation) != nullptr);
 	}
 }
 OD_TEST(odAllocation, allocate_zero) {
 	odAllocation allocation;
-	OD_ASSERT(odAllocation_allocate(&allocation, 0));
+	OD_ASSERT(odAllocation_init(&allocation, 0));
 	OD_ASSERT(odAllocation_get(&allocation) == nullptr);
 }
 OD_TEST(odAllocation, get) {
 	odAllocation allocation;
-	OD_ASSERT(odAllocation_allocate(&allocation, 1));
+	OD_ASSERT(odAllocation_init(&allocation, 1));
 	OD_ASSERT(odAllocation_get(&allocation) != nullptr);
 }
 OD_TEST(odAllocation, get_unallocated_fails) {
@@ -84,7 +100,7 @@ OD_TEST(odArray, swap) {
 	OD_ASSERT(odArray_get(&array2, 0) == ptr1_old_ptr);
 	OD_ASSERT(odArray_get_count(&array2) == 1);
 }
-OD_TEST(odArray, release) {
+OD_TEST(odArray, init_destroy) {
 	odArray array{odType_get_char()};
 
 	OD_ASSERT(odArray_set_count(&array, 1));
@@ -92,18 +108,16 @@ OD_TEST(odArray, release) {
 	OD_ASSERT(odArray_get_count(&array) == 1);
 	OD_ASSERT(odArray_get_capacity(&array) >= 1);
 
-	odArray_release(&array);
+	odArray_destroy(&array);
 	OD_ASSERT(odArray_get_count(&array) == 0);
 	OD_ASSERT(odArray_get_capacity(&array) == 0);
 }
 OD_TEST(odArray, set_capacity) {
-	int32_t testSizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
-	const int32_t numTestSizes = (sizeof(testSizes) / sizeof(testSizes[0]));
-
-	for (int32_t i = 0; i < numTestSizes; i++) {
-		odArray array{odType_get_char()};
-		OD_ASSERT(odArray_set_capacity(&array, testSizes[i]));
-		OD_ASSERT(odArray_get_capacity(&array) == testSizes[i]);
+	odArray array{odType_get_char()};
+	int32_t test_sizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
+	for (int32_t test_size: test_sizes) {
+		OD_ASSERT(odArray_set_capacity(&array, test_size));
+		OD_ASSERT(odArray_get_capacity(&array) == test_size);
 		OD_ASSERT(odArray_get_count(&array) == 0);
 	}
 }
@@ -206,6 +220,51 @@ OD_TEST(odArray, get_out_of_bounds_fails) {
 	{
 		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 		OD_ASSERT(odArray_get(&array, 2) == nullptr);
+	}
+}
+
+OD_TEST(odArrayT, get) {
+	odArrayT<int32_t> array;
+	OD_ASSERT(odArray_set_count(&array, 2));
+	OD_ASSERT(array[0] != nullptr);
+
+	OD_ASSERT(*array[1] == 0);
+	*array[1] = 2;
+	OD_ASSERT(*array[1] == 2);
+}
+OD_TEST(odArrayT, foreach) {
+	odArrayT<int32_t> array;
+	OD_ASSERT(odArray_set_count(&array, 2));
+	for (int32_t elem: array) {
+		OD_ASSERT(elem == 0);
+	}
+
+	for (int32_t &elem: array) {
+		elem = 2;
+	}
+	for (int32_t elem: array) {
+		OD_ASSERT(elem == 2);
+	}
+}
+OD_TEST(odArrayT, push) {
+	odArrayT<int32_t> array;
+	array.push(2);
+	OD_ASSERT(*array[0] == 2);
+	OD_ASSERT(odArray_get_count(&array) == 1);
+}
+OD_TEST(odArrayT, get_out_of_bounds_fails) {
+	odArrayT<int32_t> array;
+	OD_ASSERT(odArray_set_count(&array, 2));
+	{
+		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
+		OD_ASSERT(array[2] == nullptr);
+	}
+	OD_ASSERT(array[0] != nullptr);
+
+	OD_ASSERT(odArray_set_count(&array, 0));
+	{
+		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
+		OD_ASSERT(array[0] == nullptr);
 	}
 }
 

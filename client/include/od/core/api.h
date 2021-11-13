@@ -18,8 +18,13 @@
 #define OD_BUILD_TESTS 1
 #endif
 
+#if !defined(OD_BUILD_EMSCRIPTEN)
+#define OD_BUILD_EMSCRIPTEN 0
+#endif
+
 
 // Api decorators
+// More may need to be done here for msvc, e.g. enforcing a calling convention
 #if defined(__cplusplus)
 #define OD_API_C extern "C"
 #else
@@ -34,7 +39,7 @@
 
 
 // Common decorators
-#if __cplusplus >= 201703L
+#if defined(__cplusplus) && (__cplusplus >= 201703L)
 #define OD_NO_DISCARD [[nodiscard]]
 #elif defined(__clang__) || defined(__GNUC__)
 #define OD_NO_DISCARD __attribute__((warn_unused_result))

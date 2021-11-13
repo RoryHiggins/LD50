@@ -5,6 +5,8 @@
 struct odTexture {
 	void* render_context_native;
 	uint32_t texture;
+	int32_t width;
+	int32_t height;
 
 	OD_PLATFORM_MODULE odTexture();
 	OD_PLATFORM_MODULE odTexture(odTexture&& other);

@@ -2,7 +2,7 @@
 
 #include <od/platform/image.h>
 
-#include <od/core/containers.hpp>
+#include <od/core/container.hpp>
 
 struct odImage {
 	struct odAllocation allocation;

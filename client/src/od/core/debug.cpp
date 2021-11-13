@@ -20,10 +20,12 @@ odLogContext odLogContext_construct(const char* file, const char* function, int3
 		function = "<function=nullptr>";
 	}
 
-	const int32_t file_prefixes_count = 2;
+	const int32_t file_prefixes_count = 4;
 	const char* file_prefixes[file_prefixes_count] = {
 		"client/src/",
-		"client/include/"
+		"client/include/",
+		"client\\src\\",
+		"client\\include\\"
 	};
 	for (int32_t i = 0; i < file_prefixes_count; i++) {
 		const char* file_relative = strstr(file, file_prefixes[i]);

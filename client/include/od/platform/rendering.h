@@ -43,8 +43,8 @@ bool odTexture_init_blank(struct odTexture* texture, void* render_context_native
 OD_API_C OD_PLATFORM_MODULE
 void odTexture_destroy(struct odTexture* texture);
 
-OD_API_C OD_PLATFORM_MODULE
-void odTexture_get_size(const struct odTexture* texture, int32_t* out_opt_width, int32_t* out_opt_height);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD
+bool odTexture_get_size(const struct odTexture* texture, int32_t* out_opt_width, int32_t* out_opt_height);
 
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD

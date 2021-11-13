@@ -1,4 +1,4 @@
-#include <od/core/containers.hpp>
+#include <od/core/container.hpp>
 
 #include <cstring>
 #include <cstdlib>
@@ -31,25 +31,49 @@ const char* odType_get_debug_string(const odType* type) {
 	);
 }
 void* odType_index(const odType* type, void* array, int32_t i) {
+	if (!OD_DEBUG_CHECK(odType_get_valid(type))
+		|| !OD_DEBUG_CHECK(array != nullptr)
+		|| !OD_DEBUG_CHECK(i >= 0)) {
+		return nullptr;
+	}
+
 	return static_cast<void*>(static_cast<char*>(array) + (type->size * i));
 }
 const void* odType_index_const(const odType* type, const void* array, int32_t i) {
 	return odType_index(type, const_cast<void*>(array), i);
 }
 static void odType_char_default_construct_fn(void* ptr, int32_t count) {
+	if (!OD_DEBUG_CHECK(ptr != nullptr)
+		|| !OD_DEBUG_CHECK(count >= 0)) {
+		return;
+	}
+
 	memset(ptr, 0, static_cast<size_t>(count));
 }
 static void odType_char_move_assign_fn(void* ptr, void* src_ptr, int32_t count) {
+	if (!OD_DEBUG_CHECK(ptr != nullptr)
+		|| !OD_DEBUG_CHECK(src_ptr != nullptr)
+		|| !OD_DEBUG_CHECK(count >= 0)) {
+		return;
+	}
+
 	memmove(ptr, src_ptr, static_cast<size_t>(count));
 }
-static void odType_char_destruct_fn(void* /*ptr*/, int32_t /*count*/) {
+static void odType_char_destruct_fn(void* ptr, int32_t count) {
+	if (!OD_DEBUG_CHECK(ptr != nullptr)
+		|| !OD_DEBUG_CHECK(count >= 0)) {
+		return;
+	}
+
+	OD_MAYBE_UNUSED(ptr);
+	OD_MAYBE_UNUSED(count);
 }
 const odType* odType_get_char() {
 	static const odType type{
 		/*size*/ 1,
-		/*default_construct_fn*/ odType_char_default_construct_fn,
-		/*move_assign_fn*/ odType_char_move_assign_fn,
-		/*destruct_fn*/ odType_char_destruct_fn};
+		/*default_construct_fn*/ &odType_char_default_construct_fn,
+		/*move_assign_fn*/ &odType_char_move_assign_fn,
+		/*destruct_fn*/ &odType_char_destruct_fn};
 	return &type;
 }
 
@@ -85,30 +109,29 @@ const char* odAllocation_get_debug_string(const odAllocation* allocation) {
 		static_cast<const void*>(allocation),
 		static_cast<const void*>(allocation->ptr));
 }
-bool odAllocation_allocate(odAllocation* allocation, int32_t size) {
-	OD_TRACE("allocation=%s, size=%d", odAllocation_get_debug_string(allocation), size);
+bool odAllocation_init(odAllocation* allocation, int32_t allocation_size) {
+	OD_TRACE("allocation=%s, allocation_size=%d", odAllocation_get_debug_string(allocation), allocation_size);
 
 	if (!OD_DEBUG_CHECK(odAllocation_get_valid(allocation))
-		|| !OD_DEBUG_CHECK(size >= 0)) {
+		|| !OD_DEBUG_CHECK(allocation_size >= 0)) {
 		return false;
 	}
 
-	if (size == 0) {
-		odAllocation_release(allocation);
+	odAllocation_destroy(allocation);
+
+	if (allocation_size == 0) {
 		return true;
 	}
 
-	void* new_allocation_ptr = calloc(1, static_cast<size_t>(size));
-	if (!OD_CHECK(new_allocation_ptr != nullptr)) {
+	allocation->ptr = calloc(1, static_cast<size_t>(allocation_size));
+	if (!OD_CHECK(allocation->ptr != nullptr)) {
 		return false;
 	}
-	OD_TRACE("new_allocation_ptr=%p", static_cast<const void*>(new_allocation_ptr));
-
-	allocation->ptr = new_allocation_ptr;
+	OD_TRACE("allocation->ptr=%p", static_cast<const void*>(allocation->ptr));
 
 	return true;
 }
-void odAllocation_release(odAllocation* allocation) {
+void odAllocation_destroy(odAllocation* allocation) {
 	OD_TRACE("allocation=%s", odAllocation_get_debug_string(allocation));
 
 	if (!OD_DEBUG_CHECK(odAllocation_get_valid(allocation))) {
@@ -140,7 +163,7 @@ odAllocation& odAllocation::operator=(odAllocation&& other) {
 	return *this;
 }
 odAllocation::~odAllocation() {
-	odAllocation_release(this);
+	odAllocation_destroy(this);
 }
 
 const odType* odArray_get_type_constructor(void) {
@@ -192,14 +215,7 @@ const char* odArray_get_debug_string(const odArray* array) {
 		array->capacity,
 		array->count);
 }
-const odType* odArray_get_type(const odArray* array) {
-	if (!OD_DEBUG_CHECK(array != nullptr)) {
-		return nullptr;
-	}
-
-	return array->type;
-}
-bool odArray_set_type(odArray* array, const odType* type) {
+bool odArray_init(odArray* array, const odType* type) {
 	OD_TRACE("array=%s, type=%s", odArray_get_debug_string(array), odType_get_debug_string(type));
 
 	if (!OD_DEBUG_CHECK(array != nullptr)
@@ -207,12 +223,28 @@ bool odArray_set_type(odArray* array, const odType* type) {
 		return false;
 	}
 
-	if (array->capacity > 0) {
-		odArray_release(array);
-	}
+	odArray_destroy(array);
 
 	array->type = type;
 	return true;
+}
+void odArray_destroy(odArray* array) {
+	OD_TRACE("array=%s", odArray_get_debug_string(array));
+
+	if (!OD_DEBUG_CHECK(array != nullptr)) {
+		return;
+	}
+
+	array->count = 0;
+	array->capacity = 0;
+	odAllocation_destroy(&array->allocation);
+}
+const odType* odArray_get_type(const odArray* array) {
+	if (!OD_DEBUG_CHECK(array != nullptr)) {
+		return nullptr;
+	}
+
+	return array->type;
 }
 int32_t odArray_get_capacity(const odArray* array) {
 	if (!OD_DEBUG_CHECK(odArray_get_valid(array))) {
@@ -233,7 +265,7 @@ bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 	OD_TRACE("new_count=%d", new_count);
 
 	odAllocation new_allocation;
-	if (!OD_CHECK(odAllocation_allocate(&new_allocation, new_capacity * array->type->size))) {
+	if (!OD_CHECK(odAllocation_init(&new_allocation, new_capacity * array->type->size))) {
 		return false;
 	}
 	OD_TRACE("new_allocation=%s", odAllocation_get_debug_string(&new_allocation));
@@ -290,17 +322,6 @@ bool odArray_ensure_capacity(odArray* array, int32_t min_capacity) {
 	}
 
 	return odArray_set_capacity(array, new_capacity);
-}
-void odArray_release(odArray* array) {
-	OD_TRACE("array=%s", odArray_get_debug_string(array));
-
-	if (!OD_DEBUG_CHECK(array != nullptr)) {
-		return;
-	}
-
-	array->count = 0;
-	array->capacity = 0;
-	odAllocation_release(&array->allocation);
 }
 int32_t odArray_get_count(const odArray* array) {
 	if (!OD_DEBUG_CHECK(odArray_get_valid(array))) {
@@ -427,16 +448,46 @@ void* odArray_get(odArray* array, int32_t i) {
 		return nullptr;
 	}
 
-	return odType_index(array->type, elements, i);
+	void* result = odType_index(array->type, elements, i);
+	if (!OD_DEBUG_CHECK(result != nullptr)) {
+		return nullptr;
+	}
+	return result;
 }
 const void* odArray_get_const(const odArray* array, int32_t i) {
 	return odArray_get(const_cast<odArray*>(array), i);
 }
+void* odArray_begin(odArray* array) {
+	if (!OD_DEBUG_CHECK(array != nullptr)) {
+		return nullptr;
+	}
+
+	return array->allocation.ptr;
+}
+const void* odArray_begin_const(const odArray* array) {
+	return odArray_begin(const_cast<odArray*>(array));
+}
+void* odArray_end(odArray* array) {
+	if (!OD_DEBUG_CHECK(array != nullptr)
+		|| !OD_DEBUG_CHECK(array->count >= 0)) {
+		return nullptr;
+	}
+
+	void* result = odType_index(array->type, array->allocation.ptr, array->count);
+	if (!OD_DEBUG_CHECK(result != nullptr)) {
+		return nullptr;
+	}
+	return result;
+}
+const void* odArray_end_const(const odArray* array) {
+	return odArray_end(const_cast<odArray*>(array));
+}
+
 
 odArray::odArray() : allocation{}, type{nullptr}, capacity{0}, count{0} {
 }
 odArray::odArray(const odType* in_type) : odArray{} {
-	OD_ASSERT(odArray_set_type(this, in_type));
+	OD_ASSERT(odArray_init(this, in_type));
 }
 odArray::odArray(odArray&& other) : odArray{} {
 	odArray_swap(this, &other);
@@ -448,7 +499,7 @@ odArray& odArray::operator=(odArray&& other) {
 odArray::~odArray() {
 	OD_TRACE("array=%s", odArray_get_debug_string(this));
 
-	odArray_release(this);
+	odArray_destroy(this);
 
 	type = nullptr;
 }
@@ -489,7 +540,7 @@ const char* odString_get_debug_string(const odString* string) {
 		"odString{this=%p, array=%s}", static_cast<const void*>(string), odArray_get_debug_string(&string->array));
 }
 void odString_release(odString* string) {
-	odArray_release(&string->array);
+	odArray_destroy(&string->array);
 }
 bool odString_set_capacity(odString* string, int32_t new_capacity) {
 	return odArray_set_capacity(&string->array, new_capacity);
@@ -597,6 +648,18 @@ char* odString_get(odString* string, int32_t i) {
 const char* odString_get_const(const odString* string, int32_t i) {
 	return static_cast<const char*>(odArray_get_const(&string->array, i));
 }
+char* odString_begin(odString* string) {
+	return static_cast<char*>(odArray_begin(&string->array));
+}
+const char* odString_begin_const(const odString* string) {
+	return static_cast<const char*>(odArray_begin_const(&string->array));
+}
+char* odString_end(odString* string) {
+	return static_cast<char*>(odArray_end(&string->array));
+}
+const char* odString_end_const(const odString* string) {
+	return static_cast<const char*>(odArray_end_const(&string->array));
+}
 
 odString::odString() : array{odType_get_char()} {
 }
@@ -616,3 +679,21 @@ odString& odString::operator=(const odString& other) {
 	return *this;
 }
 odString::~odString() = default;
+char* odString::operator[](int32_t i) & {
+	return odString_get(this, i);
+}
+const char* odString::operator[](int32_t i) const& {
+	return odString_get_const(this, i);
+}
+char* odString::begin() & {
+	return odString_begin(this);
+}
+const char* odString::begin() const& {
+	return odString_begin_const(this);
+}
+char* odString::end() & {
+	return odString_end(this);
+}
+const char* odString::end() const& {
+	return odString_end_const(this);
+}

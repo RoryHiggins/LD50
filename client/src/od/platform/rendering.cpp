@@ -2,18 +2,23 @@
 
 #include <cstring>
 
+#if OD_BUILD_EMSCRIPTEN
+#include <SDL_opengles2.h>
+#else  // !OD_BUILD_EMSCRIPTEN
 #define GLEW_STATIC
 #define GL_GLEXT_PROTOTYPES 1
 #define GL3_PROTOTYPES 1
 #include <GL/glew.h>
 #include <GL/glu.h>
 
-#include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#endif  // !OD_BUILD_EMSCRIPTEN
+
+#include <SDL2/SDL.h>
 
 #include <od/core/debug.h>
 #include <od/core/primitive.h>
-#include <od/core/containers.hpp>
+#include <od/core/container.hpp>
 
 
 #define OD_RENDERER_MESSAGE_BUFFER_SIZE 4096
@@ -24,6 +29,38 @@ struct odRendererScope {
 };
 
 
+#if OD_BUILD_EMSCRIPTEN
+static const char odRenderer_vertex_shader[] = R"(
+	// there is no model space: all inputs are required to be in world space
+	uniform mat4 view;
+	uniform mat4 projection;
+	uniform vec2 uv_scale;
+
+	attribute vec3 src_pos;
+	attribute vec4 src_col;
+	attribute vec2 src_uv;
+
+	varying vec4 col;
+	varying vec2 uv;
+
+	void main() {
+		gl_Position = projection * view * vec4(src_pos, 1);
+		col = src_col;
+		uv = src_uv * uv_scale;
+	}
+)";
+static const char odRenderer_fragment_shader[] = R"(
+	precision mediump float;
+	uniform sampler2D src_texture;
+
+	varying vec4 col;
+	varying vec2 uv;
+
+	void main() {
+		gl_FragColor = texture2D(src_texture, uv).rgba * col;
+	}
+)";
+#else  // !OD_BUILD_EMSCRIPTEN
 /*https://www.khronos.org/registry/OpenGL/specs/gl/glspec21.pdf*/
 /*https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.20.pdf*/
 static const char odRenderer_vertex_shader[] = R"(
@@ -59,9 +96,11 @@ static const char odRenderer_fragment_shader[] = R"(
 		gl_FragColor = texture2D(src_texture, uv).rgba * col;
 	}
 )";
+#endif  // !OD_BUILD_EMSCRIPTEN
+
 static GLchar odRenderer_message_buffer[OD_RENDERER_MESSAGE_BUFFER_SIZE] = {};
 
-
+#if !OD_BUILD_EMSCRIPTEN
 static void odRenderer_gl_message_callback(
 	GLenum /*source*/,
 	GLenum /*type*/,
@@ -85,18 +124,18 @@ static void odRenderer_gl_message_callback(
 		return;
 	}
 }
+#endif  // !OD_BUILD_EMSCRIPTEN
 OD_NO_DISCARD static bool odGl_check_ok(odLogContext logger) {
 	bool ok = true;
 	GLenum gl_error = GL_NO_ERROR;
 
 	for (gl_error = glGetError(); gl_error != GL_NO_ERROR; gl_error = glGetError()) {
 		if (OD_BUILD_LOG) {
-			odLog_log(
-				logger,
-				OD_LOG_LEVEL_ERROR,
-				"OpenGL error, gl_error=%u, message=%s",
-				gl_error,
-				gluErrorString(gl_error));
+			const char* error_str = "";
+#if !OD_BUILD_EMSCRIPTEN
+			error_str = reinterpret_cast<const char*>(gluErrorString(gl_error));
+#endif  // !OD_BUILD_EMSCRIPTEN
+			odLog_log(logger, OD_LOG_LEVEL_ERROR, "gl_error=%u, message=%s", gl_error, error_str);
 		}
 		ok = false;
 	}
@@ -190,7 +229,9 @@ void odTexture_swap(odTexture* texture1, odTexture* texture2) {
 bool odTexture_get_valid(const odTexture* texture) {
 	if ((texture == nullptr)
 		|| (texture->render_context_native == nullptr)
-		|| (texture->texture == 0)) {
+		|| (texture->texture == 0)
+		|| (texture->width <= 0)
+		|| (texture->height <= 0)) {
 		return false;
 	}
 
@@ -236,8 +277,13 @@ bool odTexture_init(odTexture* texture, void* render_context_native, const odCol
 	);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+	texture->width = width;
+	texture->height = height;
 
 	if (!odGl_check_ok(OD_LOGGER())) {
 		OD_ERROR("OpenGL error creating texture, texture=%s", odTexture_get_debug_string(texture));
@@ -261,11 +307,13 @@ void odTexture_destroy(odTexture* texture) {
 	if (context_current && (texture->texture != 0)) {
 		glDeleteTextures(1, &texture->texture);
 	}
-	texture->texture = 0;
 
+	texture->height = 0;
+	texture->width = 0;
+	texture->texture = 0;
 	texture->render_context_native = nullptr;
 }
-void odTexture_get_size(const odTexture* texture, int32_t* out_opt_width, int32_t* out_opt_height) {
+bool odTexture_get_size(const odTexture* texture, int32_t* out_opt_width, int32_t* out_opt_height) {
 	int32_t unused;
 	out_opt_width = (out_opt_width != nullptr) ? out_opt_width : &unused;
 	out_opt_height = (out_opt_height != nullptr) ? out_opt_height : &unused;
@@ -273,26 +321,14 @@ void odTexture_get_size(const odTexture* texture, int32_t* out_opt_width, int32_
 	*out_opt_width = 0;
 	*out_opt_height = 0;
 
-	if (!OD_DEBUG_CHECK(texture != nullptr)
-		|| !OD_DEBUG_CHECK(texture->texture != 0)
-		|| !OD_CHECK(SDL_GL_GetCurrentContext() == texture->render_context_native)) {
-		return;
+	if (!OD_DEBUG_CHECK(odTexture_get_valid(texture))) {
+		return false;
 	}
 
-	int width = 0;
-	int height = 0;
-	glBindTexture(GL_TEXTURE_2D, texture->texture);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, /*mipLevel*/ 0, GL_TEXTURE_WIDTH, &width);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, /*mipLevel*/ 0, GL_TEXTURE_HEIGHT, &height);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	*out_opt_width = static_cast<int32_t>(texture->width);
+	*out_opt_height = static_cast<int32_t>(texture->height);
 
-	if (!odGl_check_ok(OD_LOGGER())) {
-		OD_ERROR("OpenGL error creating texture, texture=%s", odTexture_get_debug_string(texture));
-		return;
-	}
-
-	*out_opt_width = static_cast<int32_t>(width);
-	*out_opt_height = static_cast<int32_t>(height);
+	return true;
 }
 
 odTexture::odTexture()
@@ -419,7 +455,7 @@ odRenderTexture::~odRenderTexture() {
 }
 
 
-OD_NO_DISCARD static bool odRenderer_glew_init() {
+OD_NO_DISCARD static bool odRenderer_gl_init() {
 	static bool is_initialized = false;
 
 	OD_DEBUG("is_initialized=%d", is_initialized);
@@ -428,7 +464,7 @@ OD_NO_DISCARD static bool odRenderer_glew_init() {
 		return true;
 	}
 
-	OD_TRACE("glewInit");
+#if !OD_BUILD_EMSCRIPTEN
 	glewExperimental = true;
 	GLenum glewResult = glewInit();
 	if (!OD_CHECK(glewResult == GLEW_OK)) {
@@ -440,6 +476,7 @@ OD_NO_DISCARD static bool odRenderer_glew_init() {
 		OD_DEBUG("GLEW_ARB_debug_output=true, registering gl debug log callback");
 		glDebugMessageCallbackARB(odRenderer_gl_message_callback, nullptr);
 	}
+#endif  // !OD_BUILD_EMSCRIPTEN
 
 	is_initialized = true;
 
@@ -465,7 +502,9 @@ bool odRenderer_get_valid(const odRenderer* renderer) {
 	if ((renderer == nullptr)
 		|| (renderer->render_context_native == nullptr)
 		|| (renderer->vbo == 0)
+#if !OD_BUILD_EMSCRIPTEN
 		|| (renderer->vao == 0)
+#endif  // !OD_BUILD_EMSCRIPTEN
 		|| (renderer->vertex_shader == 0)
 		|| (renderer->fragment_shader == 0)
 		|| (renderer->program == 0)) {
@@ -504,16 +543,18 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 
 	renderer->render_context_native = render_context_native;
 
-	if (!OD_CHECK(odRenderer_glew_init())) {
+	if (!OD_CHECK(odRenderer_gl_init())) {
 		return false;
 	}
 
 	OD_TRACE("configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
 
+#if !OD_BUILD_EMSCRIPTEN
 	if (OD_BUILD_DEBUG) {
 		// issue: requires opengl 4.1 but we ask for a 3.2 context
 		glEnable(GL_DEBUG_OUTPUT);
 	}
+#endif  // !OD_BUILD_EMSCRIPTEN
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -535,8 +576,10 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 		return false;
 	}
 
+#if !OD_BUILD_EMSCRIPTEN
 	OD_TRACE("creating vertex array, renderer=%s", odRenderer_get_debug_string(renderer));
 	glGenVertexArrays(1, &renderer->vao);
+#endif  // !OD_BUILD_EMSCRIPTEN
 
 	if (!odGl_check_ok(OD_LOGGER())) {
 		OD_ERROR("OpenGL error when creating vertex array, renderer=%s", odRenderer_get_debug_string(renderer));
@@ -588,6 +631,11 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 	GLuint src_col_attrib = static_cast<GLuint>(glGetAttribLocation(renderer->program, "src_col"));
 	GLuint src_uv_attrib = static_cast<GLuint>(glGetAttribLocation(renderer->program, "src_uv"));
 
+	if (!odGl_check_ok(OD_LOGGER())) {
+		OD_ERROR("OpenGL error when binding shader attributes, renderer=%s", odRenderer_get_debug_string(renderer));
+		return false;
+	}
+
 	OD_TRACE(
 		"renderer=%s, src_pos_attrib=%u, src_col_attrib=%u, src_uv_attrib=%u",
 		odRenderer_get_debug_string(renderer), src_pos_attrib, src_col_attrib, src_uv_attrib);
@@ -600,23 +648,18 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 		glEnableVertexAttribArray(src_uv_attrib);
 
 		const GLvoid* offset = static_cast<const GLvoid*>(nullptr);
-		glVertexAttribPointer(src_pos_attrib, 3, GL_INT, GL_FALSE, sizeof(odVertex), offset);
+		glVertexAttribPointer(src_pos_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(odVertex), offset);
 		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (3 * sizeof(GLint)));
 
 		glVertexAttribPointer(src_col_attrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(odVertex), offset);
 		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (4 * sizeof(GLubyte)));
 
-		glVertexAttribPointer(src_uv_attrib, 2, GL_INT, GL_FALSE, sizeof(odVertex), offset);
+		glVertexAttribPointer(src_uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(odVertex), offset);
 		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (2 * sizeof(GLint)));
 	}
 
 	if (!odGl_check_ok(OD_LOGGER())) {
 		OD_ERROR("OpenGL error when configuring shader attributes, renderer=%s", odRenderer_get_debug_string(renderer));
-		return false;
-	}
-
-	if (!odGl_check_ok(OD_LOGGER())) {
-		OD_ERROR("OpenGL error when configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
 		return false;
 	}
 
@@ -650,7 +693,9 @@ void odRenderer_destroy(odRenderer* renderer) {
 	renderer->program = 0;
 
 	if (context_current && (renderer->vao != 0)) {
+#if !OD_BUILD_EMSCRIPTEN
 		glDeleteVertexArrays(1, &renderer->vao);
+#endif  // !OD_BUILD_EMSCRIPTEN
 	}
 	renderer->vao = 0;
 
@@ -717,8 +762,8 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState state, const o
 
 	int32_t texture_width = 0;
 	int32_t texture_height = 0;
-	if (state.src_texture != nullptr) {
-		odTexture_get_size(state.src_texture, &texture_width, &texture_height);
+	if (!OD_CHECK(odTexture_get_size(state.src_texture, &texture_width, &texture_height))) {
+		return false;
 	}
 	GLfloat texture_scale_x = 1.0f / static_cast<GLfloat>(texture_width ? texture_width : 1);
 	GLfloat texture_scale_y = 1.0f / static_cast<GLfloat>(texture_height ? texture_height : 1);
@@ -768,8 +813,8 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState state, const od
 	odBounds bounds{};
 	if (opt_texture_bounds != nullptr) {
 		bounds = *opt_texture_bounds;
-	} else {
-		odTexture_get_size(state.src_texture, &bounds.width, &bounds.height);
+	} else if (!OD_CHECK(odTexture_get_size(state.src_texture, &bounds.width, &bounds.height))) {
+		return false;
 	}
 
 	/* Bounds triangle index positions (assumes front faces are counter-clockwise):
@@ -778,25 +823,25 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState state, const od
 	*/
 	const int32_t vertices_count = 6;
 	const odVertex vertices[vertices_count] = {
-		{bounds.x, bounds.y, 0,
+		{float(bounds.x), float(bounds.y), 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 0, 0},
-		{bounds.x, bounds.y + bounds.height, 0,
+		 0.0f, 0.0f},
+		{float(bounds.x), float(bounds.y + bounds.height), 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 0, bounds.y + bounds.height},
-		{bounds.x + bounds.width, bounds.y, 0,
+		 0.0f, float(bounds.y + bounds.height)},
+		{float(bounds.x + bounds.width), float(bounds.y), 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 bounds.x + bounds.width, 0},
+		 float(bounds.x + bounds.width), 0.0f},
 
-		{bounds.x + bounds.width, bounds.y, 0,
+		{float(bounds.x + bounds.width), float(bounds.y), 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 bounds.x + bounds.width, 0},
-		{bounds.x, bounds.y + bounds.height, 0,
+		 float(bounds.x + bounds.width), 0.0f},
+		{float(bounds.x), float(bounds.y + bounds.height), 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 0, bounds.y + bounds.height},
-		{bounds.x + bounds.width, bounds.y + bounds.height, 0,
+		 0.0f, float(bounds.y + bounds.height)},
+		{float(bounds.x + bounds.width), float(bounds.y + bounds.height), 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 bounds.x + bounds.width, bounds.y + bounds.height},
+		 float(bounds.x + bounds.width), float(bounds.y + bounds.height)},
 	};
 
 	return odRenderer_draw_vertices(renderer, state, vertices, vertices_count);
@@ -804,7 +849,9 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState state, const od
 
 static void odRenderer_unbind() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+#if !OD_BUILD_EMSCRIPTEN
 	glBindVertexArray(0);
+#endif  // !OD_BUILD_EMSCRIPTEN
 	glUseProgram(0);
 }
 
@@ -817,7 +864,9 @@ static void odRenderer_bind(odRenderer* renderer) {
 	}
 
 	glUseProgram(renderer->program);
+#if !OD_BUILD_EMSCRIPTEN
 	glBindVertexArray(renderer->vao);
+#endif  // !OD_BUILD_EMSCRIPTEN
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
 }
 

@@ -17,17 +17,17 @@ struct odColor {
 };
 
 struct odVertex {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+	float x;
+	float y;
+	float z;
 
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
 	uint8_t a;
 
-	int32_t u;
-	int32_t v;
+	float u;
+	float v;
 };
 
 struct odVector {

@@ -4,8 +4,61 @@
 
 #include <cstring>
 
+#if OD_BUILD_EMSCRIPTEN
+#include <emscripten.h>
+#endif   // OD_BUILD_EMSCRIPTEN
+
+#if OD_BUILD_EMSCRIPTEN
+void odClient_step_emscripten();
+#endif   // OD_BUILD_EMSCRIPTEN
+bool odClient_run();
+bool odClient_init();
+bool odClient_step();
+
 /* Parameters for AddressSanitizer; https://github.com/google/sanitizers/wiki/AddressSanitizerFlags */
 const char* __asan_default_options();
+
+static odWindow odClient_window;
+
+OD_NO_DISCARD bool odClient_init() {
+	odWindowSettings window_settings{odWindowSettings_get_defaults()};
+	return odWindow_init(&odClient_window, window_settings);
+}
+OD_NO_DISCARD bool odClient_step() {
+	return OD_CHECK(odWindow_step(&odClient_window));
+}
+
+#if OD_BUILD_EMSCRIPTEN
+void odClient_step_emscripten() {
+	static bool is_initialized = false;
+	if (!is_initialized) {
+		if (!odClient_init()) {
+			emscripten_cancel_main_loop();
+		}
+		is_initialized = true;
+	}
+
+	if (!odWindow_get_valid(&odClient_window) || !OD_CHECK(odClient_step())) {
+		emscripten_cancel_main_loop();
+	}
+}
+OD_NO_DISCARD bool odClient_run() {
+	emscripten_set_main_loop(odClient_step_emscripten, 0, true);
+	return true;
+}
+#else
+OD_NO_DISCARD bool odClient_run() {
+	if (!odClient_init()) {
+		return false;
+	}
+
+	while (odWindow_get_valid(&odClient_window) && OD_CHECK(odClient_step())) {
+	}
+
+	return true;
+}
+#endif
+
 const char* __asan_default_options() {
 	return ("verbosity=1"
 			":halt_on_error=0"
@@ -17,74 +70,58 @@ const char* __asan_default_options() {
 			":detect_leaks=1");
 }
 
-OD_NO_DISCARD static bool odClient_run() {
-	OD_INFO("Running client");
-
-	odWindow window;
-	if (!OD_CHECK(odWindow_init(&window, odWindowSettings_get_defaults()))) {
-		return false;
-	}
-
-	while (odWindow_get_valid(&window)) {
-		if (!OD_CHECK(odWindow_step(&window))) {
-			return false;
-		}
-	}
-
-	OD_INFO("Client exited normally");
-	return true;
-}
 
 int main(int argc, char** argv) {
 	bool run_tests = false;
 	bool run_client = true;
 	int32_t test_filter = OD_TEST_FILTER_NONE;
 
-	const uint32_t MAX_ARG_SIZE = 64;
-	if (argv == nullptr) {
-		OD_ERROR("Unexpected empty argument array");
-		return 1;
-	}
+	OD_TRACE("argc=%d", argc);
 	for (int i = 0; i < argc; i++) {
-		if (argv[i] == nullptr) {
-			OD_ERROR("Unexpected empty argument");
-			return 1;
+		OD_TRACE("argv[%d]=%s", i, argv[i]);
+
+		size_t arg_size = strlen(argv[i]);
+
+		const char whitespace[] = " \t\n";
+		if (strspn(argv[i], whitespace) == arg_size) {
+			continue;
 		}
+
 		if (OD_BUILD_DEBUG) {
-			if (strncmp(argv[i], "--trace", MAX_ARG_SIZE) == 0) {
+			if (strncmp(argv[i], "--trace", arg_size) == 0) {
 				odLogLevel_set_max(OD_LOG_LEVEL_TRACE);
 				continue;
 			}
-			if (strncmp(argv[i], "--debug", MAX_ARG_SIZE) == 0) {
+			if (strncmp(argv[i], "--debug", arg_size) == 0) {
 				odLogLevel_set_max(OD_LOG_LEVEL_DEBUG);
 				continue;
 			}
 		}
-		if (strncmp(argv[i], "--no-log", MAX_ARG_SIZE) == 0) {
+		if (strncmp(argv[i], "--no-log", arg_size) == 0) {
 				odLogLevel_set_max(OD_LOG_LEVEL_NONE);
 				continue;
 			}
-		if (strncmp(argv[i], "--test", MAX_ARG_SIZE) == 0) {
+		if (strncmp(argv[i], "--test", arg_size) == 0) {
 			run_tests = true;
 			continue;
 		}
-		if (strncmp(argv[i], "--no-test", MAX_ARG_SIZE) == 0) {
+		if (strncmp(argv[i], "--no-test", arg_size) == 0) {
 			run_tests = false;
 			continue;
 		}
-		if (strncmp(argv[i], "--slow-test", MAX_ARG_SIZE) == 0) {
+		if (strncmp(argv[i], "--slow-test", arg_size) == 0) {
 			test_filter = test_filter & ~OD_TEST_FILTER_SLOW;
 			continue;
 		}
-		if (strncmp(argv[i], "--no-slow-test", MAX_ARG_SIZE) == 0) {
+		if (strncmp(argv[i], "--no-slow-test", arg_size) == 0) {
 			test_filter = test_filter | OD_TEST_FILTER_SLOW;
 			continue;
 		}
-		if (strncmp(argv[i], "--client", MAX_ARG_SIZE) == 0) {
+		if (strncmp(argv[i], "--client", arg_size) == 0) {
 			run_client = true;
 			continue;
 		}
-		if (strncmp(argv[i], "--no-client", MAX_ARG_SIZE) == 0) {
+		if (strncmp(argv[i], "--no-client", arg_size) == 0) {
 			run_client = false;
 			continue;
 		}
@@ -96,21 +133,29 @@ int main(int argc, char** argv) {
 
 	if (run_tests) {
 #if (OD_BUILD_TESTS)
+		OD_INFO("Running tests");
+
 		if (!odTest_run(test_filter)) {
 			OD_ERROR("tests failed");
 			return 1;
 		}
+
+		OD_INFO("Tests completed successfully");
 #else
-		OD_ERROR("tests excluded from build");
+		OD_ERROR("Tests excluded from build, skipping");
 		return 1;
 #endif
 	}
 
 	if (run_client) {
+		OD_INFO("Running client");
+
 		if (!odClient_run()) {
 			OD_ERROR("client ended with error");
 			return 1;
 		}
+
+		OD_INFO("Client exited normally");
 	}
 
 	return 0;

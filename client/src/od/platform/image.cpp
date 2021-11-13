@@ -2,11 +2,15 @@
 
 #include <cstring>
 
+#if OD_BUILD_EMSCRIPTEN
+#include <emscripten.h>
+#else  // !OD_BUILD_EMSCRIPTEN
 #include <png.h>
+#endif  // !OD_BUILD_EMSCRIPTEN
 
 #include <od/core/primitive.h>
 #include <od/core/debug.h>
-#include <od/core/containers.hpp>
+#include <od/core/container.hpp>
 
 const odType* odImage_get_type_constructor() {
 	return odType_get<odImage>();
@@ -24,7 +28,7 @@ bool odImage_copy(odImage* image, const odImage* src_image) {
 		return true;
 	}
 
-	if (!OD_CHECK(odAllocation_allocate(&image->allocation, size))) {
+	if (!OD_CHECK(odAllocation_init(&image->allocation, size))) {
 		return false;
 	}
 
@@ -95,7 +99,7 @@ bool odImage_allocate(odImage* image, int32_t width, int32_t height) {
 		return true;
 	}
 
-	if (!OD_CHECK(odAllocation_allocate(&image->allocation, size))) {
+	if (!OD_CHECK(odAllocation_init(&image->allocation, size))) {
 		return false;
 	}
 
@@ -116,7 +120,7 @@ void odImage_release(odImage* image) {
 
 	image->height = 0;
 	image->width = 0;
-	odAllocation_release(&image->allocation);
+	odAllocation_destroy(&image->allocation);
 }
 void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
 	int32_t unused;
@@ -140,6 +144,11 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 		return false;
 	}
 
+#if OD_BUILD_EMSCRIPTEN
+	OD_ERROR("libpng not available with emscripten");
+
+	return false;
+#else  // !OD_BUILD_EMSCRIPTEN
 	png_image png;
 	memset(static_cast<void*>(&png), 0, sizeof(png));
 	png.version = PNG_IMAGE_VERSION;
@@ -150,13 +159,13 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 
 	png.format = PNG_FORMAT_RGBA;
 
-	int32_t width = static_cast<int32_t>(png.width);
-	int32_t height = static_cast<int32_t>(png.height);
-	if (!OD_DEBUG_CHECK(PNG_IMAGE_SIZE(png) == static_cast<unsigned>(width * height * static_cast<int32_t>(sizeof(odColor))))) {
+	image->width = static_cast<int32_t>(png.width);
+	image->height = static_cast<int32_t>(png.height);
+	if (!OD_DEBUG_CHECK(PNG_IMAGE_SIZE(png) == static_cast<unsigned>(image->width * image->height * static_cast<int32_t>(sizeof(odColor))))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odImage_allocate(image, width, height))) {
+	if (!OD_CHECK(odImage_allocate(image, image->width, image->height))) {
 		return false;
 	}
 
@@ -168,9 +177,7 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 	if (!OD_CHECK(png_image_finish_read(&png, /*background*/ nullptr, image_data, /*row_stride*/ 0, /*colormap*/ nullptr) != 0)) {
 		return false;
 	}
-
-	image->width = width;
-	image->height = height;
+#endif  // !OD_BUILD_EMSCRIPTEN
 
 	return true;
 }

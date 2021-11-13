@@ -1,13 +1,18 @@
 
-Rendering TODOs
--------------------
-- load fbo extension
-- FBOs / controllable destination
-- Loading texture from a png
-- Point to triangles converter
-- Line to triangles converter
-- Rect to triangles converter
-- Primitive to triangles converter
+Major TODOs
+- odMemory_bytes_less() for byte ordering
+- Array sorted insert
+- Array sort
+- Multi-level render queue
+	- Keyed by (depth, interned string source key)
 - Triangle depth sorting
 - Texture atlas
+- Sprite to triangles converter function
+- Sprite loader (using texture atlas)
+
+Minor TODOs
+- Point to triangles converter function
+- Line to triangles converter function
+- Rect to triangles converter function
+- Primitive type + vertices to triangles converter function
 - Minimal font glyph support

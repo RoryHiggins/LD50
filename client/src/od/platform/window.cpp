@@ -1,11 +1,10 @@
 #include <od/platform/window.hpp>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
 
 #include <od/core/debug.h>
 #include <od/core/primitive.h>
-#include <od/core/containers.hpp>
+#include <od/core/container.hpp>
 #include <od/platform/rendering.h>
 
 static int32_t odSDL_init_counter = 0;
@@ -111,9 +110,13 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 		return false;
 	}
 
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-	// Use OpenGL 2.1 code with OpenGL 3.2 compatible context, for RenderDoc support
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+
+#if OD_BUILD_EMSCRIPTEN
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+#else  // !OD_BUILD_EMSCRIPTEN
+	// Natively use OpenGL 2.0 code with OpenGL 3.2 compatible context, for RenderDoc support
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
@@ -122,6 +125,7 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 	if (odLogLevel_get_max() >= OD_LOG_LEVEL_ERROR) {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 	}
+#endif  // !OD_BUILD_EMSCRIPTEN
 
 	window->window_native = static_cast<void*>(SDL_CreateWindow(
 		window->settings.caption,
@@ -447,9 +451,9 @@ bool odWindow_step(odWindow* window) {
 	const int32_t test_height = window->settings.game_height;
 	const int32_t test_vertices_count = 3;
 	const odVertex test_vertices[test_vertices_count] = {
-		{test_offset,test_offset,0, 0xff,0x00,0x00,0xff,  0,0},
-		{test_offset,test_offset+test_height,0, 0xff,0x00,0x00,0xff,  0,0},
-		{test_offset+test_width,test_offset,0, 0xff,0x00,0x00,0xff,  0,0}
+		{float(test_offset),float(test_offset),0.0f, 0xff,0x00,0x00,0xff,  0.0f,0.0f},
+		{float(test_offset),float(test_offset + test_height),0.0f, 0xff,0x00,0x00,0xff,  0.0f,0.0f},
+		{float(test_offset + test_width),float(test_offset),0.0f, 0xff,0x00,0x00,0xff,  0.0f,0.0f}
 	};
 
 	odRenderState view_state{

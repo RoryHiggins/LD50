@@ -1,14 +1,17 @@
 #include <od/platform/rendering.hpp>
 
+#include <cstring>
+
 #include <od/core/primitive.h>
+#include <od/core/container.hpp>
 #include <od/platform/window.hpp>
 #include <od/test/test.hpp>
 
 const int32_t odRender_test_vertices_count = 3;
 	const odVertex odRender_test_vertices[odRender_test_vertices_count] = {
-		{0,0,0, 0x00,0xff,0x00,0xff,  0,0},
-		{0,1,0, 0x00,0xff,0x00,0xff,  0,0},
-		{1,0,0, 0x00,0xff,0x00,0xff,  0,0},
+		{0.0f,0.0f,0.0f, 0x00,0xff,0x00,0xff,  0.0f,0.0f},
+		{0.0f,1.0f,0.0f, 0x00,0xff,0x00,0xff,  0.0f,0.0f},
+		{1.0f,0.0f,0.0f, 0x00,0xff,0x00,0xff,  0.0f,0.0f},
 	};
 
 
@@ -88,7 +91,7 @@ OD_TEST_FILTERED(odTexture, get_size, OD_TEST_FILTER_SLOW) {
 	// test double init
 	int32_t reported_width = -1;
 	int32_t reported_height = -1;
-	odTexture_get_size(&texture, &reported_width, &reported_height);
+	OD_ASSERT(odTexture_get_size(&texture, &reported_width, &reported_height));
 	OD_ASSERT(reported_width == width);
 	OD_ASSERT(reported_height == height);
 }

@@ -4,7 +4,6 @@
 
 #include <od/platform/rendering.hpp>
 
-struct odGLRenderer;
 struct odWindow {
 	odRenderer renderer;
 	void* window_native;

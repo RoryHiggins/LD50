@@ -5,7 +5,7 @@
 #include <cstring>
 
 #include <od/core/debug.h>
-#include <od/core/containers.hpp>
+#include <od/core/container.hpp>
 
 #define OD_FILE_ERROR(FILE, ...) \
 	OD_ERROR("%s", odFile_get_debug_string(FILE)); \
@@ -200,7 +200,7 @@ bool odFilePath_read_all(
 		return false;
 	}
 
-	if (!OD_CHECK(odAllocation_allocate(out_allocation, file_size))) {
+	if (!OD_CHECK(odAllocation_init(out_allocation, file_size))) {
 		return false;
 	}
 

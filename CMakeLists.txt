@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 project(overworld LANGUAGES CXX)
 
-find_package(SDL2 REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(PNG REQUIRED)
-find_package(ZLIB REQUIRED)
-enable_testing()
+if(NOT ("${EMSCRIPTEN}" EQUAL 1))
+	find_package(SDL2 REQUIRED)
+	find_package(OpenGL REQUIRED)
+	find_package(GLEW REQUIRED)
+	find_package(PNG REQUIRED)
+	find_package(ZLIB REQUIRED)
+endif()
 
 
 set(OD_BUILD_DEBUG_DEFAULT 1)
@@ -36,7 +37,9 @@ add_library(od_platform)
 if("${MINGW}" EQUAL 1)
 	target_link_libraries(od_platform PRIVATE mingw32)
 endif()
-target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG luajit-5.1 ZLIB::ZLIB od_core)
+if(NOT ("${EMSCRIPTEN}" EQUAL 1))
+	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG od_core)
+endif()
 # each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
 set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
 
@@ -153,6 +156,51 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			endif()
 		endif()
 	endforeach()
+endif()
+
+# emscripten-specific compiler and linker flags
+if("${EMSCRIPTEN}" EQUAL 1)
+	foreach(od_target ${od_targets})
+		target_compile_definitions(
+			${od_target}
+			PRIVATE
+			OD_BUILD_EMSCRIPTEN
+		)
+		set(
+			od_emscripten_common_params
+			-O0 -g -Wall
+			"SHELL:-s USE_SDL=2" "SHELL:-s DISABLE_EXCEPTION_CATCHING=1")
+		target_compile_options(
+			${od_target}
+			PRIVATE
+			${od_emscripten_common_params}
+		)
+		target_link_options(
+			${od_target}
+			PRIVATE
+			${od_emscripten_common_params}
+			"SHELL:-s WASM=1" "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s NO_EXIT_RUNTIME=0"
+			"SHELL:-s NO_FILESYSTEM=1"
+		)
+		if(${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
+			target_link_options(
+				${od_target}
+				PRIVATE
+				"SHELL:-s ASSERTIONS=1" "SHELL:-s SAFE_HEAP=1" "SHELL:-s STACK_OVERFLOW_CHECK=1"
+				"SHELL:-s DEMANGLE_SUPPORT=1"
+			)
+		endif()
+	endforeach()
+
+	set_target_properties(od_client PROPERTIES OUTPUT_NAME "index" SUFFIX ".html")
+
+	set(od_emscripten_shell "${PROJECT_SOURCE_DIR}/client/src/od/client/main.html")
+	target_link_options(
+		od_client
+		PRIVATE
+		"SHELL:--shell-file ${od_emscripten_shell}"
+	)
+	# configure_file("${od_emscripten_shell}" "${CMAKE_BINARY_DIR}/index.html")
 endif()
 
 add_subdirectory(client)

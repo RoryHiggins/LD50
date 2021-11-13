@@ -37,5 +37,5 @@ tidy:
 format:
 	clang-format -i -Werror -- $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))")
 clean:
-	rm -rf build
+	rm -rf build gmon.out
 
