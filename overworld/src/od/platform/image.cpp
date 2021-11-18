@@ -2,11 +2,7 @@
 
 #include <cstring>
 
-#if OD_BUILD_EMSCRIPTEN
-#include <emscripten.h>
-#else  // !OD_BUILD_EMSCRIPTEN
 #include <png.h>
-#endif  // !OD_BUILD_EMSCRIPTEN
 
 #include <od/core/primitive.h>
 #include <od/core/debug.h>
@@ -144,11 +140,6 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 		return false;
 	}
 
-#if OD_BUILD_EMSCRIPTEN
-	OD_ERROR("libpng not available with emscripten");
-
-	return false;
-#else  // !OD_BUILD_EMSCRIPTEN
 	png_image png;
 	memset(static_cast<void*>(&png), 0, sizeof(png));
 	png.version = PNG_IMAGE_VERSION;
@@ -177,7 +168,6 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 	if (!OD_CHECK(png_image_finish_read(&png, /*background*/ nullptr, image_data, /*row_stride*/ 0, /*colormap*/ nullptr) != 0)) {
 		return false;
 	}
-#endif  // !OD_BUILD_EMSCRIPTEN
 
 	return true;
 }

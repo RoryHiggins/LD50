@@ -1,15 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(overworld LANGUAGES CXX)
 
-if(NOT ("${EMSCRIPTEN}" EQUAL 1))
-	find_package(SDL2 REQUIRED)
-	find_package(OpenGL REQUIRED)
-	find_package(GLEW REQUIRED)
-	find_package(PNG REQUIRED)
-	find_package(ZLIB REQUIRED)
-endif()
-
-
 set(OD_BUILD_DEBUG_DEFAULT 1)
 if(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
 	set(OD_BUILD_DEBUG_DEFAULT 0)
@@ -18,12 +9,6 @@ endif()
 set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build for debugging")
 set(OD_BUILD_LOG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with logging")
 set(OD_BUILD_TESTS ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with tests")
-
-if ("${SDL2_LIBRARIES}" STREQUAL "")
-	set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
-else()
-	set(OD_SDL2_LIBRARIES "${SDL2_LIBRARIES}")
-endif()
 
 # od_core
 # ----------
@@ -38,7 +23,17 @@ if("${MINGW}" EQUAL 1)
 	target_link_libraries(od_platform PRIVATE mingw32)
 endif()
 if(NOT ("${EMSCRIPTEN}" EQUAL 1))
-	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew PNG::PNG od_core)
+	find_package(SDL2 REQUIRED)
+	find_package(OpenGL REQUIRED)
+	find_package(GLEW REQUIRED)
+
+	if ("${SDL2_LIBRARIES}" STREQUAL "")
+		set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
+	else()
+		set(OD_SDL2_LIBRARIES "${SDL2_LIBRARIES}")
+	endif()
+
+	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew od_core)
 endif()
 # each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
 set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
@@ -111,6 +106,7 @@ endif()
 # optional gcc-specific warnings and static analysis tools
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	foreach(od_target ${od_targets})
+		target_link_libraries(${od_target} PRIVATE m)
 		target_compile_options(
 			${od_target} PUBLIC
 			-Wall -Wextra -pedantic -Werror=vla -Winvalid-pch -fno-exceptions -fno-rtti
@@ -194,13 +190,14 @@ if("${EMSCRIPTEN}" EQUAL 1)
 
 	set_target_properties(od_client PROPERTIES OUTPUT_NAME "index" SUFFIX ".html")
 
-	set(od_emscripten_shell "${PROJECT_SOURCE_DIR}/client/src/od/client/main.html")
+	set(od_emscripten_shell "${PROJECT_SOURCE_DIR}/overworld/src/od/client/main.html")
 	target_link_options(
 		od_client
 		PRIVATE
 		"SHELL:--shell-file ${od_emscripten_shell}"
 	)
-	# configure_file("${od_emscripten_shell}" "${CMAKE_BINARY_DIR}/index.html")
 endif()
 
-add_subdirectory(client)
+add_subdirectory(overworld)
+
+target_link_libraries(od_platform PRIVATE zlibstatic png_static)
