@@ -12,5 +12,11 @@ void odTest_add(const char* suite, const char* name, void (*fn)(), int32_t filte
 
 OD_API_C OD_TEST_MODULE OD_NO_DISCARD
 bool odTest_run(int32_t filters);
+#else  // !OD_BUILD_TESTS
+inline static void odTest_add(const char* /*suite*/, const char* /*name*/, void (*)(), int32_t /*filters*/) {
+}
 
-#endif
+inline static bool odTest_run(int32_t /*filters*/) {
+	return false;
+}
+#endif  // !OD_BUILD_TESTS

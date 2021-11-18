@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
@@ -12,21 +13,15 @@ static int32_t odLog_logged_error_count = 0;
 void odLog_on_error() {
 }
 
-odLogContext odLogContext_construct(const char* file, const char* function, int32_t line) {
-	if (file == nullptr) {
-		file = "<file=nullptr>";
-	}
-	if (function == nullptr) {
-		function = "<function=nullptr>";
-	}
-
+static const char* odLog_file_short_name(const char* file) {
 	const int32_t file_prefixes_count = 4;
 	const char* file_prefixes[file_prefixes_count] = {
-		"client/src/",
-		"client/include/",
-		"client\\src\\",
-		"client\\include\\"
+		"client/src/od/",
+		"client/include/od/",
+		"client\\src\\od\\",
+		"client\\include\\od\\"
 	};
+
 	for (int32_t i = 0; i < file_prefixes_count; i++) {
 		const char* file_relative = strstr(file, file_prefixes[i]);
 		if (file_relative) {
@@ -34,32 +29,44 @@ odLogContext odLogContext_construct(const char* file, const char* function, int3
 		}
 	}
 
+	return file;
+}
+odLogContext odLogContext_construct(const char* file, const char* function, int32_t line) {
+	if (OD_BUILD_DEBUG) {
+		if (file == nullptr) {
+			file = "<file=nullptr>";
+		}
+		if (function == nullptr) {
+			function = "<function=nullptr>";
+		}
+	}
+
 	return odLogContext{file, function, line};
 }
 void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args) {
-#if OD_BUILD_DEBUG
-	// preconditions without assertions/logs special case here:
-	// asserts can call this function, which might cause infinite recursion, so we
-	// play it safe and printf
-	if ((format_c_str == nullptr) || (logger.file == nullptr) || (logger.function == nullptr) ||
-		((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
-		odLog_on_error();
+	if (OD_BUILD_DEBUG) {
+		// preconditions without assertions/logs special case here:
+		// asserts can call this function, which might cause infinite recursion, so we
+		// play it safe and printf
+		if ((format_c_str == nullptr) || (logger.file == nullptr) || (logger.function == nullptr) ||
+			((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
+			odLog_on_error();
 
-		fprintf(
-			stdout,
-			"odLog_log_variadic() error during logging: log_level=%d, "
-			"format_c_str=%p, file=%p, line=%d, function=%p",
-			log_level,
-			static_cast<const void*>(format_c_str),
-			static_cast<const void*>(logger.file),
-			logger.line,
-			static_cast<const void*>(logger.function));
-		fputc('\n', stdout);
-		fflush(stdout);
+			fprintf(
+				stdout,
+				"odLog_log_variadic() error during logging: log_level=%d, "
+				"format_c_str=%p, file=%p, line=%d, function=%p",
+				log_level,
+				static_cast<const void*>(format_c_str),
+				static_cast<const void*>(logger.file),
+				logger.line,
+				static_cast<const void*>(logger.function));
+			fputc('\n', stdout);
+			fflush(stdout);
 
-		return;
+			return;
+		}
 	}
-#endif
 
 	if ((log_level > odLogContext_level_max) || (log_level <= OD_LOG_LEVEL_NONE)) {
 		return;
@@ -69,12 +76,15 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 		odLog_logged_error_count++;
 	}
 
-	fprintf(stdout, "[%s %s:%d] %s() ", odLogLevel_get_name(log_level), logger.file, logger.line, logger.function);
+	time_t time_val = time(nullptr);
+    fprintf(stdout, "[%.8s %s %s:%d %s] ", ctime(&time_val) + 11, odLogLevel_get_name(log_level), odLog_file_short_name(logger.file), logger.line, logger.function);
 
 	vfprintf(stdout, format_c_str, args);
 
 	fputc('\n', stdout);
-	fflush(stdout);
+	if (OD_BUILD_DEBUG) {
+		fflush(stdout);
+	}
 
 	if (log_level <= OD_LOG_LEVEL_ERROR) {
 		odLog_on_error();
@@ -103,9 +113,6 @@ int32_t odLog_get_logged_error_count() {
 }
 const char* odLogLevel_get_name(int32_t log_level) {
 	switch (log_level) {
-		case OD_LOG_LEVEL_NONE: {
-			return "NONE ";
-		}
 		case OD_LOG_LEVEL_FATAL: {
 			return "FATAL";
 		}
@@ -113,10 +120,10 @@ const char* odLogLevel_get_name(int32_t log_level) {
 			return "ERROR";
 		}
 		case OD_LOG_LEVEL_WARN: {
-			return "WARN ";
+			return "WARN";
 		}
 		case OD_LOG_LEVEL_INFO: {
-			return "info ";
+			return "info";
 		}
 		case OD_LOG_LEVEL_DEBUG: {
 			return "debug";

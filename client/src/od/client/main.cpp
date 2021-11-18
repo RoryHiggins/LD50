@@ -86,37 +86,6 @@ int main(int argc, char** argv) {
 		if (strspn(argv[i], whitespace) == arg_size) {
 			continue;
 		}
-
-		if (OD_BUILD_DEBUG) {
-			if (strncmp(argv[i], "--trace", arg_size) == 0) {
-				odLogLevel_set_max(OD_LOG_LEVEL_TRACE);
-				continue;
-			}
-			if (strncmp(argv[i], "--debug", arg_size) == 0) {
-				odLogLevel_set_max(OD_LOG_LEVEL_DEBUG);
-				continue;
-			}
-		}
-		if (strncmp(argv[i], "--no-log", arg_size) == 0) {
-				odLogLevel_set_max(OD_LOG_LEVEL_NONE);
-				continue;
-			}
-		if (strncmp(argv[i], "--test", arg_size) == 0) {
-			run_tests = true;
-			continue;
-		}
-		if (strncmp(argv[i], "--no-test", arg_size) == 0) {
-			run_tests = false;
-			continue;
-		}
-		if (strncmp(argv[i], "--slow-test", arg_size) == 0) {
-			test_filter = test_filter & ~OD_TEST_FILTER_SLOW;
-			continue;
-		}
-		if (strncmp(argv[i], "--no-slow-test", arg_size) == 0) {
-			test_filter = test_filter | OD_TEST_FILTER_SLOW;
-			continue;
-		}
 		if (strncmp(argv[i], "--client", arg_size) == 0) {
 			run_client = true;
 			continue;
@@ -125,6 +94,44 @@ int main(int argc, char** argv) {
 			run_client = false;
 			continue;
 		}
+		if (OD_BUILD_LOG) {
+			if (strncmp(argv[i], "--log", arg_size) == 0) {
+				odLogLevel_set_max(OD_LOG_LEVEL_INFO);
+				continue;
+			}
+			if (strncmp(argv[i], "--no-log", arg_size) == 0) {
+				odLogLevel_set_max(OD_LOG_LEVEL_NONE);
+				continue;
+			}
+		}
+		if (OD_BUILD_LOG && OD_BUILD_DEBUG) {
+			if (strncmp(argv[i], "--debug", arg_size) == 0) {
+				odLogLevel_set_max(OD_LOG_LEVEL_DEBUG);
+				continue;
+			}
+			if (strncmp(argv[i], "--trace", arg_size) == 0) {
+				odLogLevel_set_max(OD_LOG_LEVEL_TRACE);
+				continue;
+			}
+		}
+		if (OD_BUILD_TESTS) {
+			if (strncmp(argv[i], "--test", arg_size) == 0) {
+				run_tests = true;
+				continue;
+			}
+			if (strncmp(argv[i], "--no-test", arg_size) == 0) {
+				run_tests = false;
+				continue;
+			}
+			if (strncmp(argv[i], "--slow-test", arg_size) == 0) {
+				test_filter = test_filter & ~OD_TEST_FILTER_SLOW;
+				continue;
+			}
+			if (strncmp(argv[i], "--no-slow-test", arg_size) == 0) {
+				test_filter = test_filter | OD_TEST_FILTER_SLOW;
+				continue;
+			}
+		}
 		if (i > 0) {
 			OD_ERROR("Unknown argument \"%s\"", argv[i]);
 			return 1;
@@ -132,7 +139,10 @@ int main(int argc, char** argv) {
 	}
 
 	if (run_tests) {
-#if (OD_BUILD_TESTS)
+		if (!OD_CHECK(OD_BUILD_TESTS)) {
+			return 1;
+		}
+
 		OD_INFO("Running tests");
 
 		if (!odTest_run(test_filter)) {
@@ -141,17 +151,14 @@ int main(int argc, char** argv) {
 		}
 
 		OD_INFO("Tests completed successfully");
-#else
-		OD_ERROR("Tests excluded from build, skipping");
-		return 1;
-#endif
 	}
 
 	if (run_client) {
 		OD_INFO("Running client");
 
-		if (!odClient_run()) {
-			OD_ERROR("client ended with error");
+		int32_t logged_errors_before = odLog_get_logged_error_count();
+		if (!odClient_run() || (odLog_get_logged_error_count() > logged_errors_before)) {
+			OD_ERROR("client ended with errors");
 			return 1;
 		}
 
