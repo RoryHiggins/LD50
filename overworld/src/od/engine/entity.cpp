@@ -9,50 +9,30 @@
 #define OD_ENTITY_TAGS_SIZE 4
 #define OD_ENTITY_TAGS_COUNT (8 * OD_ENTITY_TAGS_SIZE)
 
-#define OD_WORLD_CHUNK_ENTITY_SOA_COUNT 8
+#define OD_ENTITY_CHUNK_COUNT 65536
 
 typedef uint8_t odTagId;
 typedef int32_t odEntityId;
-typedef int32_t odEntityHandle;
 
 struct odEntityTags {
 	uint8_t bytes[OD_ENTITY_TAGS_SIZE];
 };
-struct odEntityBounds {
-	int16_t x1;
-	int16_t y1;
-	int16_t x2;
-	int16_t y2;
-};
 struct odEntity {
 	odEntityId id;
-	odEntityBounds bounds;
 	odEntityTags tags;
+	odBounds bounds;
 };
 
-struct odWorldChunkEntitySoA {
-	odEntityId id[OD_WORLD_CHUNK_ENTITY_SOA_COUNT];
-	int16_t x1[OD_WORLD_CHUNK_ENTITY_SOA_COUNT];
-	int16_t y1[OD_WORLD_CHUNK_ENTITY_SOA_COUNT];
-	int16_t x2[OD_WORLD_CHUNK_ENTITY_SOA_COUNT];
-	int16_t y2[OD_WORLD_CHUNK_ENTITY_SOA_COUNT];
-};
-struct odWorldChunk {
-	odArrayT<odEntity> entities;
+struct odWorld {
+	odArrayT<odEntity> chunk_entities[OD_ENTITY_CHUNK_COUNT];
 };
 
 
 
 
 
-struct odEntityTexture {
-	int16_t u1;
-	int16_t v1;
-	int16_t u2;
-	int16_t v2;
-};
 struct odEntitySpriteComponent {
-	odEntityTexture texture;
+	odBounds texture_bounds;
 	odTransform transform;
 	odColor color;
 	float depth;
@@ -69,8 +49,6 @@ struct odEntityVertexCache {
 
 
 /*
-
-#define OD_ENTITY_CHUNK_COUNT 65536
 
 struct odEntity {
 	odEntityId id;

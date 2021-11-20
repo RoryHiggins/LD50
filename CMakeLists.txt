@@ -44,11 +44,17 @@ add_library(od_engine)
 set_target_properties(od_engine PROPERTIES UNITY_BUILD 1)
 target_link_libraries(od_engine PRIVATE od_core od_platform)
 
+# od_game
+# ----------
+add_library(od_game)
+set_target_properties(od_game PROPERTIES UNITY_BUILD 1)
+target_link_libraries(od_game PRIVATE od_core od_platform)
+
 # od_test
 # ----------
 add_library(od_test)
 set_target_properties(od_test PROPERTIES UNITY_BUILD 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
-target_link_libraries(od_test PRIVATE od_core od_platform od_engine)
+target_link_libraries(od_test PRIVATE od_core od_platform od_engine od_game)
 
 # od_client
 # ----------
@@ -62,7 +68,7 @@ endif()
 
 # shared parameters
 # ----------
-set(od_libs od_core od_platform od_engine od_test)
+set(od_libs od_core od_platform od_engine od_game od_test)
 set(od_binaries od_client)
 set(od_targets ${od_libs} ${od_binaries})
 

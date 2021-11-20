@@ -1,5 +1,6 @@
 add_subdirectory(core)
 add_subdirectory(platform)
 add_subdirectory(engine)
+add_subdirectory(game)
 add_subdirectory(test)
 add_subdirectory(client)
