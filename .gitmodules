@@ -1,6 +1,0 @@
-[submodule "overworld/lib/zlib"]
-	path = overworld/lib/zlib
-	url = git@github.com:madler/zlib.git
-[submodule "overworld/lib/libpng"]
-	path = overworld/lib/libpng
-	url = git@github.com:glennrp/libpng.git
