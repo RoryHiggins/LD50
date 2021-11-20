@@ -1,6 +1,45 @@
 #include <od/core/primitive.h>
 
+#include <cstring>
+#include <cinttypes>
+#include <cstdio>
+
+#include <string>
+#include <unordered_set>
+
 #include <od/core/debug.h>
+
+static std::unordered_set<std::string> odAtom_allocations;
+
+odAtom odAtom_init_str(const char* str, int32_t size) {
+	if ((str == nullptr) || (size <= 0) || (str[0] == '\0')) {
+		return odAtom_default;
+	}
+
+	if (str[size - 1] == '\0') {
+		size -= 1;
+	}
+
+	const char* interned_c_str = odAtom_allocations.emplace(str, static_cast<size_t>(size)).first->data();
+	return reinterpret_cast<odAtom>(interned_c_str);
+}
+odAtom odAtom_init_c_str(const char* str) {
+	return odAtom_init_str(str, static_cast<int32_t>(strlen(str)));
+}
+odAtom odAtom_init_int(int32_t x) {
+	const int32_t int_str_buffer_size = 16;
+	char int_str_buffer[int_str_buffer_size] = {};
+	int32_t size = static_cast<int32_t>(snprintf(int_str_buffer, int_str_buffer_size, "%d", x));
+
+	return odAtom_init_str(int_str_buffer, size);
+}
+const char* odAtom_get_str(odAtom atom) {
+	if (atom == 0) {
+		return "";
+	}
+
+	return reinterpret_cast<const char*>(atom);
+}
 
 const char* odVertex_get_debug_string(const odVertex* vertex) {
 	if (vertex == nullptr) {

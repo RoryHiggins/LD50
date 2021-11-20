@@ -781,7 +781,9 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState state, const o
 	glUniformMatrix4fv(projection_uniform, 1, false, state.projection.matrix);
 	glUniform2f(uv_scale_uniform, texture_scale_x, texture_scale_y);
 
-	glViewport(state.viewport.x, state.viewport.y, state.viewport.width, state.viewport.height);
+	glViewport(
+		static_cast<GLint>(state.viewport.x), static_cast<GLint>(state.viewport.y),
+		static_cast<GLint>(state.viewport.width), static_cast<GLint>(state.viewport.height));
 
 	glBufferData(
 		GL_ARRAY_BUFFER,
@@ -810,11 +812,19 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState state, const od
 		return false;
 	}
 
+
 	odBounds bounds{};
 	if (opt_texture_bounds != nullptr) {
 		bounds = *opt_texture_bounds;
-	} else if (!OD_CHECK(odTexture_get_size(state.src_texture, &bounds.width, &bounds.height))) {
-		return false;
+	} else {
+		int32_t width = 0;
+		int32_t height = 0;
+
+		if (!OD_CHECK(odTexture_get_size(state.src_texture, &width, &height))) {
+			return false;
+		}
+		bounds.width = static_cast<float>(width);
+		bounds.height = static_cast<float>(height);
 	}
 
 	/* Bounds triangle index positions (assumes front faces are counter-clockwise):
@@ -823,25 +833,25 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState state, const od
 	*/
 	const int32_t vertices_count = 6;
 	const odVertex vertices[vertices_count] = {
-		{float(bounds.x), float(bounds.y), 0.0f,
+		{bounds.x, bounds.y, 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
 		 0.0f, 0.0f},
-		{float(bounds.x), float(bounds.y + bounds.height), 0.0f,
+		{bounds.x, bounds.y + bounds.height, 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 0.0f, float(bounds.y + bounds.height)},
-		{float(bounds.x + bounds.width), float(bounds.y), 0.0f,
+		 0.0f, bounds.y + bounds.height},
+		{bounds.x + bounds.width, bounds.y, 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 float(bounds.x + bounds.width), 0.0f},
+		 bounds.x + bounds.width, 0.0f},
 
-		{float(bounds.x + bounds.width), float(bounds.y), 0.0f,
+		{bounds.x + bounds.width, bounds.y, 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 float(bounds.x + bounds.width), 0.0f},
-		{float(bounds.x), float(bounds.y + bounds.height), 0.0f,
+		 bounds.x + bounds.width, 0.0f},
+		{bounds.x, bounds.y + bounds.height, 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 0.0f, float(bounds.y + bounds.height)},
-		{float(bounds.x + bounds.width), float(bounds.y + bounds.height), 0.0f,
+		 0.0f, bounds.y + bounds.height},
+		{bounds.x + bounds.width, bounds.y + bounds.height, 0.0f,
 		 0xff, 0xff, 0xff, 0xff,
-		 float(bounds.x + bounds.width), float(bounds.y + bounds.height)},
+		 bounds.x + bounds.width, bounds.y + bounds.height},
 	};
 
 	return odRenderer_draw_vertices(renderer, state, vertices, vertices_count);

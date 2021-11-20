@@ -459,7 +459,7 @@ bool odWindow_step(odWindow* window) {
 	odRenderState view_state{
 		odTransform_create_view_transform(window->settings.game_width, window->settings.game_height),
 		odTransform_identity,
-		odBounds{0, 0, window->settings.game_width, window->settings.game_height},
+		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.game_width), static_cast<float>(window->settings.game_height)},
 		&window->texture,
 		&window->game_render_texture
 	};
@@ -470,7 +470,7 @@ bool odWindow_step(odWindow* window) {
 	odRenderState window_state{
 		odTransform_create_view_transform(window->settings.game_width, window->settings.game_height),
 		odTransform_identity,
-		odBounds{0, 0, window->settings.window_width, window->settings.window_height},
+		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.window_width), static_cast<float>(window->settings.window_height)},
 		odRenderTexture_get_texture(&window->game_render_texture),
 		nullptr
 	};

@@ -2,11 +2,13 @@
 
 #include <od/core/module.h>
 
+typedef size_t odAtom;
+
 struct odBounds {
-	int32_t x;
-	int32_t y;
-	int32_t width;
-	int32_t height;
+	float x;
+	float y;
+	float width;
+	float height;
 };
 
 struct odColor {
@@ -39,6 +41,19 @@ struct odTransform {
 };
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
+odAtom odAtom_init_str(const char* str, int32_t size);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
+odAtom odAtom_init_c_str(const char* str);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
+odAtom odAtom_init_int(int32_t x);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
+const char* odAtom_get_str(odAtom atom);
+
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 const char* odVertex_get_debug_string(const struct odVertex* vertex);
 
 OD_API_C OD_CORE_MODULE
@@ -65,6 +80,8 @@ struct odTransform odTransform_multiply(struct odTransform a, struct odTransform
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 struct odVector odTransform_multiply_vector(struct odVector a, struct odTransform b);
+
+static const odAtom odAtom_default = 0;
 
 static const struct odColor odColor_white = {0xFF, 0xFF, 0xFF, 0xFF};
 static const struct odColor odColor_black = {0x00, 0x00, 0x00, 0xFF};

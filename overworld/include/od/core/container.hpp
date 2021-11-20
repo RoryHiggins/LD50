@@ -2,7 +2,12 @@
 
 #include <od/core/container.h>
 
+#include <od/core/debug.h>
+
 #include <new>
+
+template<typename T>
+struct odRangeT;
 
 template<typename T>
 struct odArrayT;
@@ -15,6 +20,21 @@ void odType_move_assign_fn(void* ptr, void* src_ptr, int32_t count);
 
 template <typename T>
 OD_NO_DISCARD const odType* odType_get();
+
+struct odRange {
+	void* ptr;
+	int32_t count;
+	int32_t stride;
+
+	OD_CORE_MODULE odRange();
+	OD_CORE_MODULE explicit odRange(void* ptr, int32_t count, int32_t stride);
+
+	inline odRange(const odRange& other) = default;
+	inline odRange(odRange&& other) = default;
+	inline odRange& operator=(odRange&& other) = default;
+	inline odRange& operator=(const odRange& other) = default;
+	inline ~odRange() = default;
+};
 
 struct odAllocation {
 	void* ptr;
@@ -45,7 +65,9 @@ struct odArray {
 };
 
 struct odString {
-	struct odArray array;
+	struct odAllocation allocation;
+	int32_t capacity;
+	int32_t count;
 
 	OD_CORE_MODULE odString();
 	OD_CORE_MODULE odString(odString&& other);
@@ -72,16 +94,42 @@ struct odString {
 
 
 template<typename T>
+struct odRangeT : public odRange {
+	using odRange::odRange;
+	inline odRangeT(T* in_ptr, int32_t in_count)
+		: odRange{in_ptr, in_count, sizeof(T)} {
+	}
+	inline T* begin() & {
+		return static_cast<T*>(ptr);
+	}
+	inline const T* begin() const & {
+		return static_cast<T*>(ptr);
+	}
+	inline T* end() & {
+		return begin() + count;
+	}
+	inline const T* end() const& {
+		return begin() + count;
+	}
+	inline T* operator[](int32_t i) & {
+		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
+			return nullptr;
+		}
+		return begin() + i;
+	}
+	inline const T* operator[](int32_t i) const& {
+		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
+			return nullptr;
+		}
+		return begin() + i;
+	}
+};
+
+template<typename T>
 struct odArrayT : public odArray {
 	inline odArrayT() : odArray{odType_get<T>()} {
 	}
 
-	inline T* operator[](int32_t i) & {
-		return static_cast<T*>(odArray_get(this, i));
-	}
-	inline const T* operator[](int32_t i) const & {
-		return static_cast<const T*>(odArray_get_const(this, i));
-	}
 	inline T* begin() & {
 		return static_cast<T*>(odArray_begin(this));
 	}
@@ -89,10 +137,22 @@ struct odArrayT : public odArray {
 		return static_cast<const T*>(odArray_begin_const(this));
 	}
 	inline T* end() & {
-		return static_cast<T*>(odArray_end(this));
+		return begin() + count;
 	}
 	inline const T* end() const & {
-		return static_cast<const T*>(odArray_end_const(this));
+		return begin() + count;
+	}
+	inline T* operator[](int32_t i) & {
+		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
+			return nullptr;
+		}
+		return begin() + i;
+	}
+	inline const T* operator[](int32_t i) const & {
+		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
+			return nullptr;
+		}
+		return begin() + i;
 	}
 	inline bool push(T&& moved_elem) & {
 		return odArray_push(this, static_cast<void*>(&moved_elem), 1);

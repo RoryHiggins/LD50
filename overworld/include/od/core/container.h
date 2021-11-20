@@ -3,6 +3,7 @@
 #include <od/core/module.h>
 
 struct odType;
+struct odRange;
 struct odAllocation;
 struct odArray;
 struct odString;
@@ -99,7 +100,7 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 bool odArray_push(struct odArray* array, void* moved_src, int32_t moved_count);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-bool odArray_shrink(struct odArray* array, int32_t count);
+bool odArray_pop(struct odArray* array, int32_t count);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 bool odArray_swap_pop(struct odArray* array, int32_t i);
@@ -136,25 +137,34 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 bool odString_get_valid(const struct odString* string);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-const char* odString_get_debug_string(const struct odString* string);
-
-OD_API_C OD_CORE_MODULE
-void odString_release(struct odString* string);
+int32_t odString_compare(const struct odString* string1, const struct odString* string2);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-bool odString_set_capacity(struct odString* string, int32_t new_capacity);
+const char* odString_get_debug_string(const struct odString* string);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
+bool odString_init(struct odString* string);
+
+OD_API_C OD_CORE_MODULE
+void odString_destroy(struct odString* string);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 int32_t odString_get_capacity(const struct odString* string);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
+bool odString_set_capacity(struct odString* string, int32_t new_capacity);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 bool odString_ensure_capacity(struct odString* string, int32_t min_capacity);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD
+int32_t odString_get_count(const struct odString* string);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 bool odString_set_count(struct odString* string, int32_t new_count);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-int32_t odString_get_count(const struct odString* string);
+bool odString_expand(struct odString* string, char** out_expand_dest, int32_t expand_count);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD
 bool odString_push(struct odString* string, const char* str, int32_t str_count);
