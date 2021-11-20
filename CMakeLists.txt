@@ -207,3 +207,4 @@ endif()
 add_subdirectory(overworld)
 
 target_link_libraries(od_platform PRIVATE zlibstatic png_static)
+target_link_libraries(od_client PRIVATE lua)

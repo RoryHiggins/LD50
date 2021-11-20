@@ -2,6 +2,16 @@
 #include <od/platform/window.hpp>
 #include <od/test/test.hpp>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+#include <lauxlib.h>
+#include <lua.h>
+#include <lualib.h>
+#if defined(__cplusplus)
+} /*extern "C"*/
+#endif
+
 #include <cstring>
 
 #if OD_BUILD_EMSCRIPTEN
@@ -164,6 +174,9 @@ int main(int argc, char** argv) {
 
 		OD_INFO("Client exited normally");
 	}
+
+	lua_State* lua = luaL_newstate();
+	lua_close(lua);
 
 	return 0;
 }
