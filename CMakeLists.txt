@@ -26,6 +26,17 @@ if(NOT ("${EMSCRIPTEN}" EQUAL 1))
 	find_package(SDL2 REQUIRED)
 	find_package(OpenGL REQUIRED)
 	find_package(GLEW REQUIRED)
+	find_package(PNG REQUIRED)
+	find_package(ZLIB REQUIRED)
+
+	find_library(LUAJIT_LIBRARY
+		NAMES luajit luajit-5.1
+		HINTS ENV LUA_DIR
+		PATH_SUFFIXES lib)
+
+	find_path(LUAJIT_INCLUDE_DIR luajit.h
+	  HINTS ENV LUA_DIR
+	  PATH_SUFFIXES include/luajit include/luajit-2.1 include/lua51 include/lua5.1 include/lua-5.1 include)
 
 	if ("${SDL2_LIBRARIES}" STREQUAL "")
 		set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
@@ -33,8 +44,20 @@ if(NOT ("${EMSCRIPTEN}" EQUAL 1))
 		set(OD_SDL2_LIBRARIES "${SDL2_LIBRARIES}")
 	endif()
 
-	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew od_core)
+	set(OD_GL_LIBRARIES OpenGL::GL OpenGL::GLU GLEW::glew)
+
+	if (NOT ("${LUAJIT_LIBRARY}" STREQUAL "") AND NOT ("${LUAJIT_INCLUDE_DIR}" STREQUAL ""))
+		set(OD_LUA_LIBRARIES "${LUAJIT_LIBRARY}")
+		include_directories(LUAJIT_INCLUDE_DIR)
+		message("-- Found LuaJIT: ${LUAJIT_LIBRARY}")
+	else()
+		find_package(Lua51 REQUIRED)
+		set(OD_LUA_LIBRARIES "${LUA_LIBRARY}")
+	endif()
+
+	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} ${OD_GL_LIBRARIES} ${OD_LUA_LIBRARIES} ZLIB::ZLIB PNG::PNG)
 endif()
+target_link_libraries(od_platform PRIVATE m od_core)
 # each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
 set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
 
@@ -42,25 +65,19 @@ set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
 # ----------
 add_library(od_engine)
 set_target_properties(od_engine PROPERTIES UNITY_BUILD 1)
-target_link_libraries(od_engine PRIVATE od_core od_platform)
-
-# od_game
-# ----------
-add_library(od_game)
-set_target_properties(od_game PROPERTIES UNITY_BUILD 1)
-target_link_libraries(od_game PRIVATE od_core od_platform)
+target_link_libraries(od_engine PRIVATE m od_core od_platform)
 
 # od_test
 # ----------
 add_library(od_test)
 set_target_properties(od_test PROPERTIES UNITY_BUILD 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
-target_link_libraries(od_test PRIVATE od_core od_platform od_engine od_game)
+target_link_libraries(od_test PRIVATE m od_core od_platform od_engine)
 
 # od_client
 # ----------
 add_executable(od_client)
 set_target_properties(od_client PROPERTIES UNITY_BUILD 1)
-target_link_libraries(od_client PRIVATE od_core od_platform)
+target_link_libraries(od_client PRIVATE m od_core od_platform)
 if (${OD_BUILD_TESTS})
 	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 0 EXCLUDE_FROM_DEFAULT_BUILD 0)
 	target_link_libraries(od_client PRIVATE od_test)
@@ -68,7 +85,7 @@ endif()
 
 # shared parameters
 # ----------
-set(od_libs od_core od_platform od_engine od_game od_test)
+set(od_libs od_core od_platform od_engine od_test)
 set(od_binaries od_client)
 set(od_targets ${od_libs} ${od_binaries})
 
@@ -160,6 +177,8 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	endforeach()
 endif()
 
+add_subdirectory(overworld)
+
 # emscripten-specific compiler and linker flags
 if("${EMSCRIPTEN}" EQUAL 1)
 	foreach(od_target ${od_targets})
@@ -202,9 +221,7 @@ if("${EMSCRIPTEN}" EQUAL 1)
 		PRIVATE
 		"SHELL:--shell-file ${od_emscripten_shell}"
 	)
+
+	target_link_libraries(od_platform PRIVATE zlibstatic png_static)
+	target_link_libraries(od_engine PRIVATE lua)
 endif()
-
-add_subdirectory(overworld)
-
-target_link_libraries(od_platform PRIVATE zlibstatic png_static)
-target_link_libraries(od_client PRIVATE lua)

@@ -1,1 +1,1 @@
-target_sources(od_engine PRIVATE entity.cpp)
+target_sources(od_engine PRIVATE entity.cpp lua_client.cpp)
