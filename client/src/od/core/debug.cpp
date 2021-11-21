@@ -16,10 +16,10 @@ void odLog_on_error() {
 static const char* odLog_file_short_name(const char* file) {
 	const int32_t file_prefixes_count = 4;
 	const char* file_prefixes[file_prefixes_count] = {
-		"overworld/src/od/",
-		"overworld/include/od/",
-		"overworld\\src\\od\\",
-		"overworld\\include\\od\\"
+		"client/src/od/",
+		"client/include/od/",
+		"client\\src\\od\\",
+		"client\\include\\od\\"
 	};
 
 	for (int32_t i = 0; i < file_prefixes_count; i++) {

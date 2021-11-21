@@ -33,9 +33,9 @@ gdb: $(CLIENT)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:
-	clang-tidy $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('overworld').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))") -- -Iclient/include -Iclient/src
+	clang-tidy $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))") -- -Iclient/include -Iclient/src
 format:
-	clang-format -i -Werror -- $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('overworld').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))")
+	clang-format -i -Werror -- $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))")
 clean:
 	rm -rf build gmon.out
 

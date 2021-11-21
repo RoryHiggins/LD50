@@ -11,18 +11,67 @@ set(OD_BUILD_LOG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with logging")
 set(OD_BUILD_TESTS ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with tests")
 
 # od_core
-# ----------
 add_library(od_core)
 set_target_properties(od_core PROPERTIES UNITY_BUILD 1)
 
 # od_platform
-# ----------
 add_library(od_platform)
-# mingw32 must be before sdl2main
+# mingw32 should be linked first, as it must be linked before sdl2main
 if("${MINGW}" EQUAL 1)
 	target_link_libraries(od_platform PRIVATE mingw32)
 endif()
-if(NOT ("${EMSCRIPTEN}" EQUAL 1))
+target_link_libraries(od_platform PRIVATE m od_core)
+# each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
+set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
+
+# od_engine
+add_library(od_engine)
+set_target_properties(od_engine PROPERTIES UNITY_BUILD 1)
+target_link_libraries(od_engine PRIVATE m od_core od_platform)
+
+# od_test
+add_library(od_test)
+set_target_properties(od_test PROPERTIES UNITY_BUILD 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+target_link_libraries(od_test PRIVATE m od_core od_platform od_engine)
+
+# od_client
+add_executable(od_client)
+set_target_properties(od_client PROPERTIES UNITY_BUILD 1)
+target_link_libraries(od_client PRIVATE m od_core od_platform)
+if (${OD_BUILD_TESTS})
+	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 0 EXCLUDE_FROM_DEFAULT_BUILD 0)
+	target_link_libraries(od_client PRIVATE od_test)
+endif()
+
+set(od_libs od_core od_platform od_engine od_test)
+set(od_binaries od_client)
+set(od_targets ${od_libs} ${od_binaries})
+
+add_subdirectory(client)
+
+# shared parameters
+foreach(od_target ${od_targets})
+	set_target_properties(
+		${od_target} PROPERTIES
+		CXX_STANDARD 11 CXX_STANDARD_REQUIRED 1 CXX_EXTENSIONS 0 LINKER_LANGUAGE CXX
+		LINK_DEPENDS_NO_SHARED 1)
+
+	# only set the UNITY_BUILD property if not set (allow explicit enabling/disabling per cu)
+	get_property(od_unity_build_set TARGET ${od_target} PROPERTY UNITY_BUILD SET)
+	if (NOT (${od_unity_build_set}))
+		set_target_properties(${od_target} PROPERTIES UNITY_BUILD 1)
+	endif()
+
+	target_compile_definitions(
+		${od_target} PUBLIC
+		OD_BUILD_LOG=${OD_BUILD_LOG}
+		OD_BUILD_DEBUG=${OD_BUILD_DEBUG}
+		OD_BUILD_TESTS=${OD_BUILD_TESTS})
+endforeach()
+
+# third-party library parameters
+if(NOT("${EMSCRIPTEN}" EQUAL 1))
+	# native (non-emscripten) parameters
 	find_package(SDL2 REQUIRED)
 	find_package(OpenGL REQUIRED)
 	find_package(GLEW REQUIRED)
@@ -56,57 +105,52 @@ if(NOT ("${EMSCRIPTEN}" EQUAL 1))
 	endif()
 
 	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} ${OD_GL_LIBRARIES} ${OD_LUA_LIBRARIES} ZLIB::ZLIB PNG::PNG)
+else()
+	# emscripten-specific parameters
+	foreach(od_target ${od_targets})
+		target_compile_definitions(
+			${od_target}
+			PRIVATE
+			OD_BUILD_EMSCRIPTEN
+		)
+		set(
+			od_emscripten_common_params
+			-O0 -g -Wall
+			"SHELL:-s USE_SDL=2" "SHELL:-s DISABLE_EXCEPTION_CATCHING=1")
+		target_compile_options(
+			${od_target}
+			PRIVATE
+			${od_emscripten_common_params}
+		)
+		target_link_options(
+			${od_target}
+			PRIVATE
+			${od_emscripten_common_params}
+			"SHELL:-s WASM=1" "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s NO_EXIT_RUNTIME=0"
+			"SHELL:-s NO_FILESYSTEM=1"
+		)
+		if(${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
+			target_link_options(
+				${od_target}
+				PRIVATE
+				"SHELL:-s ASSERTIONS=1" "SHELL:-s SAFE_HEAP=1" "SHELL:-s STACK_OVERFLOW_CHECK=1"
+				"SHELL:-s DEMANGLE_SUPPORT=1"
+			)
+		endif()
+	endforeach()
+
+	set_target_properties(od_client PROPERTIES OUTPUT_NAME "index" SUFFIX ".html")
+
+	set(od_emscripten_shell "${PROJECT_SOURCE_DIR}/client/src/od/client/main.html")
+	target_link_options(
+		od_client
+		PRIVATE
+		"SHELL:--shell-file ${od_emscripten_shell}"
+	)
+
+	target_link_libraries(od_platform PRIVATE zlibstatic png_static)
+	target_link_libraries(od_engine PRIVATE lua)
 endif()
-target_link_libraries(od_platform PRIVATE m od_core)
-# each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
-set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
-
-# od_engine
-# ----------
-add_library(od_engine)
-set_target_properties(od_engine PROPERTIES UNITY_BUILD 1)
-target_link_libraries(od_engine PRIVATE m od_core od_platform)
-
-# od_test
-# ----------
-add_library(od_test)
-set_target_properties(od_test PROPERTIES UNITY_BUILD 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
-target_link_libraries(od_test PRIVATE m od_core od_platform od_engine)
-
-# od_client
-# ----------
-add_executable(od_client)
-set_target_properties(od_client PROPERTIES UNITY_BUILD 1)
-target_link_libraries(od_client PRIVATE m od_core od_platform)
-if (${OD_BUILD_TESTS})
-	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 0 EXCLUDE_FROM_DEFAULT_BUILD 0)
-	target_link_libraries(od_client PRIVATE od_test)
-endif()
-
-# shared parameters
-# ----------
-set(od_libs od_core od_platform od_engine od_test)
-set(od_binaries od_client)
-set(od_targets ${od_libs} ${od_binaries})
-
-foreach(od_target ${od_targets})
-	set_target_properties(
-		${od_target} PROPERTIES
-		CXX_STANDARD 11 CXX_STANDARD_REQUIRED 1 CXX_EXTENSIONS 0 LINKER_LANGUAGE CXX
-		LINK_DEPENDS_NO_SHARED 1)
-
-	# only set the UNITY_BUILD property if not set (allow explicit enabling/disabling per cu)
-	get_property(od_unity_build_set TARGET ${od_target} PROPERTY UNITY_BUILD SET)
-	if (NOT (${od_unity_build_set}))
-		set_target_properties(${od_target} PROPERTIES UNITY_BUILD 1)
-	endif()
-
-	target_compile_definitions(
-		${od_target} PUBLIC
-		OD_BUILD_LOG=${OD_BUILD_LOG}
-		OD_BUILD_DEBUG=${OD_BUILD_DEBUG}
-		OD_BUILD_TESTS=${OD_BUILD_TESTS})
-endforeach()
 
 # decorate module api macros with dllimport/dllexport if building dlls for windows
 if(("${BUILD_SHARED_LIBS}" EQUAL 1) AND ("${WIN32}" EQUAL 1))
@@ -126,7 +170,7 @@ if(("${BUILD_SHARED_LIBS}" EQUAL 1) AND ("${WIN32}" EQUAL 1))
 	endforeach()
 endif()
 
-# optional gcc-specific warnings and static analysis tools
+# optional gcc-specific parameters, if using gcc
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	foreach(od_target ${od_targets})
 		target_link_libraries(${od_target} PRIVATE m)
@@ -175,53 +219,4 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			endif()
 		endif()
 	endforeach()
-endif()
-
-add_subdirectory(overworld)
-
-# emscripten-specific compiler and linker flags
-if("${EMSCRIPTEN}" EQUAL 1)
-	foreach(od_target ${od_targets})
-		target_compile_definitions(
-			${od_target}
-			PRIVATE
-			OD_BUILD_EMSCRIPTEN
-		)
-		set(
-			od_emscripten_common_params
-			-O0 -g -Wall
-			"SHELL:-s USE_SDL=2" "SHELL:-s DISABLE_EXCEPTION_CATCHING=1")
-		target_compile_options(
-			${od_target}
-			PRIVATE
-			${od_emscripten_common_params}
-		)
-		target_link_options(
-			${od_target}
-			PRIVATE
-			${od_emscripten_common_params}
-			"SHELL:-s WASM=1" "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s NO_EXIT_RUNTIME=0"
-			"SHELL:-s NO_FILESYSTEM=1"
-		)
-		if(${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
-			target_link_options(
-				${od_target}
-				PRIVATE
-				"SHELL:-s ASSERTIONS=1" "SHELL:-s SAFE_HEAP=1" "SHELL:-s STACK_OVERFLOW_CHECK=1"
-				"SHELL:-s DEMANGLE_SUPPORT=1"
-			)
-		endif()
-	endforeach()
-
-	set_target_properties(od_client PROPERTIES OUTPUT_NAME "index" SUFFIX ".html")
-
-	set(od_emscripten_shell "${PROJECT_SOURCE_DIR}/overworld/src/od/client/main.html")
-	target_link_options(
-		od_client
-		PRIVATE
-		"SHELL:--shell-file ${od_emscripten_shell}"
-	)
-
-	target_link_libraries(od_platform PRIVATE zlibstatic png_static)
-	target_link_libraries(od_engine PRIVATE lua)
 endif()
