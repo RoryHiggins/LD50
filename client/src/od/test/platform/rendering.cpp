@@ -9,9 +9,9 @@
 
 const int32_t odRender_test_vertices_count = 3;
 	const odVertex odRender_test_vertices[odRender_test_vertices_count] = {
-		{0.0f,0.0f,0.0f, 0x00,0xff,0x00,0xff,  0.0f,0.0f},
-		{0.0f,1.0f,0.0f, 0x00,0xff,0x00,0xff,  0.0f,0.0f},
-		{1.0f,0.0f,0.0f, 0x00,0xff,0x00,0xff,  0.0f,0.0f},
+		{{0.0f,0.0f,0.0f,1.0f}, {0x00,0xff,0x00,0xff}, 0.0f,0.0f},
+		{{0.0f,1.0f,0.0f,1.0f}, {0x00,0xff,0x00,0xff}, 0.0f,0.0f},
+		{{1.0f,0.0f,0.0f,1.0f}, {0x00,0xff,0x00,0xff}, 0.0f,0.0f},
 	};
 
 
@@ -225,10 +225,13 @@ OD_TEST_FILTERED(odRenderer, flush, OD_TEST_FILTER_SLOW) {
 OD_TEST_FILTERED(odRenderer, clear, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
-	OD_ASSERT(odRenderer_clear(&window.renderer, odColor_white, nullptr));
+
+	odRenderState state{odTransform_identity, odTransform_identity, odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &window.texture, nullptr};
+
+	OD_ASSERT(odRenderer_clear(&window.renderer, &state, odColor_white));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 
-	OD_ASSERT(odRenderer_clear(&window.renderer, odColor_white, &window.game_render_texture));
+	OD_ASSERT(odRenderer_clear(&window.renderer, &state, odColor_white));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
 OD_TEST_FILTERED(odRenderer, draw_vertices, OD_TEST_FILTER_SLOW) {
@@ -236,11 +239,11 @@ OD_TEST_FILTERED(odRenderer, draw_vertices, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
 	odRenderState state{odTransform_identity, odTransform_identity, odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &window.texture, nullptr};
-	OD_ASSERT(odRenderer_draw_vertices(&window.renderer, state, odRender_test_vertices, odRender_test_vertices_count));
+	OD_ASSERT(odRenderer_draw_vertices(&window.renderer, &state, odRender_test_vertices, odRender_test_vertices_count));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 
-	state.render_texture = &window.game_render_texture;
-	OD_ASSERT(odRenderer_draw_vertices(&window.renderer, state, odRender_test_vertices, odRender_test_vertices_count));
+	state.opt_render_texture = &window.game_render_texture;
+	OD_ASSERT(odRenderer_draw_vertices(&window.renderer, &state, odRender_test_vertices, odRender_test_vertices_count));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
 OD_TEST_FILTERED(odRenderer, draw_texture, OD_TEST_FILTER_SLOW) {
@@ -248,15 +251,15 @@ OD_TEST_FILTERED(odRenderer, draw_texture, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
 	odRenderState state{odTransform_identity, odTransform_identity, odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &window.texture, nullptr};
-	OD_ASSERT(odRenderer_draw_texture(&window.renderer, state, nullptr));
+	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 
-	state.render_texture = &window.game_render_texture;
-	OD_ASSERT(odRenderer_draw_texture(&window.renderer, state, nullptr));
+	state.opt_render_texture = &window.game_render_texture;
+	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 
 	state.src_texture = odRenderTexture_get_texture(&window.game_render_texture);
-	OD_ASSERT(odRenderer_draw_texture(&window.renderer, state, nullptr));
+	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
 OD_TEST_FILTERED(odRenderer, init_multiple_renderers, OD_TEST_FILTER_SLOW) {
@@ -270,16 +273,16 @@ OD_TEST_FILTERED(odRenderer, init_multiple_renderers, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderer_get_valid(&renderer));
 	OD_ASSERT(odRenderer_get_valid(&window.renderer));
 
-	OD_ASSERT(odRenderer_draw_vertices(&window.renderer, state, odRender_test_vertices, odRender_test_vertices_count));
+	OD_ASSERT(odRenderer_draw_vertices(&window.renderer, &state, odRender_test_vertices, odRender_test_vertices_count));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 
-	OD_ASSERT(odRenderer_draw_vertices(&renderer, state, odRender_test_vertices, odRender_test_vertices_count));
+	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, odRender_test_vertices_count));
 	OD_ASSERT(odRenderer_flush(&renderer));
 
 	odRenderer_destroy(&window.renderer);
 	OD_ASSERT(!odRenderer_get_valid(&window.renderer));
 	OD_ASSERT(odRenderer_get_valid(&renderer));
-	OD_ASSERT(odRenderer_draw_vertices(&renderer, state, odRender_test_vertices, odRender_test_vertices_count));
+	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, odRender_test_vertices_count));
 	OD_ASSERT(odRenderer_flush(&renderer));
 }
 OD_TEST(odRenderer, init_without_context_fails) {

@@ -7,30 +7,13 @@
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
+OD_API_C OD_CORE_MODULE
+void odLog_on_error();
+
+
 static int32_t odLogContext_level_max = OD_LOG_LEVEL_DEFAULT;
 static int32_t odLog_logged_error_count = 0;
 
-void odLog_on_error() {
-}
-
-static const char* odLog_file_short_name(const char* file) {
-	const int32_t file_prefixes_count = 4;
-	const char* file_prefixes[file_prefixes_count] = {
-		"client/src/od/",
-		"client/include/od/",
-		"client\\src\\od\\",
-		"client\\include\\od\\"
-	};
-
-	for (int32_t i = 0; i < file_prefixes_count; i++) {
-		const char* file_relative = strstr(file, file_prefixes[i]);
-		if (file_relative) {
-			file = file_relative + strlen(file_prefixes[i]);
-		}
-	}
-
-	return file;
-}
 odLogContext odLogContext_construct(const char* file, const char* function, int32_t line) {
 	if (OD_BUILD_DEBUG) {
 		if (file == nullptr) {
@@ -43,74 +26,7 @@ odLogContext odLogContext_construct(const char* file, const char* function, int3
 
 	return odLogContext{file, function, line};
 }
-void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args) {
-	if (OD_BUILD_DEBUG) {
-		// preconditions without assertions/logs special case here:
-		// asserts can call this function, which might cause infinite recursion, so we
-		// play it safe and printf
-		if ((format_c_str == nullptr) || (logger.file == nullptr) || (logger.function == nullptr) ||
-			((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
-			odLog_on_error();
 
-			fprintf(
-				stdout,
-				"odLog_log_variadic() error during logging: log_level=%d, "
-				"format_c_str=%p, file=%p, line=%d, function=%p",
-				log_level,
-				static_cast<const void*>(format_c_str),
-				static_cast<const void*>(logger.file),
-				logger.line,
-				static_cast<const void*>(logger.function));
-			fputc('\n', stdout);
-			fflush(stdout);
-
-			return;
-		}
-	}
-
-	if ((log_level > odLogContext_level_max) || (log_level <= OD_LOG_LEVEL_NONE)) {
-		return;
-	}
-
-	if (log_level <= OD_LOG_LEVEL_WARN) {
-		odLog_logged_error_count++;
-	}
-
-	time_t time_val = time(nullptr);
-    fprintf(stdout, "[%.8s %s %s:%d %s] ", ctime(&time_val) + 11, odLogLevel_get_name(log_level), odLog_file_short_name(logger.file), logger.line, logger.function);
-
-	vfprintf(stdout, format_c_str, args);
-
-	fputc('\n', stdout);
-	if (OD_BUILD_DEBUG) {
-		fflush(stdout);
-	}
-
-	if (log_level <= OD_LOG_LEVEL_ERROR) {
-		odLog_on_error();
-	}
-}
-void odLog_log(odLogContext logger, int32_t log_level, const char* format_c_str, ...) {
-	va_list args = {};
-	va_start(args, format_c_str);
-	odLog_log_variadic(logger, log_level, format_c_str, args);
-	va_end(args);
-}
-bool odLog_check(odLogContext logger, bool success, const char* expression_c_str) {
-	if (!success) {
-		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Check failed: \"%s\"", expression_c_str);
-	}
-	return success;
-}
-void odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
-	if (!success) {
-		odLog_log(logger, OD_LOG_LEVEL_FATAL, "Assertion failed: \"%s\"", expression_c_str);
-		exit(EXIT_FAILURE);
-	}
-}
-int32_t odLog_get_logged_error_count() {
-	return odLog_logged_error_count;
-}
 const char* odLogLevel_get_name(int32_t log_level) {
 	switch (log_level) {
 		case OD_LOG_LEVEL_FATAL: {
@@ -151,6 +67,95 @@ void odLogLevel_set_max(int32_t log_level) {
 	}
 
 	odLogContext_level_max = log_level;
+}
+
+static const char* odLog_get_short_filename(const char* file) {
+	const int32_t file_prefixes_count = 4;
+	const char* file_prefixes[file_prefixes_count] = {
+		"client/src/od/",
+		"client/include/od/",
+		"client\\src\\od\\",
+		"client\\include\\od\\"
+	};
+
+	for (int32_t i = 0; i < file_prefixes_count; i++) {
+		const char* file_relative = strstr(file, file_prefixes[i]);
+		if (file_relative) {
+			file = file_relative + strlen(file_prefixes[i]);
+		}
+	}
+
+	return file;
+}
+void odLog_on_error() {
+}
+void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args) {
+	if (OD_BUILD_DEBUG) {
+		// preconditions without assertions/logs special case here:
+		// asserts can call this function, which might cause infinite recursion, so we
+		// play it safe and printf
+		if ((format_c_str == nullptr) || (logger.file == nullptr) || (logger.function == nullptr) ||
+			((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
+			odLog_on_error();
+
+			fprintf(
+				stdout,
+				"odLog_log_variadic() error during logging: log_level=%d, "
+				"format_c_str=%p, file=%p, line=%d, function=%p",
+				log_level,
+				static_cast<const void*>(format_c_str),
+				static_cast<const void*>(logger.file),
+				logger.line,
+				static_cast<const void*>(logger.function));
+			fputc('\n', stdout);
+			fflush(stdout);
+
+			return;
+		}
+	}
+
+	if ((log_level > odLogContext_level_max) || (log_level <= OD_LOG_LEVEL_NONE)) {
+		return;
+	}
+
+	if (log_level <= OD_LOG_LEVEL_WARN) {
+		odLog_logged_error_count++;
+	}
+
+	time_t time_val = time(nullptr);
+    fprintf(stdout, "[%.8s %s %s:%d %s] ", ctime(&time_val) + 11, odLogLevel_get_name(log_level), odLog_get_short_filename(logger.file), logger.line, logger.function);
+
+	vfprintf(stdout, format_c_str, args);
+
+	fputc('\n', stdout);
+	if (OD_BUILD_DEBUG) {
+		fflush(stdout);
+	}
+
+	if (log_level <= OD_LOG_LEVEL_ERROR) {
+		odLog_on_error();
+	}
+}
+void odLog_log(odLogContext logger, int32_t log_level, const char* format_c_str, ...) {
+	va_list args = {};
+	va_start(args, format_c_str);
+	odLog_log_variadic(logger, log_level, format_c_str, args);
+	va_end(args);
+}
+bool odLog_check(odLogContext logger, bool success, const char* expression_c_str) {
+	if (!success) {
+		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Check failed: \"%s\"", expression_c_str);
+	}
+	return success;
+}
+void odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
+	if (!success) {
+		odLog_log(logger, OD_LOG_LEVEL_FATAL, "Assertion failed: \"%s\"", expression_c_str);
+		exit(EXIT_FAILURE);
+	}
+}
+int32_t odLog_get_logged_error_count() {
+	return odLog_logged_error_count;
 }
 
 odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {

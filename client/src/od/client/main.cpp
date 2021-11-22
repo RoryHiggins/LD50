@@ -8,57 +8,74 @@
 #include <emscripten.h>
 #endif   // OD_BUILD_EMSCRIPTEN
 
-#if OD_BUILD_EMSCRIPTEN
-void odClient_step_emscripten();
-#endif   // OD_BUILD_EMSCRIPTEN
-bool odClient_run();
-bool odClient_init();
-bool odClient_step();
+struct odClient {
+	odWindow window;
+	bool is_initialized;
 
-/* Parameters for AddressSanitizer; https://github.com/google/sanitizers/wiki/AddressSanitizerFlags */
-const char* __asan_default_options();
+	odClient();
+};
 
-static odWindow odClient_window;
+odClient::odClient()
+	: window{}, is_initialized{false} {
+}
 
-OD_NO_DISCARD bool odClient_init() {
+OD_NO_DISCARD static bool odClient_init(odClient* client) {
 	odWindowSettings window_settings{odWindowSettings_get_defaults()};
-	return odWindow_init(&odClient_window, window_settings);
+	return odWindow_init(&client->window, window_settings);
 }
-OD_NO_DISCARD bool odClient_step() {
-	return OD_CHECK(odWindow_step(&odClient_window));
-}
-
-#if OD_BUILD_EMSCRIPTEN
-void odClient_step_emscripten() {
-	static bool is_initialized = false;
-	if (!is_initialized) {
-		if (!odClient_init()) {
-			emscripten_cancel_main_loop();
+OD_NO_DISCARD static bool odClient_step(odClient* client) {
+	if (!client->is_initialized) {
+		if (!OD_CHECK(odClient_init(client))) {
+			return false;
 		}
-		is_initialized = true;
+		client->is_initialized = true;
 	}
 
-	if (!odWindow_get_valid(&odClient_window) || !OD_CHECK(odClient_step())) {
-		emscripten_cancel_main_loop();
-	}
-}
-OD_NO_DISCARD bool odClient_run() {
-	emscripten_set_main_loop(odClient_step_emscripten, 0, true);
-	return true;
-}
-#else
-OD_NO_DISCARD bool odClient_run() {
-	if (!odClient_init()) {
+	if (!OD_CHECK(odWindow_get_valid(&client->window))) {
 		return false;
 	}
 
-	while (odWindow_get_valid(&odClient_window) && OD_CHECK(odClient_step())) {
+	if (!OD_CHECK(odWindow_step(&client->window)) || !odWindow_get_valid(&client->window)) {
+		return false;
 	}
 
+	return true;
+}
+
+#if OD_BUILD_EMSCRIPTEN
+static void odClient_step_emscripten(void* client_raw) {
+	odClient* client = reinterpret_cast<odClient*>(client_raw);
+	if (!odClient_step(client)) {
+		emscripten_cancel_main_loop();
+	}
+}
+OD_NO_DISCARD static bool odClient_run(odClient* client) {
+	emscripten_set_main_loop_arg(&odClient_step_emscripten, reinterpret_cast<void*>(client), 0, true);
+
+	return true;
+}
+#else
+OD_NO_DISCARD static bool odClient_run(odClient* client) {
+	OD_INFO("Running client");
+
+	int32_t logged_errors_before = odLog_get_logged_error_count();
+
+	while (odClient_step(client)) {
+	}
+
+	if (odLog_get_logged_error_count() > logged_errors_before) {
+		OD_INFO("Client ended with errors");
+		return false;
+	}
+
+	OD_INFO("Client ended gracefully");
 	return true;
 }
 #endif
 
+
+/* Parameters for AddressSanitizer; https://github.com/google/sanitizers/wiki/AddressSanitizerFlags */
+const char* __asan_default_options();
 const char* __asan_default_options() {
 	return ("verbosity=1"
 			":halt_on_error=0"
@@ -139,30 +156,16 @@ int main(int argc, char** argv) {
 	}
 
 	if (run_tests) {
-		if (!OD_CHECK(OD_BUILD_TESTS)) {
+		if (!OD_CHECK(OD_BUILD_TESTS) || !odTest_run(test_filter)) {
 			return 1;
 		}
-
-		OD_INFO("Running tests");
-
-		if (!odTest_run(test_filter)) {
-			OD_ERROR("tests failed");
-			return 1;
-		}
-
-		OD_INFO("Tests completed successfully");
 	}
 
 	if (run_client) {
-		OD_INFO("Running client");
-
-		int32_t logged_errors_before = odLog_get_logged_error_count();
-		if (!odClient_run() || (odLog_get_logged_error_count() > logged_errors_before)) {
-			OD_ERROR("client ended with errors");
+		odClient client;
+		if (!odClient_run(&client)) {
 			return 1;
 		}
-
-		OD_INFO("Client exited normally");
 	}
 
 	return 0;

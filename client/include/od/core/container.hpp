@@ -8,16 +8,13 @@
 
 template<typename T>
 struct odRangeT;
-
 template<typename T>
 struct odArrayT;
 
 template <typename T>
 void odType_default_construct_fn(void* ptr, int32_t count);
-
 template <typename T>
 void odType_move_assign_fn(void* ptr, void* src_ptr, int32_t count);
-
 template <typename T>
 OD_NO_DISCARD const odType* odType_get();
 
@@ -35,7 +32,6 @@ struct odRange {
 	inline odRange& operator=(const odRange& other) = default;
 	inline ~odRange() = default;
 };
-
 struct odAllocation {
 	void* ptr;
 
@@ -47,7 +43,6 @@ struct odAllocation {
 	odAllocation(const odAllocation& other) = delete;
 	odAllocation& operator=(const odAllocation& other) = delete;
 };
-
 struct odArray {
 	struct odAllocation allocation;
 	const struct odType* type;
@@ -63,7 +58,6 @@ struct odArray {
 	odArray(const odArray& other) = delete;
 	odArray& operator=(const odArray& other) = delete;
 };
-
 struct odString {
 	struct odAllocation allocation;
 	int32_t capacity;
@@ -91,7 +85,6 @@ struct odString {
 	char* end() && = delete;
 	const char* end() const&& = delete;
 };
-
 
 template<typename T>
 struct odRangeT : public odRange {
@@ -124,7 +117,6 @@ struct odRangeT : public odRange {
 		return begin() + i;
 	}
 };
-
 template<typename T>
 struct odArrayT : public odArray {
 	inline odArrayT() : odArray{odType_get<T>()} {
@@ -167,7 +159,6 @@ struct odArrayT : public odArray {
 	const T* end() const && = delete;
 	bool push(T&& moved_elem) && = delete;
 };
-
 
 template <typename T>
 void odType_default_construct_fn(void* ptr, int32_t count) {

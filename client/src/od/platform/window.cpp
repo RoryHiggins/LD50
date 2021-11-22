@@ -438,43 +438,57 @@ bool odWindow_step(odWindow* window) {
 		return false;
 	}
 
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, odColor_white, &window->game_render_texture))) {
-		return false;
-	}
-
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, odColor_white, nullptr))) {
-		return false;
-	}
-
-	const int32_t test_offset = 0;
-	const int32_t test_width = window->settings.game_width;
-	const int32_t test_height = window->settings.game_height;
-	const int32_t test_vertices_count = 3;
-	const odVertex test_vertices[test_vertices_count] = {
-		{float(test_offset),float(test_offset),0.0f, 0xff,0x00,0x00,0xff,  0.0f,0.0f},
-		{float(test_offset),float(test_offset + test_height),0.0f, 0xff,0x00,0x00,0xff,  0.0f,0.0f},
-		{float(test_offset + test_width),float(test_offset),0.0f, 0xff,0x00,0x00,0xff,  0.0f,0.0f}
-	};
+	odTransform view_transform{};
+	odTransform_init_view_transform(&view_transform, window->settings.game_width, window->settings.game_height);
 
 	odRenderState view_state{
-		odTransform_create_view_transform(window->settings.game_width, window->settings.game_height),
+		view_transform,
 		odTransform_identity,
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.game_width), static_cast<float>(window->settings.game_height)},
 		&window->texture,
 		&window->game_render_texture
 	};
-	if (!OD_CHECK(odRenderer_draw_vertices(&window->renderer, view_state, test_vertices, test_vertices_count))) {
-		return false;
-	}
 
 	odRenderState window_state{
-		odTransform_create_view_transform(window->settings.game_width, window->settings.game_height),
+		view_transform,
 		odTransform_identity,
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.window_width), static_cast<float>(window->settings.window_height)},
 		odRenderTexture_get_texture(&window->game_render_texture),
-		nullptr
+		/* opt_render_texture*/ nullptr
 	};
-	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, window_state, nullptr))) {
+
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, &view_state, odColor_white))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, &window_state, odColor_white))) {
+		return false;
+	}
+
+	// BEGIN throwaway rendering test code - TODO remove
+	{
+		const int32_t test_offset = 0;
+		const int32_t test_width = window->settings.game_width;
+		const int32_t test_height = window->settings.game_height;
+		const int32_t test_vertices_count = 3;
+		const odVertex test_vertices[test_vertices_count] = {
+			{{float(test_offset),float(test_offset),0.0f,1.0f},
+			 {0xff,0x00,0x00,0xff},
+			 0.0f,0.0f},
+			{{float(test_offset),float(test_offset + test_height),0.0f,1.0f},
+			 {0xff,0x00,0x00,0xff},
+			 0.0f,0.0f},
+			{{float(test_offset + test_width),float(test_offset),0.0f,1.0f},
+			 {0xff,0x00,0x00,0xff},
+			 0.0f,0.0f}
+		};
+		if (!OD_CHECK(odRenderer_draw_vertices(&window->renderer, &view_state, test_vertices, test_vertices_count))) {
+			return false;
+		}
+	}
+	// END throwaway rendering test code - TODO remove
+
+	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, &window_state, nullptr))) {
 		return false;
 	}
 
@@ -500,9 +514,8 @@ const odWindowSettings* odWindow_get_settings(const odWindow* window) {
 }
 
 odWindow::odWindow()
-	: window_native{nullptr}, render_context_native{nullptr}, is_sdl_init{false},
-	  is_open{false}, next_frame_ms{0}, settings{odWindowSettings_get_defaults()},
-	  texture{}, game_render_texture{} {
+	: settings{odWindowSettings_get_defaults()}, window_native{nullptr}, render_context_native{nullptr},
+	is_sdl_init{false}, is_open{false}, next_frame_ms{0}, texture{}, game_render_texture{} {
 }
 odWindow::odWindow(odWindow&& other) : odWindow{} {
 	odWindow_swap(this, &other);

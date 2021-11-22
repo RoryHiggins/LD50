@@ -2,112 +2,98 @@
 
 #include <cstring>
 #include <cinttypes>
-#include <cstdio>
-
-#include <string>
-#include <unordered_set>
 
 #include <od/core/debug.h>
 
-static std::unordered_set<std::string> odAtom_allocations;
 
-odAtom odAtom_init_str(const char* str, int32_t size) {
-	if ((str == nullptr) || (size <= 0) || (str[0] == '\0')) {
-		return odAtom_default;
-	}
-
-	if (str[size - 1] == '\0') {
-		size -= 1;
-	}
-
-	const char* interned_c_str = odAtom_allocations.emplace(str, static_cast<size_t>(size)).first->data();
-	return reinterpret_cast<odAtom>(interned_c_str);
-}
-odAtom odAtom_init_c_str(const char* str) {
-	return odAtom_init_str(str, static_cast<int32_t>(strlen(str)));
-}
-odAtom odAtom_init_int(int32_t x) {
-	const int32_t int_str_buffer_size = 16;
-	char int_str_buffer[int_str_buffer_size] = {};
-	int32_t size = static_cast<int32_t>(snprintf(int_str_buffer, int_str_buffer_size, "%d", x));
-
-	return odAtom_init_str(int_str_buffer, size);
-}
-const char* odAtom_get_str(odAtom atom) {
-	if (atom == 0) {
-		return "";
-	}
-
-	return reinterpret_cast<const char*>(atom);
-}
-
-const char* odVertex_get_debug_string(const odVertex* vertex) {
-	if (vertex == nullptr) {
-		return "odVertex{this=nullptr}";
+const char* odBounds_get_debug_string(const odBounds* bounds) {
+	if (bounds == nullptr) {
+		return "odBounds{this=nullptr}";
 	}
 
 	return odDebugString_format(
-		"odVertex{this=%p, x=%f, y=%f, z=%f r=%d, g=%d, b=%d, a=%d, u=%f, v=%f}",
-		static_cast<const void*>(vertex),
-		static_cast<double>(vertex->z),
-		static_cast<double>(vertex->y),
-		static_cast<double>(vertex->z),
-		static_cast<int>(vertex->r),
-		static_cast<int>(vertex->g),
-		static_cast<int>(vertex->b),
-		static_cast<int>(vertex->a),
-		static_cast<double>(vertex->u),
-		static_cast<double>(vertex->v));
+		"odBounds{this=%p, x=%f, y=%f, width=%f, height=%f}",
+		static_cast<const void*>(bounds),
+		static_cast<double>(bounds->x),
+		static_cast<double>(bounds->y),
+		static_cast<double>(bounds->width),
+		static_cast<double>(bounds->height));
 }
-void odVertex_set_color(odVertex* vertex, const odColor* color) {
-	if (vertex == nullptr) {
-		OD_ERROR("vertex == nullptr");
-		return;
-	}
 
+const char* odColor_get_debug_string(const odColor* color) {
 	if (color == nullptr) {
-		OD_ERROR("color == nullptr");
-		return;
+		return "odColor{this=nullptr}";
 	}
 
-	vertex->r = color->r;
-	vertex->g = color->g;
-	vertex->b = color->b;
-	vertex->a = color->a;
-}
-void odVertex_get_color(const odVertex* vertex, odColor* out_color) {
-	if (vertex == nullptr) {
-		OD_ERROR("vertex == nullptr");
-		return;
-	}
-
-	if (out_color == nullptr) {
-		OD_ERROR("out_color == nullptr");
-		return;
-	}
-
-	out_color->r = vertex->r;
-	out_color->g = vertex->g;
-	out_color->b = vertex->b;
-	out_color->a = vertex->a;
+	return odDebugString_format(
+		"odColor{this=%p, r=%" PRIu8 ", g=%" PRIu8 ", b=%" PRIu8 ", a=%" PRIu8 "}",
+		static_cast<const void*>(color),
+		color->r,
+		color->g,
+		color->b,
+		color->a);
 }
 
-odTransform odTransform_create(
-	float scale_x,
-	float scale_y,
-	float scale_z,
-	float translate_x,
-	float translate_y,
-	float translate_z) {
-	return {
+const char* odVector_get_debug_string(const odVector* vector) {
+	if (vector == nullptr) {
+		return "odVector{this=nullptr}";
+	}
+
+	return odDebugString_format(
+		"odVector{this=%p, vector={%f, %f, %f, %f}}",
+		static_cast<const void*>(vector),
+		static_cast<double>(vector->vector[0]),
+		static_cast<double>(vector->vector[1]),
+		static_cast<double>(vector->vector[2]),
+		static_cast<double>(vector->vector[3]));
+}
+
+const char* odTransform_get_debug_string(const odTransform* transform) {
+	if (transform == nullptr) {
+		return "odTransform{this=nullptr}";
+	}
+
+	return odDebugString_format(
+		"odTransform{this=%p, transform={\n%f, %f, %f, %f,\n%f, %f, %f, %f,\n%f, %f, %f, %f,\n%f, %f, %f, %f}}",
+		static_cast<const void*>(transform),
+		static_cast<double>(transform->matrix[0]),
+		static_cast<double>(transform->matrix[1]),
+		static_cast<double>(transform->matrix[2]),
+		static_cast<double>(transform->matrix[3]),
+		static_cast<double>(transform->matrix[4]),
+		static_cast<double>(transform->matrix[5]),
+		static_cast<double>(transform->matrix[6]),
+		static_cast<double>(transform->matrix[7]),
+		static_cast<double>(transform->matrix[8]),
+		static_cast<double>(transform->matrix[9]),
+		static_cast<double>(transform->matrix[10]),
+		static_cast<double>(transform->matrix[11]),
+		static_cast<double>(transform->matrix[12]),
+		static_cast<double>(transform->matrix[13]),
+		static_cast<double>(transform->matrix[14]),
+		static_cast<double>(transform->matrix[15]));
+}
+void odTransform_init(odTransform* out_transform,
+					  float scale_x, float scale_y, float scale_z,
+					  float translate_x, float translate_y, float translate_z) {
+	if (!OD_DEBUG_CHECK(out_transform != nullptr)) {
+		return;
+	}
+
+	*out_transform = {
 		scale_x, 0, 0, 0,
 		0, scale_y, 0, 0,
 		0, 0, scale_z, 0,
 		translate_x, translate_y, translate_z, 1
 	};
 }
-odTransform odTransform_create_view_transform(int32_t width, int32_t height) {
-	return odTransform_create(
+void odTransform_init_view_transform(odTransform* out_transform, int32_t width, int32_t height) {
+	if (!OD_DEBUG_CHECK(out_transform != nullptr)) {
+		return;
+	}
+
+	return odTransform_init(
+		out_transform,
 		2.0f / static_cast<float>(width),
 		2.0f / static_cast<float>(height),
 		1.0f / static_cast<float>(1 << 20),  // +/- 2^20, near the int limit for float32
@@ -116,11 +102,17 @@ odTransform odTransform_create_view_transform(int32_t width, int32_t height) {
 		0.0f
 	);
 }
-odTransform odTransform_multiply(odTransform a, odTransform b) {
-	const float* ma = a.matrix;
-	const float* mb = b.matrix;
+void odTransform_multiply(odTransform* out_transform, odTransform* a, odTransform* b) {
+	if (!OD_DEBUG_CHECK(out_transform != nullptr)
+		|| !OD_DEBUG_CHECK(a != nullptr)
+		|| !OD_DEBUG_CHECK(b != nullptr)) {
+		return;
+	}
 
-	return odTransform{{
+	const float* ma = a->matrix;
+	const float* mb = b->matrix;
+
+	*out_transform = odTransform{{
 		(ma[0] * mb[0])  + (ma[4] * mb[1])  + (ma[8]  * mb[2])  + (ma[12] * mb[3]),
 		(ma[1] * mb[0])  + (ma[5] * mb[1])  + (ma[9]  * mb[2])  + (ma[13] * mb[3]),
 		(ma[2] * mb[0])  + (ma[6] * mb[1])  + (ma[10] * mb[2])  + (ma[14] * mb[3]),
@@ -139,14 +131,34 @@ odTransform odTransform_multiply(odTransform a, odTransform b) {
 		(ma[3] * mb[12]) + (ma[7] * mb[13]) + (ma[11] * mb[14]) + (ma[15] * mb[15])
 	}};
 }
-odVector odTransform_multiply_vector(odVector a, odTransform b) {
-	const float* v = a.vector;
-	const float* m = b.matrix;
+void odTransform_multiply_vector(odVector* out_vector, odVector* a, odTransform* b) {
+	if (!OD_DEBUG_CHECK(out_vector != nullptr)
+		|| !OD_DEBUG_CHECK(a != nullptr)
+		|| !OD_DEBUG_CHECK(b != nullptr)) {
+		return;
+	}
 
-	return odVector{{
+	const float* v = a->vector;
+	const float* m = b->matrix;
+
+	*out_vector = odVector{{
 		(m[0] * v[0]) + (m[4] * v[1]) + (m[8]  * v[2]) + (m[12] * v[3]),
 		(m[1] * v[0]) + (m[5] * v[1]) + (m[9]  * v[2]) + (m[13] * v[3]),
 		(m[2] * v[0]) + (m[6] * v[1]) + (m[10] * v[2]) + (m[14] * v[3]),
 		(m[3] * v[0]) + (m[7] * v[1]) + (m[11] * v[2]) + (m[15] * v[3])
 	}};
+}
+
+const char* odVertex_get_debug_string(const odVertex* vertex) {
+	if (vertex == nullptr) {
+		return "odVertex{this=nullptr}";
+	}
+
+	return odDebugString_format(
+		"odVertex{this=%p, pos=%s, col=%s, u=%f, v=%f}",
+		static_cast<const void*>(vertex),
+		odVector_get_debug_string(&vertex->pos),
+		odColor_get_debug_string(&vertex->col),
+		static_cast<double>(vertex->u),
+		static_cast<double>(vertex->v));
 }

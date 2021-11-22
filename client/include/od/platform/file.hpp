@@ -9,4 +9,7 @@ struct odFile {
 	OD_PLATFORM_MODULE odFile(odFile&& other);
 	OD_PLATFORM_MODULE odFile& operator=(odFile&& other);
 	OD_PLATFORM_MODULE ~odFile();
+
+	odFile(const odFile& other) = delete;
+	odFile& operator=(const odFile& other) = delete;
 };

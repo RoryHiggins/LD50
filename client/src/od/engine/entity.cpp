@@ -2,46 +2,59 @@
 
 #include <od/engine/entity.hpp>
 
+#include <cmath>
+
 #include <od/core/debug.h>
 #include <od/core/container.hpp>
 #include <od/core/primitive.h>
 
-#define OD_ENTITY_TAGS_SIZE 4
+#define OD_ENTITY_TAGS_SIZE 32
 #define OD_ENTITY_TAGS_COUNT (8 * OD_ENTITY_TAGS_SIZE)
 
-#define OD_ENTITY_CHUNK_COUNT 65536
+#define OD_ENTITY_CHUNK_COORD_DROPPED_BITS 4
+#define OD_ENTITY_CHUNK_COORD_BITS 4
+#define OD_ENTITY_CHUNK_COUNT (1 << (2 * OD_ENTITY_CHUNK_COORD_BITS))
 
 typedef uint8_t odTagId;
 typedef int32_t odEntityId;
+
+int32_t odWorld_get_chunk_coord(float coord);
+int32_t odWorld_get_chunk(float x, float y);
 
 struct odEntityTags {
 	uint8_t bytes[OD_ENTITY_TAGS_SIZE];
 };
 struct odEntity {
 	odEntityId id;
-	odEntityTags tags;
 	odBounds bounds;
-};
+	odEntityTags tags;
 
-struct odWorld {
-	odArrayT<odEntity> chunk_entities[OD_ENTITY_CHUNK_COUNT];
-};
-
-
-
-
-
-struct odEntitySpriteComponent {
 	odBounds texture_bounds;
 	odTransform transform;
 	odColor color;
 	float depth;
-	int32_t vertex_index;
 };
-struct odEntityVertexCache {
-	float depth;
-	odVertex vertices[6];
+struct odChunkEntity {
+	odEntityId id;
+	odBounds bounds;
+	odEntityTags tags;
 };
+
+struct odWorld {
+	odArrayT<odEntity> entities;
+	odArrayT<odChunkEntity> chunk_entities[OD_ENTITY_CHUNK_COUNT];
+};
+
+
+int32_t odWorld_get_chunk_coord(float coord) {
+	const int32_t coord_bitmask = (1 << OD_ENTITY_CHUNK_COORD_BITS) - 1;
+	return (static_cast<int32_t>(coord) >> OD_ENTITY_CHUNK_COORD_DROPPED_BITS) & coord_bitmask;
+}
+int32_t odWorld_get_chunk(float x, float y) {
+	return odWorld_get_chunk_coord(x) + (odWorld_get_chunk_coord(y) << OD_ENTITY_CHUNK_COORD_BITS);
+}
+
+
 // struct odRenderWorld {
 // 	odArrayT<odSpriteComponent> sprites;
 // 	odArrayT<odVertexComponent> vertices;

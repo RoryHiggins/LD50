@@ -2,86 +2,56 @@
 
 #include <od/core/module.h>
 
-typedef size_t odAtom;
-
 struct odBounds {
 	float x;
 	float y;
 	float width;
 	float height;
 };
-
+struct odVector {
+	float vector[4];  // xyzw
+};
+struct odTransform {
+	float matrix[16];  // column-major
+};
 struct odColor {
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
 	uint8_t a;
 };
-
 struct odVertex {
-	float x;
-	float y;
-	float z;
-
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	uint8_t a;
-
+	odVector pos;
+	odColor col;
 	float u;
 	float v;
 };
 
-struct odVector {
-	float vector[4];
-};
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odBounds_get_debug_string(const struct odBounds* bounds);
 
-struct odTransform {
-	float matrix[16];  // column-major memory layout
-};
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odVector_get_debug_string(const struct odVector* vector);
 
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-odAtom odAtom_init_str(const char* str, int32_t size);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odTransform_get_debug_string(const struct odTransform* transform);
 
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-odAtom odAtom_init_c_str(const char* str);
+OD_API_C OD_CORE_MODULE void
+odTransform_init(struct odTransform* out_transform,
+				 float scale_x, float scale_y, float scale_z,
+				 float translate_x, float translate_y, float translate_z);
+OD_API_C OD_CORE_MODULE void
+odTransform_init_view_transform(struct odTransform* out_transform, int32_t width, int32_t height);
+OD_API_C OD_CORE_MODULE void
+odTransform_multiply(struct odTransform* out_transform, struct odTransform* a, struct odTransform* b);
+OD_API_C OD_CORE_MODULE void
+odTransform_multiply_vector(struct odVector* out_vector, struct odVector* a, struct odTransform* b);
 
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-odAtom odAtom_init_int(int32_t x);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odColor_get_debug_string(const struct odColor* color);
 
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-const char* odAtom_get_str(odAtom atom);
-
-
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-const char* odVertex_get_debug_string(const struct odVertex* vertex);
-
-OD_API_C OD_CORE_MODULE
-void odVertex_set_color(struct odVertex* vertex, const struct odColor* color);
-
-OD_API_C OD_CORE_MODULE
-void odVertex_get_color(const struct odVertex* vertex, struct odColor* out_color);
-
-
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-struct odTransform odTransform_create(
-	float scale_x,
-	float scale_y,
-	float scale_z,
-	float translate_x,
-	float translate_y,
-	float translate_z);
-
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-struct odTransform odTransform_create_view_transform(int32_t width, int32_t height);
-
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-struct odTransform odTransform_multiply(struct odTransform a, struct odTransform b);
-
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD
-struct odVector odTransform_multiply_vector(struct odVector a, struct odTransform b);
-
-static const odAtom odAtom_default = 0;
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odVertex_get_debug_string(const struct odVertex* vertex);
 
 static const struct odColor odColor_white = {0xFF, 0xFF, 0xFF, 0xFF};
 static const struct odColor odColor_black = {0x00, 0x00, 0x00, 0xFF};

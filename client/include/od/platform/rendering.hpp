@@ -13,10 +13,11 @@ struct odTexture {
 	OD_PLATFORM_MODULE odTexture& operator=(odTexture&& other);
 	OD_PLATFORM_MODULE ~odTexture();
 
+	// copy _could_ be wrapped for convenience, but it's likely to be used
+	// accidentally in c++, and a blocking texture copy can be very expensive
 	odTexture(odTexture const& other) = delete;
 	odTexture& operator=(const odTexture& other) = delete;
 };
-
 struct odRenderTexture {
 	odTexture texture;
 	uint32_t fbo;
@@ -29,7 +30,6 @@ struct odRenderTexture {
 	odRenderTexture(odRenderTexture const& other) = delete;
 	odRenderTexture& operator=(const odRenderTexture& other) = delete;
 };
-
 struct odRenderer {
 	void* render_context_native;
 	uint32_t vbo;
