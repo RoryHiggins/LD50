@@ -3,8 +3,9 @@
 #include <SDL2/SDL.h>
 
 #include <od/core/debug.h>
-#include <od/core/primitive.h>
-#include <od/core/container.hpp>
+#include <od/core/type.hpp>
+#include <od/core/color.h>
+#include <od/platform/vertex.h>
 #include <od/platform/rendering.h>
 
 static int32_t odSDL_init_counter = 0;
@@ -39,8 +40,8 @@ static void odSDL_destroy_reentrant() {
 	}
 }
 
-odWindowSettings odWindowSettings_get_defaults() {
-	return odWindowSettings{
+const odWindowSettings* odWindowSettings_get_defaults() {
+	static const odWindowSettings settings{
 		/*caption*/ "",
 		/*window_width*/ 640,
 		/*window_height*/ 480,
@@ -51,13 +52,21 @@ odWindowSettings odWindowSettings_get_defaults() {
 		/*is_vsync_enabled"*/ true,
 		/*is_visible*/ true,
 	};
+	return &settings;
 }
-odWindowSettings odWindowSettings_get_headless_defaults() {
-	odWindowSettings headless_defaults{odWindowSettings_get_defaults()};
-	headless_defaults.is_visible = false;
-	headless_defaults.is_fps_limit_enabled = false;
-	headless_defaults.is_vsync_enabled = false;
-	return headless_defaults;
+const odWindowSettings* odWindowSettings_get_headless_defaults() {
+	static const odWindowSettings settings{
+		/*caption*/ "",
+		/*window_width*/ 640,
+		/*window_height*/ 480,
+		/*game_width*/ 160,
+		/*game_height*/ 120,
+		/*fps_limit*/ 60,
+		/*is_fps_limit_enabled*/ false,
+		/*is_vsync_enabled"*/ false,
+		/*is_visible*/ false,
+	};
+	return &settings;
 }
 
 const odType* odWindow_get_type_constructor() {
@@ -94,7 +103,7 @@ const char* odWindow_get_debug_string(const odWindow* window) {
 		static_cast<const void*>(window),
 		window->is_open);
 }
-bool odWindow_init(odWindow* window, odWindowSettings settings) {
+bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
 	if (!OD_DEBUG_CHECK(window != nullptr)) {
@@ -103,7 +112,10 @@ bool odWindow_init(odWindow* window, odWindowSettings settings) {
 
 	odWindow_destroy(window);
 
-	window->settings = settings;
+	window->settings = *odWindowSettings_get_defaults();
+	if (opt_settings != nullptr) {
+		window->settings = *opt_settings;
+	}
 
 	window->is_sdl_init = odSDL_init_reentrant();
 	if (!window->is_sdl_init) {
@@ -438,30 +450,30 @@ bool odWindow_step(odWindow* window) {
 		return false;
 	}
 
-	odTransform view_transform{};
-	odTransform_init_view_transform(&view_transform, window->settings.game_width, window->settings.game_height);
+	odMatrix view_matrix{};
+	odMatrix_init_view_2d(&view_matrix, window->settings.game_width, window->settings.game_height);
 
 	odRenderState view_state{
-		view_transform,
-		odTransform_identity,
+		view_matrix,
+		*odMatrix_get_identity(),
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.game_width), static_cast<float>(window->settings.game_height)},
 		&window->texture,
 		&window->game_render_texture
 	};
 
 	odRenderState window_state{
-		view_transform,
-		odTransform_identity,
+		view_matrix,
+		*odMatrix_get_identity(),
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.window_width), static_cast<float>(window->settings.window_height)},
 		odRenderTexture_get_texture(&window->game_render_texture),
 		/* opt_render_texture*/ nullptr
 	};
 
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, &view_state, odColor_white))) {
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, &view_state, odColor_get_white()))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, &window_state, odColor_white))) {
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, &window_state, odColor_get_white()))) {
 		return false;
 	}
 
@@ -514,7 +526,7 @@ const odWindowSettings* odWindow_get_settings(const odWindow* window) {
 }
 
 odWindow::odWindow()
-	: settings{odWindowSettings_get_defaults()}, window_native{nullptr}, render_context_native{nullptr},
+	: settings{*odWindowSettings_get_defaults()}, window_native{nullptr}, render_context_native{nullptr},
 	is_sdl_init{false}, is_open{false}, next_frame_ms{0}, texture{}, game_render_texture{} {
 }
 odWindow::odWindow(odWindow&& other) : odWindow{} {

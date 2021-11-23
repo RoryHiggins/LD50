@@ -2,20 +2,18 @@
 
 #include <od/platform/module.h>
 
-#include <od/core/primitive.h>
+#include <od/core/bounds.h>
+#include <od/core/matrix.h>
 
 struct odType;
-struct odColor;
-struct odBounds;
-struct odVertex;
 
 struct odTexture;
 struct odRenderTexture;
 struct odRenderer;
 
 struct odRenderState {
-	struct odTransform view;
-	struct odTransform projection;
+	struct odMatrix view;
+	struct odMatrix projection;
 	struct odBounds viewport;
 	const struct odTexture* src_texture;
 	struct odRenderTexture* opt_render_texture;
@@ -71,7 +69,7 @@ odRenderer_destroy(struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odRenderer_flush(struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odRenderer_clear(struct odRenderer* renderer, struct odRenderState* state, odColor color);
+odRenderer_clear(struct odRenderer* renderer, struct odRenderState* state, const struct odColor* color);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odRenderer_draw_vertices(struct odRenderer* renderer, struct odRenderState* state,
 						 const struct odVertex* vertices, int32_t vertices_count);

@@ -4,9 +4,10 @@
 
 #include <png.h>
 
-#include <od/core/primitive.h>
 #include <od/core/debug.h>
-#include <od/core/container.hpp>
+#include <od/core/color.h>
+#include <od/core/type.hpp>
+#include <od/core/allocation.hpp>
 
 const odType* odImage_get_type_constructor() {
 	return odType_get<odImage>();

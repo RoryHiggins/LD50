@@ -17,9 +17,9 @@ struct odWindowSettings {
 	bool is_visible;
 };
 
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odWindowSettings
+OD_API_C OD_PLATFORM_MODULE const struct odWindowSettings*
 odWindowSettings_get_defaults(void);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odWindowSettings
+OD_API_C OD_PLATFORM_MODULE const struct odWindowSettings*
 odWindowSettings_get_headless_defaults(void);
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odType*
@@ -29,7 +29,7 @@ odWindow_swap(struct odWindow* window1, struct odWindow* window2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odWindow_get_debug_string(const struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odWindow_init(struct odWindow* window, struct odWindowSettings settings);
+odWindow_init(struct odWindow* window, const struct odWindowSettings* opt_settings);
 OD_API_C OD_PLATFORM_MODULE void
 odWindow_destroy(struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE void*

@@ -5,6 +5,9 @@
 #include <cstring>
 #include <ctime>
 
+// we intentionally don't mix streams, to avoid out-of-order output
+#define OD_DEBUG_OUT_STREAM stdout
+
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
 OD_API_C OD_CORE_MODULE
@@ -14,7 +17,14 @@ void odLog_on_error();
 static int32_t odLogContext_level_max = OD_LOG_LEVEL_DEFAULT;
 static int32_t odLog_logged_error_count = 0;
 
-odLogContext odLogContext_construct(const char* file, const char* function, int32_t line) {
+void odLogContext_init(struct odLogContext* log_context, const char* file, const char* function, int32_t line) {
+	if (log_context == nullptr) {
+		// using our own logging/assertion code here would risking an infinite loop
+		fprintf(OD_DEBUG_OUT_STREAM, "error initializing log context");
+		fflush(OD_DEBUG_OUT_STREAM);
+		exit(EXIT_FAILURE);
+	}
+
 	if (OD_BUILD_DEBUG) {
 		if (file == nullptr) {
 			file = "<file=nullptr>";
@@ -24,8 +34,15 @@ odLogContext odLogContext_construct(const char* file, const char* function, int3
 		}
 	}
 
-	return odLogContext{file, function, line};
+	*log_context = odLogContext{file, function, line};
 }
+const odLogContext* odLogContext_init_temp(const char* file, const char* function, int32_t line) {
+	static odLogContext log_context{};
+	log_context = odLogContext_init_inline(file, function, line);
+
+	return &log_context;
+}
+
 
 const char* odLogLevel_get_name(int32_t log_level) {
 	switch (log_level) {
@@ -89,26 +106,26 @@ static const char* odLog_get_short_filename(const char* file) {
 }
 void odLog_on_error() {
 }
-void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const char* format_c_str, va_list args) {
+void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list args) {
 	if (OD_BUILD_DEBUG) {
 		// preconditions without assertions/logs special case here:
 		// asserts can call this function, which might cause infinite recursion, so we
 		// play it safe and printf
-		if ((format_c_str == nullptr) || (logger.file == nullptr) || (logger.function == nullptr) ||
+		if ((format_c_str == nullptr) || (log_context->file == nullptr) || (log_context->function == nullptr) ||
 			((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
 			odLog_on_error();
 
 			fprintf(
-				stdout,
+				OD_DEBUG_OUT_STREAM,
 				"odLog_log_variadic() error during logging: log_level=%d, "
 				"format_c_str=%p, file=%p, line=%d, function=%p",
 				log_level,
 				static_cast<const void*>(format_c_str),
-				static_cast<const void*>(logger.file),
-				logger.line,
-				static_cast<const void*>(logger.function));
-			fputc('\n', stdout);
-			fflush(stdout);
+				static_cast<const void*>(log_context->file),
+				log_context->line,
+				static_cast<const void*>(log_context->function));
+			fputc('\n', OD_DEBUG_OUT_STREAM);
+			fflush(OD_DEBUG_OUT_STREAM);
 
 			return;
 		}
@@ -123,48 +140,39 @@ void odLog_log_variadic(struct odLogContext logger, int32_t log_level, const cha
 	}
 
 	time_t time_val = time(nullptr);
-    fprintf(stdout, "[%.8s %s %s:%d %s] ", ctime(&time_val) + 11, odLogLevel_get_name(log_level), odLog_get_short_filename(logger.file), logger.line, logger.function);
+    fprintf(OD_DEBUG_OUT_STREAM, "[%.8s %s %s:%d %s] ", ctime(&time_val) + 11, odLogLevel_get_name(log_level), odLog_get_short_filename(log_context->file), log_context->line, log_context->function);
 
-	vfprintf(stdout, format_c_str, args);
+	vfprintf(OD_DEBUG_OUT_STREAM, format_c_str, args);
 
-	fputc('\n', stdout);
+	fputc('\n', OD_DEBUG_OUT_STREAM);
 	if (OD_BUILD_DEBUG) {
-		fflush(stdout);
+		fflush(OD_DEBUG_OUT_STREAM);
 	}
 
 	if (log_level <= OD_LOG_LEVEL_ERROR) {
 		odLog_on_error();
 	}
 }
-void odLog_log(odLogContext logger, int32_t log_level, const char* format_c_str, ...) {
+void odLog_log(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, ...) {
 	va_list args = {};
 	va_start(args, format_c_str);
-	odLog_log_variadic(logger, log_level, format_c_str, args);
+	odLog_log_variadic(log_context, log_level, format_c_str, args);
 	va_end(args);
 }
-bool odLog_check(odLogContext logger, bool success, const char* expression_c_str) {
+bool odLog_check(const struct odLogContext* log_context, bool success, const char* expression_c_str) {
 	if (!success) {
-		odLog_log(logger, OD_LOG_LEVEL_ERROR, "Check failed: \"%s\"", expression_c_str);
+		odLog_log(log_context, OD_LOG_LEVEL_ERROR, "Check failed: \"%s\"", expression_c_str);
 	}
 	return success;
 }
-void odLog_assert(odLogContext logger, bool success, const char* expression_c_str) {
+void odLog_assert(const struct odLogContext* log_context, bool success, const char* expression_c_str) {
 	if (!success) {
-		odLog_log(logger, OD_LOG_LEVEL_FATAL, "Assertion failed: \"%s\"", expression_c_str);
+		odLog_log(log_context, OD_LOG_LEVEL_FATAL, "Assertion failed: \"%s\"", expression_c_str);
 		exit(EXIT_FAILURE);
 	}
 }
 int32_t odLog_get_logged_error_count() {
 	return odLog_logged_error_count;
-}
-
-odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {
-}
-odLogLevelScoped::odLogLevelScoped(int32_t log_level) : backup_log_level{odLogLevel_get_max()} {
-	odLogLevel_set_max(log_level);
-}
-odLogLevelScoped::~odLogLevelScoped() {
-	odLogLevel_set_max(backup_log_level);
 }
 
 char* odDebugString_allocate(int32_t size) {
@@ -230,4 +238,13 @@ const char* odDebugString_format(const char* format_c_str, ...) {
 	va_end(args);
 
 	return result;
+}
+
+odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {
+}
+odLogLevelScoped::odLogLevelScoped(int32_t log_level) : backup_log_level{odLogLevel_get_max()} {
+	odLogLevel_set_max(log_level);
+}
+odLogLevelScoped::~odLogLevelScoped() {
+	odLogLevel_set_max(backup_log_level);
 }

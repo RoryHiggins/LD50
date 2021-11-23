@@ -4,8 +4,9 @@
 #include <cstring>
 #include <time.h>
 
+#include <od/core/allocation.hpp>
+#include <od/core/string.hpp>
 #include <od/test/test.hpp>
-#include <od/core/container.hpp>
 
 static odString odFile_test_create_random_name() {
 	const char prefix[] = "./odFile_test_";

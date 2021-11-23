@@ -17,8 +17,11 @@
 #include <SDL2/SDL.h>
 
 #include <od/core/debug.h>
-#include <od/core/primitive.h>
-#include <od/core/container.hpp>
+#include <od/core/color.h>
+#include <od/core/vector.h>
+#include <od/core/type.hpp>
+#include <od/core/array.hpp>
+#include <od/platform/vertex.h>
 
 
 #define OD_RENDERER_MESSAGE_BUFFER_SIZE 4096
@@ -89,7 +92,7 @@ static void odRenderer_gl_message_callback(
 	}
 }
 #endif  // !OD_BUILD_EMSCRIPTEN
-OD_NO_DISCARD static bool odGl_check_ok(odLogContext logger) {
+OD_NO_DISCARD static bool odGl_check_ok(odLogContext log_context) {
 	bool ok = true;
 	GLenum gl_error = GL_NO_ERROR;
 
@@ -99,17 +102,17 @@ OD_NO_DISCARD static bool odGl_check_ok(odLogContext logger) {
 #if !OD_BUILD_EMSCRIPTEN
 			error_str = reinterpret_cast<const char*>(gluErrorString(gl_error));
 #endif  // !OD_BUILD_EMSCRIPTEN
-			odLog_log(logger, OD_LOG_LEVEL_ERROR, "gl_error=%u, message=%s", gl_error, error_str);
+			odLog_log(&log_context, OD_LOG_LEVEL_ERROR, "gl_error=%u, message=%s", gl_error, error_str);
 		}
 		ok = false;
 	}
 
-	OD_MAYBE_UNUSED(logger);
+	OD_MAYBE_UNUSED(log_context);
 
 	return ok;
 }
-OD_NO_DISCARD static bool odGl_check_shader_ok(odLogContext logger, GLuint shader) {
-	if (!odGl_check_ok(logger)) {
+OD_NO_DISCARD static bool odGl_check_shader_ok(odLogContext log_context, GLuint shader) {
+	if (!odGl_check_ok(log_context)) {
 		return false;
 	}
 
@@ -129,7 +132,7 @@ OD_NO_DISCARD static bool odGl_check_shader_ok(odLogContext logger, GLuint shade
 			glGetShaderInfoLog(shader, msg_max_size, nullptr, odRenderer_message_buffer);
 
 			odLog_log(
-				logger,
+				&log_context,
 				OD_LOG_LEVEL_ERROR,
 				"OpenGL shader compilation failed, error=\n%s",
 				static_cast<const char*>(odRenderer_message_buffer));
@@ -137,12 +140,12 @@ OD_NO_DISCARD static bool odGl_check_shader_ok(odLogContext logger, GLuint shade
 		return false;
 	}
 
-	OD_MAYBE_UNUSED(logger);
+	OD_MAYBE_UNUSED(log_context);
 
 	return true;
 }
-OD_NO_DISCARD static bool odGl_check_program_ok(odLogContext logger, GLuint program) {
-	if (!odGl_check_ok(logger)) {
+OD_NO_DISCARD static bool odGl_check_program_ok(odLogContext log_context, GLuint program) {
+	if (!odGl_check_ok(log_context)) {
 		return false;
 	}
 
@@ -162,7 +165,7 @@ OD_NO_DISCARD static bool odGl_check_program_ok(odLogContext logger, GLuint prog
 			glGetProgramInfoLog(program, msg_max_size, nullptr, odRenderer_message_buffer);
 
 			odLog_log(
-				logger,
+				&log_context,
 				OD_LOG_LEVEL_ERROR,
 				"OpenGL program linking failed, error=\n%s",
 				static_cast<const char*>(odRenderer_message_buffer));
@@ -170,7 +173,7 @@ OD_NO_DISCARD static bool odGl_check_program_ok(odLogContext logger, GLuint prog
 		return false;
 	}
 
-	OD_MAYBE_UNUSED(logger);
+	OD_MAYBE_UNUSED(log_context);
 
 	return true;
 }
@@ -693,10 +696,11 @@ bool odRenderer_flush(odRenderer* renderer) {
 
 	return true;
 }
-bool odRenderer_clear(odRenderer* renderer, odRenderState* state, odColor color) {
+bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor* color) {
 	if (!OD_DEBUG_CHECK(odRenderer_get_valid(renderer))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)
-		|| !OD_DEBUG_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_get_valid(state->opt_render_texture))) {
+		|| !OD_DEBUG_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_get_valid(state->opt_render_texture))
+		|| !OD_DEBUG_CHECK(color != nullptr)) {
 		return false;
 	}
 
@@ -704,10 +708,10 @@ bool odRenderer_clear(odRenderer* renderer, odRenderState* state, odColor color)
 	glBindFramebuffer(GL_FRAMEBUFFER, (state->opt_render_texture != nullptr) ? state->opt_render_texture->fbo : 0);
 
 	glClearColor(
-		static_cast<GLfloat>(color.r) / 255.0f,
-		static_cast<GLfloat>(color.g) / 255.0f,
-		static_cast<GLfloat>(color.b) / 255.0f,
-		static_cast<GLfloat>(color.a) / 255.0f
+		static_cast<GLfloat>(color->r) / 255.0f,
+		static_cast<GLfloat>(color->g) / 255.0f,
+		static_cast<GLfloat>(color->b) / 255.0f,
+		static_cast<GLfloat>(color->a) / 255.0f
 	);
 	glClear(GL_COLOR_BUFFER_BIT);
 

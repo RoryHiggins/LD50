@@ -2,6 +2,7 @@
 
 #include <od/platform/module.h>
 
+struct odType;
 struct odColor;
 struct odImage;
 

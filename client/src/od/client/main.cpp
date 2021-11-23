@@ -20,8 +20,8 @@ odClient::odClient()
 }
 
 OD_NO_DISCARD static bool odClient_init(odClient* client) {
-	odWindowSettings window_settings{odWindowSettings_get_defaults()};
-	return odWindow_init(&client->window, window_settings);
+	odWindowSettings window_settings{*odWindowSettings_get_defaults()};
+	return odWindow_init(&client->window, &window_settings);
 }
 OD_NO_DISCARD static bool odClient_step(odClient* client) {
 	if (!client->is_initialized) {

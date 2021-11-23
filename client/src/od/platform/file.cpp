@@ -5,7 +5,8 @@
 #include <cstring>
 
 #include <od/core/debug.h>
-#include <od/core/container.hpp>
+#include <od/core/allocation.hpp>
+#include <od/core/type.hpp>
 
 #define OD_FILE_ERROR(FILE, ...) \
 	OD_ERROR("%s", odFile_get_debug_string(FILE)); \
