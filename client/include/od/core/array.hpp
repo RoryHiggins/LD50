@@ -63,3 +63,5 @@ struct odArrayT : public odArray {
 	const T* end() const && = delete;
 	bool push(T&& moved_elem) && = delete;
 };
+
+OD_CORE_MODULE extern template struct odArrayT<int32_t>;

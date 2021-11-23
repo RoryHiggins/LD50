@@ -339,3 +339,5 @@ odArray::~odArray() {
 
 	type = nullptr;
 }
+
+template struct odArrayT<int32_t>;

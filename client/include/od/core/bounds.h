@@ -11,3 +11,6 @@ struct odBounds {
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odBounds_get_debug_string(const struct odBounds* bounds);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odBounds_collides(const struct odBounds* a, const struct odBounds* b);

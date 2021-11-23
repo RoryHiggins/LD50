@@ -8,7 +8,7 @@ const char* odVector_get_debug_string(const odVector* vector) {
 	}
 
 	return odDebugString_format(
-		"odVector{this=%p, vector={%f, %f, %f, %f}}",
+		"odVector{this=%p, vector={%g, %g, %g, %g}}",
 		static_cast<const void*>(vector),
 		static_cast<double>(vector->vector[0]),
 		static_cast<double>(vector->vector[1]),

@@ -11,7 +11,7 @@ const char* odMatrix_get_debug_string(const odMatrix* matrix) {
 	}
 
 	return odDebugString_format(
-		"odMatrix{this=%p, matrix={\n%f, %f, %f, %f,\n%f, %f, %f, %f,\n%f, %f, %f, %f,\n%f, %f, %f, %f}}",
+		"odMatrix{this=%p, matrix={\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g}}",
 		static_cast<const void*>(matrix),
 		static_cast<double>(matrix->matrix[0]),
 		static_cast<double>(matrix->matrix[1]),

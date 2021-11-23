@@ -8,7 +8,7 @@ const char* odVertex_get_debug_string(const odVertex* vertex) {
 	}
 
 	return odDebugString_format(
-		"odVertex{this=%p, pos=%s, col=%s, u=%f, v=%f}",
+		"odVertex{this=%p, pos=%s, col=%s, u=%g, v=%g}",
 		static_cast<const void*>(vertex),
 		odVector_get_debug_string(&vertex->pos),
 		odColor_get_debug_string(&vertex->col),
