@@ -31,6 +31,8 @@ odArray_get_count(const struct odArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odArray_set_count(struct odArray* array, int32_t new_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odArray_ensure_count(struct odArray* array, int32_t min_count);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odArray_expand(struct odArray* array, void** out_expand_dest, int32_t expand_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odArray_push(struct odArray* array, void* moved_src, int32_t moved_count);

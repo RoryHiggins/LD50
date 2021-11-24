@@ -2,35 +2,11 @@
 
 #include <od/engine/world.hpp>
 
-#include <od/platform/vertex.h>
 #include <od/engine/entity.hpp>
 
-#define OD_ENTITY_STORAGE_AOSOA_BITS 3
-#define OD_ENTITY_STORAGE_AOSOA_COUNT (1 << OD_ENTITY_STORAGE_AOSOA_BITS)
-#define OD_ENTITY_STORAGE_AOSOA_SUBINDEX_MASK (OD_ENTITY_STORAGE_AOSOA_COUNT - 1)
-
-struct odInt32Pair {
-	int32_t a;
-	int32_t b;
-};
-
-struct odEntitySprite {
-	float depth;
-	odColor color;
-	odBounds texture_bounds;
-	odMatrix matrix;
-};
 struct odEntityStorage {
-	odTagset tagset[OD_ENTITY_STORAGE_AOSOA_COUNT];
-	int32_t x[OD_ENTITY_STORAGE_AOSOA_COUNT];
-	int32_t y[OD_ENTITY_STORAGE_AOSOA_COUNT];
-	int32_t width[OD_ENTITY_STORAGE_AOSOA_COUNT];
-	int32_t height[OD_ENTITY_STORAGE_AOSOA_COUNT];
-	
-	odEntitySprite sprite[OD_ENTITY_STORAGE_AOSOA_COUNT];
-
-	odArrayT</*chunk_index, map_index*/ odInt32Pair> chunk_entity_map_indices[OD_ENTITY_STORAGE_AOSOA_COUNT];
-	odArrayT</*tag_index, map_index*/ odInt32Pair> tag_entity_map_indices[OD_ENTITY_STORAGE_AOSOA_COUNT];
+	odEntity entity;
+	odEntitySprite sprite;
 };
 
 struct odChunkIterator {
@@ -47,17 +23,22 @@ struct odChunkIterator {
 	bool operator!=(const odChunkIterator& other) const;
 	odChunkIterator& operator++();
 	odChunkIterator& operator++(int);
-	/*chunk_index*/ int32_t operator*();
+	/*chunk_id*/ int32_t operator*();
 };
 
-template struct odArrayT<odInt32Pair>;
+static int32_t odChunkIterator_contains_coords(const odChunkIterator* chunk_iterator, uint8_t x, uint8_t y);
+static int32_t odChunkIterator_contains_chunk(const odChunkIterator* chunk_iterator, int32_t chunk_id);
 
-static uint8_t odChunk_get_coord(float coord);
-static int32_t odChunk_get_index(float x, float y);
+static uint8_t odChunkCoord_init(float coord);
+
+static int32_t odChunkId_init(float x, float y);
+static int32_t odChunkId_init_coords(int32_t x, int32_t y);
+static uint8_t odChunkId_get_coord_x(int32_t chunk_id);
+static uint8_t odChunkId_get_coord_y(int32_t chunk_id);
 
 
 
-bool odWorld_init(struct odWorld* world) {
+bool odWorld_init(odWorld* world) {
 	OD_DEBUG("world=%p", static_cast<const void*>(world));
 
 	if (!OD_DEBUG_CHECK(world != nullptr)) {
@@ -68,196 +49,238 @@ bool odWorld_init(struct odWorld* world) {
 
 	return true;
 }
-void odWorld_destroy(struct odWorld* world) {
+void odWorld_destroy(odWorld* world) {
 	OD_DEBUG("world=%p", static_cast<const void*>(world));
 
 	if (!OD_DEBUG_CHECK(world != nullptr)) {
 		return;
 	}
 
-	odArray_destroy(&world->entity_storage);
+	odArray_destroy(&world->entities);
 
-	for (int32_t i = 0; i < OD_WORLD_CHUNK_INDEX_MAX; i++) {
-		odArray_destroy(&world->chunk_entity_map[i]);
-	}
-
-	for (int32_t i = 0; i < OD_TAG_INDEX_MAX; i++) {
-		odArray_destroy(&world->tag_entity_map[i]);
+	for (int32_t i = 0; i < OD_WORLD_CHUNK_ID_MAX; i++) {
+		odArray_destroy(&world->chunks[i]);
 	}
 }
-static OD_NO_DISCARD bool odWorld_unset_bounds(struct odWorld* world, int32_t entity_index) {
-	odEntityStorage* storage = world->entity_storage[entity_index >> OD_ENTITY_STORAGE_AOSOA_BITS];
-	int32_t storage_subindex = entity_index & OD_ENTITY_STORAGE_AOSOA_SUBINDEX_MASK;
-
-	for (odInt32Pair chunk_map_index_pair: storage->chunk_entity_map_indices[storage_subindex]) {
-		int32_t chunk_index = chunk_map_index_pair.a;
-		int32_t map_index = chunk_map_index_pair.b;
-
-		odArrayT</*entity_index*/ int32_t>* chunk_entity_array = &world->chunk_entity_map[chunk_index];
-
-		if (!OD_CHECK(odArray_swap_pop(chunk_entity_array, map_index))) {
-			return false;
-		}
-
-		int32_t chunk_entity_swapped_index = odArray_get_count(chunk_entity_array) - 1;
-
-		if (chunk_entity_swapped_index >= 0) {
-			// update indexing for entity swapped in the chunk's entity index
-			// unfortunately messy due to AoSoA layout and long confusing names
-			int32_t swapped_entity_index = *(*chunk_entity_array)[chunk_entity_swapped_index];
-			odEntityStorage* swapped_storage = world->entity_storage[swapped_entity_index >> OD_ENTITY_STORAGE_AOSOA_BITS];
-			int32_t swapped_storage_subindex = swapped_entity_index & OD_ENTITY_STORAGE_AOSOA_SUBINDEX_MASK;
-			
-			odInt32Pair* swapped_chunk_entity_map_index_array =
-				swapped_storage->chunk_entity_map_indices[swapped_storage_subindex].begin();
-			int32_t swapped_chunk_entity_map_index_count = odArray_get_count(
-				&swapped_storage->chunk_entity_map_indices[swapped_storage_subindex]);
-			
-			bool swapped_chunk_entity_map_index_found = false;
-			for (int32_t i = 0; i < swapped_chunk_entity_map_index_count; i++) {
-				if (swapped_chunk_entity_map_index_array[i].a == chunk_index) {
-					swapped_chunk_entity_map_index_array[i].b = chunk_entity_swapped_index;
-					swapped_chunk_entity_map_index_found = true;
-					break;
-				}
-			}
-
-			if (!OD_DEBUG_CHECK(swapped_chunk_entity_map_index_found)) {
-				return false;
-			}
-			OD_MAYBE_UNUSED(swapped_chunk_entity_map_index_found);
-		}
-	}
-
-	if (!odArray_set_count(&storage->chunk_entity_map_indices[storage_subindex], 0)) {
+static OD_NO_DISCARD bool odWorld_chunk_find_entity(odWorld* world, int32_t chunk_id, int32_t entity_id, int32_t* opt_out_chunk_index) {
+	if (!OD_DEBUG_CHECK(world != nullptr)
+		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_WORLD_CHUNK_ID_MAX))
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < odArray_get_count(&world->entities)))) {
 		return false;
 	}
 
-	storage->x[storage_subindex] = 0;
-	storage->y[storage_subindex] = 0;
-	storage->width[storage_subindex] = 0;
-	storage->height[storage_subindex] = 0;
-
-	return true;
-}
-static OD_NO_DISCARD bool odWorld_unset_tag(struct odWorld* world, int32_t entity_index, int32_t tag_index) {
-	odEntityStorage* storage = world->entity_storage[entity_index >> OD_ENTITY_STORAGE_AOSOA_BITS];
-	int32_t storage_subindex = entity_index & OD_ENTITY_STORAGE_AOSOA_SUBINDEX_MASK;
-
-	if (!odTagset_get(&storage->tagset[storage_subindex], tag_index)) {
-		return true;
+	odArrayT<odEntity>* chunk_entity_array = &world->chunks[chunk_id];
+	int32_t chunk_entity_count = odArray_get_count(chunk_entity_array);
+	const odEntity* chunk_entities = world->chunks[chunk_id].begin();
+	if (!OD_DEBUG_CHECK((chunk_entity_count > 0) && (chunk_entities != nullptr))) {
+		return false;
 	}
 
-	bool tag_map_index_found = false;
-	int32_t tag_map_index = 0;
-	odInt32Pair* tag_entity_map_index_array =
-		storage->tag_entity_map_indices[storage_subindex].begin();
-	int32_t tag_entity_map_index_count = odArray_get_count(
-		&storage->tag_entity_map_indices[storage_subindex]);
-
-	for (int32_t i = 0; i < tag_entity_map_index_count; i++) {
-		if (tag_entity_map_index_array[i].a == tag_index) {
-			tag_map_index_found = true;
-			tag_map_index = i;
+	int32_t chunk_index = -1;
+	bool found = false;
+	for (int32_t i = 0; i < chunk_entity_count; i++) {
+		if (chunk_entities[i].id == entity_id) {
+			chunk_index = i;
+			found = true;
 			break;
 		}
 	}
 
-	if (!OD_DEBUG_CHECK(tag_map_index_found)) {
-		return false;
-	}
-	OD_MAYBE_UNUSED(tag_map_index_found);
-
-	odInt32Pair tag_map_index_pair = *storage->tag_entity_map_indices[storage_subindex][tag_map_index];
-	int32_t map_index = tag_map_index_pair.b;
-
-	odArrayT</*entity_index*/ int32_t>* tag_entity_array = &world->tag_entity_map[tag_index];
-
-	if (!OD_CHECK(odArray_swap_pop(tag_entity_array, map_index))) {
-		return false;
+	if (opt_out_chunk_index != nullptr) {
+		*opt_out_chunk_index = chunk_index;
 	}
 
-	int32_t swapped_tag_entity_index = odArray_get_count(tag_entity_array) - 1;
+	return found;
+}
+static OD_NO_DISCARD bool odWorld_chunk_unset_entity(odWorld* world, int32_t chunk_id, int32_t entity_id) {
+	if (!OD_DEBUG_CHECK(world != nullptr)
+		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_WORLD_CHUNK_ID_MAX))
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < odArray_get_count(&world->entities)))) {
+		return false;
+	}
 
-	if (swapped_tag_entity_index >= 0) {
-		// update indexing for entity swapped in the chunk's entity index
-		// unfortunately messy due to AoSoA layout and long confusing names
-		int32_t swapped_entity_index = *(*tag_entity_array)[swapped_tag_entity_index];
-		odEntityStorage* swapped_storage = world->entity_storage[swapped_entity_index >> OD_ENTITY_STORAGE_AOSOA_BITS];
-		int32_t swapped_storage_subindex = swapped_entity_index & OD_ENTITY_STORAGE_AOSOA_SUBINDEX_MASK;
-		
-		odInt32Pair* swapped_tag_entity_map_index_array =
-			swapped_storage->tag_entity_map_indices[swapped_storage_subindex].begin();
-		int32_t swapped_tag_entity_map_index_count = odArray_get_count(
-			&swapped_storage->tag_entity_map_indices[swapped_storage_subindex]);
-		
-		bool swapped_tag_entity_map_index_found = false;
-		for (int32_t i = 0; i < swapped_tag_entity_map_index_count; i++) {
-			if (swapped_tag_entity_map_index_array[i].a == tag_index) {
-				swapped_tag_entity_map_index_array[i].b = swapped_tag_entity_index;
-				swapped_tag_entity_map_index_found = true;
-				break;
+	odArrayT<odEntity>* chunk_entity_array = &world->chunks[chunk_id];
+	int32_t chunk_index = -1;
+	if (!OD_CHECK(odWorld_chunk_find_entity(world, chunk_id, entity_id, &chunk_index)
+		|| !OD_DEBUG_CHECK(chunk_index >= 0)
+		|| !OD_DEBUG_CHECK(chunk_index < odArray_get_count(chunk_entity_array)))) {
+		return false;
+	}
+
+	if (!odArray_swap_pop(chunk_entity_array, chunk_index)) {
+		return false;
+	}
+
+	return true;
+}
+static OD_NO_DISCARD bool odWorld_chunk_set_entity(odWorld* world, int32_t chunk_id, const odEntity* new_entity) {
+	if (!OD_DEBUG_CHECK(world != nullptr)
+		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_WORLD_CHUNK_ID_MAX))
+		|| !OD_DEBUG_CHECK(new_entity != nullptr)
+		|| !OD_DEBUG_CHECK(odEntity_get_valid(new_entity))
+		|| !OD_DEBUG_CHECK((new_entity->id >= 0) && (new_entity->id < odArray_get_count(&world->entities)))) {
+		return false;
+	}
+
+	odArrayT<odEntity>* chunk_entity_array = &world->chunks[chunk_id];
+	int32_t chunk_index = 0;
+	bool chunk_has_entity = odWorld_chunk_find_entity(world, chunk_id, new_entity->id, &chunk_index);
+
+	if (!OD_DEBUG_CHECK((chunk_index >= 0) || (!chunk_has_entity))
+		|| !OD_DEBUG_CHECK(chunk_index < odArray_get_count(chunk_entity_array))) {
+		return false;
+	}
+
+	if (!chunk_has_entity) {
+		chunk_entity_array->push(odEntity{*new_entity});
+		return true;
+	}
+
+	odEntity* chunk_entity = (*chunk_entity_array)[chunk_index];
+	if (!OD_DEBUG_CHECK(chunk_entity != nullptr)) {
+		return false;
+	}
+
+	*chunk_entity = *new_entity;
+
+	return true;
+}
+bool odWorld_entity_set(odWorld* world, int32_t entity_id, const odEntity* new_entity) {
+	if (!OD_DEBUG_CHECK(world != nullptr)
+		|| !OD_DEBUG_CHECK(entity_id >= 0)
+		|| !OD_DEBUG_CHECK(new_entity != nullptr)
+		|| !OD_DEBUG_CHECK(odEntity_get_valid(new_entity))
+		|| !OD_DEBUG_CHECK(new_entity->id == entity_id)) {
+		return false;
+	}
+
+	if (odArray_ensure_count(&world->entities, entity_id + 1)) {
+		return false;
+	}
+
+	odEntityStorage* storage = world->entities[entity_id];
+	if (!OD_DEBUG_CHECK(storage != nullptr)
+		|| !OD_DEBUG_CHECK(odEntity_get_valid(&storage->entity))) {
+		return false;
+	}
+
+	odEntity* old_entity = &storage->entity;
+	if (odEntity_equals(old_entity, new_entity)) {
+		return true;
+	}
+
+	odChunkIterator old_bounds_chunks{old_entity->bounds};
+	odChunkIterator new_bounds_chunks{new_entity->bounds};
+	for (int32_t chunk_id: old_bounds_chunks) {
+		if (!odChunkIterator_contains_chunk(&new_bounds_chunks, chunk_id)) {
+			if (!odWorld_chunk_unset_entity(world, chunk_id, entity_id)) {
+				return false;
 			}
 		}
-
-		if (!OD_DEBUG_CHECK(swapped_tag_entity_map_index_found)) {
-			return false;
-		}
-		OD_MAYBE_UNUSED(swapped_tag_entity_map_index_found);
 	}
 
-	if (!OD_CHECK(odArray_swap_pop(&storage->tag_entity_map_indices[storage_subindex], tag_map_index))) {
-		return false;
-	}
-
-	odTagset_set(&storage->tagset[storage_subindex], tag_index, false);
-
-	return true;
-}
-static OD_NO_DISCARD bool odWorld_unset_tags(struct odWorld* world, int32_t entity_index) {
-	for (int32_t tag_index = 0; tag_index < OD_TAG_INDEX_MAX; tag_index++) {
-		if (!odWorld_unset_tag(world, entity_index, tag_index)) {
+	for (int32_t chunk_id: new_bounds_chunks) {
+		if (!odWorld_chunk_set_entity(world, chunk_id, new_entity)) {
 			return false;
 		}
 	}
+
+	*old_entity = *new_entity;
+
 	return true;
 }
-bool odWorld_unset(struct odWorld* world, int32_t entity_index) {
+bool odWorld_entity_get(const odWorld* world, int32_t entity_id, odEntity* out_entity) {
 	if (!OD_DEBUG_CHECK(world != nullptr)
-		|| !OD_DEBUG_CHECK(entity_index >= 0)
-		|| !OD_DEBUG_CHECK((entity_index >> OD_ENTITY_STORAGE_AOSOA_BITS) >= odArray_get_count(&world->entity_storage))
-		|| !OD_CHECK(odWorld_unset_bounds(world, entity_index))
-		|| !OD_CHECK(odWorld_unset_tags(world, entity_index))) {
+		|| !OD_DEBUG_CHECK(entity_id >= 0)
+		|| !OD_DEBUG_CHECK(out_entity != nullptr)) {
 		return false;
 	}
 
-	odEntityStorage* storage = world->entity_storage[entity_index >> OD_ENTITY_STORAGE_AOSOA_BITS];
-	int32_t storage_subindex = entity_index & OD_ENTITY_STORAGE_AOSOA_SUBINDEX_MASK;
-	if (!OD_DEBUG_CHECK(storage != nullptr)) {
+	*out_entity = odEntity{};
+
+	if (entity_id >= odArray_get_count(&world->entities)) {
+		return true;
+	}
+
+	const odEntityStorage* storage = world->entities[entity_id];
+	if (!OD_CHECK(storage != nullptr)
+		|| !OD_DEBUG_CHECK(odEntity_get_valid(&storage->entity))) {
 		return false;
 	}
 
-	storage->sprite[storage_subindex] = odEntitySprite{};
+	*out_entity = storage->entity;
 
 	return true;
 }
-// bool odWorld_set(struct odWorld* world, int32_t entity_index, const struct odEntity* entity) {
+bool odWorld_entity_set_sprite(odWorld* world, int32_t entity_id, const odEntitySprite* new_sprite) {
+	if (!OD_DEBUG_CHECK(world != nullptr)
+		|| !OD_DEBUG_CHECK(entity_id >= 0)
+		|| !OD_DEBUG_CHECK(new_sprite != nullptr)) {
+		return false;
+	}
 
-// }
-// bool odWorld_set_bounds(struct odWorld* world, int32_t entity_index, const struct odBounds* bounds) {
+	if (odArray_ensure_count(&world->entities, entity_id + 1)) {
+		return false;
+	}
 
-// }
-// const struct odEntity* odWorld_get(const struct odWorld* world, int32_t entity_index) {
+	odEntityStorage* storage = world->entities[entity_id];
+	if (!OD_DEBUG_CHECK(storage != nullptr)
+		|| !OD_DEBUG_CHECK(odEntity_get_valid(&storage->entity))) {
+		return false;
+	}
 
-// }
-// int32_t odWorld_search_init(const struct odWorld* world, const struct odWorldSearch* search,
-// 							struct odWorldIterator* out_iterator) {
+	storage->sprite = *new_sprite;
 
-// }
-// bool odWorld_search(const struct odWorld* world, struct odWorldIterator* iterator,
-// 					int32_t* out_entity_index) {
+	return true;
+}
+bool odWorld_entity_get_sprite(const odWorld* world, int32_t entity_id, odEntitySprite* out_sprite) {
+	if (!OD_DEBUG_CHECK(world != nullptr)
+		|| !OD_DEBUG_CHECK(entity_id >= 0)
+		|| !OD_DEBUG_CHECK(out_sprite != nullptr)) {
+		return false;
+	}
 
-// }
+	*out_sprite = odEntitySprite{};
+
+	if (entity_id >= odArray_get_count(&world->entities)) {
+		return true;
+	}
+
+	const odEntityStorage* storage = world->entities[entity_id];
+	if (!OD_CHECK(storage != nullptr)
+		|| !OD_DEBUG_CHECK(odEntity_get_valid(&storage->entity))) {
+		return false;
+	}
+
+	*out_sprite = storage->sprite;
+	return true;
+}
+
+bool odWorldSearch_init(odWorldSearch* search, const odBounds* bounds, const odTagset* opt_tagset, const int32_t* opt_excluded_entity_id) {
+	if (!OD_DEBUG_CHECK(search != nullptr)
+		|| !OD_DEBUG_CHECK(bounds != nullptr)
+		|| !OD_DEBUG_CHECK(odBounds_get_valid(bounds)
+		|| !OD_DEBUG_CHECK((opt_excluded_entity_id == nullptr) || (*opt_excluded_entity_id >= 0)))) {
+		return false;
+	}
+
+	odTagset tagset = opt_tagset ? *opt_tagset : odTagset{};
+	int32_t excluded_entity_id = opt_excluded_entity_id ? *opt_excluded_entity_id : -1;
+
+	int32_t start_chunk_id = odChunkId_init(search->bounds.x, search->bounds.y);
+	*search = odWorldSearch{
+		*bounds,
+		tagset,
+		excluded_entity_id,
+		odChunkId_get_coord_x(start_chunk_id),
+		odChunkId_get_coord_x(start_chunk_id),
+		0
+	};
+
+	return true;
+}
+// bool odWorldSearch_get_complete(const odWorldSearch* search);
+// bool odWorldSearch_next(odWorldSearch* search, const odWorld* world, int32_t* out_entity_id);
 
 odWorld::odWorld() = default;
 odWorld::odWorld(odWorld&& other) = default;
@@ -265,8 +288,8 @@ odWorld& odWorld::operator=(odWorld&& other) = default;
 odWorld::~odWorld() = default;
 
 odChunkIterator::odChunkIterator(odBounds bounds)
-	: x1{odChunk_get_coord(bounds.x)}, y1{odChunk_get_coord(bounds.y)},
-	  x2{odChunk_get_coord(bounds.x + bounds.width)}, y2{odChunk_get_coord(bounds.y + bounds.width)} {
+	: x1{odChunkCoord_init(bounds.x)}, y1{odChunkCoord_init(bounds.y)},
+	  x2{odChunkCoord_init(bounds.x + bounds.width)}, y2{odChunkCoord_init(bounds.y + bounds.width)} {
 }
 
 odChunkIterator odChunkIterator::begin() const {
@@ -302,20 +325,54 @@ odChunkIterator& odChunkIterator::operator++() {
 odChunkIterator& odChunkIterator::operator++(int) {
 	return operator++();
 }
-/*chunk_index*/ int32_t odChunkIterator::operator*() {
-	return (
-		static_cast<int32_t>(x1)
-		+ static_cast<int32_t>(y1 << OD_WORLD_CHUNK_COORD_MASK_BITS));
+int32_t odChunkIterator::operator*() {
+	return odChunkId_init_coords(x1, y1);
 }
 
-static uint8_t odChunk_get_coord(float coord) {
+static int32_t odChunkIterator_contains_coords(const odChunkIterator* chunk_iterator, uint8_t x, uint8_t y) {
+	if (!OD_DEBUG_CHECK(chunk_iterator != nullptr)) {
+		return false;
+	}
+
+	if ((x < chunk_iterator->x1)
+		|| (y < chunk_iterator->y1)
+		|| (x > chunk_iterator->x2)
+		|| (y > chunk_iterator->y2)
+		|| (chunk_iterator->x1 >= chunk_iterator->x2)
+		|| (chunk_iterator->y1 >= chunk_iterator->y2)) {
+		return false;
+	}
+
+	return true;
+}
+static int32_t odChunkIterator_contains_chunk(const odChunkIterator* chunk_iterator, int32_t chunk_id) {
+	return odChunkIterator_contains_coords(
+		chunk_iterator,
+		odChunkId_get_coord_x(chunk_id),
+		odChunkId_get_coord_y(chunk_id));
+}
+
+static uint8_t odChunkCoord_init(float coord) {
 	const int32_t coord_bitmask = (1 << OD_WORLD_CHUNK_COORD_MASK_BITS) - 1;
 	return (static_cast<int32_t>(coord) >> OD_WORLD_CHUNK_COORD_DISCARD_BITS) & coord_bitmask;
 }
-static int32_t odChunk_get_index(float x, float y) {
+static int32_t odChunkId_init(float x, float y) {
 	return (
-		static_cast<int32_t>(odChunk_get_coord(x))
-		+ static_cast<int32_t>((odChunk_get_coord(y) << OD_WORLD_CHUNK_COORD_MASK_BITS)));
+		static_cast<int32_t>(odChunkCoord_init(x))
+		+ static_cast<int32_t>((odChunkCoord_init(y) << OD_WORLD_CHUNK_COORD_MASK_BITS)));
+}
+static int32_t odChunkId_init_coords(int32_t x, int32_t y) {
+	return (
+		static_cast<int32_t>(x)
+		+ static_cast<int32_t>(y << OD_WORLD_CHUNK_COORD_MASK_BITS));
+}
+static uint8_t odChunkId_get_coord_x(int32_t chunk_id) {
+	const int32_t coord_bitmask = (1 << OD_WORLD_CHUNK_COORD_MASK_BITS) - 1;
+	return static_cast<uint8_t>(chunk_id & coord_bitmask);
+}
+static uint8_t odChunkId_get_coord_y(int32_t chunk_id) {
+	const int32_t coord_bitmask = (1 << OD_WORLD_CHUNK_COORD_MASK_BITS) - 1;
+	return static_cast<uint8_t>((chunk_id >> OD_WORLD_CHUNK_COORD_MASK_BITS) & coord_bitmask);
 }
 
 template struct odArrayT<odEntityStorage>;

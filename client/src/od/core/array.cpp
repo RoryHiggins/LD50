@@ -191,6 +191,20 @@ bool odArray_set_count(odArray* array, int32_t new_count) {
 
 	return true;
 }
+bool odArray_ensure_count(struct odArray* array, int32_t min_count) {
+	OD_TRACE("array=%s, min_count=%d", odArray_get_debug_string(array), min_count);
+
+	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+		|| !OD_DEBUG_CHECK(min_count >= 0)) {
+		return false;
+	}
+
+	if (array->count < min_count) {
+		return odArray_set_count(array, min_count);
+	}
+
+	return true;
+}
 bool odArray_expand(odArray* array, void** out_expand_dest, int32_t expand_count) {
 	OD_TRACE(
 		"array=%s, out_expand_dest=%p, expand_count=%d",

@@ -9,11 +9,18 @@
 #include <od/engine/tagset.h>
 
 struct odEntity {
+	int32_t id;
 	odTagset tagset;
 	odBounds bounds;
-	
+};
+struct odEntitySprite {
 	float depth;
 	odColor color;
 	odBounds texture_bounds;
-	odMatrix matrix;
+	odMatrix transform;
 };
+
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+odEntity_get_valid(const struct odEntity* entity);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+odEntity_equals(const struct odEntity* a, const struct odEntity* b);
