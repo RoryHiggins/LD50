@@ -6,6 +6,7 @@
 TARGET := DEBUG
 # client input arguments 
 CLIENT_ARGS :=
+VERBOSE_BUILD := 0
 
 # Dependencies
 # ---
@@ -13,7 +14,9 @@ CMAKE := cmake
 
 # Outputs
 # ---
-BUILD := build/$(TARGET)
+BUILD_ROOT := build
+BUILD_SUFFIX := ANY
+BUILD := $(BUILD_ROOT)/$(TARGET)_$(BUILD_SUFFIX)
 CLIENT := $(BUILD)/od_client
 
 # Commands
@@ -22,7 +25,12 @@ CLIENT := $(BUILD)/od_client
 .DEFAULT_GOAL := $(CLIENT)
 
 $(CLIENT):
-	$(CMAKE) -S . -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" -D BUILD_SHARED_LIBS=1
+	$(CMAKE) \-S . \
+		-B $(BUILD) \
+		-D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" \
+		-D BUILD_SHARED_LIBS=1 \
+		-D CMAKE_VERBOSE_MAKEFILE=$(VERBOSE_BUILD)
+
 	$(CMAKE) --build $(BUILD)
 run: $(CLIENT)
 	$(CLIENT) $(CLIENT_ARGS)
@@ -37,5 +45,5 @@ tidy:
 format:
 	clang-format -i -Werror -- $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))")
 clean:
-	rm -rf build gmon.out
+	rm -rf $(BUILD_ROOT) gmon.out
 

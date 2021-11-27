@@ -172,7 +172,7 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 
 	if (window->settings.is_vsync_enabled) {
 		if (SDL_GL_SetSwapInterval(1) < 0) {
-			OD_ERROR("SDL_GL_SetSwapInterval failed, error=%s; disabling vsync and continuing", SDL_GetError());
+			OD_INFO("SDL_GL_SetSwapInterval failed, error=%s; disabling vsync and continuing", SDL_GetError());
 			// Lack of vsync support is not fatal; we have a frame timer as backup
 			window->settings.is_vsync_enabled = false;
 		}

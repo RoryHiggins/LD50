@@ -127,4 +127,4 @@ const struct odMatrix4* odMatrix4_get_identity() {
 		0, 0, 0, 1
 	};
 	return &matrix;
-};
+}

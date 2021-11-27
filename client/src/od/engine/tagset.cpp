@@ -11,9 +11,9 @@ const char* odTagset_get_debug_string(const odTagset* tagset) {
 		return "odEntity{this=nullptr}";
 	}
 
-	char tagset_hex[2 * OD_TAGSET_BYTE_SIZE];
+	char tagset_hex[1 + (2 * OD_TAGSET_BYTE_SIZE)];
 	for (int32_t i = 0; i < OD_TAGSET_BYTE_SIZE; i++) {
-		snprintf(tagset_hex + (2 * i), 2, "%02x", static_cast<unsigned>(tagset->tagset[i]));
+		snprintf(tagset_hex + (2 * i), 3, "%02x", static_cast<unsigned>(tagset->tagset[i]));
 	}
 
 	return odDebugString_format(

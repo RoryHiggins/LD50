@@ -195,12 +195,11 @@ static OD_NO_DISCARD bool odWorld_chunk_set_entity(odWorld* world, int32_t chunk
 }
 bool odWorld_set(odWorld* world, const odEntity* entity) {
 	if (!OD_DEBUG_CHECK(world != nullptr)
-		|| !OD_DEBUG_CHECK(odEntity_check_valid(entity))
-		|| !OD_DEBUG_CHECK(entity->id < odArray_get_count(&world->entities))) {
+		|| !OD_DEBUG_CHECK(odEntity_check_valid(entity))) {
 		return false;
 	}
 
-	if (odArray_ensure_count(&world->entities, entity->id + 1)) {
+	if (!OD_CHECK(odArray_ensure_count(&world->entities, entity->id + 1))) {
 		return false;
 	}
 
@@ -211,17 +210,15 @@ bool odWorld_set(odWorld* world, const odEntity* entity) {
 	}
 
 	odEntity* old_entity = &storage->entity;
-	if (OD_BUILD_DEBUG) {
-		if (odEntity_equals(old_entity, entity)) {
-			OD_WARN("Assigning entity with already assigned state, entity=%s", odEntity_get_debug_string(old_entity));
-		}
+	if (odEntity_equals(old_entity, entity)) {
+		return true;
 	}
 
 	odChunkIterator old_bounds_chunks{old_entity->bounds};
 	odChunkIterator new_bounds_chunks{entity->bounds};
 	for (int32_t chunk_id: old_bounds_chunks) {
 		if (!odChunkIterator_contains_chunk(&new_bounds_chunks, chunk_id)) {
-			if (!odWorld_chunk_unset_entity(world, chunk_id, entity->id)) {
+			if (!OD_CHECK(odWorld_chunk_unset_entity(world, chunk_id, entity->id))) {
 				return false;
 			}
 		}

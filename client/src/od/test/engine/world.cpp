@@ -19,8 +19,14 @@ OD_TEST(odWorld, init_destroy) {
 }
 
 // OD_TEST(odWorld, set) {
-// 	odWorld world;
-// 	odEntity entity;
+// 	odWorld world{};
+// 	odEntity entity{};
 
+// 	// OD_ASSERT(odWorld_set(&world, &entity));
+
+// 	entity.bounds = {0.0f, 0.0f, 16.0f, 16.0f};
 // 	OD_ASSERT(odWorld_set(&world, &entity));
+
+// 	// entity.bounds = {};
+// 	// OD_ASSERT(odWorld_set(&world, &entity));
 // }

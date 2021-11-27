@@ -53,6 +53,7 @@ static const char odRenderer_vertex_shader[] = R"(
 		uv = src_uv * uv_scale;
 	}
 )";
+#if OD_BUILD_EMSCRIPTEN
 static const char odRenderer_fragment_shader[] = R"(
 	precision mediump float;
 	uniform sampler2D src_texture;
@@ -64,6 +65,18 @@ static const char odRenderer_fragment_shader[] = R"(
 		gl_FragColor = texture2D(src_texture, uv).rgba * col;
 	}
 )";
+#else   // !OD_BUILD_EMSCRIPTEN
+static const char odRenderer_fragment_shader[] = R"(
+	uniform sampler2D src_texture;
+
+	varying vec4 col;
+	varying vec2 uv;
+
+	void main() {
+		gl_FragColor = texture2D(src_texture, uv).rgba * col;
+	}
+)";
+#endif
 
 static GLchar odRenderer_message_buffer[OD_RENDERER_MESSAGE_BUFFER_SIZE] = {};
 

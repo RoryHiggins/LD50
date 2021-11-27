@@ -3,12 +3,9 @@
 #include <od/engine/world.h>
 
 #include <od/core/array.hpp>
-
-struct odEntity;
+#include <od/engine/entity.hpp>
 
 struct odEntityStorage;
-
-OD_ENGINE_MODULE extern template struct odArrayT<odEntity>;
 
 OD_ENGINE_MODULE extern template struct odArrayT<odEntityStorage>;
 

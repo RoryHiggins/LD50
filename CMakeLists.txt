@@ -85,7 +85,7 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 
 	find_path(LUAJIT_INCLUDE_DIR luajit.h
 	  HINTS ENV LUA_DIR
-	  PATH_SUFFIXES include/luajit include/luajit-2.1 include/lua51 include/lua5.1 include/lua-5.1 include)
+	  PATH_SUFFIXES include/luajit include/luajit-2.1)
 
 	if ("${SDL2_LIBRARIES}" STREQUAL "")
 		set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
@@ -96,15 +96,19 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 	set(OD_GL_LIBRARIES OpenGL::GL OpenGL::GLU GLEW::glew)
 
 	if (NOT ("${LUAJIT_LIBRARY}" STREQUAL "") AND NOT ("${LUAJIT_INCLUDE_DIR}" STREQUAL ""))
-		set(OD_LUA_LIBRARIES "${LUAJIT_LIBRARY}")
-		include_directories(LUAJIT_INCLUDE_DIR)
+		set(OD_LUA_LIBRARY "${LUAJIT_LIBRARY}")
+		set(OD_LUA_INCLUDE_DIR "${LUAJIT_INCLUDE_DIR}")
 		message("-- Found LuaJIT: ${LUAJIT_LIBRARY}")
 	else()
 		find_package(Lua51 REQUIRED)
-		set(OD_LUA_LIBRARIES "${LUA_LIBRARY}")
+		set(OD_LUA_LIBRARY "${LUA_LIBRARY}")
+		set(OD_LUA_INCLUDE_DIR "${LUA_INCLUDE_DIR}")
 	endif()
 
-	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} ${OD_GL_LIBRARIES} ${OD_LUA_LIBRARIES} ZLIB::ZLIB PNG::PNG)
+	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} ${OD_GL_LIBRARIES} ZLIB::ZLIB PNG::PNG)
+
+	target_link_libraries(od_engine PRIVATE ${OD_LUA_LIBRARY})
+	target_include_directories(od_engine PRIVATE ${OD_LUA_INCLUDE_DIR})
 else()
 	# emscripten-specific parameters
 	foreach(od_target ${od_targets})
@@ -172,6 +176,10 @@ endif()
 
 # optional gcc-specific parameters, if using gcc
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	set(od_sanitizer_options -fsanitize=address,leak,undefined -fsanitize-recover=address
+		-fsanitize-address-use-after-scope -fstack-protector-all)
+	set(od_static_link_options -static-libstdc++ -static-libgcc)
+
 	foreach(od_target ${od_targets})
 		target_link_libraries(${od_target} PRIVATE m)
 		target_compile_options(
@@ -193,12 +201,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 				target_compile_options(${od_target} PUBLIC -fanalyzer)
 			endif()
 
-			if(NOT ("${MINGW}" EQUAL 1))
-				set(
-					od_sanitizer_options
-					-fsanitize=address,leak,undefined -fsanitize-recover=address
-					-fsanitize-address-use-after-scope -fstack-protector-all
-				)
+			if(NOT("${MINGW}" EQUAL 1))
 				target_compile_options(${od_target} PUBLIC ${od_sanitizer_options})
 				target_link_options(${od_target} PUBLIC ${od_sanitizer_options})
 			endif()
@@ -213,7 +216,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			endif()
 
 			if("${BUILD_SHARED_LIBS}" EQUAL 1)
-				set(od_static_link_options -static-libstdc++ -static-libgcc)
 				target_compile_options(${od_target} PUBLIC ${od_static_link_options})
 				target_link_options(${od_target} PUBLIC ${od_static_link_options})
 			endif()
