@@ -11,7 +11,7 @@ odFile_get_type_constructor(void);
 OD_API_C OD_PLATFORM_MODULE void
 odFile_swap(struct odFile* file1, struct odFile* file2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odFile_get_valid(const struct odFile* file);
+odFile_check_valid(const struct odFile* file);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odFile_get_debug_string(const struct odFile* file);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool

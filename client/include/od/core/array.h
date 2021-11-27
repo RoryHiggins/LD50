@@ -11,7 +11,7 @@ odArray_get_type_constructor(void);
 OD_API_C OD_CORE_MODULE void
 odArray_swap(struct odArray* array1, struct odArray* array2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odArray_get_valid(const struct odArray* array);
+odArray_check_valid(const struct odArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odArray_get_debug_string(const struct odArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool

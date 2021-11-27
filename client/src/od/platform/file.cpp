@@ -16,18 +16,18 @@ const odType* odFile_get_type_constructor(void) {
 	return odType_get<odFile>();
 }
 void odFile_swap(odFile* file1, odFile* file2) {
-	void* native_file_swap = file1->native_file;
-
-	file1->native_file = file2->native_file;
-
-	file2->native_file = native_file_swap;
-}
-bool odFile_get_valid(const struct odFile* file) {
-	if (file == nullptr) {
-		return false;
+	if (!OD_DEBUG_CHECK(file1 != nullptr)
+		|| !OD_DEBUG_CHECK(file2 != nullptr)) {
+		return;
 	}
 
-	if (file->native_file == nullptr) {
+	void* native_file_swap = file1->native_file;
+	file1->native_file = file2->native_file;
+	file2->native_file = native_file_swap;
+}
+bool odFile_check_valid(const struct odFile* file) {
+	if (!OD_CHECK(file != nullptr)
+		|| !OD_CHECK(file->native_file != nullptr)) {
 		return false;
 	}
 
@@ -127,7 +127,7 @@ bool odFile_read(odFile* file, void* out_buffer, int32_t buffer_size, int32_t* o
 		buffer_size,
 		static_cast<const void*>(out_size));
 
-	if (!OD_DEBUG_CHECK(odFile_get_valid(file))
+	if (!OD_DEBUG_CHECK(odFile_check_valid(file))
 		|| !OD_DEBUG_CHECK(out_buffer != nullptr)
 		|| !OD_DEBUG_CHECK(out_size != nullptr)
 		|| !OD_DEBUG_CHECK(buffer_size > 0)) {
@@ -154,7 +154,7 @@ bool odFile_write(odFile* file, const void* buffer, int32_t size) {
 		static_cast<const void*>(buffer),
 		size);
 
-	if (!OD_DEBUG_CHECK(odFile_get_valid(file))
+	if (!OD_DEBUG_CHECK(odFile_check_valid(file))
 		|| !OD_DEBUG_CHECK(buffer != nullptr)
 		|| !OD_DEBUG_CHECK(size > 0)) {
 		return false;

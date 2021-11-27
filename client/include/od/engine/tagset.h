@@ -10,6 +10,8 @@ struct odTagset {
 	uint8_t tagset[OD_TAGSET_BYTE_SIZE];
 };
 
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*
+odTagset_get_debug_string(const struct odTagset* tagset);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odTagset_get(const struct odTagset* tagset, int32_t required_tag_id);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool

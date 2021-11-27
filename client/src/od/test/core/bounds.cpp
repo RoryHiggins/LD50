@@ -2,8 +2,6 @@
 
 #include <od/test/test.hpp>
 
-
-
 OD_TEST(odBounds, collides) {
 	odBounds bounds{8, 8, 64, 64};
 

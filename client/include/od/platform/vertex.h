@@ -6,7 +6,7 @@
 #include <od/core/color.h>
 
 struct odVertex {
-	odVector pos;
+	odVector4 pos;
 	odColor col;
 	float u;
 	float v;
@@ -14,3 +14,5 @@ struct odVertex {
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odVertex_get_debug_string(const struct odVertex* vertex);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odVertex_check_valid(const struct odVertex* vertex);

@@ -1,5 +1,7 @@
 #include <od/core/bounds.h>
 
+#include <cmath>
+
 #include <od/core/debug.h>
 
 const char* odBounds_get_debug_string(const odBounds* bounds) {
@@ -15,21 +17,22 @@ const char* odBounds_get_debug_string(const odBounds* bounds) {
 		static_cast<double>(bounds->width),
 		static_cast<double>(bounds->height));
 }
-bool odBounds_get_valid(const struct odBounds* bounds) {
-	if (!OD_DEBUG_CHECK(bounds != nullptr)) {
-		return false;
-	}
-
-	if ((bounds->width < 0)
-		|| (bounds->height < 0)) {
+bool odBounds_check_valid(const struct odBounds* bounds) {
+	if (!OD_CHECK(bounds != nullptr)
+		|| !OD_CHECK(std::isfinite(bounds->x))
+		|| !OD_CHECK(std::isfinite(bounds->y))
+		|| !OD_CHECK(std::isfinite(bounds->width))
+		|| !OD_CHECK(std::isfinite(bounds->height))
+		|| !OD_CHECK(bounds->width >= 0)
+		|| !OD_CHECK(bounds->height >= 0)) {
 		return false;
 	}
 
 	return true;
 }
 bool odBounds_collides(const odBounds* a, const odBounds* b) {
-	if (!OD_DEBUG_CHECK(a != nullptr)
-		|| !OD_DEBUG_CHECK(b != nullptr)) {
+	if (!OD_DEBUG_CHECK(odBounds_check_valid(a))
+		|| !OD_DEBUG_CHECK(odBounds_check_valid(b))) {
 		return false;
 	}
 
@@ -58,4 +61,14 @@ bool odBounds_equals(const odBounds* a, const odBounds* b) {
 	}
 
 	return true;
+}
+void odBounds_floor(odBounds* bounds) {
+	if (!OD_DEBUG_CHECK(bounds != nullptr)) {
+		return;
+	}
+
+	bounds->x = floorf(bounds->x);
+	bounds->y = floorf(bounds->y);
+	bounds->width = floorf(bounds->width);
+	bounds->height = floorf(bounds->height);
 }

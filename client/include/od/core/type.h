@@ -10,7 +10,7 @@ struct odType {
 };
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odType_get_valid(const struct odType* type);
+odType_check_valid(const struct odType* type);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odType_get_debug_string(const struct odType* type);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD void*

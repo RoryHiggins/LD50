@@ -178,8 +178,20 @@ OD_NO_DISCARD static bool odGl_check_program_ok(odLogContext log_context, GLuint
 	return true;
 }
 
+bool odRenderState_check_valid(const odRenderState* state) {
+	if (!OD_CHECK(state != nullptr)
+		|| !OD_CHECK(odMatrix4_check_valid(&state->view))
+		|| !OD_CHECK(odMatrix4_check_valid(&state->projection))
+		|| !OD_CHECK(odBounds_check_valid(&state->viewport))
+		|| !OD_CHECK(odTexture_check_valid(state->src_texture))
+		|| !OD_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_check_valid(state->opt_render_texture))) {
+		return false;
+	}
 
-const struct odType* odTexture_get_type_constructor() {
+	return true;
+}
+
+const odType* odTexture_get_type_constructor() {
 	return odType_get<odTexture>();
 }
 void odTexture_swap(odTexture* texture1, odTexture* texture2) {
@@ -193,12 +205,12 @@ void odTexture_swap(odTexture* texture1, odTexture* texture2) {
 	memcpy(static_cast<void*>(texture1), static_cast<void*>(texture2), sizeof(odTexture));
 	memcpy(static_cast<void*>(texture2), static_cast<void*>(&texture_swap), sizeof(odTexture));
 }
-bool odTexture_get_valid(const odTexture* texture) {
-	if ((texture == nullptr)
-		|| (texture->render_context_native == nullptr)
-		|| (texture->texture == 0)
-		|| (texture->width <= 0)
-		|| (texture->height <= 0)) {
+bool odTexture_check_valid(const odTexture* texture) {
+	if (!OD_CHECK(texture != nullptr)
+		|| !OD_CHECK(texture->render_context_native != nullptr)
+		|| !OD_CHECK(texture->texture > 0)
+		|| !OD_CHECK(texture->width > 0)
+		|| !OD_CHECK(texture->height > 0)) {
 		return false;
 	}
 
@@ -260,7 +272,7 @@ bool odTexture_init(odTexture* texture, void* render_context_native,
 
 	return true;
 }
-bool odTexture_init_blank(struct odTexture* texture, void* render_context_native) {
+bool odTexture_init_blank(odTexture* texture, void* render_context_native) {
 	const odColor default_texture = {0xFF, 0xFF, 0xFF,0xFF};
 	return odTexture_init(texture, render_context_native, &default_texture, 1, 1);
 }
@@ -290,7 +302,7 @@ bool odTexture_get_size(const odTexture* texture, int32_t* out_opt_width, int32_
 	*out_opt_width = 0;
 	*out_opt_height = 0;
 
-	if (!OD_DEBUG_CHECK(odTexture_get_valid(texture))) {
+	if (!OD_DEBUG_CHECK(odTexture_check_valid(texture))) {
 		return false;
 	}
 
@@ -315,7 +327,7 @@ odTexture::~odTexture() {
 }
 
 
-const struct odType* odRenderTexture_get_type_constructor() {
+const odType* odRenderTexture_get_type_constructor() {
 	return odType_get<odRenderTexture>();
 }
 void odRenderTexture_swap(odRenderTexture* render_texture1, odRenderTexture* render_texture2) {
@@ -329,10 +341,10 @@ void odRenderTexture_swap(odRenderTexture* render_texture1, odRenderTexture* ren
 	memcpy(static_cast<void*>(render_texture1), static_cast<void*>(render_texture2), sizeof(odTexture));
 	memcpy(static_cast<void*>(render_texture2), static_cast<void*>(&render_texture_swap), sizeof(odTexture));
 }
-bool odRenderTexture_get_valid(const odRenderTexture* render_texture) {
-	if ((render_texture == nullptr)
-		|| (!odTexture_get_valid(&render_texture->texture))
-		|| (render_texture->fbo == 0)) {
+bool odRenderTexture_check_valid(const odRenderTexture* render_texture) {
+	if (!OD_CHECK(render_texture != nullptr)
+		|| !OD_CHECK(odTexture_check_valid(&render_texture->texture))
+		|| !OD_CHECK(render_texture->fbo > 0)) {
 		return false;
 	}
 
@@ -401,7 +413,7 @@ void odRenderTexture_destroy(odRenderTexture* render_texture) {
 
 	odTexture_destroy(&render_texture->texture);
 }
-struct odTexture* odRenderTexture_get_texture(odRenderTexture* render_texture) {
+odTexture* odRenderTexture_get_texture(odRenderTexture* render_texture) {
 	if (!OD_DEBUG_CHECK(render_texture != nullptr)
 		|| !OD_DEBUG_CHECK(render_texture->fbo != 0)) {
 		return nullptr;
@@ -409,7 +421,7 @@ struct odTexture* odRenderTexture_get_texture(odRenderTexture* render_texture) {
 
 	return &render_texture->texture;
 }
-const struct odTexture* odRenderTexture_get_texture_const(const odRenderTexture* render_texture) {
+const odTexture* odRenderTexture_get_texture_const(const odRenderTexture* render_texture) {
 	return odRenderTexture_get_texture(const_cast<odRenderTexture*>(render_texture));
 }
 
@@ -471,16 +483,16 @@ void odRenderer_swap(odRenderer* renderer1, odRenderer* renderer2) {
 	memcpy(static_cast<void*>(renderer1), static_cast<void*>(renderer2), sizeof(odRenderer));
 	memcpy(static_cast<void*>(renderer2), static_cast<void*>(&renderer_swap), sizeof(odRenderer));
 }
-bool odRenderer_get_valid(const odRenderer* renderer) {
-	if ((renderer == nullptr)
-		|| (renderer->render_context_native == nullptr)
-		|| (renderer->vbo == 0)
+bool odRenderer_check_valid(const odRenderer* renderer) {
+	if (!OD_CHECK(renderer != nullptr)
+		|| !OD_CHECK(renderer->render_context_native != nullptr)
+		|| !OD_CHECK(renderer->vbo > 0)
 #if !OD_BUILD_EMSCRIPTEN
-		|| (renderer->vao == 0)
+		|| !OD_CHECK(renderer->vao > 0)
 #endif  // !OD_BUILD_EMSCRIPTEN
-		|| (renderer->vertex_shader == 0)
-		|| (renderer->fragment_shader == 0)
-		|| (renderer->program == 0)) {
+		|| !OD_CHECK(renderer->vertex_shader > 0)
+		|| !OD_CHECK(renderer->fragment_shader > 0)
+		|| !OD_CHECK(renderer->program > 0)) {
 		return false;
 	}
 
@@ -622,7 +634,7 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 
 		const GLvoid* offset = static_cast<const GLvoid*>(nullptr);
 		glVertexAttribPointer(src_pos_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(odVertex), offset);
-		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (sizeof(odVector)));
+		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (sizeof(odVector4)));
 
 		glVertexAttribPointer(src_col_attrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(odVertex), offset);
 		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (sizeof(odColor)));
@@ -683,7 +695,7 @@ void odRenderer_destroy(odRenderer* renderer) {
 	renderer->render_context_native = nullptr;
 }
 bool odRenderer_flush(odRenderer* renderer) {
-	if (!OD_DEBUG_CHECK(odRenderer_get_valid(renderer))
+	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return false;
 	}
@@ -697,9 +709,9 @@ bool odRenderer_flush(odRenderer* renderer) {
 	return true;
 }
 bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor* color) {
-	if (!OD_DEBUG_CHECK(odRenderer_get_valid(renderer))
+	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)
-		|| !OD_DEBUG_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_get_valid(state->opt_render_texture))
+		|| !OD_DEBUG_CHECK(odRenderState_check_valid(state))
 		|| !OD_DEBUG_CHECK(color != nullptr)) {
 		return false;
 	}
@@ -729,14 +741,20 @@ bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor*
 }
 bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 							  const odVertex* vertices, int32_t vertices_count) {
-	if (!OD_DEBUG_CHECK(odRenderer_get_valid(renderer))
-		|| !OD_DEBUG_CHECK(state != nullptr)
+	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
+		|| !OD_DEBUG_CHECK(odRenderState_check_valid(state))
 		|| !OD_DEBUG_CHECK(vertices != nullptr)
 		|| !OD_DEBUG_CHECK(vertices_count >= 0)
-		|| !OD_DEBUG_CHECK((state->src_texture == nullptr) || odTexture_get_valid(state->src_texture))
-		|| !OD_DEBUG_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_get_valid(state->opt_render_texture))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return false;
+	}
+
+	if (OD_BUILD_DEBUG) {
+		for (int32_t i = 0; i < vertices_count; i++) {
+			if (!OD_DEBUG_CHECK(odVertex_check_valid(&vertices[i]))) {
+				return false;
+			}
+		}
 	}
 
 	int32_t texture_width = 0;
@@ -749,7 +767,7 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 
 	odRendererScope renderer_scope{renderer};
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, (state->src_texture != nullptr) ? state->src_texture->texture : 0);
+	glBindTexture(GL_TEXTURE_2D, state->src_texture->texture);
 	glBindFramebuffer(GL_FRAMEBUFFER, (state->opt_render_texture != nullptr) ? state->opt_render_texture->fbo : 0);
 
 	GLuint view_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "view"));
@@ -784,15 +802,13 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 }
 bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 							 const odBounds *opt_texture_bounds) {
-	if (!OD_DEBUG_CHECK(odRenderer_get_valid(renderer))
+	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_DEBUG_CHECK(renderer != nullptr)
-		|| !OD_DEBUG_CHECK(state != nullptr)
-		|| !OD_DEBUG_CHECK(state->src_texture != nullptr)
-		|| !OD_DEBUG_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_get_valid(state->opt_render_texture))
-		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
+		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)
+		|| !OD_DEBUG_CHECK(odRenderState_check_valid(state))
+		|| !OD_DEBUG_CHECK((opt_texture_bounds == nullptr) || odBounds_check_valid(opt_texture_bounds))) {
 		return false;
 	}
-
 
 	odBounds bounds{};
 	if (opt_texture_bounds != nullptr) {
@@ -849,7 +865,7 @@ static void odRenderer_unbind() {
 static void odRenderer_bind(odRenderer* renderer) {
 	odRenderer_unbind();
 
-	if (!OD_DEBUG_CHECK(odRenderer_get_valid(renderer))
+	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return;
 	}

@@ -203,45 +203,42 @@ void odWindow_destroy(odWindow* window) {
 		return;
 	}
 
-	if (!OD_CHECK(!odWindow_get_valid(window) || odWindow_prepare_render_context(window))) {
-		return;
-	}
+	if ((window->window_native != nullptr)
+		&& (window->render_context_native != nullptr)
+		&& OD_CHECK(odWindow_prepare_render_context(window))) {
+		OD_TRACE("Destroying render texture");
+		odRenderTexture_destroy(&window->game_render_texture);
 
-	OD_TRACE("Destroying render texture");
+		OD_TRACE("Destroying texture");
+		odTexture_destroy(&window->texture);
 
-	odRenderTexture_destroy(&window->game_render_texture);
+		OD_TRACE("Destroying renderer");
+		odRenderer_destroy(&window->renderer);
 
-	OD_TRACE("Destroying texture");
-
-	odTexture_destroy(&window->texture);
-
-	OD_TRACE("Destroying renderer");
-
-	odRenderer_destroy(&window->renderer);
-
-	if (window->render_context_native != nullptr) {
 		OD_TRACE("Destroying render context");
-
 		SDL_GL_DeleteContext(static_cast<SDL_GLContext*>(window->render_context_native));
-		window->render_context_native = nullptr;
 	}
+
+	window->render_context_native = nullptr;
+	window->window_native = nullptr;
 
 	if (window->window_native != nullptr) {
 		OD_TRACE("Destroying window");
-
 		SDL_DestroyWindow(static_cast<SDL_Window*>(window->window_native));
-		window->window_native = nullptr;
 	}
 
 	if (window->is_sdl_init) {
 		odSDL_destroy_reentrant();
-		window->is_sdl_init = false;
 	}
+
+	window->is_sdl_init = false;
 
 	window->is_open = false;
 }
 void* odWindow_prepare_render_context(odWindow* window) {
-	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
+	if (!OD_DEBUG_CHECK(odWindow_check_valid(window))
+		|| !OD_DEBUG_CHECK(window->window_native != nullptr)
+		|| !OD_DEBUG_CHECK(window->render_context_native != nullptr)) {
 		return nullptr;
 	}
 
@@ -251,17 +248,10 @@ void* odWindow_prepare_render_context(odWindow* window) {
 
 	return window->render_context_native;
 }
-bool odWindow_get_valid(const odWindow* window) {
-	if (!OD_DEBUG_CHECK(window != nullptr)) {
-		return false;
-	}
-
-	if (!window->is_open) {
-		return false;
-	}
-
-	if (!OD_DEBUG_CHECK(window->window_native != nullptr)
-		|| !OD_DEBUG_CHECK(window->render_context_native != nullptr)) {
+bool odWindow_check_valid(const odWindow* window) {
+	if (!OD_CHECK(window != nullptr)
+		|| !OD_CHECK((!window->is_open) || (window->window_native != nullptr))
+		|| !OD_CHECK((!window->is_open) || (window->render_context_native != nullptr))) {
 		return false;
 	}
 
@@ -270,7 +260,7 @@ bool odWindow_get_valid(const odWindow* window) {
 bool odWindow_set_visible(odWindow* window, bool is_visible) {
 	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
 
-	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
+	if (!odWindow_check_valid(window) || !window->is_open) {
 		return false;
 	}
 
@@ -291,7 +281,7 @@ bool odWindow_set_visible(odWindow* window, bool is_visible) {
 bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
 
-	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
+	if (!odWindow_check_valid(window) || !window->is_open) {
 		return false;
 	}
 
@@ -305,7 +295,7 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 	return true;
 }
 OD_NO_DISCARD static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
-	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
+	if (!odWindow_check_valid(window) || !window->is_open) {
 		return false;
 	}
 
@@ -396,7 +386,7 @@ OD_NO_DISCARD static bool odWindow_handle_event(odWindow* window, const SDL_Even
 	return true;
 }
 OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
-	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
+	if (!odWindow_check_valid(window) || !window->is_open) {
 		return false;
 	}
 
@@ -431,7 +421,7 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 	return true;
 }
 bool odWindow_step(odWindow* window) {
-	if (!OD_DEBUG_CHECK(odWindow_get_valid(window))) {
+	if (!odWindow_check_valid(window) || !window->is_open) {
 		return false;
 	}
 
@@ -441,7 +431,7 @@ bool odWindow_step(odWindow* window) {
 			return false;
 		}
 
-		if (!odWindow_get_valid(window)) {
+		if (!odWindow_check_valid(window) || !window->is_open) {
 			return true;
 		}
 	}
@@ -450,12 +440,12 @@ bool odWindow_step(odWindow* window) {
 		return false;
 	}
 
-	odMatrix view_matrix{};
-	odMatrix_init_view_2d(&view_matrix, window->settings.game_width, window->settings.game_height);
+	odMatrix4 view_matrix{};
+	odMatrix4_init_view_2d(&view_matrix, window->settings.game_width, window->settings.game_height);
 
 	odRenderState view_state{
 		view_matrix,
-		*odMatrix_get_identity(),
+		*odMatrix4_get_identity(),
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.game_width), static_cast<float>(window->settings.game_height)},
 		&window->texture,
 		&window->game_render_texture
@@ -463,7 +453,7 @@ bool odWindow_step(odWindow* window) {
 
 	odRenderState window_state{
 		view_matrix,
-		*odMatrix_get_identity(),
+		*odMatrix4_get_identity(),
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.window_width), static_cast<float>(window->settings.window_height)},
 		odRenderTexture_get_texture(&window->game_render_texture),
 		/* opt_render_texture*/ nullptr

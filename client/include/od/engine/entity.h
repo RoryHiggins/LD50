@@ -17,10 +17,17 @@ struct odEntitySprite {
 	float depth;
 	odColor color;
 	odBounds texture_bounds;
-	odMatrix transform;
+	odMatrix4 transform;
 };
 
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*
+odEntity_get_debug_string(const struct odEntity* entity);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odEntity_get_valid(const struct odEntity* entity);
+odEntity_check_valid(const struct odEntity* entity);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odEntity_equals(const struct odEntity* a, const struct odEntity* b);
+
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*
+odEntitySprite_get_debug_string(const struct odEntitySprite* sprite);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+odEntitySprite_check_valid(const struct odEntitySprite* sprite);

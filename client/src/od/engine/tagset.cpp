@@ -2,11 +2,29 @@
 
 #include <od/engine/tagset.h>
 
+#include <cstdio>
+
 #include <od/core/debug.h>
 
+const char* odTagset_get_debug_string(const odTagset* tagset) {
+	if (tagset == nullptr) {
+		return "odEntity{this=nullptr}";
+	}
+
+	char tagset_hex[2 * OD_TAGSET_BYTE_SIZE];
+	for (int32_t i = 0; i < OD_TAGSET_BYTE_SIZE; i++) {
+		snprintf(tagset_hex + (2 * i), 2, "%02x", static_cast<unsigned>(tagset->tagset[i]));
+	}
+
+	return odDebugString_format(
+		"odEntity{this=%p, tagset=0x%*s}",
+		static_cast<const void*>(tagset),
+		2 * OD_TAGSET_BYTE_SIZE,
+		tagset_hex);
+}
 bool odTagset_get(const odTagset *tagset, int32_t required_tag_id) {
 	if (!OD_DEBUG_CHECK(tagset != nullptr)
-		|| !OD_DEBUG_CHECK((required_tag_id > 0) && (required_tag_id <= OD_TAG_ID_MAX))) {
+		|| !OD_DEBUG_CHECK((required_tag_id >= 0) && (required_tag_id <= OD_TAG_ID_MAX))) {
 		return false;
 	}
 
@@ -44,7 +62,7 @@ bool odTagset_equals(const odTagset* a, const odTagset* b) {
 }
 void odTagset_set(odTagset *tagset, int32_t tag_id, bool enabled) {
 	if (!OD_DEBUG_CHECK(tagset != nullptr)
-		|| !OD_DEBUG_CHECK((tag_id > 0) && (tag_id <= OD_TAG_ID_MAX))) {
+		|| !OD_DEBUG_CHECK((tag_id >= 0) && (tag_id <= OD_TAG_ID_MAX))) {
 		return;
 	}
 

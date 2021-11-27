@@ -1,17 +1,18 @@
 #include <od/core/matrix.h>
 
+#include <cmath>
 #include <cstring>
 
 #include <od/core/debug.h>
 #include <od/core/vector.h>
 
-const char* odMatrix_get_debug_string(const odMatrix* matrix) {
+const char* odMatrix4_get_debug_string(const odMatrix4* matrix) {
 	if (matrix == nullptr) {
-		return "odMatrix{this=nullptr}";
+		return "odMatrix4{this=nullptr}";
 	}
 
 	return odDebugString_format(
-		"odMatrix{this=%p, matrix={\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g}}",
+		"odMatrix4{this=%p, matrix={\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g}}",
 		static_cast<const void*>(matrix),
 		static_cast<double>(matrix->matrix[0]),
 		static_cast<double>(matrix->matrix[1]),
@@ -30,7 +31,20 @@ const char* odMatrix_get_debug_string(const odMatrix* matrix) {
 		static_cast<double>(matrix->matrix[14]),
 		static_cast<double>(matrix->matrix[15]));
 }
-void odMatrix_init(odMatrix* out_matrix,
+bool odMatrix4_check_valid(const odMatrix4* matrix) {
+	if (!OD_CHECK(matrix != nullptr)) {
+		return false;
+	}
+
+	for (uint32_t i = 0; i < OD_MATRIX4_ELEM_COUNT; i++) {
+		if (!OD_CHECK(std::isfinite(matrix->matrix[i]))) {
+			return false;
+		}
+	}
+
+	return true;
+}
+void odMatrix4_init(odMatrix4* out_matrix,
 				   float scale_x, float scale_y, float scale_z,
 				   float translate_x, float translate_y, float translate_z) {
 	if (!OD_DEBUG_CHECK(out_matrix != nullptr)) {
@@ -44,12 +58,12 @@ void odMatrix_init(odMatrix* out_matrix,
 		translate_x, translate_y, translate_z, 1
 	};
 }
-void odMatrix_init_view_2d(odMatrix* out_matrix, int32_t width, int32_t height) {
+void odMatrix4_init_view_2d(odMatrix4* out_matrix, int32_t width, int32_t height) {
 	if (!OD_DEBUG_CHECK(out_matrix != nullptr)) {
 		return;
 	}
 
-	return odMatrix_init(
+	return odMatrix4_init(
 		out_matrix,
 		2.0f / static_cast<float>(width),
 		2.0f / static_cast<float>(height),
@@ -59,7 +73,7 @@ void odMatrix_init_view_2d(odMatrix* out_matrix, int32_t width, int32_t height) 
 		0.0f
 	);
 }
-void odMatrix_multiply(odMatrix* out_matrix, odMatrix* a, odMatrix* b) {
+void odMatrix4_multiply(odMatrix4* out_matrix, odMatrix4* a, odMatrix4* b) {
 	if (!OD_DEBUG_CHECK(out_matrix != nullptr)
 		|| !OD_DEBUG_CHECK(a != nullptr)
 		|| !OD_DEBUG_CHECK(b != nullptr)) {
@@ -69,7 +83,7 @@ void odMatrix_multiply(odMatrix* out_matrix, odMatrix* a, odMatrix* b) {
 	const float* ma = a->matrix;
 	const float* mb = b->matrix;
 
-	*out_matrix = odMatrix{{
+	*out_matrix = odMatrix4{{
 		(ma[0] * mb[0])  + (ma[4] * mb[1])  + (ma[8]  * mb[2])  + (ma[12] * mb[3]),
 		(ma[1] * mb[0])  + (ma[5] * mb[1])  + (ma[9]  * mb[2])  + (ma[13] * mb[3]),
 		(ma[2] * mb[0])  + (ma[6] * mb[1])  + (ma[10] * mb[2])  + (ma[14] * mb[3]),
@@ -88,7 +102,7 @@ void odMatrix_multiply(odMatrix* out_matrix, odMatrix* a, odMatrix* b) {
 		(ma[3] * mb[12]) + (ma[7] * mb[13]) + (ma[11] * mb[14]) + (ma[15] * mb[15])
 	}};
 }
-void odMatrix_multiply_vector(odVector* out_vector, odVector* a, odMatrix* b) {
+void odMatrix4_multiply_vector(odVector4* out_vector, odVector4* a, odMatrix4* b) {
 	if (!OD_DEBUG_CHECK(out_vector != nullptr)
 		|| !OD_DEBUG_CHECK(a != nullptr)
 		|| !OD_DEBUG_CHECK(b != nullptr)) {
@@ -98,15 +112,15 @@ void odMatrix_multiply_vector(odVector* out_vector, odVector* a, odMatrix* b) {
 	const float* v = a->vector;
 	const float* m = b->matrix;
 
-	*out_vector = odVector{{
+	*out_vector = odVector4{{
 		(m[0] * v[0]) + (m[4] * v[1]) + (m[8]  * v[2]) + (m[12] * v[3]),
 		(m[1] * v[0]) + (m[5] * v[1]) + (m[9]  * v[2]) + (m[13] * v[3]),
 		(m[2] * v[0]) + (m[6] * v[1]) + (m[10] * v[2]) + (m[14] * v[3]),
 		(m[3] * v[0]) + (m[7] * v[1]) + (m[11] * v[2]) + (m[15] * v[3])
 	}};
 }
-const struct odMatrix* odMatrix_get_identity() {
-	static const odMatrix matrix{
+const struct odMatrix4* odMatrix4_get_identity() {
+	static const odMatrix4 matrix{
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,

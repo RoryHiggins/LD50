@@ -9,8 +9,8 @@ const odType* odAllocation_get_type_constructor(void) {
 	return odType_get<odAllocation>();
 }
 void odAllocation_swap(odAllocation* allocation1, odAllocation* allocation2) {
-	if (!OD_DEBUG_CHECK(odAllocation_get_valid(allocation1))
-		|| !OD_DEBUG_CHECK(odAllocation_get_valid(allocation1))) {
+	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation1))
+		|| !OD_DEBUG_CHECK(odAllocation_check_valid(allocation1))) {
 		return;
 	}
 
@@ -20,8 +20,8 @@ void odAllocation_swap(odAllocation* allocation1, odAllocation* allocation2) {
 
 	allocation2->ptr = swap_ptr;
 }
-bool odAllocation_get_valid(const odAllocation* allocation) {
-	if (allocation == nullptr) {
+bool odAllocation_check_valid(const odAllocation* allocation) {
+	if (!OD_CHECK(allocation != nullptr)) {
 		return false;
 	}
 
@@ -40,7 +40,7 @@ const char* odAllocation_get_debug_string(const odAllocation* allocation) {
 bool odAllocation_init(odAllocation* allocation, int32_t allocation_size) {
 	OD_TRACE("allocation=%s, allocation_size=%d", odAllocation_get_debug_string(allocation), allocation_size);
 
-	if (!OD_DEBUG_CHECK(odAllocation_get_valid(allocation))
+	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation))
 		|| !OD_DEBUG_CHECK(allocation_size >= 0)) {
 		return false;
 	}
@@ -62,7 +62,7 @@ bool odAllocation_init(odAllocation* allocation, int32_t allocation_size) {
 void odAllocation_destroy(odAllocation* allocation) {
 	OD_TRACE("allocation=%s", odAllocation_get_debug_string(allocation));
 
-	if (!OD_DEBUG_CHECK(odAllocation_get_valid(allocation))) {
+	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation))) {
 		return;
 	}
 
@@ -71,7 +71,7 @@ void odAllocation_destroy(odAllocation* allocation) {
 	allocation->ptr = nullptr;
 }
 void* odAllocation_get(odAllocation* allocation) {
-	if (!OD_DEBUG_CHECK(odAllocation_get_valid(allocation))) {
+	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation))) {
 		return nullptr;
 	}
 

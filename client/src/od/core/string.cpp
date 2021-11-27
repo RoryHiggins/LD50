@@ -13,8 +13,8 @@ const odType* odString_get_type_constructor() {
 bool odString_copy(odString* string, const odString* src_string) {
 	OD_TRACE("string=%s, src_string=%s", odString_get_debug_string(string), odString_get_debug_string(src_string));
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))
-		|| !OD_DEBUG_CHECK(odString_get_valid(src_string))) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))
+		|| !OD_DEBUG_CHECK(odString_check_valid(src_string))) {
 		return false;
 	}
 
@@ -43,11 +43,11 @@ void odString_swap(odString* string1, odString* string2) {
 
 	odAllocation_swap(&string1->allocation, &string2->allocation);
 }
-bool odString_get_valid(const odString* string) {
-	if ((string == nullptr)
-		|| (string->count < 0)
-		|| (string->capacity < 0)
-		|| (!odAllocation_get_valid(&string->allocation))) {
+bool odString_check_valid(const odString* string) {
+	if (!OD_CHECK(string != nullptr)
+		|| !OD_CHECK(string->count >= 0)
+		|| !OD_CHECK(string->capacity >= 0)
+		|| !OD_CHECK(odAllocation_check_valid(&string->allocation))) {
 		return false;
 	}
 
@@ -116,7 +116,7 @@ void odString_destroy(odString* string) {
 	odAllocation_destroy(&string->allocation);
 }
 int32_t odString_get_capacity(const odString* string) {
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
 		return 0;
 	}
 
@@ -125,7 +125,7 @@ int32_t odString_get_capacity(const odString* string) {
 bool odString_set_capacity(odString* string, int32_t new_capacity) {
 	OD_TRACE("array=%s, new_capacity=%d", odString_get_debug_string(string), new_capacity);
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))
 		|| !OD_DEBUG_CHECK(new_capacity >= 0)) {
 		return false;
 	}
@@ -170,7 +170,7 @@ bool odString_set_capacity(odString* string, int32_t new_capacity) {
 bool odString_ensure_capacity(odString* string, int32_t min_capacity) {
 	OD_TRACE("string=%s, min_capacity=%d", odString_get_debug_string(string), min_capacity);
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
 		return false;
 	}
 
@@ -193,7 +193,7 @@ bool odString_ensure_capacity(odString* string, int32_t min_capacity) {
 	return odString_set_capacity(string, new_capacity);
 }
 int32_t odString_get_count(const odString* string) {
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
 		return 0;
 	}
 
@@ -202,7 +202,7 @@ int32_t odString_get_count(const odString* string) {
 bool odString_set_count(odString* string, int32_t new_count) {
 	OD_TRACE("string=%s, new_count=%d", odString_get_debug_string(string), new_count);
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))
 		|| !OD_DEBUG_CHECK(new_count >= 0)) {
 		return false;
 	}
@@ -228,7 +228,7 @@ bool odString_expand(odString* string, char** out_expand_dest, int32_t expand_co
 		static_cast<const void*>(out_expand_dest),
 		expand_count);
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))
 		|| !OD_DEBUG_CHECK(out_expand_dest != nullptr)
 		|| !OD_DEBUG_CHECK(expand_count >= 0)) {
 		return false;
@@ -259,7 +259,7 @@ bool odString_push(odString* string, const char* str, int32_t str_count) {
 		static_cast<const void*>(str),
 		str_count);
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))
 		|| !OD_DEBUG_CHECK(str != nullptr)
 		|| !OD_DEBUG_CHECK(str_count > 0)) {
 		return false;
@@ -279,7 +279,7 @@ bool odString_push(odString* string, const char* str, int32_t str_count) {
 bool odString_push_formatted_variadic(odString* string, const char* format_c_str, va_list args) {
 	OD_TRACE("string=%s, format_c_str=%s", odString_get_debug_string(string), format_c_str ? format_c_str : "<nullptr>");
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))
 		|| !OD_DEBUG_CHECK(format_c_str != nullptr)) {
 		return false;
 	}
@@ -330,7 +330,7 @@ bool odString_push_formatted(odString* string, const char* format_c_str, ...) {
 bool odString_ensure_null_terminated(odString* string) {
 	OD_TRACE("string=%s", odString_get_debug_string(string));
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
 		return false;
 	}
 
@@ -343,7 +343,7 @@ bool odString_ensure_null_terminated(odString* string) {
 bool odString_get_null_terminated(const odString* string) {
 	OD_TRACE("string=%s", odString_get_debug_string(string));
 
-	if (!OD_DEBUG_CHECK(odString_get_valid(string))) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
 		return false;
 	}
 

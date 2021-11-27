@@ -13,7 +13,7 @@ odAllocation_swap(struct odAllocation* allocation1, struct odAllocation* allocat
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odAllocation_get_debug_string(const struct odAllocation* allocation);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odAllocation_get_valid(const struct odAllocation* allocation);
+odAllocation_check_valid(const struct odAllocation* allocation);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odAllocation_init(struct odAllocation* allocation, int32_t allocation_size);
 OD_API_C OD_CORE_MODULE void

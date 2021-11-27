@@ -31,11 +31,11 @@ OD_NO_DISCARD static bool odClient_step(odClient* client) {
 		client->is_initialized = true;
 	}
 
-	if (!OD_CHECK(odWindow_get_valid(&client->window))) {
+	if (!OD_CHECK(odWindow_check_valid(&client->window))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odWindow_step(&client->window)) || !odWindow_get_valid(&client->window)) {
+	if (!odWindow_step(&client->window)) {
 		return false;
 	}
 

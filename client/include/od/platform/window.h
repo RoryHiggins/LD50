@@ -41,6 +41,6 @@ odWindow_set_visible(struct odWindow* window, bool is_visible);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odWindow_set_size(struct odWindow* window, int32_t width, int32_t height);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odWindow_get_valid(const struct odWindow* window);
+odWindow_check_valid(const struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odWindowSettings*
 odWindow_get_settings(const struct odWindow* window);

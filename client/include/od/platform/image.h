@@ -13,7 +13,7 @@ odImage_copy(struct odImage* image, const struct odImage* src_image);
 OD_API_C OD_PLATFORM_MODULE void
 odImage_swap(struct odImage* image1, struct odImage* image2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odImage_get_valid(const struct odImage* image);
+odImage_check_valid(const struct odImage* image);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odImage_get_debug_string(const struct odImage* image);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool

@@ -2,7 +2,9 @@
 
 #include <cstring>
 
-bool odType_get_valid(const odType* type) {
+#include <od/core/debug.h>
+
+bool odType_check_valid(const odType* type) {
 	if ((type == nullptr)
 		|| (type->default_construct_fn == nullptr)
 		|| (type->move_assign_fn == nullptr)
@@ -27,7 +29,7 @@ const char* odType_get_debug_string(const odType* type) {
 	);
 }
 void* odType_index(const odType* type, void* array, int32_t i) {
-	if (!OD_DEBUG_CHECK(odType_get_valid(type))
+	if (!OD_DEBUG_CHECK(odType_check_valid(type))
 		|| !OD_DEBUG_CHECK(array != nullptr)
 		|| !OD_DEBUG_CHECK(i >= 0)) {
 		return nullptr;

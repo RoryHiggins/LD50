@@ -13,7 +13,7 @@ odString_copy(struct odString* string, const struct odString* src_string);
 OD_API_C OD_CORE_MODULE void
 odString_swap(struct odString* string1, struct odString* string2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_get_valid(const struct odString* string);
+odString_check_valid(const struct odString* string);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
 odString_compare(const struct odString* string1, const struct odString* string2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*

@@ -29,12 +29,12 @@ void odArray_swap(odArray* array1, odArray* array2) {
 
 	odAllocation_swap(&array1->allocation, &array2->allocation);
 }
-bool odArray_get_valid(const odArray* array) {
-	if ((array == nullptr)
-		|| (array->count < 0)
-		|| (array->capacity < 0)
-		|| (!odType_get_valid(array->type))
-		|| (!odAllocation_get_valid(&array->allocation))) {
+bool odArray_check_valid(const odArray* array) {
+	if (!OD_CHECK(array != nullptr)
+		|| !OD_CHECK(array->count >= 0)
+		|| !OD_CHECK(array->capacity >= 0)
+		|| !OD_CHECK(odType_check_valid(array->type))
+		|| !OD_CHECK(odAllocation_check_valid(&array->allocation))) {
 		return false;
 	}
 
@@ -57,7 +57,7 @@ bool odArray_init(odArray* array, const odType* type) {
 	OD_TRACE("array=%s, type=%s", odArray_get_debug_string(array), odType_get_debug_string(type));
 
 	if (!OD_DEBUG_CHECK(array != nullptr)
-		|| !OD_DEBUG_CHECK(odType_get_valid(type))) {
+		|| !OD_DEBUG_CHECK(odType_check_valid(type))) {
 		return false;
 	}
 
@@ -85,7 +85,7 @@ const odType* odArray_get_type(const odArray* array) {
 	return array->type;
 }
 int32_t odArray_get_capacity(const odArray* array) {
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))) {
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
 		return 0;
 	}
 
@@ -94,7 +94,7 @@ int32_t odArray_get_capacity(const odArray* array) {
 bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 	OD_TRACE("array=%s, new_capacity=%d", odArray_get_debug_string(array), new_capacity);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(new_capacity >= 0)) {
 		return false;
 	}
@@ -139,7 +139,7 @@ bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 bool odArray_ensure_capacity(odArray* array, int32_t min_capacity) {
 	OD_TRACE("array=%s, min_capacity=%d", odArray_get_debug_string(array), min_capacity);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))) {
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
 		return false;
 	}
 
@@ -162,7 +162,7 @@ bool odArray_ensure_capacity(odArray* array, int32_t min_capacity) {
 	return odArray_set_capacity(array, new_capacity);
 }
 int32_t odArray_get_count(const odArray* array) {
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))) {
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
 		return 0;
 	}
 
@@ -171,7 +171,7 @@ int32_t odArray_get_count(const odArray* array) {
 bool odArray_set_count(odArray* array, int32_t new_count) {
 	OD_TRACE("array=%s, new_count=%d", odArray_get_debug_string(array), new_count);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(new_count >= 0)) {
 		return false;
 	}
@@ -194,7 +194,7 @@ bool odArray_set_count(odArray* array, int32_t new_count) {
 bool odArray_ensure_count(struct odArray* array, int32_t min_count) {
 	OD_TRACE("array=%s, min_count=%d", odArray_get_debug_string(array), min_count);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(min_count >= 0)) {
 		return false;
 	}
@@ -212,7 +212,7 @@ bool odArray_expand(odArray* array, void** out_expand_dest, int32_t expand_count
 		static_cast<const void*>(out_expand_dest),
 		expand_count);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(out_expand_dest != nullptr)
 		|| !OD_DEBUG_CHECK(expand_count >= 0)) {
 		return false;
@@ -243,7 +243,7 @@ bool odArray_push(odArray* array, void* moved_src, int32_t moved_count) {
 		static_cast<const void*>(moved_src),
 		moved_count);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(moved_src != nullptr)
 		|| !OD_DEBUG_CHECK(moved_count > 0)) {
 		return false;
@@ -263,7 +263,7 @@ bool odArray_push(odArray* array, void* moved_src, int32_t moved_count) {
 bool odArray_pop(odArray* array, int32_t count) {
 	OD_TRACE("array=%s, count=%d", odArray_get_debug_string(array), count);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(count > 0)
 		|| !OD_DEBUG_CHECK(array->count >= count)) {
 		return false;
@@ -278,7 +278,7 @@ bool odArray_pop(odArray* array, int32_t count) {
 bool odArray_swap_pop(odArray* array, int32_t i) {
 	OD_TRACE("array=%s, i=%d", odArray_get_debug_string(array), i);
 
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(i >= 0)
 		|| !OD_CHECK(i < array->count)) {
 		return false;
@@ -289,7 +289,7 @@ bool odArray_swap_pop(odArray* array, int32_t i) {
 	return true;
 }
 void* odArray_get(odArray* array, int32_t i) {
-	if (!OD_DEBUG_CHECK(odArray_get_valid(array))
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(i >= 0)
 		|| !OD_CHECK(i < array->count)) {
 		return nullptr;

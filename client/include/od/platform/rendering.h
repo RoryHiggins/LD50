@@ -12,19 +12,22 @@ struct odRenderTexture;
 struct odRenderer;
 
 struct odRenderState {
-	struct odMatrix view;
-	struct odMatrix projection;
+	struct odMatrix4 view;
+	struct odMatrix4 projection;
 	struct odBounds viewport;
 	const struct odTexture* src_texture;
 	struct odRenderTexture* opt_render_texture;
 };
+
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odRenderState_check_valid(const struct odRenderState* state);
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odType*
 odTexture_get_type_constructor(void);
 OD_API_C OD_PLATFORM_MODULE void
 odTexture_swap(struct odTexture* texture1, struct odTexture* texture2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odTexture_get_valid(const struct odTexture* texture);
+odTexture_check_valid(const struct odTexture* texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odTexture_get_debug_string(const struct odTexture* texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
@@ -42,7 +45,7 @@ odRenderTexture_get_type_constructor(void);
 OD_API_C OD_PLATFORM_MODULE void
 odRenderTexture_swap(struct odRenderTexture* render_texture1, struct odRenderTexture* render_texture2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odRenderTexture_get_valid(const struct odRenderTexture* render_texture);
+odRenderTexture_check_valid(const struct odRenderTexture* render_texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odRenderTexture_get_debug_string(const struct odRenderTexture* render_texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
@@ -59,7 +62,7 @@ odRenderer_get_type_constructor(void);
 OD_API_C OD_PLATFORM_MODULE void
 odRenderer_swap(struct odRenderer* renderer1, struct odRenderer* renderer2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odRenderer_get_valid(const struct odRenderer* renderer);
+odRenderer_check_valid(const struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odRenderer_get_debug_string(const struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
