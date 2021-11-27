@@ -256,7 +256,7 @@ bool odArray_push(odArray* array, void* moved_src, int32_t moved_count) {
 
 	OD_TRACE("push_dest=%p", static_cast<const void*>(push_dest));
 
-	array->type->move_assign_fn(push_dest, moved_src, moved_count * array->type->size);
+	array->type->move_assign_fn(push_dest, moved_src, moved_count);
 
 	return true;
 }
@@ -284,7 +284,7 @@ bool odArray_swap_pop(odArray* array, int32_t i) {
 		return false;
 	}
 
-	array->type->move_assign_fn(odArray_get(array, i), odArray_get(array, array->count - 1), array->type->size);
+	array->type->move_assign_fn(odArray_get(array, i), odArray_get(array, array->count - 1), 1);
 
 	return true;
 }
