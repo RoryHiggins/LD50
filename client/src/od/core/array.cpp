@@ -286,6 +286,10 @@ bool odArray_swap_pop(odArray* array, int32_t i) {
 
 	array->type->move_assign_fn(odArray_get(array, i), odArray_get(array, array->count - 1), 1);
 
+	if (!OD_CHECK(odArray_set_count(array, array->count - 1))) {
+		return false;
+	}
+
 	return true;
 }
 void* odArray_get(odArray* array, int32_t i) {
