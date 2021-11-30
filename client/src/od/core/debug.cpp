@@ -10,9 +10,17 @@
 
 #define OD_TEMP_BUFFER_CAPACITY 262144
 
-OD_API_C OD_CORE_MODULE
-void odLog_on_error();
+static bool (*odDebug_platform_backtrace_handler)() = nullptr;
 
+void odPlatformDebug_set_backtrace_handler(bool(*handler)()) {
+	odDebug_platform_backtrace_handler = handler;
+}
+
+void odDebug_error() {
+	if (odDebug_platform_backtrace_handler != nullptr) {
+		odDebug_platform_backtrace_handler();
+	}
+}
 
 static int32_t odLogContext_level_max = OD_LOG_LEVEL_DEFAULT;
 static int32_t odLog_logged_error_count = 0;
@@ -42,7 +50,6 @@ const odLogContext* odLogContext_init_temp(const char* file, const char* functio
 
 	return &log_context;
 }
-
 
 const char* odLogLevel_get_name(int32_t log_level) {
 	switch (log_level) {
@@ -104,8 +111,6 @@ static const char* odLog_get_short_filename(const char* file) {
 
 	return file;
 }
-void odLog_on_error() {
-}
 void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list args) {
 	if (OD_BUILD_DEBUG) {
 		// preconditions without assertions/logs special case here:
@@ -113,7 +118,7 @@ void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_leve
 		// play it safe and printf
 		if ((format_c_str == nullptr) || (log_context->file == nullptr) || (log_context->function == nullptr) ||
 			((log_level < OD_LOG_LEVEL_FIRST) || (log_level > OD_LOG_LEVEL_LAST))) {
-			odLog_on_error();
+			odDebug_error();
 
 			fprintf(
 				OD_DEBUG_OUT_STREAM,
@@ -149,8 +154,8 @@ void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_leve
 		fflush(OD_DEBUG_OUT_STREAM);
 	}
 
-	if (log_level <= OD_LOG_LEVEL_ERROR) {
-		odLog_on_error();
+	if (OD_BUILD_DEBUG && (log_level <= OD_LOG_LEVEL_ERROR)) {
+		odDebug_error();
 	}
 }
 void odLog_log(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, ...) {

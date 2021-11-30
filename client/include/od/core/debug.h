@@ -45,6 +45,9 @@ struct odLogContext {
 };
 
 OD_API_C OD_CORE_MODULE void
+odDebug_error(void);
+
+OD_API_C OD_CORE_MODULE void
 odLogContext_init(struct odLogContext* log_context, const char* file, const char* function, int32_t line);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odLogContext*
 odLogContext_init_temp(const char* file, const char* function, int32_t line);
@@ -79,3 +82,7 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odDebugString_format_variadic(const char* format_c_str, va_list args);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+
+OD_API_C OD_CORE_MODULE void
+odPlatformDebug_set_backtrace_handler(bool(*fn)(void));
+

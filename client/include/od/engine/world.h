@@ -2,25 +2,26 @@
 
 #include <od/engine/module.h>
 
+#include <od/core/bounds.h>
+#include <od/engine/tagset.h>
+
 #define OD_WORLD_CHUNK_COORD_DISCARD_BITS 4
 #define OD_WORLD_CHUNK_COORD_MASK_BITS 4
 #define OD_WORLD_CHUNK_COORD_COUNT 2  // x, y
 #define OD_WORLD_CHUNK_ID_MAX \
 	(1 << (OD_WORLD_CHUNK_COORD_MASK_BITS * OD_WORLD_CHUNK_COORD_COUNT))
 
-struct odBounds;
-struct odTagset;
 struct odEntity;
 struct odEntitySprite;
 
 struct odWorld;
 
 struct odWorldSearch {
+	int32_t* out_entity_ids;
 	int32_t max_results;
-	const struct odTagset* tagset;
-	const struct odBounds* bounds;
+	struct odBounds bounds;
+	struct odTagset tagset;
 	const int32_t* opt_excluded_entity_id;
-	int32_t* opt_out_entity_ids;
 };
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*

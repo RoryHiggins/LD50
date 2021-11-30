@@ -7,6 +7,7 @@ TARGET := DEBUG
 # client input arguments 
 CLIENT_ARGS :=
 VERBOSE_BUILD := 0
+SHARED_LIBRARY_BUILD := 1
 
 # Dependencies
 # ---
@@ -28,7 +29,7 @@ $(CLIENT):
 	$(CMAKE) \-S . \
 		-B $(BUILD) \
 		-D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" \
-		-D BUILD_SHARED_LIBS=1 \
+		-D BUILD_SHARED_LIBS=$(SHARED_LIBRARY_BUILD) \
 		-D CMAKE_VERBOSE_MAKEFILE=$(VERBOSE_BUILD)
 
 	$(CMAKE) --build $(BUILD)
@@ -37,7 +38,7 @@ run: $(CLIENT)
 test: $(CLIENT)
 	$(CLIENT) --test $(CLIENT_ARGS)
 gdb: $(CLIENT)
-	gdb -ex 'break main' -ex 'break odLog_on_error' --ex run --args $(CLIENT) $(CLIENT_ARGS)
+	gdb -ex 'break main' -ex 'break abort' --ex run --args $(CLIENT) $(CLIENT_ARGS)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:

@@ -4,15 +4,17 @@ project(overworld LANGUAGES CXX)
 set(OD_BUILD_DEBUG_DEFAULT 1)
 if(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
 	set(OD_BUILD_DEBUG_DEFAULT 0)
-else()
 endif()
-set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build for debugging")
-set(OD_BUILD_LOG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with logging")
-set(OD_BUILD_TESTS ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL "Build with tests")
+
+set(OD_BUILD_LOG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
+	"Build with logging")
+set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
+	"Build with debugging checks")
+set(OD_BUILD_TESTS ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
+	"Build with tests")
 
 # od_core
 add_library(od_core)
-set_target_properties(od_core PROPERTIES UNITY_BUILD 1)
 
 # od_platform
 add_library(od_platform)
@@ -26,7 +28,6 @@ set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
 
 # od_engine
 add_library(od_engine)
-set_target_properties(od_engine PROPERTIES UNITY_BUILD 1)
 target_link_libraries(od_engine PRIVATE m od_core od_platform)
 
 # od_test
@@ -36,7 +37,6 @@ target_link_libraries(od_test PRIVATE m od_core od_platform od_engine)
 
 # od_client
 add_executable(od_client)
-set_target_properties(od_client PROPERTIES UNITY_BUILD 1)
 target_link_libraries(od_client PRIVATE m od_core od_platform)
 if (${OD_BUILD_TESTS})
 	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 0 EXCLUDE_FROM_DEFAULT_BUILD 0)
@@ -77,6 +77,8 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 	find_package(GLEW REQUIRED)
 	find_package(PNG REQUIRED)
 	find_package(ZLIB REQUIRED)
+
+	find_package(Backtrace)
 
 	find_library(LUAJIT_LIBRARY
 		NAMES luajit luajit-5.1
@@ -194,16 +196,24 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual)
 
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
-			target_compile_options(${od_target} PUBLIC -O0 -ggdb3)
+			target_compile_options(${od_target} PUBLIC -O0 -ggdb3 -fno-omit-frame-pointer)
 			target_compile_definitions(${od_target} PRIVATE _FORTIFY_SOURCE=2)
 
 			if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
 				target_compile_options(${od_target} PUBLIC -fanalyzer)
 			endif()
 
-			if(NOT("${MINGW}" EQUAL 1))
+			if("${WIN32}" EQUAL 1)
+				target_link_libraries(${od_target} PRIVATE imagehlp)
+				target_compile_definitions(${od_target} PRIVATE OD_CORE_HAS_DBGHELP=1)
+			else()
 				target_compile_options(${od_target} PUBLIC ${od_sanitizer_options})
 				target_link_options(${od_target} PUBLIC ${od_sanitizer_options})
+
+				if (Backtrace_FOUND)
+					target_link_libraries(${od_target} PRIVATE backtrace)
+					target_compile_definitions(${od_target} PRIVATE OD_CORE_HAS_LIBBACKTRACE=1)
+				endif()
 			endif()
 		endif()
 

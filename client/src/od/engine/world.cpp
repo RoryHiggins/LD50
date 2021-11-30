@@ -30,13 +30,13 @@ struct odChunkIterator {
 	/*chunk_id*/ int32_t operator*();
 };
 
-static int32_t odChunkIterator_contains_coords(const odChunkIterator* chunk_iterator, uint8_t x, uint8_t y);
-static int32_t odChunkIterator_contains_chunk(const odChunkIterator* chunk_iterator, int32_t chunk_id);
+static bool odChunkIterator_contains_chunk_coords(const odChunkIterator* iter, uint8_t x, uint8_t y);
+static bool odChunkIterator_contains_chunk_id(const odChunkIterator* iter, int32_t chunk_id);
 
 static uint8_t odChunkCoord_init(float coord);
 
-// static int32_t odChunkId_init(float x, float y);
-static int32_t odChunkId_init_coords(uint8_t x, uint8_t y);
+// static int32_t odChunkId_init_coords(float x, float y);
+static int32_t odChunkId_init_chunk_coords(uint8_t x, uint8_t y);
 static uint8_t odChunkId_get_coord_x(int32_t chunk_id);
 static uint8_t odChunkId_get_coord_y(int32_t chunk_id);
 
@@ -52,22 +52,22 @@ const char* odWorldSearch_get_debug_string(const odWorldSearch* search) {
 	}
 
 	return odDebugString_format(
-		"odWorldSearch{this=%p, max_results=%d, tagset=%s, bounds=%s, opt_excluded_entity_id=%s, opt_out_entity_ids=%p}",
+		"odWorldSearch{this=%p, max_results=%d, tagset=%s, bounds=%s, opt_excluded_entity_id=%s, out_entity_ids=%p}",
 		static_cast<const void*>(search),
 		search->max_results,
-		odTagset_get_debug_string(search->tagset),
-		odBounds_get_debug_string(search->bounds),
+		odTagset_get_debug_string(&search->tagset),
+		odBounds_get_debug_string(&search->bounds),
 		excluded_entity_id_str,
-		static_cast<const void*>(search->opt_out_entity_ids));
+		static_cast<const void*>(search->out_entity_ids));
 }
 bool odWorldSearch_check_valid(const odWorldSearch* search) {
 	if (!OD_CHECK(search != nullptr)) {
 		return false;
 	}
 
-	if (!OD_CHECK(search->max_results > 0)
-		|| !OD_CHECK(search->tagset != nullptr)
-		|| !OD_CHECK(odBounds_check_valid(search->bounds)
+	if (!OD_CHECK(search->out_entity_ids != nullptr)
+		|| !OD_CHECK(search->max_results >= 0)
+		|| !OD_CHECK(odBounds_check_valid(&search->bounds)
 		|| !OD_CHECK((search->opt_excluded_entity_id == nullptr) || (*search->opt_excluded_entity_id >= 0)))) {
 		return false;
 	}
@@ -80,8 +80,8 @@ bool odWorldSearch_matches_entity(const odWorldSearch* search, const odEntity* e
 		return false;
 	}
 
-	if (!odTagset_intersects(&entity->tagset, search->tagset)
-		|| !odBounds_collides(&entity->bounds, search->bounds)
+	if (!odTagset_intersects(&entity->tagset, &search->tagset)
+		|| !odBounds_collides(&entity->bounds, &search->bounds)
 		|| ((search->opt_excluded_entity_id != nullptr) && (entity->id == *search->opt_excluded_entity_id))) {
 		return false;
 	}
@@ -152,7 +152,7 @@ static OD_NO_DISCARD bool odWorld_chunk_unset_entity(odWorld* world, int32_t chu
 
 	odArrayT<odEntity>* chunk_entity_array = &world->chunks[chunk_id];
 	int32_t chunk_index = -1;
-	if (!OD_DEBUG_CHECK(!odWorld_chunk_find_entity(world, chunk_id, entity_id, &chunk_index))) {
+	if (!OD_DEBUG_CHECK(odWorld_chunk_find_entity(world, chunk_id, entity_id, &chunk_index))) {
 		return false;
 	}
 
@@ -217,7 +217,7 @@ bool odWorld_set(odWorld* world, const odEntity* entity) {
 	odChunkIterator old_bounds_chunks{old_entity->bounds};
 	odChunkIterator new_bounds_chunks{entity->bounds};
 	for (int32_t chunk_id: old_bounds_chunks) {
-		if (!odChunkIterator_contains_chunk(&new_bounds_chunks, chunk_id)) {
+		if (!odChunkIterator_contains_chunk_id(&new_bounds_chunks, chunk_id)) {
 			if (!OD_CHECK(odWorld_chunk_unset_entity(world, chunk_id, entity->id))) {
 				return false;
 			}
@@ -305,30 +305,43 @@ bool odWorld_get_sprite(const odWorld* world, int32_t entity_id, odEntitySprite*
 int32_t odWorld_search(const odWorld* world, const odWorldSearch* search) {
 	if (!OD_DEBUG_CHECK(world != nullptr)
 		|| !OD_DEBUG_CHECK(odWorldSearch_check_valid(search))) {
-		return false;
+		return 0;
 	}
 
+	if (search->max_results == 0) {
+		return 0;
+	}
+
+	odChunkIterator search_bounds{search->bounds};
+
 	int32_t count = 0;
-	for (int32_t chunk_id: odChunkIterator{*search->bounds}) {
+	for (int32_t chunk_id: search_bounds) {
 		for (const odEntity& entity: world->chunks[chunk_id]) {
 			if (!OD_DEBUG_CHECK(odEntity_check_valid(&entity))) {
-				return false;
+				return 0;
 			}
 
 			if (!odWorldSearch_matches_entity(search, &entity)) {
 				continue;
 			}
 
-			int32_t new_count = count + 1;
-			if (search->opt_out_entity_ids != nullptr) {
-				search->opt_out_entity_ids[count] = entity.id;
-
-				if (new_count >= search->max_results) {
+			bool seen_before = false;
+			for (int32_t i = 0; i < count; i++) {
+				if (search->out_entity_ids[i] == entity.id) {
+					seen_before = true;
 					break;
 				}
 			}
+			if (seen_before) {
+				continue;
+			}
 
-			count = new_count;
+			search->out_entity_ids[count] = entity.id;
+
+			count++;
+			if (count >= search->max_results) {
+				break;
+			}
 		}
 	}
 
@@ -342,17 +355,25 @@ odWorld::~odWorld() = default;
 
 odChunkIterator::odChunkIterator(const odBounds& bounds)
 	: x1{odChunkCoord_init(bounds.x)}, y1{odChunkCoord_init(bounds.y)},
-	  x2{odChunkCoord_init(bounds.x + bounds.width)}, y2{odChunkCoord_init(bounds.y + bounds.width)} {
+	  x2{odChunkCoord_init(bounds.x + bounds.width)}, y2{odChunkCoord_init(bounds.y + bounds.height)} {
+	if (!OD_CHECK(odBounds_check_valid(&bounds))
+		|| (bounds.width == 0)
+	  	|| (bounds.height == 0)) {
+		x1 = 0;
+		y1 = 0;
+		x2 = 0;
+		y2 = 0;
+	}
 }
 
 odChunkIterator odChunkIterator::begin() const {
 	return *this;
 }
 odChunkIterator odChunkIterator::end() const {
-	odChunkIterator chunk_iterator = *this;
-	chunk_iterator.x1 = x2;
-	chunk_iterator.y1 = y2;
-	return chunk_iterator;
+	odChunkIterator iter = *this;
+	iter.x1 = x2;
+	iter.y1 = y2;
+	return iter;
 }
 bool odChunkIterator::operator==(const odChunkIterator& other) const {
 	return (
@@ -366,10 +387,12 @@ bool odChunkIterator::operator!=(const odChunkIterator& other) const {
 	return !(operator==(other));
 }
 odChunkIterator& odChunkIterator::operator++() {
-	if (x1 < x2) {
-		x1++;
-	} else if (y1 < y2) {
-		y1++;
+	const int32_t coord_bitmask = (1 << OD_WORLD_CHUNK_COORD_MASK_BITS) - 1;
+
+	if (x1 != x2) {
+		x1 = (x1 + 1) & coord_bitmask;
+	} else if (y1 != y2) {
+		y1 = (y1 + 1) & coord_bitmask;
 	} else {
 		OD_ERROR("Attempting to iterate chunk iterator past its end");
 	}
@@ -379,48 +402,46 @@ odChunkIterator& odChunkIterator::operator++(int) {
 	return operator++();
 }
 int32_t odChunkIterator::operator*() {
-	return odChunkId_init_coords(x1, y1);
+	return odChunkId_init_chunk_coords(x1, y1);
 }
 
-static int32_t odChunkIterator_contains_coords(const odChunkIterator* chunk_iterator, uint8_t x, uint8_t y) {
-	if (!OD_DEBUG_CHECK(chunk_iterator != nullptr)) {
+static bool odChunkIterator_contains_chunk_coords(const odChunkIterator* iter, uint8_t x, uint8_t y) {
+	if (!OD_DEBUG_CHECK(iter != nullptr)) {
 		return false;
 	}
 
-	if ((x < chunk_iterator->x1)
-		|| (y < chunk_iterator->y1)
-		|| (x > chunk_iterator->x2)
-		|| (y > chunk_iterator->y2)
-		|| (chunk_iterator->x1 >= chunk_iterator->x2)
-		|| (chunk_iterator->y1 >= chunk_iterator->y2)) {
+	if (((iter->x1 < iter->x2) && ((x < iter->x1) || (x > iter->x2)))
+		|| ((iter->y1 < iter->y2) && ((y < iter->y1) || (y > iter->y2)))
+		// can wrap around on an axis; if so, reject coord if in continuous range of nonmatching values
+		|| ((iter->x1 > iter->x2) && (x > iter->x1) && (x < iter->x2))
+		|| ((iter->y1 > iter->y2) && (y > iter->y1) && (y < iter->y2))) {
 		return false;
 	}
 
 	return true;
 }
-static int32_t odChunkIterator_contains_chunk(const odChunkIterator* chunk_iterator, int32_t chunk_id) {
-	return odChunkIterator_contains_coords(
-		chunk_iterator,
+static bool odChunkIterator_contains_chunk_id(const odChunkIterator* iter, int32_t chunk_id) {
+	return odChunkIterator_contains_chunk_coords(
+		iter,
 		odChunkId_get_coord_x(chunk_id),
 		odChunkId_get_coord_y(chunk_id));
 }
-
 static uint8_t odChunkCoord_init(float coord) {
 	const int32_t coord_bitmask = (1 << OD_WORLD_CHUNK_COORD_MASK_BITS) - 1;
 	return (static_cast<int32_t>(coord) >> OD_WORLD_CHUNK_COORD_DISCARD_BITS) & coord_bitmask;
 }
-// static int32_t odChunkId_init(float x, float y) {
+// static int32_t odChunkId_init_coords(float x, float y) {
 // 	return (
 // 		static_cast<int32_t>(odChunkCoord_init(x))
 // 		+ static_cast<int32_t>((odChunkCoord_init(y) << OD_WORLD_CHUNK_COORD_MASK_BITS)));
 // }
-static int32_t odChunkId_init_coords(uint8_t x, uint8_t y) {
+static int32_t odChunkId_init_chunk_coords(uint8_t x, uint8_t y) {
 	return (
 		static_cast<int32_t>(x)
 		+ static_cast<int32_t>(y << OD_WORLD_CHUNK_COORD_MASK_BITS));
 }
 static uint8_t odChunkId_get_coord_x(int32_t chunk_id) {
-	if (!OD_DEBUG_CHECK(chunk_id < 0)) {
+	if (!OD_DEBUG_CHECK(chunk_id >= 0)) {
 		return 0;
 	}
 
@@ -428,7 +449,7 @@ static uint8_t odChunkId_get_coord_x(int32_t chunk_id) {
 	return static_cast<uint8_t>(chunk_id & coord_bitmask);
 }
 static uint8_t odChunkId_get_coord_y(int32_t chunk_id) {
-	if (!OD_DEBUG_CHECK(chunk_id < 0)) {
+	if (!OD_DEBUG_CHECK(chunk_id >= 0)) {
 		return 0;
 	}
 
