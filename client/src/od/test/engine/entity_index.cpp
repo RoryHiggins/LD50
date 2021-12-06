@@ -127,6 +127,10 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance_realistic_case, OD_TEST
 	const float grid_width_f = float(grid_width);
 	const int32_t grid_area = (grid_width * grid_width);
 
+	const int32_t small_searches_count = (4 * grid_area);
+	const int32_t large_searches_count = 4;
+	const int32_t frame_rate = 60;
+
 	for (int32_t i = 0; i < grid_area; i++) {
 		odEntity entity{};
 		entity.collider.id = i;
@@ -134,44 +138,47 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance_realistic_case, OD_TEST
 		OD_ASSERT(odEntityIndex_set(&entity_index, &entity));
 	}
 
-	int32_t cumulative = 0;
-	for (int32_t i = 0; i < (4 * grid_area); i++) {
-		const int32_t search_results_count = 1;
-		int32_t search_results[search_results_count];
-		odEntitySearch search{
-			search_results,
-			search_results_count,
-			{8.0f * float(i / 64), 8.0f * float(i % 64), 8.0f, 8.0f},
-			{}};
-		cumulative += odEntityIndex_search(&entity_index, &search);
-	}
-	OD_ASSERT(cumulative > 0);
+	for (int32_t i = 0; i < frame_rate; i++) {
+		int32_t cumulative = 0;
 
-	cumulative = 0;
-	for (int32_t i = 0; i < 4; i++) {
-		const int32_t search_results_count = 1;
-		int32_t search_results[search_results_count];
-		odEntitySearch search{
-			search_results,
-			search_results_count,
-			{-grid_width_f, -grid_width_f, grid_width_f, grid_width_f},
-			{}};
-		cumulative += odEntityIndex_search(&entity_index, &search);
-	}
-	OD_ASSERT(cumulative == 0);
+		for (int32_t j = 0; j < small_searches_count; j++) {
+			const int32_t search_results_count = 1;
+			int32_t search_results[search_results_count];
+			odEntitySearch search{
+				search_results,
+				search_results_count,
+				{8.0f * float(j / 64), 8.0f * float(j % 64), 8.0f, 8.0f},
+				{}};
+			cumulative += odEntityIndex_search(&entity_index, &search);
+		}
+		OD_ASSERT(cumulative > 0);
 
-	cumulative = 0;
-	for (int32_t i = 0; i < 4; i++) {
-		const int32_t search_results_count = 1;
-		int32_t search_results[search_results_count];
-		odEntitySearch search{
-			search_results,
-			search_results_count,
-			{-grid_width_f, -grid_width_f, (2.0f * grid_width_f), (2.0f * grid_width_f)},
-			{}};
-		cumulative += odEntityIndex_search(&entity_index, &search);
+		cumulative = 0;
+		for (int32_t j = 0; j < large_searches_count; j++) {
+			const int32_t search_results_count = 1;
+			int32_t search_results[search_results_count];
+			odEntitySearch search{
+				search_results,
+				search_results_count,
+				{-grid_width_f, -grid_width_f, grid_width_f, grid_width_f},
+				{}};
+			cumulative += odEntityIndex_search(&entity_index, &search);
+		}
+		OD_ASSERT(cumulative == 0);
+
+		cumulative = 0;
+		for (int32_t j = 0; j < large_searches_count; j++) {
+			const int32_t search_results_count = 1;
+			int32_t search_results[search_results_count];
+			odEntitySearch search{
+				search_results,
+				search_results_count,
+				{-grid_width_f, -grid_width_f, (2.0f * grid_width_f), (2.0f * grid_width_f)},
+				{}};
+			cumulative += odEntityIndex_search(&entity_index, &search);
+		}
+		OD_ASSERT(cumulative > 0);
 	}
-	OD_ASSERT(cumulative > 0);
 }
 
 OD_TEST_SUITE(

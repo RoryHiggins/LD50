@@ -34,8 +34,6 @@ struct odTestSuite {
 		return odTestSuite{#SUITE_NAME, tests, (sizeof(tests) / sizeof(odTest))}; \
 	}
 
-#endif
-
 OD_TEST_SUITE_DECLARE(odTestSuite_odFile)
 OD_TEST_SUITE_DECLARE(odTestSuite_odImage)
 OD_TEST_SUITE_DECLARE(odTestSuite_odRendering)
@@ -48,3 +46,5 @@ OD_TEST_SUITE_DECLARE(odTestSuite_odLog)
 OD_TEST_SUITE_DECLARE(odTestSuite_odFastArray)
 OD_TEST_SUITE_DECLARE(odTestSuite_odString)
 OD_TEST_SUITE_DECLARE(odTestSuite_odType)
+
+#endif

@@ -89,6 +89,10 @@ endforeach()
 
 # third-party library parameters
 if(NOT("${EMSCRIPTEN}" EQUAL 1))
+	if(NOT ("${BUILD_SHARED_LIBS}" EQUAL 1))
+		set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
+	endif()
+
 	# native (non-emscripten) parameters
 	find_package(SDL2 REQUIRED)
 	find_package(OpenGL REQUIRED)
@@ -201,9 +205,7 @@ endif()
 # optional gcc-specific parameters, if using gcc
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	foreach(od_target ${od_targets})
-		target_link_libraries(${od_target} PRIVATE m)
-		target_compile_options(
-			${od_target} PUBLIC
+		set(od_warning_options
 			-Wall -Wextra -pedantic -Werror=vla -Winvalid-pch -fno-exceptions -fno-rtti
 			-Wold-style-cast -Wregister -Wshadow -Wvirtual-inheritance -Wnamespaces
 			-Wzero-as-null-pointer-constant -Wpacked -Wredundant-decls -Wvla
@@ -212,7 +214,24 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			-Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
 			-Wdisabled-optimization -Wfloat-conversion -Wlogical-op -Wmultichar
 			-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual
-			-Wno-stringop-truncation)
+			-Wno-stringop-truncation -Wno-missing-profile)
+
+		target_link_libraries(${od_target} PRIVATE m)
+		target_compile_options(${od_target} PUBLIC ${od_warning_options} ${od_profile_generation_options})
+		target_link_options(${od_target} PUBLIC ${od_warning_options} ${od_profile_generation_options})
+
+		if(NOT ("${BUILD_SHARED_LIBS}" EQUAL 1))
+			set(od_static_link_options -static -static-libstdc++ -static-libgcc)
+			target_compile_options(${od_target} PUBLIC ${od_static_link_options})
+			target_link_options(${od_target} PUBLIC ${od_static_link_options})
+
+			if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE"))
+				target_compile_options(${od_target} PUBLIC -fprofile-generate)
+				target_link_options(${od_target} PUBLIC -fprofile-generate)
+			endif()
+
+			target_link_options(${od_target} PUBLIC -fprofile-use)
+		endif()
 
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 			set(od_debug_options -Og -ggdb3 -fno-omit-frame-pointer -fno-inline)
@@ -255,12 +274,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
 			if("${MINGW}" EQUAL 1)
 				target_link_options(${od_target} PUBLIC -mwindows)
-			endif()
-
-			if(NOT ("${BUILD_SHARED_LIBS}" EQUAL 1))
-				set(od_static_link_options -static-libstdc++ -static-libgcc)
-				target_compile_options(${od_target} PUBLIC ${od_static_link_options})
-				target_link_options(${od_target} PUBLIC ${od_static_link_options})
 			endif()
 		endif()
 	endforeach()
