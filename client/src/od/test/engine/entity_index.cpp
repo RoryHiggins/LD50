@@ -3,7 +3,7 @@
 #include <od/engine/entity.h>
 #include <od/test/test.hpp>
 
-OD_TEST(odEntityIndex, init_destroy) {
+OD_TEST(odTest_odEntityIndex_init_destroy) {
 	odEntityIndex entity_index;
 
 	OD_ASSERT(odEntityIndex_init(&entity_index));
@@ -17,8 +17,7 @@ OD_TEST(odEntityIndex, init_destroy) {
 	odEntityIndex_destroy(&entity_index);
 	odEntityIndex_destroy(&entity_index);
 }
-
-OD_TEST(odEntityIndex, set_get) {
+OD_TEST(odTest_odEntityIndex_set_get) {
 	odEntityIndex entity_index{};
 	odEntity entity{};
 
@@ -46,8 +45,7 @@ OD_TEST(odEntityIndex, set_get) {
 	OD_ASSERT(odEntityCollider_equals(&entity.collider,
 									  &odEntityIndex_get(&entity_index, entity.collider.id)->collider));
 }
-
-OD_TEST(odEntityIndex, search) {
+OD_TEST(odTest_odEntityIndex_search) {
 	odEntityIndex entity_index{};
 
 	// OD_INFO("%s", odEntityIndex_get_debug_string(&entity_index));
@@ -121,8 +119,7 @@ OD_TEST(odEntityIndex, search) {
 	search.bounds = {-65.0f, -64.0f, 1.0f, 1.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 }
-
-OD_TEST_FILTERED(odEntityIndex, search_performance_realistic_case, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odEntityIndex_search_performance_realistic_case, OD_TEST_FILTER_SLOW) {
 	odEntityIndex entity_index{};
 
 	const int32_t grid_width_bits = (OD_WORLD_CHUNK_OPTIMUM_SCREEN_WIDTH_BITS - OD_WORLD_CHUNK_OPTIMUM_TILE_WIDTH_BITS);
@@ -176,3 +173,11 @@ OD_TEST_FILTERED(odEntityIndex, search_performance_realistic_case, OD_TEST_FILTE
 	}
 	OD_ASSERT(cumulative > 0);
 }
+
+OD_TEST_SUITE(
+	odTestSuite_odEntityIndex,
+	odTest_odEntityIndex_init_destroy,
+	odTest_odEntityIndex_set_get,
+	odTest_odEntityIndex_search,
+	odTest_odEntityIndex_search_performance_realistic_case,
+)

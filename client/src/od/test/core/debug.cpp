@@ -4,7 +4,7 @@
 
 #include <od/test/test.hpp>
 
-OD_TEST(odLog, get_level_name) {
+OD_TEST(odTest_odLog_get_level_name) {
 	const char* unknown_level_name = odLogLevel_get_name(OD_LOG_LEVEL_NONE);
 	OD_ASSERT(unknown_level_name != nullptr);
 
@@ -19,3 +19,8 @@ OD_TEST(odLog, get_level_name) {
 		OD_ASSERT(strcmp(level_name, unknown_level_name) != 0);
 	}
 }
+
+OD_TEST_SUITE(
+	odTestSuite_odLog,
+	odTest_odLog_get_level_name,
+)

@@ -6,30 +6,45 @@
 #include <od/core/debug.hpp>
 
 struct odTest {
-	const char* suite;
 	const char* name;
 	void (*fn)();
 	int32_t filters;
 
-	OD_TEST_MODULE odTest(const char* in_suite, const char* in_name, void (*in_fn)(), int32_t in_filters);
+	OD_TEST_MODULE odTest(const char* in_name, void (*in_fn)(), int32_t in_filters);
 };
 
-// struct odTest {
-// 	OD_TEST_MODULE odTest(const char* suite, const char* name, void (*fn)(), int32_t filters);
-// };
+struct odTestSuite {
+	const char* name;
+	const odTest* tests;
+	int32_t tests_count;
+};
 
-#define OD_TEST_FILTERED(TEST_SUITE, TEST_NAME, TEST_FILTERS) \
-	static void odTest_##TEST_SUITE##_##TEST_NAME(); \
-	inline odTest odTest_get_##TEST_SUITE##_##TEST_NAME() { \
-		return odTest{ \
-			(#TEST_SUITE), \
-			(#TEST_NAME), \
-			&odTest_##TEST_SUITE##_##TEST_NAME, \
-			(TEST_FILTERS), \
-		}; \
-	} \
-	static void odTest_##TEST_SUITE##_##TEST_NAME()
+#define OD_TEST_FILTERED(TEST_NAME, TEST_FILTERS) \
+	static void TEST_NAME##_run(); \
+	static odTest TEST_NAME = odTest{#TEST_NAME, &TEST_NAME##_run, (TEST_FILTERS)}; \
+	static void TEST_NAME##_run()
 
-#define OD_TEST(TEST_SUITE, TEST_NAME) OD_TEST_FILTERED(TEST_SUITE, TEST_NAME, OD_TEST_FILTER_NONE)
+#define OD_TEST(TEST_NAME) OD_TEST_FILTERED(TEST_NAME, OD_TEST_FILTER_NONE)
+
+#define OD_TEST_SUITE_DECLARE(SUITE_NAME) extern OD_TEST_MODULE odTestSuite SUITE_NAME();
+
+#define OD_TEST_SUITE(SUITE_NAME, ...) \
+	odTestSuite SUITE_NAME() { \
+		static odTest tests[] = { __VA_ARGS__ }; \
+		return odTestSuite{#SUITE_NAME, tests, (sizeof(tests) / sizeof(odTest))}; \
+	}
 
 #endif
+
+OD_TEST_SUITE_DECLARE(odTestSuite_odFile)
+OD_TEST_SUITE_DECLARE(odTestSuite_odImage)
+OD_TEST_SUITE_DECLARE(odTestSuite_odRendering)
+OD_TEST_SUITE_DECLARE(odTestSuite_odWindow)
+OD_TEST_SUITE_DECLARE(odTestSuite_odEntityIndex)
+OD_TEST_SUITE_DECLARE(odTestSuite_odAllocation)
+OD_TEST_SUITE_DECLARE(odTestSuite_odArray)
+OD_TEST_SUITE_DECLARE(odTestSuite_odBounds)
+OD_TEST_SUITE_DECLARE(odTestSuite_odLog)
+OD_TEST_SUITE_DECLARE(odTestSuite_odFastArray)
+OD_TEST_SUITE_DECLARE(odTestSuite_odString)
+OD_TEST_SUITE_DECLARE(odTestSuite_odType)

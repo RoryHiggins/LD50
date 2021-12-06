@@ -2,7 +2,7 @@
 
 #include <od/test/test.hpp>
 
-OD_TEST(odBounds, collides) {
+OD_TEST(odTest_odBounds_collides) {
 	odBounds bounds{8, 8, 64, 64};
 
 	odBounds expected_collision_bounds[] = {
@@ -40,3 +40,8 @@ OD_TEST(odBounds, collides) {
 		}
 	}
 }
+
+OD_TEST_SUITE(
+	odTestSuite_odBounds,
+	odTest_odBounds_collides,
+)

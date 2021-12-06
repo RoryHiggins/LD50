@@ -16,7 +16,7 @@ const int32_t odRender_test_vertices_count = 3;
 	};
 
 
-OD_TEST_FILTERED(odTexture, init_destroy, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odTexture_init_destroy, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -39,7 +39,7 @@ OD_TEST_FILTERED(odTexture, init_destroy, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odTexture_check_valid(&texture));
 	odTexture_destroy(&texture);
 }
-OD_TEST_FILTERED(odTexture, init_large, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odTexture_init_large, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -54,7 +54,7 @@ OD_TEST_FILTERED(odTexture, init_large, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odTexture_init(&texture, window.render_context_native, static_cast<odColor*>(odArray_get(&texture_pixels, 0)), width, height));
 	OD_ASSERT(odTexture_check_valid(&texture));
 }
-OD_TEST_FILTERED(odTexture, destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odTexture_destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -69,7 +69,7 @@ OD_TEST_FILTERED(odTexture, destroy_after_window_destroy_fails, OD_TEST_FILTER_S
 		odTexture_destroy(&texture);
 	}
 }
-OD_TEST_FILTERED(odTexture, get_size, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odTexture_get_size, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -89,17 +89,17 @@ OD_TEST_FILTERED(odTexture, get_size, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(reported_width == width);
 	OD_ASSERT(reported_height == height);
 }
-OD_TEST(odTexture, init_without_context_fails) {
+OD_TEST(odTest_odTexture_init_without_context_fails) {
 	odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 	odTexture texture;
 	OD_ASSERT(!odTexture_init_blank(&texture, nullptr));
 }
-OD_TEST(odTexture, destroy_invalid) {
+OD_TEST(odTest_odTexture_destroy_invalid) {
 	odTexture texture;
 	odTexture_destroy(&texture);
 }
 
-OD_TEST_FILTERED(odRenderTexture, init_destroy, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderTexture_init_destroy, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -122,7 +122,7 @@ OD_TEST_FILTERED(odRenderTexture, init_destroy, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderTexture_check_valid(&render_texture));
 	odRenderTexture_destroy(&render_texture);
 }
-OD_TEST_FILTERED(odRenderTexture, init_large, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderTexture_init_large, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -130,7 +130,7 @@ OD_TEST_FILTERED(odRenderTexture, init_large, OD_TEST_FILTER_SLOW) {
 	odRenderTexture render_texture;
 	OD_ASSERT(odRenderTexture_init(&render_texture, window.render_context_native, 4096, 4096));
 }
-OD_TEST_FILTERED(odRenderTexture, destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderTexture_destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -145,18 +145,17 @@ OD_TEST_FILTERED(odRenderTexture, destroy_after_window_destroy_fails, OD_TEST_FI
 		odRenderTexture_destroy(&render_texture);
 	}
 }
-OD_TEST(odRenderTexture, init_without_context_fails) {
+OD_TEST(odTest_odRenderTexture_init_without_context_fails) {
 	odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 	odRenderTexture render_texture;
 	OD_ASSERT(!odRenderTexture_init(&render_texture, nullptr, 1, 1));
 }
-OD_TEST(odRenderTexture, destroy_invalid) {
+OD_TEST(odTest_odRenderTexture_destroy_invalid) {
 	odRenderTexture render_texture;
 	odRenderTexture_destroy(&render_texture);
 }
 
-
-OD_TEST_FILTERED(odRenderer, init_destroy, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderer_init_destroy, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -179,7 +178,7 @@ OD_TEST_FILTERED(odRenderer, init_destroy, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderer_check_valid(&renderer));
 	odRenderer_destroy(&renderer);
 }
-OD_TEST_FILTERED(odRenderer, destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderer_destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odWindow_check_valid(&window));
@@ -194,12 +193,12 @@ OD_TEST_FILTERED(odRenderer, destroy_after_window_destroy_fails, OD_TEST_FILTER_
 		odRenderer_destroy(&renderer);
 	}
 }
-OD_TEST_FILTERED(odRenderer, flush, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderer_flush, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
-OD_TEST_FILTERED(odRenderer, clear, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderer_clear, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
@@ -211,7 +210,7 @@ OD_TEST_FILTERED(odRenderer, clear, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderer_clear(&window.renderer, &state, odColor_get_white()));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
-OD_TEST_FILTERED(odRenderer, draw_vertices, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderer_draw_vertices, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
@@ -223,7 +222,7 @@ OD_TEST_FILTERED(odRenderer, draw_vertices, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderer_draw_vertices(&window.renderer, &state, odRender_test_vertices, odRender_test_vertices_count));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
-OD_TEST_FILTERED(odRenderer, draw_texture, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderer_draw_texture, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
@@ -239,7 +238,7 @@ OD_TEST_FILTERED(odRenderer, draw_texture, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
-OD_TEST_FILTERED(odRenderer, init_multiple_renderers, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odRenderer_init_multiple_renderers, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
@@ -261,13 +260,37 @@ OD_TEST_FILTERED(odRenderer, init_multiple_renderers, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, odRender_test_vertices_count));
 	OD_ASSERT(odRenderer_flush(&renderer));
 }
-OD_TEST(odRenderer, init_without_context_fails) {
+OD_TEST(odTest_odRenderer_init_without_context_fails) {
 	odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 	odRenderer renderer;
 	OD_ASSERT(!odRenderer_init(&renderer, nullptr));
 }
-OD_TEST(odRenderer, destroy_invalid) {
+OD_TEST(odTest_odRenderer_destroy_invalid) {
 	odRenderer renderer;
 
 	odRenderer_destroy(&renderer);
 }
+
+OD_TEST_SUITE(
+	odTestSuite_odRendering,
+	odTest_odTexture_init_destroy,
+	odTest_odTexture_init_large,
+	odTest_odTexture_destroy_after_window_destroy_fails,
+	odTest_odTexture_get_size,
+	odTest_odTexture_init_without_context_fails,
+	odTest_odTexture_destroy_invalid,
+	odTest_odRenderTexture_init_destroy,
+	odTest_odRenderTexture_init_large,
+	odTest_odRenderTexture_destroy_after_window_destroy_fails,
+	odTest_odRenderTexture_init_without_context_fails,
+	odTest_odRenderTexture_destroy_invalid,
+	odTest_odRenderer_init_destroy,
+	odTest_odRenderer_destroy_after_window_destroy_fails,
+	odTest_odRenderer_flush,
+	odTest_odRenderer_clear,
+	odTest_odRenderer_draw_vertices,
+	odTest_odRenderer_draw_texture,
+	odTest_odRenderer_init_multiple_renderers,
+	odTest_odRenderer_init_without_context_fails,
+	odTest_odRenderer_destroy_invalid,
+)

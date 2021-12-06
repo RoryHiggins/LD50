@@ -17,31 +17,31 @@
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "DEBUG build iteratively and run tests + client",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test",
-			"working_dir": "$project_path",
-		},
-		{
 			"name": "DEBUG run tests + client with gdb",
 			"shell_cmd": "start make gdb CLIENT_ARGS='--test'",
 			"working_dir": "$project_path",
 		},
+		// {
+		// 	"name": "DEBUG build iteratively and run tests + client",
+		// 	"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test",
+		// 	"working_dir": "$project_path",
+		// },
 
-		{
-			"name": "PROFILE generate and rebuild",
-			"shell_cmd": "rm -rf .\\build\\PROFILE_ANY && make TARGET=PROFILE CMAKE_ARGS='-D CMAKE_VERBOSE_MAKEFILE=1'",
-			"working_dir": "$project_path",
-		},
-		{
-			"name": "PROFILE build iteratively and run tests by name",
-			"shell_cmd": "ninja -C .\\build\\PROFILE_ANY od_client.exe && .\\build\\PROFILE_ANY\\od_client.exe --no-client --test --test-name search_performance_realistic_case",
-			"working_dir": "$project_path",
-		},
-		{
-			"name": "PROFILE create report",
-			"shell_cmd": "make profile TARGET=PROFILE",
-			"working_dir": "$project_path",
-		},
+		// {
+		// 	"name": "PROFILE generate and rebuild",
+		// 	"shell_cmd": "rm -rf .\\build\\PROFILE_ANY && make TARGET=PROFILE CMAKE_ARGS='-D CMAKE_VERBOSE_MAKEFILE=1'",
+		// 	"working_dir": "$project_path",
+		// },
+		// {
+		// 	"name": "PROFILE build iteratively and run tests by name",
+		// 	"shell_cmd": "ninja -C .\\build\\PROFILE_ANY od_client.exe && .\\build\\PROFILE_ANY\\od_client.exe --no-client --test --test-name search_performance_realistic_case",
+		// 	"working_dir": "$project_path",
+		// },
+		// {
+		// 	"name": "PROFILE create report",
+		// 	"shell_cmd": "make profile TARGET=PROFILE",
+		// 	"working_dir": "$project_path",
+		// },
 
 		// {
 		// 	"name": "RELEASE generate and rebuild",

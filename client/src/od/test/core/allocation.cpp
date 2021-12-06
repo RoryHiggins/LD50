@@ -2,7 +2,7 @@
 
 #include <od/test/test.hpp>
 
-OD_TEST(odAllocation, swap) {
+OD_TEST(odTest_odAllocation_swap) {
 	odAllocation allocation1;
 	odAllocation allocation2;
 	OD_ASSERT(odAllocation_init(&allocation1, 1));
@@ -17,7 +17,7 @@ OD_TEST(odAllocation, swap) {
 	OD_ASSERT(odAllocation_get(&allocation1) == allocation2_old_ptr);
 	OD_ASSERT(odAllocation_get(&allocation2) == allocation1_old_ptr);
 }
-OD_TEST(odAllocation, swap_unallocated) {
+OD_TEST(odTest_odAllocation_swap_unallocated) {
 	odAllocation allocation1;
 	odAllocation allocation2;
 	OD_ASSERT(odAllocation_init(&allocation1, 1));
@@ -28,7 +28,7 @@ OD_TEST(odAllocation, swap_unallocated) {
 	OD_ASSERT(odAllocation_get(&allocation1) == nullptr);
 	OD_ASSERT(odAllocation_get(&allocation2) != nullptr);
 }
-OD_TEST(odAllocation, init_destroy) {
+OD_TEST(odTest_odAllocation_init_destroy) {
 	odAllocation allocation;
 
 	OD_ASSERT(odAllocation_init(&allocation, 1));
@@ -52,20 +52,30 @@ OD_TEST(odAllocation, init_destroy) {
 		OD_ASSERT(odAllocation_get(&allocation) != nullptr);
 	}
 }
-OD_TEST(odAllocation, allocate_zero) {
+OD_TEST(odTest_odAllocation_allocate_zero) {
 	odAllocation allocation;
 	OD_ASSERT(odAllocation_init(&allocation, 0));
 	OD_ASSERT(odAllocation_get(&allocation) == nullptr);
 }
-OD_TEST(odAllocation, get) {
+OD_TEST(odTest_odAllocation_get) {
 	odAllocation allocation;
 	OD_ASSERT(odAllocation_init(&allocation, 1));
 	OD_ASSERT(odAllocation_get(&allocation) != nullptr);
 }
-OD_TEST(odAllocation, get_unallocated_fails) {
+OD_TEST(odTest_odAllocation_get_unallocated_fails) {
 	odAllocation allocation;
 	{
 		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 		OD_ASSERT(odAllocation_get(&allocation) == nullptr);
 	}
 }
+
+OD_TEST_SUITE(
+	odTestSuite_odAllocation,
+	odTest_odAllocation_swap,
+	odTest_odAllocation_swap_unallocated,
+	odTest_odAllocation_init_destroy,
+	odTest_odAllocation_allocate_zero,
+	odTest_odAllocation_get,
+	odTest_odAllocation_get_unallocated_fails
+)

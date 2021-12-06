@@ -34,7 +34,7 @@ odArrayTestingContainer::~odArrayTestingContainer() {
 template struct odArrayT<int32_t>;
 template struct odArrayT<odArrayTestingContainer>;
 
-OD_TEST(odArray, swap) {
+OD_TEST(odTest_odArray_swap) {
 	odArray array1{odType_get_char()};
 	odArray array2{odType_get_char()};
 	OD_ASSERT(odArray_set_count(&array1, 1));
@@ -51,7 +51,7 @@ OD_TEST(odArray, swap) {
 	OD_ASSERT(odArray_get(&array2, 0) == ptr1_old_ptr);
 	OD_ASSERT(odArray_get_count(&array2) == 1);
 }
-OD_TEST(odArray, init_destroy) {
+OD_TEST(odTest_odArray_init_destroy) {
 	odArray array{odType_get_char()};
 
 	OD_ASSERT(odArray_set_count(&array, 1));
@@ -63,7 +63,7 @@ OD_TEST(odArray, init_destroy) {
 	OD_ASSERT(odArray_get_count(&array) == 0);
 	OD_ASSERT(odArray_get_capacity(&array) == 0);
 }
-OD_TEST(odArray, set_capacity) {
+OD_TEST(odTest_odArray_set_capacity) {
 	odArray array{odType_get_char()};
 	int32_t test_sizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
 	for (int32_t test_size: test_sizes) {
@@ -72,11 +72,11 @@ OD_TEST(odArray, set_capacity) {
 		OD_ASSERT(odArray_get_count(&array) == 0);
 	}
 }
-OD_TEST(odArray, set_capacity_zero) {
+OD_TEST(odTest_odArray_set_capacity_zero) {
 	odArray array{odType_get_char()};
 	OD_ASSERT(odArray_set_capacity(&array, 0));
 }
-OD_TEST(odArray, ensure_capacity) {
+OD_TEST(odTest_odArray_ensure_capacity) {
 	odArray array{odType_get_char()};
 
 	const int32_t start_capacity = 2;
@@ -92,13 +92,13 @@ OD_TEST(odArray, ensure_capacity) {
 	OD_ASSERT(odArray_get_capacity(&array) >= (start_capacity + 1));
 	OD_ASSERT(odArray_get_count(&array) == 0);
 }
-OD_TEST(odArray, set_count) {
+OD_TEST(odTest_odArray_set_count) {
 	odArray array{odType_get_char()};
 	OD_ASSERT(odArray_set_count(&array, 1));
 	OD_ASSERT(odArray_get_capacity(&array) >= 1);
 	OD_ASSERT(odArray_get_count(&array) == 1);
 }
-OD_TEST(odArray, set_count_expand) {
+OD_TEST(odTest_odArray_set_count_expand) {
 	odArray array{odType_get_char()};
 	OD_ASSERT(odArray_set_capacity(&array, 1));
 	OD_ASSERT(odArray_set_count(&array, 1));
@@ -123,7 +123,7 @@ OD_TEST(odArray, set_count_expand) {
 		array_ptr[i] = '\0';
 	}
 }
-OD_TEST(odArray, set_count_truncate) {
+OD_TEST(odTest_odArray_set_count_truncate) {
 	odArray array{odType_get_char()};
 	const int32_t start_count = 4;
 	OD_ASSERT(odArray_set_count(&array, start_count));
@@ -142,7 +142,7 @@ OD_TEST(odArray, set_count_truncate) {
 		OD_ASSERT(array_ptr[i] == '\0');
 	}
 }
-OD_TEST(odArray, pop) {
+OD_TEST(odTest_odArray_pop) {
 	odArray array{odType_get_char()};
 	OD_ASSERT(odArray_set_count(&array, 1));
 	OD_ASSERT(odArray_get_count(&array) == 1);
@@ -150,7 +150,7 @@ OD_TEST(odArray, pop) {
 	OD_ASSERT(odArray_pop(&array, 1));
 	OD_ASSERT(odArray_get_count(&array) == 0);
 }
-OD_TEST(odArray, swap_pop) {
+OD_TEST(odTest_odArray_swap_pop) {
 	odArray array{odType_get_char()};
 	OD_ASSERT(odArray_set_count(&array, 4));
 
@@ -165,7 +165,7 @@ OD_TEST(odArray, swap_pop) {
 	OD_ASSERT(array_ptr != nullptr);
 	OD_ASSERT(strncmp(array_ptr, "13\0\0", 4));
 }
-OD_TEST(odArray, get_out_of_bounds_fails) {
+OD_TEST(odTest_odArray_get_out_of_bounds_fails) {
 	odArray array{odType_get_char()};
 	OD_ASSERT(odArray_set_count(&array, 2));
 	OD_ASSERT(odArray_get(&array, 0) != nullptr);
@@ -175,7 +175,7 @@ OD_TEST(odArray, get_out_of_bounds_fails) {
 	}
 }
 
-OD_TEST(odArrayT, get) {
+OD_TEST(odTest_odArrayT_get) {
 	odArrayT<int32_t> array;
 	OD_ASSERT(odArray_set_count(&array, 2));
 	OD_ASSERT(array[0] != nullptr);
@@ -184,7 +184,7 @@ OD_TEST(odArrayT, get) {
 	*array[1] = 2;
 	OD_ASSERT(*array[1] == 2);
 }
-OD_TEST(odArrayT, foreach) {
+OD_TEST(odTest_odArrayT_foreach) {
 	odArrayT<int32_t> array;
 	OD_ASSERT(odArray_set_count(&array, 2));
 	for (int32_t elem: array) {
@@ -198,13 +198,13 @@ OD_TEST(odArrayT, foreach) {
 		OD_ASSERT(elem == 2);
 	}
 }
-OD_TEST(odArrayT, push) {
+OD_TEST(odTest_odArrayT_push) {
 	odArrayT<int32_t> array;
 	array.push(2);
 	OD_ASSERT(*array[0] == 2);
 	OD_ASSERT(odArray_get_count(&array) == 1);
 }
-OD_TEST(odArrayT, debug_get_out_of_bounds_fails) {
+OD_TEST(odTest_odArrayT_debug_get_out_of_bounds_fails) {
 	if (OD_BUILD_DEBUG) {
 		odArrayT<int32_t> array;
 		OD_ASSERT(odArray_set_count(&array, 2));
@@ -221,7 +221,7 @@ OD_TEST(odArrayT, debug_get_out_of_bounds_fails) {
 		}
 	}
 }
-OD_TEST(odArrayT, push_pop_container) {
+OD_TEST(odTest_odArrayT_push_pop_container) {
 	odArrayT<odArrayTestingContainer> array;
 
 	odArrayTestingContainer test_container{};
@@ -248,3 +248,23 @@ OD_TEST(odArrayT, push_pop_container) {
 	OD_ASSERT(odArray_get_count(&array) == 1);
 	OD_ASSERT(array[0]->original_self == test_container.original_self);
 }
+
+OD_TEST_SUITE(
+	odTestSuite_odArray,
+	odTest_odArray_swap,
+	odTest_odArray_init_destroy,
+	odTest_odArray_set_capacity,
+	odTest_odArray_set_capacity_zero,
+	odTest_odArray_ensure_capacity,
+	odTest_odArray_set_count,
+	odTest_odArray_set_count_expand,
+	odTest_odArray_set_count_truncate,
+	odTest_odArray_pop,
+	odTest_odArray_swap_pop,
+	odTest_odArray_get_out_of_bounds_fails,
+	odTest_odArrayT_get,
+	odTest_odArrayT_foreach,
+	odTest_odArrayT_push,
+	odTest_odArrayT_debug_get_out_of_bounds_fails,
+	odTest_odArrayT_push_pop_container,
+)

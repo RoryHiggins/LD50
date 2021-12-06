@@ -4,7 +4,7 @@
 
 #include <od/test/test.hpp>
 
-OD_TEST(odString, swap) {
+OD_TEST(odTest_odString_swap) {
 	odString string1;
 	odString string2;
 	OD_ASSERT(odString_set_count(&string1, 1));
@@ -21,7 +21,7 @@ OD_TEST(odString, swap) {
 	OD_ASSERT(odString_get(&string2, 0) == ptr1_old_ptr);
 	OD_ASSERT(odString_get_count(&string2) == 1);
 }
-OD_TEST(odString, init_destroy) {
+OD_TEST(odTest_odString_init_destroy) {
 	odString string;
 
 	OD_ASSERT(odString_set_count(&string, 1));
@@ -33,7 +33,7 @@ OD_TEST(odString, init_destroy) {
 	OD_ASSERT(odString_get_count(&string) == 0);
 	OD_ASSERT(odString_get_capacity(&string) == 0);
 }
-OD_TEST(odString, set_capacity) {
+OD_TEST(odTest_odString_set_capacity) {
 	odString string;
 	int32_t test_sizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
 	for (int32_t test_size: test_sizes) {
@@ -42,11 +42,11 @@ OD_TEST(odString, set_capacity) {
 		OD_ASSERT(odString_get_count(&string) == 0);
 	}
 }
-OD_TEST(odString, set_capacity_zero) {
+OD_TEST(odTest_odString_set_capacity_zero) {
 	odString string;
 	OD_ASSERT(odString_set_capacity(&string, 0));
 }
-OD_TEST(odString, ensure_capacity) {
+OD_TEST(odTest_odString_ensure_capacity) {
 	odString string;
 
 	const int32_t start_capacity = 2;
@@ -62,13 +62,13 @@ OD_TEST(odString, ensure_capacity) {
 	OD_ASSERT(odString_get_capacity(&string) >= (start_capacity + 1));
 	OD_ASSERT(odString_get_count(&string) == 0);
 }
-OD_TEST(odString, set_count) {
+OD_TEST(odTest_odString_set_count) {
 	odString string;
 	OD_ASSERT(odString_set_count(&string, 1));
 	OD_ASSERT(odString_get_capacity(&string) >= 1);
 	OD_ASSERT(odString_get_count(&string) == 1);
 }
-OD_TEST(odString, set_count_expand) {
+OD_TEST(odTest_odString_set_count_expand) {
 	odString string;
 	OD_ASSERT(odString_set_capacity(&string, 1));
 	OD_ASSERT(odString_get_capacity(&string) == 1);
@@ -91,7 +91,7 @@ OD_TEST(odString, set_count_expand) {
 	OD_ASSERT(array_ptr != nullptr);
 	OD_ASSERT(array_ptr[0] == '!');
 }
-OD_TEST(odString, set_count_truncate) {
+OD_TEST(odTest_odString_set_count_truncate) {
 	odString string;
 	const int32_t start_count = 4;
 	OD_ASSERT(odString_set_count(&string, start_count));
@@ -110,7 +110,7 @@ OD_TEST(odString, set_count_truncate) {
 		OD_ASSERT(array_ptr[i] == '\0');
 	}
 }
-OD_TEST(odString, debug_get_out_of_bounds_fails) {
+OD_TEST(odTest_odString_debug_get_out_of_bounds_fails) {
 	if (OD_BUILD_DEBUG) {
 		odString string;
 		OD_ASSERT(odString_set_count(&string, 2));
@@ -121,7 +121,7 @@ OD_TEST(odString, debug_get_out_of_bounds_fails) {
 		}
 	}
 }
-OD_TEST(odString, compare) {
+OD_TEST(odTest_odString_compare) {
 	odString string1;
 	odString string2;
 
@@ -145,8 +145,7 @@ OD_TEST(odString, compare) {
 	OD_ASSERT(odString_push(&string2, loser, static_cast<int32_t>(strlen(loser))));
 	OD_ASSERT(odString_compare(&string1, &string2) < 0);  // {"hello ", "loser "}
 }
-
-OD_TEST(odString, copy) {
+OD_TEST(odTest_odString_copy) {
 	odString str1;
 	OD_ASSERT(odString_push(&str1, "yep", 3));
 
@@ -157,7 +156,7 @@ OD_TEST(odString, copy) {
 	OD_ASSERT(str2_data != nullptr);
 	OD_ASSERT(strncmp(str2_data, "yep", 3) == 0);
 }
-OD_TEST(odString, push_formatted) {
+OD_TEST(odTest_odString_push_formatted) {
 	odString str;
 	OD_ASSERT(odString_push_formatted(&str, "%s %d", "yep", 123));
 
@@ -165,3 +164,19 @@ OD_TEST(odString, push_formatted) {
 	OD_ASSERT(str_data != nullptr);
 	OD_ASSERT(strncmp(str_data, "yep 123", 7) == 0);
 }
+
+OD_TEST_SUITE(
+	odTestSuite_odString,
+	odTest_odString_swap,
+	odTest_odString_init_destroy,
+	odTest_odString_set_capacity,
+	odTest_odString_set_capacity_zero,
+	odTest_odString_ensure_capacity,
+	odTest_odString_set_count,
+	odTest_odString_set_count_expand,
+	odTest_odString_set_count_truncate,
+	odTest_odString_debug_get_out_of_bounds_fails,
+	odTest_odString_compare,
+	odTest_odString_copy,
+	odTest_odString_push_formatted,
+)
