@@ -1,5 +1,7 @@
 #include <od/core/array.hpp>
 
+#include <cstdio>
+
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 #include <od/core/allocation.hpp>
@@ -42,16 +44,38 @@ bool odArray_check_valid(const odArray* array) {
 }
 const char* odArray_get_debug_string(const odArray* array) {
 	if (array == nullptr) {
-		return "odArray{this=nullptr}";
+		return "null";
+	}
+
+	if (array->type == nullptr) {
+		return "{\"type\": null, \"count\": 0, \"data\": \"\"}";
+	}
+
+	const char* bytes_hex_str = "...";
+	int32_t bytes_hex_str_size = 3;
+
+	int32_t size = array->count * array->type->size;
+	int32_t bytes_hex_str_buf_size = (2 * size) + 1;
+
+	if (bytes_hex_str_buf_size < 4096) {
+		char* bytes_hex_str_buf = static_cast<char*>(odDebugString_allocate(bytes_hex_str_buf_size, 1));
+
+		const char* bytes = static_cast<const char*>(array->allocation.ptr);
+		if ((bytes_hex_str_buf != nullptr) && (bytes != nullptr)) {
+			for (int32_t i = 0; i < size; i++) {
+				snprintf(bytes_hex_str_buf + (2 * i), 3, "%02X", static_cast<unsigned>(bytes[i]));
+			}
+			bytes_hex_str = bytes_hex_str_buf;
+			bytes_hex_str_size = bytes_hex_str_buf_size - 1;
+		}
 	}
 
 	return odDebugString_format(
-		"odArray{this=%p, type=%s, allocation=%s, capacity=%d, count=%d}",
-		static_cast<const void*>(array),
+		"{\"type\": %s, \"count\": %d, \"data\": \"0x%*s\"}",
 		odType_get_debug_string(array->type),
-		odAllocation_get_debug_string(&array->allocation),
-		array->capacity,
-		array->count);
+		array->count,
+		bytes_hex_str_size,
+		bytes_hex_str);
 }
 bool odArray_init(odArray* array, const odType* type) {
 	OD_TRACE("array=%s, type=%s", odArray_get_debug_string(array), odType_get_debug_string(type));

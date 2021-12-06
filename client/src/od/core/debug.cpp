@@ -21,7 +21,6 @@ void odDebug_error() {
 		odDebug_platform_backtrace_handler();
 	}
 }
-
 static int32_t odLogContext_level_max = OD_LOG_LEVEL_DEFAULT;
 static int32_t odLog_logged_error_count = 0;
 
@@ -35,10 +34,10 @@ void odLogContext_init(struct odLogContext* log_context, const char* file, const
 
 	if (OD_BUILD_DEBUG) {
 		if (file == nullptr) {
-			file = "<file=nullptr>";
+			file = "\"<file=nullptr>\"";
 		}
 		if (function == nullptr) {
-			function = "<function=nullptr>";
+			function = "\"<function=nullptr>\"";
 		}
 	}
 
@@ -72,7 +71,7 @@ const char* odLogLevel_get_name(int32_t log_level) {
 			return "trace";
 		}
 		default: {
-			return "<log_level_unknown>";
+			return "\"<log_level_unknown>\"";
 		}
 	}
 }
@@ -150,9 +149,7 @@ void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_leve
 	vfprintf(OD_DEBUG_OUT_STREAM, format_c_str, args);
 
 	fputc('\n', OD_DEBUG_OUT_STREAM);
-	if (OD_BUILD_DEBUG) {
-		fflush(OD_DEBUG_OUT_STREAM);
-	}
+	fflush(OD_DEBUG_OUT_STREAM);
 
 	if (OD_BUILD_DEBUG && (log_level <= OD_LOG_LEVEL_ERROR)) {
 		odDebug_error();
@@ -170,18 +167,18 @@ bool odLog_check(const struct odLogContext* log_context, bool success, const cha
 	}
 	return success;
 }
-void odLog_assert(const struct odLogContext* log_context, bool success, const char* expression_c_str) {
+bool odLog_assert(const struct odLogContext* log_context, bool success, const char* expression_c_str) {
 	if (!success) {
 		odLog_log(log_context, OD_LOG_LEVEL_FATAL, "Assertion failed: \"%s\"", expression_c_str);
 		exit(EXIT_FAILURE);
 	}
+	return success;
 }
 int32_t odLog_get_logged_error_count() {
 	return odLog_logged_error_count;
 }
 
-char* odDebugString_allocate(int32_t size) {
-	const int32_t alignment = 1;
+void* odDebugString_allocate(int32_t size, int32_t alignment) {
 	static int32_t currentSize = 0;
 	static char buffer[OD_TEMP_BUFFER_CAPACITY] = {0};
 
@@ -199,7 +196,9 @@ char* odDebugString_allocate(int32_t size) {
 	currentSize += allocated_size;
 
 	uintptr_t allocation_uint = reinterpret_cast<uintptr_t>(allocation);
-	uintptr_t aligned_allocation_uint = ((allocation_uint + alignment - 1) / alignment) * alignment;
+	uintptr_t aligned_allocation_uint = ((
+		(allocation_uint + static_cast<uintptr_t>(alignment) - 1) / static_cast<uintptr_t>(alignment))
+		* static_cast<uintptr_t>(alignment));
 	// calculate offset and add that to pointer instead of casting (performance-no-int-to-ptr)
 	uintptr_t aligned_offset_uint = aligned_allocation_uint - reinterpret_cast<uintptr_t>(allocation);
 	char* aligned_allocation = allocation + aligned_offset_uint;
@@ -208,7 +207,7 @@ char* odDebugString_allocate(int32_t size) {
 }
 const char* odDebugString_format_variadic(const char* format_c_str, va_list args) {
 	if (!OD_CHECK(format_c_str != nullptr)) {
-		return "<format_str_null>";
+		return "\"<format_str_null>\"";
 	}
 
 	va_list compute_size_args = {};
@@ -219,16 +218,16 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 	va_end(compute_size_args);
 
 	if (!OD_CHECK(required_count >= 0)) {
-		return "<debug_str_format_failed>";
+		return "\"<debug_str_format_failed>\"";
 	}
 
 	// sprintf-style calls always write null-terminated, but count in return value
 	// excludes null terminator
 	int32_t required_capacity = static_cast<int32_t>(required_count) + 1;
 
-	void* allocation = odDebugString_allocate(required_capacity);
+	void* allocation = odDebugString_allocate(required_capacity, 1);
 	if (!OD_CHECK(allocation != nullptr)) {
-		return "<debug_str_allocation_failed>";
+		return "\"<debug_str_allocation_failed>\"";
 	}
 
 	char* allocation_str = static_cast<char*>(allocation);
@@ -243,6 +242,58 @@ const char* odDebugString_format(const char* format_c_str, ...) {
 	va_end(args);
 
 	return result;
+}
+const char* odDebugString_format_array(const char* (*to_debug_str)(const void*),
+									   const void* xs, int32_t count, int32_t stride) {
+	if (count == 0) {
+		return "";
+	}
+
+	if ((to_debug_str == nullptr) || (xs == nullptr) || (count <= 0)) {
+		return "\"<debug_str_array_failed>\"";
+	}
+
+	const char** elem_strs = static_cast<const char**>(
+		odDebugString_allocate(static_cast<int32_t>(sizeof(const char**)) * count, alignof(const char**)));
+	if (elem_strs == nullptr) {
+		return "\"<debug_str_array_failed>\"";
+	}
+
+	const char separator[] = ", ";
+	const size_t separator_size = sizeof(separator) - 1;
+
+	size_t combined_size = 0;
+	combined_size += 1;  // null terminator
+	combined_size += separator_size * static_cast<size_t>(count - 1);
+
+	for (int32_t i = 0; i < count; i++) {
+		const void* x = static_cast<const void*>(static_cast<const char*>(xs) + (i * stride));
+		elem_strs[i] = to_debug_str(x);
+
+		if (elem_strs[i] == nullptr) {
+			return "\"<debug_str_array_failed>\"";
+		}
+
+		combined_size += strlen(elem_strs[i]);
+	}
+
+	char* combined = static_cast<char*>(odDebugString_allocate(static_cast<int32_t>(combined_size), 1));
+	size_t combined_pos = 0;
+
+	for (int32_t i = 0; i < count; i++) {
+		size_t size = strlen(elem_strs[i]);
+		strncpy(combined + combined_pos, elem_strs[i], size);
+		combined_pos += size;
+
+		if ((i + 1) < count) {
+			strncpy(combined + combined_pos, separator, separator_size);
+			combined_pos += separator_size;
+		}
+	}
+
+	combined[combined_size - 1] = '\0';
+
+	return combined;
 }
 
 odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {

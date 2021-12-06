@@ -2,6 +2,7 @@ tmp/
 build/
 .vscode/
 gmon.out
+profile.txt
 *.sublime-workspace
 
 odFile_test_*

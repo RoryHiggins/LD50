@@ -6,16 +6,16 @@
 
 const char* odColor_get_debug_string(const odColor* color) {
 	if (color == nullptr) {
-		return "odColor{this=nullptr}";
+		return "null";
 	}
 
-	return odDebugString_format(
-		"odColor{this=%p, r=%" PRIu8 ", g=%" PRIu8 ", b=%" PRIu8 ", a=%" PRIu8 "}",
-		static_cast<const void*>(color),
-		color->r,
-		color->g,
-		color->b,
-		color->a);
+	uint32_t color_u32 = (
+		uint32_t(color->r)
+		+ (uint32_t(color->g) << 8)
+		+ (uint32_t(color->b) << 16)
+		+ (uint32_t(color->a) << 24));
+
+	return odDebugString_format("\"0x%08x\"", color_u32);
 }
 const struct odColor* odColor_get_white() {
 	static const odColor color{0xFF, 0xFF, 0xFF, 0xFF};

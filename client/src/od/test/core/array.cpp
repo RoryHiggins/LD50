@@ -204,19 +204,21 @@ OD_TEST(odArrayT, push) {
 	OD_ASSERT(*array[0] == 2);
 	OD_ASSERT(odArray_get_count(&array) == 1);
 }
-OD_TEST(odArrayT, get_out_of_bounds_fails) {
-	odArrayT<int32_t> array;
-	OD_ASSERT(odArray_set_count(&array, 2));
-	{
-		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-		OD_ASSERT(array[2] == nullptr);
-	}
-	OD_ASSERT(array[0] != nullptr);
+OD_TEST(odArrayT, debug_get_out_of_bounds_fails) {
+	if (OD_BUILD_DEBUG) {
+		odArrayT<int32_t> array;
+		OD_ASSERT(odArray_set_count(&array, 2));
+		{
+			odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
+			OD_ASSERT(array[2] == nullptr);
+		}
+		OD_ASSERT(array[0] != nullptr);
 
-	OD_ASSERT(odArray_set_count(&array, 0));
-	{
-		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-		OD_ASSERT(array[0] == nullptr);
+		OD_ASSERT(odArray_set_count(&array, 0));
+		{
+			odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
+			OD_ASSERT(array[0] == nullptr);
+		}
 	}
 }
 OD_TEST(odArrayT, push_pop_container) {

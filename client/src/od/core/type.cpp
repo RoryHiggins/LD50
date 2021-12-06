@@ -16,17 +16,10 @@ bool odType_check_valid(const odType* type) {
 }
 const char* odType_get_debug_string(const odType* type) {
 	if (type == nullptr) {
-		return "odType{this=nullptr}";
+		return "null";
 	}
 
-	return odDebugString_format(
-		"odType{this=%p, size=%d, default_construct_fn=%p, move_assign_fn=%p, destruct_fn=%p}",
-		static_cast<const void*>(type),
-		type->size,
-		reinterpret_cast<const void*>(type->default_construct_fn),
-		reinterpret_cast<const void*>(type->move_assign_fn),
-		reinterpret_cast<const void*>(type->destruct_fn)
-	);
+	return odDebugString_format("{\"size\": %d}", type->size);
 }
 void* odType_index(const odType* type, void* array, int32_t i) {
 	if (!OD_DEBUG_CHECK(odType_check_valid(type))

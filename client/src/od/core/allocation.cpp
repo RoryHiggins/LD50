@@ -29,12 +29,11 @@ bool odAllocation_check_valid(const odAllocation* allocation) {
 }
 const char* odAllocation_get_debug_string(const odAllocation* allocation) {
 	if (allocation == nullptr) {
-		return "odAllocation{this=nullptr}";
+		return "null";
 	}
 
 	return odDebugString_format(
-		"odAllocation{this=%p, ptr=%p}",
-		static_cast<const void*>(allocation),
+		"\"%p\"",
 		static_cast<const void*>(allocation->ptr));
 }
 bool odAllocation_init(odAllocation* allocation, int32_t allocation_size) {

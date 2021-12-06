@@ -34,7 +34,7 @@ static odString odFile_test_create_random_name() {
 		name_ptr[i] = static_cast<char>(static_cast<int>('a') + (rand() % 20));
 	}
 
-	OD_ASSERT(odString_ensure_null_terminated(&name));
+	// OD_ASSERT(odString_ensure_null_terminated(&name));
 
 	return name;
 }

@@ -2,66 +2,76 @@
 	"build_systems":
 	[
 		{
-			"name": "Debug generate and rebuild",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG",
+			"name": "DEBUG generate and rebuild",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_ARGS='-D BUILD_SHARED_LIBS=1'",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Debug build iteratively and run fast tests",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test --no-client",
+			"name": "DEBUG build iteratively and run fast tests",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --no-slow-test",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Debug build iteratively and run fast tests + client",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test",
+			"name": "DEBUG build iteratively and run tests by name",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name search_performance",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Debug build iteratively and run tests + client",
+			"name": "DEBUG build iteratively and run tests + client",
 			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Debug run tests + client with gdb",
-			"shell_cmd": "start make gdb CLIENT_ARGS='--test --debug'",
+			"name": "DEBUG run tests + client with gdb",
+			"shell_cmd": "start make gdb CLIENT_ARGS='--test'",
+			"working_dir": "$project_path",
+		},
+
+		{
+			"name": "PROFILE generate and rebuild",
+			"shell_cmd": "rm -rf .\\build\\PROFILE_ANY && make TARGET=PROFILE CMAKE_ARGS='-D CMAKE_VERBOSE_MAKEFILE=1'",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Emscripten debug generate and rebuild",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S . -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"name": "PROFILE build iteratively and run tests by name",
+			"shell_cmd": "ninja -C .\\build\\PROFILE_ANY od_client.exe && .\\build\\PROFILE_ANY\\od_client.exe --no-client --test --test-name search_performance_realistic_case",
 			"working_dir": "$project_path",
 		},
 		{
-			"name": "Emscripten debug iterative build",
-			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"name": "PROFILE create report",
+			"shell_cmd": "make profile TARGET=PROFILE",
 			"working_dir": "$project_path",
 		},
-		{
-			"name": "Emscripten debug iterative build and host",
-			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
-			"working_dir": "$project_path",
-		},
+
 		// {
-		// 	"name": "Run client",
-		// 	"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe",
+		// 	"name": "RELEASE generate and rebuild",
+		// 	"shell_cmd": "rm -rf .\\build\\RELEASE_ANY && make TARGET=RELEASE",
 		// 	"working_dir": "$project_path",
 		// },
 		// {
-		// 	"name": "Debug run tests with gdb",
-		// 	"shell_cmd": "start make test_gdb",
+		// 	"name": "RELEASE build iteratively and run client",
+		// 	"shell_cmd": "ninja -C .\\build\\RELEASE_ANY od_client.exe && .\\build\\RELEASE_ANY\\od_client.exe",
+		// 	"working_dir": "$project_path",
+		// },
+
+
+		// {
+		// 	"name": "Emscripten debug generate and rebuild",
+		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S . -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
 		// 	"working_dir": "$project_path",
 		// },
 		// {
-		// 	"name": "Debug generate and rebuild with clang-tidy",
-		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && cmake -S . -B .\\build\\DEBUG_ANY -G\"Ninja\" -DCMAKE_CXX_CLANG_TIDY=clang-tidy -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG",
+		// 	"name": "Emscripten debug iterative build",
+		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
 		// 	"working_dir": "$project_path",
 		// },
 		// {
-		// 	"name": "Release generate and rebuild",
-		// 	"shell_cmd": "rm -rf .\\build\\RELEASE && make TARGET=RELEASE",
+		// 	"name": "Emscripten debug iterative build and host",
+		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
 		// 	"working_dir": "$project_path",
 		// },
-		// renamed find to gnu-find locally for windows, due to clash with win32 find
+
+
 		// {
 		// 	"name": "Clang format",
 		// 	"shell_cmd": "make format",

@@ -6,12 +6,11 @@
 
 const char* odVector4_get_debug_string(const odVector4* vector) {
 	if (vector == nullptr) {
-		return "odVector4{this=nullptr}";
+		return "null";
 	}
 
 	return odDebugString_format(
-		"odVector4{this=%p, vector={%g, %g, %g, %g}}",
-		static_cast<const void*>(vector),
+		"\"[%g,%g,%g,%g]\"",
 		static_cast<double>(vector->vector[0]),
 		static_cast<double>(vector->vector[1]),
 		static_cast<double>(vector->vector[2]),

@@ -15,13 +15,14 @@
 #define OD_LOG_GET_CONTEXT() odLogContext_init_inline(__FILE__, __func__, static_cast<int32_t>(__LINE__))
 #define OD_LOG_SET_CONTEXT() odLogContext_init_temp(__FILE__, __func__, static_cast<int32_t>(__LINE__))
 
-#if OD_BUILD_LOG
+#if OD_BUILD_LOGS
 #define OD_LOG(LEVEL, ...) odLog_log(OD_LOG_SET_CONTEXT(), LEVEL, __VA_ARGS__)
 #else
 #define OD_LOG(...)
 #endif
-#define OD_CHECK(EXPR) odLog_check(OD_LOG_SET_CONTEXT(), EXPR, #EXPR)
-#define OD_ASSERT(EXPR) odLog_assert(OD_LOG_SET_CONTEXT(), EXPR, #EXPR)
+
+#define OD_CHECK(EXPR) ((EXPR) ? true : odLog_check(OD_LOG_SET_CONTEXT(), false, #EXPR))
+#define OD_ASSERT(EXPR) ((EXPR) ? true : odLog_assert(OD_LOG_SET_CONTEXT(), false, #EXPR))
 #define OD_ERROR(...) OD_LOG(OD_LOG_LEVEL_ERROR, __VA_ARGS__)
 #define OD_WARN(...) OD_LOG(OD_LOG_LEVEL_WARN, __VA_ARGS__)
 #define OD_INFO(...) OD_LOG(OD_LOG_LEVEL_INFO, __VA_ARGS__)
@@ -73,16 +74,19 @@ OD_API_C OD_CORE_MODULE void
 odLog_log(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odLog_check(const struct odLogContext* log_context, bool success, const char* expression_c_str);
-OD_API_C OD_CORE_MODULE void
+OD_API_C OD_CORE_MODULE bool
 odLog_assert(const struct odLogContext* log_context, bool success, const char* expression_c_str);
 
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD char*
-odDebugString_allocate(int32_t size);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD void*
+odDebugString_allocate(int32_t size, int32_t alignment);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odDebugString_format_variadic(const char* format_c_str, va_list args);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odDebugString_format_array(const char* (*to_debug_str)(const void*),
+						   const void* xs, int32_t count, int32_t stride);
+
 
 OD_API_C OD_CORE_MODULE void
 odPlatformDebug_set_backtrace_handler(bool(*fn)(void));
-

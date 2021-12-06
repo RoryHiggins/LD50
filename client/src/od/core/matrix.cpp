@@ -8,12 +8,11 @@
 
 const char* odMatrix4_get_debug_string(const odMatrix4* matrix) {
 	if (matrix == nullptr) {
-		return "odMatrix4{this=nullptr}";
+		return "null";
 	}
 
 	return odDebugString_format(
-		"odMatrix4{this=%p, matrix={\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g,\n%g, %g, %g, %g}}",
-		static_cast<const void*>(matrix),
+		"\"[%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g]\"",
 		static_cast<double>(matrix->matrix[0]),
 		static_cast<double>(matrix->matrix[1]),
 		static_cast<double>(matrix->matrix[2]),

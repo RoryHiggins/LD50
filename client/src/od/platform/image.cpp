@@ -72,15 +72,10 @@ bool odImage_check_valid(const odImage* image) {
 }
 const char* odImage_get_debug_string(const odImage* image) {
 	if (image == nullptr) {
-		return "odImage{this=nullptr}";
+		return "null";
 	}
 
-	return odDebugString_format(
-		"odImage{this=%p, allocation=%s, width=%d, height=%d}",
-		static_cast<const void*>(image),
-		odAllocation_get_debug_string(&image->allocation),
-		image->width,
-		image->height);
+	return odDebugString_format("{\"width\": %d, \"height\": %d}", image->width, image->height);
 }
 bool odImage_allocate(odImage* image, int32_t width, int32_t height) {
 	if (!OD_DEBUG_CHECK(image != nullptr)

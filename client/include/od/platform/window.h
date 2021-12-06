@@ -17,6 +17,8 @@ struct odWindowSettings {
 	bool is_visible;
 };
 
+OD_API_C OD_PLATFORM_MODULE const char*
+odWindowSettings_get_debug_string(const struct odWindowSettings* settings);
 OD_API_C OD_PLATFORM_MODULE const struct odWindowSettings*
 odWindowSettings_get_defaults(void);
 OD_API_C OD_PLATFORM_MODULE const struct odWindowSettings*

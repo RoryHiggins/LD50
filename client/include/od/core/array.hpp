@@ -23,34 +23,34 @@ struct odArray {
 };
 template<typename T>
 struct odArrayT : public odArray {
-	inline odArrayT() : odArray{odType_get<T>()} {
+	odArrayT() : odArray{odType_get<T>()} {
 	}
 
-	inline T* begin() & {
+	T* begin() & {
 		return static_cast<T*>(odArray_begin(this));
 	}
-	inline const T* begin() const & {
+	const T* begin() const & {
 		return static_cast<const T*>(odArray_begin_const(this));
 	}
-	inline T* end() & {
+	T* end() & {
 		return begin() + count;
 	}
-	inline const T* end() const & {
+	const T* end() const & {
 		return begin() + count;
 	}
-	inline T* operator[](int32_t i) & {
+	T* operator[](int32_t i) & {
 		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
 			return nullptr;
 		}
 		return begin() + i;
 	}
-	inline const T* operator[](int32_t i) const & {
+	const T* operator[](int32_t i) const & {
 		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
 			return nullptr;
 		}
 		return begin() + i;
 	}
-	inline bool push(T&& moved_elem) & {
+	bool push(T&& moved_elem) & {
 		return odArray_push(this, static_cast<void*>(&moved_elem), 1);
 	}
 

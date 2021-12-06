@@ -35,7 +35,7 @@ struct odRendererScope {
 /*https://www.khronos.org/registry/OpenGL/specs/gl/glspec21.pdf*/
 /*https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.20.pdf*/
 static const char odRenderer_vertex_shader[] = R"(
-	// there is no model space: all inputs are required to be in world space
+	// there is no model space: all inputs are required to be in entity_index space
 	uniform mat4 view;
 	uniform mat4 projection;
 	uniform vec2 uv_scale;
@@ -103,6 +103,8 @@ static void odRenderer_gl_message_callback(
 		OD_DEBUG("%s", message);
 		return;
 	}
+
+	OD_MAYBE_UNUSED(message);
 }
 #endif  // !OD_BUILD_EMSCRIPTEN
 OD_NO_DISCARD static bool odGl_check_ok(odLogContext log_context) {
@@ -110,7 +112,7 @@ OD_NO_DISCARD static bool odGl_check_ok(odLogContext log_context) {
 	GLenum gl_error = GL_NO_ERROR;
 
 	for (gl_error = glGetError(); gl_error != GL_NO_ERROR; gl_error = glGetError()) {
-		if (OD_BUILD_LOG) {
+		if (OD_BUILD_LOGS) {
 			const char* error_str = "";
 #if !OD_BUILD_EMSCRIPTEN
 			error_str = reinterpret_cast<const char*>(gluErrorString(gl_error));
@@ -134,7 +136,7 @@ OD_NO_DISCARD static bool odGl_check_shader_ok(odLogContext log_context, GLuint 
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
 
 	if (compile_status == GL_FALSE) {
-		if (OD_BUILD_LOG) {
+		if (OD_BUILD_LOGS) {
 			GLsizei msg_max_size = 0;
 			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &msg_max_size);
 			if (msg_max_size > OD_RENDERER_MESSAGE_BUFFER_SIZE) {
@@ -167,7 +169,7 @@ OD_NO_DISCARD static bool odGl_check_program_ok(odLogContext log_context, GLuint
 	glGetProgramiv(program, GL_LINK_STATUS, &link_status);
 
 	if (link_status == GL_FALSE) {
-		if (OD_BUILD_LOG) {
+		if (OD_BUILD_LOGS) {
 			GLsizei msg_max_size = 0;
 			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &msg_max_size);
 			if (msg_max_size > OD_RENDERER_MESSAGE_BUFFER_SIZE) {
@@ -231,12 +233,11 @@ bool odTexture_check_valid(const odTexture* texture) {
 }
 const char* odTexture_get_debug_string(const odTexture* texture) {
 	if (texture == nullptr) {
-		return "odTexture{this=nullptr}";
+		return "null";
 	}
 
 	return odDebugString_format(
-		"odTexture{this=%p, render_context_native=%p, texture=%u}",
-		static_cast<const void*>(texture),
+		"{\"render_context_native\": \"%p\", \"texture\": %u}",
 		static_cast<const void*>(texture->render_context_native),
 		texture->texture
 	);
@@ -365,12 +366,11 @@ bool odRenderTexture_check_valid(const odRenderTexture* render_texture) {
 }
 const char* odRenderTexture_get_debug_string(const odRenderTexture* render_texture) {
 	if (render_texture == nullptr) {
-		return "odTexture{this=nullptr}";
+		return "null";
 	}
 
 	return odDebugString_format(
-		"odTexture{this=%p, texture=%s, fbo=%u}",
-		static_cast<const void*>(render_texture),
+		"{\"texture\": %s, \"fbo\": %u}",
 		odTexture_get_debug_string(&render_texture->texture),
 		render_texture->fbo
 	);
@@ -513,13 +513,12 @@ bool odRenderer_check_valid(const odRenderer* renderer) {
 }
 const char* odRenderer_get_debug_string(const odRenderer* renderer) {
 	if (renderer == nullptr) {
-		return "odRenderer{this=nullptr}";
+		return "null";
 	}
 
 	return odDebugString_format(
-		("odRenderer{this=%p, render_context_native=%p, vertex_shader=%u, "
-		 "fragment_shader=%u, program=%u, vbo=%u, vao=%u}"),
-		static_cast<const void*>(renderer),
+		("{\"render_context_native\": \"%p\", \"vertex_shader\": %u, "
+		 "\"fragment_shader\": %u, \"program\": %u, \"vbo\": %u, \"vao\": %u}"),
 		static_cast<const void*>(renderer->render_context_native),
 		renderer->vertex_shader,
 		renderer->fragment_shader,

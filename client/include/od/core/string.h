@@ -40,10 +40,8 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_push_formatted_variadic(struct odString* string, const char* format_c_str, va_list args);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_push_formatted(struct odString* string, const char* format_c_str, ...);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_ensure_null_terminated(struct odString* string);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_get_null_terminated(const struct odString* string);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odString_get_c_str(const struct odString* string);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD char*
 odString_get(struct odString* string, int32_t i);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*

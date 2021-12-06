@@ -2,12 +2,14 @@
 # ---
 # Client code build target.  One of:
 # - RELEASE
+# - PROFILE
 # - DEBUG
 TARGET := DEBUG
+# key for output build
+KEY := ANY
 # client input arguments 
 CLIENT_ARGS :=
-VERBOSE_BUILD := 0
-SHARED_LIBRARY_BUILD := 1
+CMAKE_ARGS :=
 
 # Dependencies
 # ---
@@ -16,8 +18,7 @@ CMAKE := cmake
 # Outputs
 # ---
 BUILD_ROOT := build
-BUILD_SUFFIX := ANY
-BUILD := $(BUILD_ROOT)/$(TARGET)_$(BUILD_SUFFIX)
+BUILD := $(BUILD_ROOT)/$(TARGET)_$(KEY)
 CLIENT := $(BUILD)/od_client
 
 # Commands
@@ -26,19 +27,14 @@ CLIENT := $(BUILD)/od_client
 .DEFAULT_GOAL := $(CLIENT)
 
 $(CLIENT):
-	$(CMAKE) \-S . \
-		-B $(BUILD) \
-		-D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" \
-		-D BUILD_SHARED_LIBS=$(SHARED_LIBRARY_BUILD) \
-		-D CMAKE_VERBOSE_MAKEFILE=$(VERBOSE_BUILD)
-
+	$(CMAKE) \-S . -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" $(CMAKE_ARGS)
 	$(CMAKE) --build $(BUILD)
 run: $(CLIENT)
 	$(CLIENT) $(CLIENT_ARGS)
 test: $(CLIENT)
-	$(CLIENT) --test $(CLIENT_ARGS)
+	$(CLIENT) --no-client --test $(CLIENT_ARGS)
 gdb: $(CLIENT)
-	gdb -ex 'break main' -ex 'break abort' --ex run --args $(CLIENT) $(CLIENT_ARGS)
+	gdb --ex 'break main' --ex "break odDebug_error" --ex "run" --args $(CLIENT) --test --no-slow-test --debug $(CLIENT_ARGS)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:
@@ -46,5 +42,5 @@ tidy:
 format:
 	clang-format -i -Werror -- $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))")
 clean:
-	rm -rf $(BUILD_ROOT) gmon.out
+	rm -rf $(BUILD_ROOT) gmon.out profile.txt
 

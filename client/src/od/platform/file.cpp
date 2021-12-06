@@ -35,13 +35,10 @@ bool odFile_check_valid(const struct odFile* file) {
 }
 const char* odFile_get_debug_string(const struct odFile* file) {
 	if (file == nullptr) {
-		return "odFile{this=nullptr}";
+		return "null";
 	}
 
-	return odDebugString_format(
-		"odFile{this=%p, native_file=%p}",
-		static_cast<const void*>(file),
-		static_cast<const void*>(file->native_file));
+	return odDebugString_format("\"%p\"", static_cast<const void*>(file->native_file));
 }
 bool odFile_open(odFile* file, const char* mode, const char* file_path) {
 	OD_DEBUG(

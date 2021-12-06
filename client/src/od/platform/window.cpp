@@ -40,6 +40,25 @@ static void odSDL_destroy_reentrant() {
 	}
 }
 
+const char* odWindowSettings_get_debug_string(const odWindowSettings* settings) {
+	if (settings == nullptr) {
+		return "null";
+	}
+
+	return odDebugString_format(
+		"{\"caption\": %s, \"window_width\": %d, \"window_height\": %d, \"game_width\": %d, \"game_height\": %d, "
+		"\"fps_limit\": %d, \"is_fps_limit_enabled\": %d, \"is_vsync_enabled\": %d, \"is_visible\": %d}",
+		settings->caption,
+		settings->window_width,
+		settings->window_height,
+		settings->game_width,
+		settings->game_height,
+		settings->fps_limit,
+		static_cast<int>(settings->is_fps_limit_enabled),
+		static_cast<int>(settings->is_vsync_enabled),
+		static_cast<int>(settings->is_visible)
+	);
+}
 const odWindowSettings* odWindowSettings_get_defaults() {
 	static const odWindowSettings settings{
 		/*caption*/ "",
@@ -95,13 +114,13 @@ void odWindow_swap(odWindow* window1, odWindow* window2) {
 }
 const char* odWindow_get_debug_string(const odWindow* window) {
 	if (window == nullptr) {
-		return "odWindow{this=nullptr}";
+		return "null";
 	}
 
 	return odDebugString_format(
-		"odWindow{this=%p, is_open=%d}",
-		static_cast<const void*>(window),
-		window->is_open);
+		"{\"is_open\"=%d, \"settings\": %s}",
+		window->is_open,
+		odWindowSettings_get_debug_string(&window->settings));
 }
 bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
@@ -172,7 +191,7 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 
 	if (window->settings.is_vsync_enabled) {
 		if (SDL_GL_SetSwapInterval(1) < 0) {
-			OD_INFO("SDL_GL_SetSwapInterval failed, error=%s; disabling vsync and continuing", SDL_GetError());
+			OD_INFO("SDL_GL_SetSwapInterval failed, message=\"%s\"\nDisabling vsync and continuing", SDL_GetError());
 			// Lack of vsync support is not fatal; we have a frame timer as backup
 			window->settings.is_vsync_enabled = false;
 		}

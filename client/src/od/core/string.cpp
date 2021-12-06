@@ -33,7 +33,7 @@ void odString_swap(odString* string1, odString* string2) {
 	}
 
 	int32_t swap_count = string1->count;
-	int32_t swap_capacity = string1->count;
+	int32_t swap_capacity = string1->capacity;
 
 	string1->count = string2->count;
 	string1->capacity = string2->capacity;
@@ -47,7 +47,11 @@ bool odString_check_valid(const odString* string) {
 	if (!OD_CHECK(string != nullptr)
 		|| !OD_CHECK(string->count >= 0)
 		|| !OD_CHECK(string->capacity >= 0)
-		|| !OD_CHECK(odAllocation_check_valid(&string->allocation))) {
+		|| !OD_CHECK(odAllocation_check_valid(&string->allocation))
+		|| !OD_DEBUG_CHECK((string->count == 0) || (string->count < string->capacity))
+		|| !OD_DEBUG_CHECK((string->count == 0) || (string->allocation.ptr != nullptr))
+		|| !OD_DEBUG_CHECK((string->count == 0)
+						   || (static_cast<const char*>(string->allocation.ptr)[string->count] == '\0'))) {
 		return false;
 	}
 
@@ -83,15 +87,25 @@ int32_t odString_compare(const odString* string1, const odString* string2) {
 }
 const char* odString_get_debug_string(const odString* string) {
 	if (string == nullptr) {
-		return "odString{this=nullptr}";
+		return "null";
 	}
 
-	return odDebugString_format(
-		"odString{this=%p, allocation=%s, capacity=%d, count=%d}",
-		static_cast<const void*>(string),
-		odAllocation_get_debug_string(&string->allocation),
-		string->capacity,
-		string->count);
+	const char* string_preview = "";
+	int32_t string_preview_max_count = 0;
+	if (string->count > 0) {
+		string_preview = odString_begin_const(string);
+		string_preview_max_count = string->count;
+
+	}
+
+	if (string->count > 4096) {
+		string_preview = "...";
+		string_preview_max_count = 3;
+	}
+
+	int32_t string_preview_count = static_cast<int32_t>(strnlen(string_preview, static_cast<size_t>(string_preview_max_count)));
+
+	return odDebugString_format("{\"count\": %d, \"data\": \"%*s\"}", string->count, string_preview_count, string_preview);
 }
 bool odString_init(odString* string) {
 	OD_TRACE("string=%s", odString_get_debug_string(string));
@@ -123,14 +137,19 @@ int32_t odString_get_capacity(const odString* string) {
 	return string->capacity;
 }
 bool odString_set_capacity(odString* string, int32_t new_capacity) {
-	OD_TRACE("array=%s, new_capacity=%d", odString_get_debug_string(string), new_capacity);
+	OD_TRACE("string=%s, new_capacity=%d", odString_get_debug_string(string), new_capacity);
 
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))
 		|| !OD_DEBUG_CHECK(new_capacity >= 0)) {
 		return false;
 	}
 
-	int32_t new_count = (new_capacity < string->count) ? new_capacity : string->count;
+	int32_t new_count = string->count;
+	if (new_capacity == 0) {
+		new_count = 0;
+	} else if ((new_capacity - 1) < string->count) {
+		new_count = new_capacity - 1;
+	}
 	OD_TRACE("new_count=%d", new_count);
 
 	odAllocation new_allocation;
@@ -207,7 +226,7 @@ bool odString_set_count(odString* string, int32_t new_count) {
 		return false;
 	}
 
-	if (!OD_CHECK(odString_ensure_capacity(string, new_count))) {
+	if (!OD_CHECK(odString_ensure_capacity(string, new_count + 1))) {
 		return false;
 	}
 
@@ -254,7 +273,7 @@ bool odString_expand(odString* string, char** out_expand_dest, int32_t expand_co
 }
 bool odString_push(odString* string, const char* str, int32_t str_count) {
 	OD_TRACE(
-		"array=%s, str=%p, str_count=%d",
+		"string=%s, str=%p, str_count=%d",
 		odString_get_debug_string(string),
 		static_cast<const void*>(str),
 		str_count);
@@ -288,27 +307,24 @@ bool odString_push_formatted_variadic(odString* string, const char* format_c_str
 	va_copy(args_copy, args);
 	int32_t added_required_count = static_cast<int32_t>(vsnprintf(nullptr, 0, format_c_str, args_copy));
 	va_end(args_copy);
+
 	if (!OD_CHECK(added_required_count >= 0)) {
 		return false;
 	}
 
 	// sprintf-style calls always write null-terminated, but count in return value
 	// excludes null terminator
-	int32_t added_required_capacity = added_required_count + 1;
 	int32_t old_count = odString_get_count(string);
-	int32_t new_required_capacity = old_count + added_required_capacity;
-	if (!OD_CHECK(odString_ensure_capacity(string, new_required_capacity))) {
-		return false;
-	}
-	
-	int32_t new_required_count = old_count + added_required_count;
-	if (!OD_CHECK(odString_set_count(string, new_required_count))) {
+	if (!OD_CHECK(odString_set_count(string, old_count + added_required_count))) {
 		return false;
 	}
 	
 	char* dest_str = odString_get(string, old_count);
+	if (!OD_DEBUG_CHECK(dest_str != nullptr)) {
+		return false;
+	}
 
-	int32_t written_count = static_cast<int32_t>(vsnprintf(dest_str, static_cast<size_t>(added_required_capacity), format_c_str, args));
+	int32_t written_count = static_cast<int32_t>(vsnprintf(dest_str, static_cast<size_t>(added_required_count + 1), format_c_str, args));
 	if (!OD_CHECK(written_count >= 0)) {
 		return false;
 	}
@@ -327,37 +343,48 @@ bool odString_push_formatted(odString* string, const char* format_c_str, ...) {
 
 	return result;
 }
-bool odString_ensure_null_terminated(odString* string) {
-	OD_TRACE("string=%s", odString_get_debug_string(string));
-
+const char* odString_get_c_str(const odString* string) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
-		return false;
+		return "";
 	}
 
-	if (odString_get_null_terminated(string)) {
-		return true;
+	if (string->allocation.ptr == nullptr) {
+		return "";
 	}
 
-	return odString_push(string, "\0", 1);
+	return static_cast<char*>(string->allocation.ptr);
 }
-bool odString_get_null_terminated(const odString* string) {
-	OD_TRACE("string=%s", odString_get_debug_string(string));
+// bool odString_ensure_null_terminated(odString* string) {
+// 	OD_TRACE("string=%s", odString_get_debug_string(string));
 
-	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
-		return false;
-	}
+// 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
+// 		return false;
+// 	}
 
-	if (odString_get_count(string) == 0) {
-		return false;
-	}
+// 	if (odString_get_null_terminated(string)) {
+// 		return true;
+// 	}
 
-	const char* terminator_ptr = odString_get_const(string, odString_get_count(string) - 1);
-	if (terminator_ptr == nullptr) {
-		return false;
-	}
+// 	return odString_push(string, "\0", 1);
+// }
+// bool odString_get_null_terminated(const odString* string) {
+// 	OD_TRACE("string=%s", odString_get_debug_string(string));
 
-	return (*terminator_ptr == '\0');
-}
+// 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
+// 		return false;
+// 	}
+
+// 	if (odString_get_count(string) == 0) {
+// 		return false;
+// 	}
+
+// 	const char* terminator_ptr = odString_get_const(string, odString_get_count(string) - 1);
+// 	if (terminator_ptr == nullptr) {
+// 		return false;
+// 	}
+
+// 	return (*terminator_ptr == '\0');
+// }
 char* odString_get(odString* string, int32_t i) {
 	if (!OD_DEBUG_CHECK((i >= 0) && (i < string->count))) {
 		return nullptr;

@@ -1,30 +1,46 @@
 cmake_minimum_required(VERSION 3.16)
 project(overworld LANGUAGES CXX)
 
-set(OD_BUILD_DEBUG_DEFAULT 1)
-if(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
-	set(OD_BUILD_DEBUG_DEFAULT 0)
+set(OD_BUILD_LOGS_DEFAULT 1)
+set(OD_BUILD_DEBUG_DEFAULT 0)
+set(OD_BUILD_TESTS_DEFAULT 1)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+	set(OD_BUILD_DEBUG_DEFAULT 1)
+endif()
+if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE")
+	set(OD_BUILD_LOGS_DEFAULT 0)
+	set(OD_BUILD_TESTS_DEFAULT 0)
 endif()
 
-set(OD_BUILD_LOG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
+set(OD_BUILD_LOGS ${OD_BUILD_LOGS_DEFAULT} CACHE BOOL
 	"Build with logging")
 set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
-	"Build with debugging checks")
-set(OD_BUILD_TESTS ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
+	"Build with debugging runtime checks")
+set(OD_BUILD_TESTS ${OD_BUILD_TESTS_DEFAULT} CACHE BOOL
 	"Build with tests")
+
+if(("${CMAKE_BUILD_TYPE}" STREQUAL "PROFILE") AND ("${BUILD_SHARED_LIBS}" EQUAL 1))
+	message(FATAL_ERROR "profile build must be statically linked")
+endif()
+if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG") AND ("${OD_BUILD_DEBUG}" EQUAL 1))
+	message(WARNING "debug checks with non-debug build may not be intentional")
+endif()
+if(("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE") AND ("${OD_BUILD_TESTS}" EQUAL 1))
+	message(WARNING "release build with tests may not be intentional")
+endif()
+
+message("OD_BUILD_LOGS=${OD_BUILD_LOGS}")
+message("OD_BUILD_DEBUG=${OD_BUILD_DEBUG}")
+message("OD_BUILD_TESTS=${OD_BUILD_TESTS}")
+message("BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
 
 # od_core
 add_library(od_core)
 
 # od_platform
 add_library(od_platform)
-# mingw32 should be linked first, as it must be linked before sdl2main
-if("${MINGW}" EQUAL 1)
-	target_link_libraries(od_platform PRIVATE mingw32)
-endif()
-target_link_libraries(od_platform PRIVATE m od_core)
-# each CU has separate lib dependencies which mitigate the gains vs parallel and add cost to iterative builds
 set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
+target_link_libraries(od_platform PRIVATE m od_core)
 
 # od_engine
 add_library(od_engine)
@@ -32,16 +48,18 @@ target_link_libraries(od_engine PRIVATE m od_core od_platform)
 
 # od_test
 add_library(od_test)
-set_target_properties(od_test PROPERTIES UNITY_BUILD 1 EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
 target_link_libraries(od_test PRIVATE m od_core od_platform od_engine)
+if (NOT (${OD_BUILD_TESTS}))
+	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+endif()
 
 # od_client
 add_executable(od_client)
-target_link_libraries(od_client PRIVATE m od_core od_platform)
+target_link_libraries(od_client PRIVATE m od_core od_platform od_engine)
 if (${OD_BUILD_TESTS})
-	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 0 EXCLUDE_FROM_DEFAULT_BUILD 0)
 	target_link_libraries(od_client PRIVATE od_test)
 endif()
+
 
 set(od_libs od_core od_platform od_engine od_test)
 set(od_binaries od_client)
@@ -64,7 +82,7 @@ foreach(od_target ${od_targets})
 
 	target_compile_definitions(
 		${od_target} PUBLIC
-		OD_BUILD_LOG=${OD_BUILD_LOG}
+		OD_BUILD_LOGS=${OD_BUILD_LOGS}
 		OD_BUILD_DEBUG=${OD_BUILD_DEBUG}
 		OD_BUILD_TESTS=${OD_BUILD_TESTS})
 endforeach()
@@ -93,6 +111,10 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 		set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
 	else()
 		set(OD_SDL2_LIBRARIES "${SDL2_LIBRARIES}")
+	endif()
+	# mingw32 must be linked before sdl2main
+	if("${MINGW}" EQUAL 1)
+		list(APPEND OD_SDL2_LIBRARIES mingw32)
 	endif()
 
 	set(OD_GL_LIBRARIES OpenGL::GL OpenGL::GLU GLEW::glew)
@@ -135,7 +157,7 @@ else()
 			"SHELL:-s WASM=1" "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s NO_EXIT_RUNTIME=0"
 			"SHELL:-s NO_FILESYSTEM=1"
 		)
-		if(${CMAKE_BUILD_TYPE} STREQUAL DEBUG)
+		if("${CMAKE_BUILD_TYPE}" STREQUAL DEBUG)
 			target_link_options(
 				${od_target}
 				PRIVATE
@@ -178,10 +200,6 @@ endif()
 
 # optional gcc-specific parameters, if using gcc
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	set(od_sanitizer_options -fsanitize=address,leak,undefined -fsanitize-recover=address
-		-fsanitize-address-use-after-scope -fstack-protector-all)
-	set(od_static_link_options -static-libstdc++ -static-libgcc)
-
 	foreach(od_target ${od_targets})
 		target_link_libraries(${od_target} PRIVATE m)
 		target_compile_options(
@@ -192,12 +210,14 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			-Wlarger-than=16777216 -Walloc-size-larger-than=16777216 -Wstringop-overflow=4
 			-Walloc-zero -Warray-bounds=2 -Wcast-align=strict -Wconversion -Wundef
 			-Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
-			-Wdisabled-optimization -Wfloat-conversion -Wlogical-op -Winline -Wmultichar
-			-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual)
+			-Wdisabled-optimization -Wfloat-conversion -Wlogical-op -Wmultichar
+			-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual
+			-Wno-stringop-truncation)
 
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
-			target_compile_options(${od_target} PUBLIC -O0 -ggdb3 -fno-omit-frame-pointer)
-			target_compile_definitions(${od_target} PRIVATE _FORTIFY_SOURCE=2)
+			set(od_debug_options -Og -ggdb3 -fno-omit-frame-pointer -fno-inline)
+			target_compile_options(${od_target} PUBLIC ${od_debug_options})
+			target_link_options(${od_target} PUBLIC ${od_debug_options})
 
 			if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0.0)
 				target_compile_options(${od_target} PUBLIC -fanalyzer)
@@ -207,6 +227,8 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 				target_link_libraries(${od_target} PRIVATE imagehlp)
 				target_compile_definitions(${od_target} PRIVATE OD_CORE_HAS_DBGHELP=1)
 			else()
+				set(od_sanitizer_options -fsanitize=address,leak,undefined -fsanitize-recover=address
+					-fsanitize-address-use-after-scope -fstack-protector-all)
 				target_compile_options(${od_target} PUBLIC ${od_sanitizer_options})
 				target_link_options(${od_target} PUBLIC ${od_sanitizer_options})
 
@@ -217,15 +239,26 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			endif()
 		endif()
 
+		if("${CMAKE_BUILD_TYPE}" STREQUAL "PROFILE")
+			target_compile_options(${od_target} PUBLIC -Os -g -pg)
+			target_link_options(${od_target} PUBLIC -Os -g -pg)
+		endif()
+
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE")
-			target_compile_options(${od_target} PUBLIC -Os -s -ffast-math -flto)
-			target_link_options(${od_target} PUBLIC -Os -s -flto -fwhole-program)
+			target_compile_options(${od_target} PUBLIC -s -Os)
+			target_link_options(${od_target} PUBLIC -s -Os)
+		endif()
+
+		if(("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE") OR ("${CMAKE_BUILD_TYPE}" STREQUAL "PROFILE"))
+			target_compile_options(${od_target} PUBLIC -ffast-math -flto)
+			target_link_options(${od_target} PUBLIC -flto -fwhole-program)
 
 			if("${MINGW}" EQUAL 1)
 				target_link_options(${od_target} PUBLIC -mwindows)
 			endif()
 
-			if("${BUILD_SHARED_LIBS}" EQUAL 1)
+			if(NOT ("${BUILD_SHARED_LIBS}" EQUAL 1))
+				set(od_static_link_options -static-libstdc++ -static-libgcc)
 				target_compile_options(${od_target} PUBLIC ${od_static_link_options})
 				target_link_options(${od_target} PUBLIC ${od_static_link_options})
 			endif()

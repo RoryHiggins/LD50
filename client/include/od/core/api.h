@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 // Build settings
-#if !defined(OD_BUILD_LOG)
-#define OD_BUILD_LOG 1
+#if !defined(OD_BUILD_LOGS)
+#define OD_BUILD_LOGS 1
 #endif
 
 #if !defined(OD_BUILD_DEBUG)
