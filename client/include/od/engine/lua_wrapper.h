@@ -2,4 +2,4 @@
 
 #include <od/engine/module.h>
 
-struct odLuaClient;
+struct odLuaWrapper;

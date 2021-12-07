@@ -9,6 +9,8 @@
 
 typedef int32_t odEntityId;
 
+struct odPrimitiveQuad;
+
 struct odEntityCollider {
 	odEntityId id;
 	struct odTagset tagset;
@@ -41,3 +43,5 @@ OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*
 odEntity_get_debug_string(const struct odEntity* entity);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odEntity_check_valid(const struct odEntity* entity);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+odEntity_get_quad(const struct odEntity* entity, struct odPrimitiveQuad *out_quad);

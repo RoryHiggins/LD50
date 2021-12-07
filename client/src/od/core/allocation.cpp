@@ -36,21 +36,21 @@ const char* odAllocation_get_debug_string(const odAllocation* allocation) {
 		"\"%p\"",
 		static_cast<const void*>(allocation->ptr));
 }
-bool odAllocation_init(odAllocation* allocation, int32_t allocation_size) {
-	OD_TRACE("allocation=%s, allocation_size=%d", odAllocation_get_debug_string(allocation), allocation_size);
+bool odAllocation_init(odAllocation* allocation, int32_t size) {
+	OD_TRACE("allocation=%s, size=%d", odAllocation_get_debug_string(allocation), size);
 
 	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation))
-		|| !OD_DEBUG_CHECK(allocation_size >= 0)) {
+		|| !OD_DEBUG_CHECK(size >= 0)) {
 		return false;
 	}
 
 	odAllocation_destroy(allocation);
 
-	if (allocation_size == 0) {
+	if (size == 0) {
 		return true;
 	}
 
-	allocation->ptr = calloc(1, static_cast<size_t>(allocation_size));
+	allocation->ptr = calloc(1, static_cast<size_t>(size));
 	if (!OD_CHECK(allocation->ptr != nullptr)) {
 		return false;
 	}

@@ -92,8 +92,8 @@ const odType* odWindow_get_type_constructor() {
 	return odType_get<odWindow>();
 }
 void odWindow_swap(odWindow* window1, odWindow* window2) {
-	if (!OD_DEBUG_CHECK(window1 != nullptr)
-		|| !OD_DEBUG_CHECK(window2 != nullptr)) {
+	if (!OD_CHECK(window1 != nullptr)
+		|| !OD_CHECK(window2 != nullptr)) {
 		return;
 	}
 
@@ -125,7 +125,7 @@ const char* odWindow_get_debug_string(const odWindow* window) {
 bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
-	if (!OD_DEBUG_CHECK(window != nullptr)) {
+	if (!OD_CHECK(window != nullptr)) {
 		return false;
 	}
 
@@ -137,7 +137,7 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 	}
 
 	window->is_sdl_init = odSDL_init_reentrant();
-	if (!window->is_sdl_init) {
+	if (!OD_CHECK(window->is_sdl_init)) {
 		return false;
 	}
 
@@ -218,7 +218,7 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 void odWindow_destroy(odWindow* window) {
 	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
-	if (!OD_DEBUG_CHECK(window != nullptr)) {
+	if (!OD_CHECK(window != nullptr)) {
 		return;
 	}
 
@@ -255,9 +255,9 @@ void odWindow_destroy(odWindow* window) {
 	window->is_open = false;
 }
 void* odWindow_prepare_render_context(odWindow* window) {
-	if (!OD_DEBUG_CHECK(odWindow_check_valid(window))
-		|| !OD_DEBUG_CHECK(window->window_native != nullptr)
-		|| !OD_DEBUG_CHECK(window->render_context_native != nullptr)) {
+	if (!OD_CHECK(odWindow_check_valid(window))
+		|| !OD_CHECK(window->window_native != nullptr)
+		|| !OD_CHECK(window->render_context_native != nullptr)) {
 		return nullptr;
 	}
 
@@ -279,7 +279,7 @@ bool odWindow_check_valid(const odWindow* window) {
 bool odWindow_set_visible(odWindow* window, bool is_visible) {
 	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
 
-	if (!odWindow_check_valid(window) || !window->is_open) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
 
@@ -300,7 +300,7 @@ bool odWindow_set_visible(odWindow* window, bool is_visible) {
 bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
 
-	if (!odWindow_check_valid(window) || !window->is_open) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
 
@@ -314,7 +314,7 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 	return true;
 }
 OD_NO_DISCARD static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
-	if (!odWindow_check_valid(window) || !window->is_open) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
 
@@ -405,7 +405,7 @@ OD_NO_DISCARD static bool odWindow_handle_event(odWindow* window, const SDL_Even
 	return true;
 }
 OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
-	if (!odWindow_check_valid(window) || !window->is_open) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
 
@@ -437,10 +437,11 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 		SDL_Delay(static_cast<Uint32>(wait_ms));
 	}
 	window->next_frame_ms += frame_duration_ms;
+
 	return true;
 }
 bool odWindow_step(odWindow* window) {
-	if (!odWindow_check_valid(window) || !window->is_open) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
 
@@ -450,7 +451,7 @@ bool odWindow_step(odWindow* window) {
 			return false;
 		}
 
-		if (!odWindow_check_valid(window) || !window->is_open) {
+		if (!window->is_open) {
 			return true;
 		}
 	}
@@ -529,8 +530,7 @@ bool odWindow_step(odWindow* window) {
 	return true;
 }
 const odWindowSettings* odWindow_get_settings(const odWindow* window) {
-	if (window == nullptr) {
-		OD_ERROR("window=nullptr");
+	if (!OD_CHECK(window != nullptr)) {
 		return nullptr;
 	}
 

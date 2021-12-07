@@ -245,9 +245,9 @@ const char* odTexture_get_debug_string(const odTexture* texture) {
 }
 bool odTexture_init(odTexture* texture, void* render_context_native,
 					const odColor* opt_pixels, int32_t width, int32_t height) {
-	if (!OD_DEBUG_CHECK(texture != nullptr)
-		|| !OD_DEBUG_CHECK(width >= 0)
-		|| !OD_DEBUG_CHECK(height >= 0)
+	if (!OD_CHECK(texture != nullptr)
+		|| !OD_CHECK(width >= 0)
+		|| !OD_CHECK(height >= 0)
 		|| !OD_CHECK(render_context_native != nullptr)
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == render_context_native)) {
 		return false;
@@ -292,7 +292,7 @@ bool odTexture_init_blank(odTexture* texture, void* render_context_native) {
 	return odTexture_init(texture, render_context_native, &default_texture, 1, 1);
 }
 void odTexture_destroy(odTexture* texture) {
-	if (!OD_DEBUG_CHECK(texture != nullptr)) {
+	if (!OD_CHECK(texture != nullptr)) {
 		return;
 	}
 
@@ -346,8 +346,8 @@ const odType* odRenderTexture_get_type_constructor() {
 	return odType_get<odRenderTexture>();
 }
 void odRenderTexture_swap(odRenderTexture* render_texture1, odRenderTexture* render_texture2) {
-	if (!OD_DEBUG_CHECK(render_texture1 != nullptr)
-		|| !OD_DEBUG_CHECK(render_texture2 != nullptr)) {
+	if (!OD_CHECK(render_texture1 != nullptr)
+		|| !OD_CHECK(render_texture2 != nullptr)) {
 		return;
 	}
 
@@ -377,9 +377,9 @@ const char* odRenderTexture_get_debug_string(const odRenderTexture* render_textu
 	);
 }
 bool odRenderTexture_init(odRenderTexture* render_texture, void* render_context_native, int32_t width, int32_t height) {
-	if (!OD_DEBUG_CHECK(render_texture != nullptr)
-		|| !OD_DEBUG_CHECK(width >= 0)
-		|| !OD_DEBUG_CHECK(height >= 0)
+	if (!OD_CHECK(render_texture != nullptr)
+		|| !OD_CHECK(width >= 0)
+		|| !OD_CHECK(height >= 0)
 		|| !OD_CHECK(render_context_native != nullptr)
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == render_context_native)) {
 		return false;
@@ -411,7 +411,7 @@ bool odRenderTexture_init(odRenderTexture* render_texture, void* render_context_
 	return true;
 }
 void odRenderTexture_destroy(odRenderTexture* render_texture) {
-	if (!OD_DEBUG_CHECK(render_texture != nullptr)) {
+	if (!OD_CHECK(render_texture != nullptr)) {
 		return;
 	}
 
@@ -487,8 +487,8 @@ const odType* odRenderer_get_type_constructor() {
 	return odType_get<odRenderer>();
 }
 void odRenderer_swap(odRenderer* renderer1, odRenderer* renderer2) {
-	if (!OD_DEBUG_CHECK(renderer1 != nullptr)
-		|| !OD_DEBUG_CHECK(renderer2 != nullptr)) {
+	if (!OD_CHECK(renderer1 != nullptr)
+		|| !OD_CHECK(renderer2 != nullptr)) {
 		return;
 	}
 
@@ -531,7 +531,7 @@ const char* odRenderer_get_debug_string(const odRenderer* renderer) {
 bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));
 
-	if (!OD_DEBUG_CHECK(renderer != nullptr)
+	if (!OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(render_context_native != nullptr)
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == render_context_native)) {
 		return false;
@@ -654,8 +654,6 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 
 		glVertexAttribPointer(src_uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(odVertex), offset);
 		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (2 * sizeof(GLfloat)));
-
-		OD_DEBUG_ASSERT(reinterpret_cast<size_t>(offset) == sizeof(odVertex));
 	}
 
 	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
@@ -668,7 +666,7 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 void odRenderer_destroy(odRenderer* renderer) {
 	OD_DEBUG("renderer=%s", odRenderer_get_debug_string(renderer));
 
-	if (!OD_DEBUG_CHECK(renderer != nullptr)) {
+	if (!OD_CHECK(renderer != nullptr)) {
 		return;
 	}
 
@@ -708,7 +706,7 @@ void odRenderer_destroy(odRenderer* renderer) {
 	renderer->render_context_native = nullptr;
 }
 bool odRenderer_flush(odRenderer* renderer) {
-	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
+	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return false;
 	}
@@ -722,10 +720,10 @@ bool odRenderer_flush(odRenderer* renderer) {
 	return true;
 }
 bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor* color) {
-	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
+	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)
-		|| !OD_DEBUG_CHECK(odRenderState_check_valid(state))
-		|| !OD_DEBUG_CHECK(color != nullptr)) {
+		|| !OD_CHECK(odRenderState_check_valid(state))
+		|| !OD_CHECK(color != nullptr)) {
 		return false;
 	}
 
@@ -754,10 +752,10 @@ bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor*
 }
 bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 							  const odVertex* vertices, int32_t vertices_count) {
-	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
-		|| !OD_DEBUG_CHECK(odRenderState_check_valid(state))
-		|| !OD_DEBUG_CHECK(vertices != nullptr)
-		|| !OD_DEBUG_CHECK(vertices_count >= 0)
+	if (!OD_CHECK(odRenderer_check_valid(renderer))
+		|| !OD_CHECK(odRenderState_check_valid(state))
+		|| !OD_CHECK(vertices != nullptr)
+		|| !OD_CHECK(vertices_count >= 0)
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return false;
 	}
@@ -792,8 +790,10 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 	glUniform2f(uv_scale_uniform, texture_scale_x, texture_scale_y);
 
 	glViewport(
-		static_cast<GLint>(state->viewport.x), static_cast<GLint>(state->viewport.y),
-		static_cast<GLint>(state->viewport.width), static_cast<GLint>(state->viewport.height));
+		static_cast<GLint>(state->viewport.x1),
+		static_cast<GLint>(state->viewport.y1),
+		static_cast<GLint>(odBounds_get_width(&state->viewport)),
+		static_cast<GLint>(odBounds_get_height(&state->viewport)));
 
 	glBufferData(
 		GL_ARRAY_BUFFER,
@@ -815,12 +815,12 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 }
 bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 							 const odBounds* opt_src_bounds, const struct odMatrix4* opt_transform) {
-	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
-		|| !OD_DEBUG_CHECK(renderer != nullptr)
+	if (!OD_CHECK(odRenderer_check_valid(renderer))
+		|| !OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)
-		|| !OD_DEBUG_CHECK(odRenderState_check_valid(state))
-		|| !OD_DEBUG_CHECK((opt_src_bounds == nullptr) || odBounds_check_valid(opt_src_bounds))
-		|| !OD_DEBUG_CHECK((opt_transform == nullptr) || odMatrix4_check_valid(opt_transform))) {
+		|| !OD_CHECK(odRenderState_check_valid(state))
+		|| !OD_CHECK((opt_src_bounds == nullptr) || odBounds_check_valid(opt_src_bounds))
+		|| !OD_CHECK((opt_transform == nullptr) || odMatrix4_check_valid(opt_transform))) {
 		return false;
 	}
 
@@ -836,7 +836,16 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	}
 
 	odMatrix4 transform{};
-	odMatrix4_init(&transform, state->viewport.width, state->viewport.height, 1.0f, 0.0f, 0.0f, 0.0f);
+	odMatrix4_init(
+		&transform,
+		odBounds_get_width(&state->viewport),
+		odBounds_get_height(&state->viewport),
+		1.0f,
+		0.0f,
+		0.0f,
+		0.0f
+	);
+
 	if (opt_transform != nullptr) {
 		transform = *opt_transform;
 	}
@@ -849,23 +858,23 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	odVertex vertices[vertices_count] = {
 		{{0.0f, 0.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x, src_bounds.y},
+		 src_bounds.x1, src_bounds.y1},
 		{{0.0f, 1.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x, src_bounds.y + src_bounds.height},
+		 src_bounds.x1, src_bounds.y2},
 		{{1.0f, 0.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x + src_bounds.width, src_bounds.y},
+		 src_bounds.x2, src_bounds.y1},
 
 		{{1.0f, 0.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x + src_bounds.width, src_bounds.y},
+		 src_bounds.x2, src_bounds.y1},
 		{{0.0f, 1.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x, src_bounds.y + src_bounds.height},
+		 src_bounds.x1, src_bounds.y2},
 		{{1.0f, 1.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x + src_bounds.width, src_bounds.y + src_bounds.height},
+		 src_bounds.x2, src_bounds.y2},
 	};
 
 	for (int32_t i = 0; i < vertices_count; i++) {
@@ -886,7 +895,7 @@ static void odRenderer_unbind() {
 static void odRenderer_bind(odRenderer* renderer) {
 	odRenderer_unbind();
 
-	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
+	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return;
 	}

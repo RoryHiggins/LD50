@@ -18,7 +18,11 @@ const char* odTagset_get_debug_string(const odTagset* tagset) {
 
 	const uint8_t* tagset_bytes = reinterpret_cast<const uint8_t*>(tagset->tagset);
 	for (int32_t i = 0; i < OD_TAGSET_BYTE_SIZE; i++) {
-		snprintf(tagset_hex + (2 * i), 3, "%02x", static_cast<unsigned>(tagset_bytes[i]));
+		const int32_t byte_hex_str_size = 16;
+		char byte_hex_str[byte_hex_str_size]{};
+		snprintf(byte_hex_str, byte_hex_str_size, "%02X", static_cast<unsigned>(tagset_bytes[i]));
+
+		sprintf(tagset_hex + (2 * i), "%2s", byte_hex_str);
 	}
 
 	return odDebugString_format("\"0x%*s\"", tagset_hex_size, tagset_hex);

@@ -13,8 +13,8 @@ const odType* odImage_get_type_constructor() {
 	return odType_get<odImage>();
 }
 bool odImage_copy(odImage* image, const odImage* src_image) {
-	if (!OD_DEBUG_CHECK(image != nullptr)
-		|| !OD_DEBUG_CHECK(src_image != nullptr)) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(src_image != nullptr)) {
 		return false;
 	}
 
@@ -46,8 +46,8 @@ bool odImage_copy(odImage* image, const odImage* src_image) {
 	return true;
 }
 void odImage_swap(odImage* image1, odImage* image2) {
-	if (!OD_DEBUG_CHECK(image1 != nullptr)
-		|| !OD_DEBUG_CHECK(image2 != nullptr)) {
+	if (!OD_CHECK(image1 != nullptr)
+		|| !OD_CHECK(image2 != nullptr)) {
 		return;
 	}
 
@@ -78,9 +78,9 @@ const char* odImage_get_debug_string(const odImage* image) {
 	return odDebugString_format("{\"width\": %d, \"height\": %d}", image->width, image->height);
 }
 bool odImage_allocate(odImage* image, int32_t width, int32_t height) {
-	if (!OD_DEBUG_CHECK(image != nullptr)
-		|| !OD_DEBUG_CHECK(width >= 0)
-		|| !OD_DEBUG_CHECK(height >= 0)) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(width >= 0)
+		|| !OD_CHECK(height >= 0)) {
 		return false;
 	}
 
@@ -106,7 +106,7 @@ bool odImage_allocate(odImage* image, int32_t width, int32_t height) {
 	return true;
 }
 void odImage_release(odImage* image) {
-	if (!OD_DEBUG_CHECK(image != nullptr)) {
+	if (!OD_CHECK(image != nullptr)) {
 		return;
 	}
 
@@ -122,7 +122,7 @@ void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out
 	*out_opt_width = 0;
 	*out_opt_height = 0;
 
-	if (!OD_DEBUG_CHECK(odImage_check_valid(image))) {
+	if (!OD_CHECK(odImage_check_valid(image))) {
 		return;
 	}
 
@@ -130,9 +130,9 @@ void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out
 	*out_opt_height = image->height;
 }
 bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size) {
-	if (!OD_DEBUG_CHECK(image != nullptr)
-		|| !OD_DEBUG_CHECK(src_png != nullptr)
-		|| !OD_DEBUG_CHECK(src_png_size > 0)) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(src_png != nullptr)
+		|| !OD_CHECK(src_png_size > 0)) {
 		return false;
 	}
 
@@ -148,7 +148,7 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 
 	image->width = static_cast<int32_t>(png.width);
 	image->height = static_cast<int32_t>(png.height);
-	if (!OD_DEBUG_CHECK(PNG_IMAGE_SIZE(png) == static_cast<unsigned>(image->width * image->height * static_cast<int32_t>(sizeof(odColor))))) {
+	if (!OD_CHECK(PNG_IMAGE_SIZE(png) == static_cast<unsigned>(image->width * image->height * static_cast<int32_t>(sizeof(odColor))))) {
 		return false;
 	}
 
@@ -157,7 +157,7 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 	}
 
 	void* image_data = odAllocation_get(&image->allocation);
-	if (!OD_DEBUG_CHECK(image_data != nullptr)) {
+	if (!OD_CHECK(image_data != nullptr)) {
 		return false;
 	}
 
@@ -168,7 +168,7 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 	return true;
 }
 odColor* odImage_get(odImage* image) {
-	if (!OD_DEBUG_CHECK(odImage_check_valid(image))) {
+	if (!OD_CHECK(odImage_check_valid(image))) {
 		return nullptr;
 	}
 
@@ -181,13 +181,17 @@ const odColor* odImage_get_const(const odImage* image) {
 odImage::odImage() : allocation{}, width{0}, height{0} {
 }
 odImage::odImage(odImage const& other) : odImage{} {
-	OD_ASSERT(odImage_copy(this, &other));
+	if (!OD_CHECK(odImage_copy(this, &other))) {
+		return;
+	}
 }
 odImage::odImage(odImage&& other) : odImage{} {
 	odImage_swap(this, &other);
 }
 odImage& odImage::operator=(const odImage& other) {
-	OD_ASSERT(odImage_copy(this, &other));
+	if (!OD_CHECK(odImage_copy(this, &other))) {
+		return *this;
+	}
 	return *this;
 }
 odImage& odImage::operator=(odImage&& other) {

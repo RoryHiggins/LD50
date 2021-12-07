@@ -1,4 +1,4 @@
-#include <od/engine/lua_client.h>
+#include <od/engine/lua_wrapper.h>
 
 #if defined(__cplusplus)
 extern "C" {

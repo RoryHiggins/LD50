@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include <od/platform/primitive.h>
 #include <od/core/debug.h>
 
 template struct odFastArrayT<odEntityCollider>;
@@ -31,8 +32,8 @@ bool odEntityCollider_check_valid(const odEntityCollider* collider) {
 	return true;
 }
 bool odEntityCollider_equals(const odEntityCollider* a, const odEntityCollider* b) {
-	if (!OD_DEBUG_CHECK(a != nullptr)
-		|| !OD_DEBUG_CHECK(b != nullptr)) {
+	if (!OD_DEBUG_CHECK(odEntityCollider_check_valid(a))
+		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(b))) {
 		return false;
 	}
 
@@ -58,17 +59,17 @@ const char* odEntitySprite_get_debug_string(const odEntitySprite* sprite) {
 		odMatrix4_get_debug_string(&sprite->transform));
 }
 bool odEntitySprite_check_valid(const odEntitySprite* sprite) {
-	if (!OD_DEBUG_CHECK(sprite != nullptr)) {
+	if (!OD_CHECK(sprite != nullptr)) {
 		return false;
 	}
 
 	odBounds floored_texture_bounds = sprite->texture_bounds;
 	odBounds_floor(&floored_texture_bounds);
 
-	if (!std::isfinite(sprite->depth)
-		|| (!odBounds_check_valid(&sprite->texture_bounds))
-		|| (!odBounds_equals(&floored_texture_bounds, &sprite->texture_bounds))
-		|| (!odMatrix4_check_valid(&sprite->transform))) {
+	if (!OD_CHECK(std::isfinite(sprite->depth))
+		|| (!OD_CHECK(odBounds_check_valid(&sprite->texture_bounds)))
+		|| (!OD_CHECK(odBounds_equals(&floored_texture_bounds, &sprite->texture_bounds)))
+		|| (!OD_CHECK(odMatrix4_check_valid(&sprite->transform)))) {
 		return false;
 	}
 
@@ -94,6 +95,21 @@ bool odEntity_check_valid(const odEntity* entity) {
 		|| !OD_CHECK(odEntitySprite_check_valid(&entity->sprite))) {
 		return false;
 	}
+
+	return true;
+}
+bool odEntity_get_quad(const odEntity* entity, odPrimitiveQuad *out_quad) {
+	if (!OD_DEBUG_CHECK(odEntity_check_valid(entity))
+		|| !OD_DEBUG_CHECK(out_quad != nullptr)) {
+		return false;
+	}
+
+	*out_quad = odPrimitiveQuad{
+		entity->collider.bounds,
+		entity->sprite.texture_bounds,
+		entity->sprite.color,
+		entity->sprite.depth
+	};
 
 	return true;
 }

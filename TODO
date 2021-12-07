@@ -1,28 +1,12 @@
 
-Reduce unnecessary debug logic checks:
-- Rename OD_DEBUG_CHECK to OD_DEBUG_EVAL - this is only evaluated in debug
-- Add OD_DEBUG_CHECK - always  evaluated, but the result is only checked in debug (else result discarded into a no-op inline function)
-- OD_CHECK - always, evaluated and the result always used
-
-Entity rendering optimizations:
-- Vertex cache by depth, odArrayT<odFastArray<odVertex>>
-
-
+odEntityIndex test cases to verify entity vertex generation and odEngine test code to validate end-to-end including texture loading
 
 Major TODOs
-- odMemory_bytes_less() for byte ordering
-- Array sorted insert
-- Array sort
-- Multi-level render queue
-	- Keyed by (depth, interned string source key)
-- Triangle depth sorting
 - Texture atlas
-- Sprite to triangles converter function
 - Sprite loader (using texture atlas)
 
 Minor TODOs
+- Triangle vertices sort function - no need for a queue or primitive list or anything else complex
 - Point to triangles converter function
 - Line to triangles converter function
-- Rect to triangles converter function
-- Primitive type + vertices to triangles converter function
 - Minimal font glyph support

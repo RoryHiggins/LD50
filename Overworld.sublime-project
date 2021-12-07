@@ -18,7 +18,7 @@
 		},
 		{
 			"name": "DEBUG build iteratively and run tests by name",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name search_performance",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name odTest_odBounds_collides",
 			"working_dir": "$project_path",
 		},
 		{

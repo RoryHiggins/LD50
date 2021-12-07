@@ -7,7 +7,7 @@
 #include <od/engine/entity.h>
 
 // input parameters to the chunk indexing system, can be tweaked at compile-time as needed per game:
-#define OD_ENTITY_CHUNK_OPTIMUM_WORLD_WIDTH_BITS 10  // 2^10 = 1024; optimal game world <= 1024x1024 pixels
+#define OD_ENTITY_CHUNK_OPTIMUM_WORLD_WIDTH_BITS 9  // 2^9 = 512; optimal game world <= 512x512 pixels
 #define OD_ENTITY_CHUNK_OPTIMUM_CHUNK_WIDTH_BITS 4  // 2^4 = 16; game world split into 16x16 pixel chunks
 
 #define OD_ENTITY_CHUNK_COORD_COUNT 2  // x, y
@@ -22,8 +22,8 @@
 struct odEntityIndex;
 
 struct odEntitySearch {
-	odEntityId* out_entity_ids;
-	int32_t max_entity_ids;
+	odEntityId* out_results;
+	int32_t max_results;
 	struct odBounds bounds;
 	struct odTagset tagset;
 };
@@ -46,7 +46,7 @@ OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odEntityIndex_set_sprite(struct odEntityIndex* entity_index, odEntityId entity_id, const struct odEntitySprite* sprite);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odEntityIndex_set(struct odEntityIndex* entity_index, const struct odEntity* entity);
-OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD /*result count*/ int32_t
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD /*num_results*/ int32_t
 odEntityIndex_search(const struct odEntityIndex* entity_index, const struct odEntitySearch* search);
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*

@@ -227,5 +227,5 @@ struct odPlatform {
 static odPlatform odPlatform_instance{};
 
 odPlatform::odPlatform() {
-	odPlatformDebug_set_backtrace_handler(&odBacktrace_print);
+	odDebug_set_backtrace_handler(&odBacktrace_print);
 }

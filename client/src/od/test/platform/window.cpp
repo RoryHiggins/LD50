@@ -34,16 +34,6 @@ OD_TEST_FILTERED(odTest_odWindow_set_visible, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_set_visible(&window, true));
 	OD_ASSERT(odWindow_set_visible(&window, false));
 }
-OD_TEST(odTest_odWindow_set_visible_not_open_fails) {
-	odWindow window;
-
-	{
-		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-		OD_ASSERT(!odWindow_set_visible(&window, false));
-		OD_ASSERT(!odWindow_set_visible(&window, true));
-	}
-
-}
 OD_TEST_FILTERED(odTest_odWindow_set_size, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
@@ -86,7 +76,6 @@ OD_TEST_SUITE(
 	odTest_odWindow_init_destroy,
 	odTest_odWindow_step,
 	odTest_odWindow_set_visible,
-	odTest_odWindow_set_visible_not_open_fails,
 	odTest_odWindow_set_size,
 	odTest_odWindow_get_open,
 	odTest_odWindow_init_multiple_windows,

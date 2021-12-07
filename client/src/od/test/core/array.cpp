@@ -167,13 +167,15 @@ OD_TEST(odTest_odArray_swap_pop) {
 	OD_ASSERT(array_ptr != nullptr);
 	OD_ASSERT(strncmp(array_ptr, "13\0\0", 4));
 }
-OD_TEST(odTest_odArray_get_out_of_bounds_fails) {
-	odArray array{odType_get_char()};
-	OD_ASSERT(odArray_set_count(&array, 2));
-	OD_ASSERT(odArray_get(&array, 0) != nullptr);
-	{
-		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-		OD_ASSERT(odArray_get(&array, 2) == nullptr);
+OD_TEST(odTest_odArray_debug_get_out_of_bounds_fails) {
+	if (OD_BUILD_DEBUG) {
+		odArray array{odType_get_char()};
+		OD_ASSERT(odArray_set_count(&array, 2));
+		OD_ASSERT(odArray_get(&array, 0) != nullptr);
+		{
+			odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
+			OD_ASSERT(odArray_get(&array, 2) == nullptr);
+		}
 	}
 }
 
@@ -263,7 +265,7 @@ OD_TEST_SUITE(
 	odTest_odArray_set_count_truncate,
 	odTest_odArray_pop,
 	odTest_odArray_swap_pop,
-	odTest_odArray_get_out_of_bounds_fails,
+	odTest_odArray_debug_get_out_of_bounds_fails,
 	odTest_odArrayT_get,
 	odTest_odArrayT_foreach,
 	odTest_odArrayT_push,

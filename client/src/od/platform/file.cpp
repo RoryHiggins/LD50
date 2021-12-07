@@ -16,8 +16,8 @@ const odType* odFile_get_type_constructor(void) {
 	return odType_get<odFile>();
 }
 void odFile_swap(odFile* file1, odFile* file2) {
-	if (!OD_DEBUG_CHECK(file1 != nullptr)
-		|| !OD_DEBUG_CHECK(file2 != nullptr)) {
+	if (!OD_CHECK(file1 != nullptr)
+		|| !OD_CHECK(file2 != nullptr)) {
 		return;
 	}
 
@@ -47,9 +47,9 @@ bool odFile_open(odFile* file, const char* mode, const char* file_path) {
 		mode ? mode : "<nullptr>",
 		file_path ? file_path : "<nullptr>");
 
-	if (!OD_DEBUG_CHECK(file_path != nullptr)
-		|| !OD_DEBUG_CHECK(mode != nullptr)
-		|| !OD_DEBUG_CHECK(file != nullptr)) {
+	if (!OD_CHECK(file_path != nullptr)
+		|| !OD_CHECK(mode != nullptr)
+		|| !OD_CHECK(file != nullptr)) {
 		return false;
 	}
 
@@ -68,7 +68,7 @@ bool odFile_open(odFile* file, const char* mode, const char* file_path) {
 void odFile_close(odFile* file) {
 	OD_DEBUG("file=%p", static_cast<const void*>(file));
 
-	if (!OD_DEBUG_CHECK(file != nullptr)) {
+	if (!OD_CHECK(file != nullptr)) {
 		return;
 	}
 
@@ -84,8 +84,8 @@ void odFile_close(odFile* file) {
 bool odFile_read_size(odFile* file, int32_t* out_size) {
 	OD_TRACE("file=%p, out_size=%p", static_cast<const void*>(file), static_cast<const void*>(out_size));
 
-	if (!OD_DEBUG_CHECK(file != nullptr)
-		|| !OD_DEBUG_CHECK(out_size != nullptr)) {
+	if (!OD_CHECK(file != nullptr)
+		|| !OD_CHECK(out_size != nullptr)) {
 		return false;
 	}
 
@@ -124,10 +124,10 @@ bool odFile_read(odFile* file, void* out_buffer, int32_t buffer_size, int32_t* o
 		buffer_size,
 		static_cast<const void*>(out_size));
 
-	if (!OD_DEBUG_CHECK(odFile_check_valid(file))
-		|| !OD_DEBUG_CHECK(out_buffer != nullptr)
-		|| !OD_DEBUG_CHECK(out_size != nullptr)
-		|| !OD_DEBUG_CHECK(buffer_size > 0)) {
+	if (!OD_CHECK(odFile_check_valid(file))
+		|| !OD_CHECK(out_buffer != nullptr)
+		|| !OD_CHECK(out_size != nullptr)
+		|| !OD_CHECK(buffer_size > 0)) {
 		return false;
 	}
 
@@ -151,9 +151,9 @@ bool odFile_write(odFile* file, const void* buffer, int32_t size) {
 		static_cast<const void*>(buffer),
 		size);
 
-	if (!OD_DEBUG_CHECK(odFile_check_valid(file))
-		|| !OD_DEBUG_CHECK(buffer != nullptr)
-		|| !OD_DEBUG_CHECK(size > 0)) {
+	if (!OD_CHECK(odFile_check_valid(file))
+		|| !OD_CHECK(buffer != nullptr)
+		|| !OD_CHECK(size > 0)) {
 		return false;
 	}
 
@@ -177,10 +177,10 @@ bool odFilePath_read_all(
 		static_cast<const void*>(out_allocation),
 		static_cast<const void*>(out_size));
 
-	if (!OD_DEBUG_CHECK(file_path != nullptr)
-		|| !OD_DEBUG_CHECK(mode != nullptr)
-		|| !OD_DEBUG_CHECK(out_allocation != nullptr)
-		|| !OD_DEBUG_CHECK(out_size != nullptr)) {
+	if (!OD_CHECK(file_path != nullptr)
+		|| !OD_CHECK(mode != nullptr)
+		|| !OD_CHECK(out_allocation != nullptr)
+		|| !OD_CHECK(out_size != nullptr)) {
 		return false;
 	}
 
@@ -224,10 +224,10 @@ bool odFilePath_write_all(const char* file_path, const char* mode, const void* b
 		static_cast<const void*>(buffer),
 		size);
 
-	if (!OD_DEBUG_CHECK(file_path != nullptr)
-		|| !OD_DEBUG_CHECK(mode != nullptr)
-		|| !OD_DEBUG_CHECK(buffer != nullptr)
-		|| !OD_DEBUG_CHECK(size > 0)) {
+	if (!OD_CHECK(file_path != nullptr)
+		|| !OD_CHECK(mode != nullptr)
+		|| !OD_CHECK(buffer != nullptr)
+		|| !OD_CHECK(size > 0)) {
 		return false;
 	}
 
@@ -245,7 +245,7 @@ bool odFilePath_write_all(const char* file_path, const char* mode, const void* b
 bool odFilePath_delete(const char* file_path) {
 	OD_TRACE("file_path=%s", file_path ? file_path : "<nullptr>");
 
-	if (!OD_DEBUG_CHECK(file_path != nullptr)) {
+	if (!OD_CHECK(file_path != nullptr)) {
 		return false;
 	}
 
@@ -259,7 +259,7 @@ bool odFilePath_delete(const char* file_path) {
 bool odFilePath_get_exists(const char* file_path) {
 	OD_TRACE("file_path=%s", file_path ? file_path : "<nullptr>");
 
-	if (!OD_DEBUG_CHECK(file_path != nullptr)) {
+	if (!OD_CHECK(file_path != nullptr)) {
 		return false;
 	}
 

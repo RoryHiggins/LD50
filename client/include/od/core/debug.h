@@ -30,12 +30,10 @@
 #if OD_BUILD_DEBUG
 #define OD_DEBUG(...) OD_LOG(OD_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #define OD_TRACE(...) OD_LOG(OD_LOG_LEVEL_TRACE, __VA_ARGS__)
-#define OD_DEBUG_ASSERT(EXPR) OD_ASSERT(EXPR)
 #define OD_DEBUG_CHECK(EXPR) OD_CHECK(EXPR)
 #else
 #define OD_DEBUG(...)
 #define OD_TRACE(...)
-#define OD_DEBUG_ASSERT(EXPR)
 #define OD_DEBUG_CHECK(EXPR) true
 #endif
 
@@ -45,8 +43,26 @@ struct odLogContext {
 	int32_t line;
 };
 
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD void*
+odDebugString_allocate(int32_t size, int32_t alignment);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odDebugString_format_variadic(const char* format_c_str, va_list args);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odDebugString_format_array(const char* (*to_debug_str)(const void*),
+						   const void* xs, int32_t count, int32_t stride);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
+odLog_get_logged_error_count(void);
 OD_API_C OD_CORE_MODULE void
-odDebug_error(void);
+odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list args);
+OD_API_C OD_CORE_MODULE void
+odLog_log(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odLog_check(const struct odLogContext* log_context, bool success, const char* expression_c_str);
+OD_API_C OD_CORE_MODULE bool
+odLog_assert(const struct odLogContext* log_context, bool success, const char* expression_c_str);
 
 OD_API_C OD_CORE_MODULE void
 odLogContext_init(struct odLogContext* log_context, const char* file, const char* function, int32_t line);
@@ -66,27 +82,7 @@ odLogLevel_get_max(void);
 OD_API_C OD_CORE_MODULE void
 odLogLevel_set_max(int32_t log_level);
 
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
-odLog_get_logged_error_count(void);
 OD_API_C OD_CORE_MODULE void
-odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list args);
+odDebug_error(void);
 OD_API_C OD_CORE_MODULE void
-odLog_log(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odLog_check(const struct odLogContext* log_context, bool success, const char* expression_c_str);
-OD_API_C OD_CORE_MODULE bool
-odLog_assert(const struct odLogContext* log_context, bool success, const char* expression_c_str);
-
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD void*
-odDebugString_allocate(int32_t size, int32_t alignment);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
-odDebugString_format_variadic(const char* format_c_str, va_list args);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
-odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
-odDebugString_format_array(const char* (*to_debug_str)(const void*),
-						   const void* xs, int32_t count, int32_t stride);
-
-
-OD_API_C OD_CORE_MODULE void
-odPlatformDebug_set_backtrace_handler(bool(*fn)(void));
+odDebug_set_backtrace_handler(bool(*fn)(void));

@@ -65,7 +65,11 @@ const char* odArray_get_debug_string(const odArray* array) {
 		const char* bytes = static_cast<const char*>(array->allocation.ptr);
 		if ((bytes_hex_str_buf != nullptr) && (bytes != nullptr)) {
 			for (int32_t i = 0; i < size; i++) {
-				snprintf(bytes_hex_str_buf + (2 * i), 3, "%02X", static_cast<unsigned>(bytes[i]));
+				const int32_t byte_hex_str_size = 16;
+				char byte_hex_str[byte_hex_str_size]{};
+				snprintf(byte_hex_str, byte_hex_str_size, "%02X", static_cast<unsigned>(bytes[i]));
+
+				sprintf(bytes_hex_str_buf + (2 * i), "%2s", byte_hex_str);
 			}
 			bytes_hex_str = bytes_hex_str_buf;
 			bytes_hex_str_size = bytes_hex_str_buf_size - 1;
@@ -256,7 +260,7 @@ bool odArray_expand(odArray* array, void** out_expand_dest, int32_t expand_count
 	}
 
 	*out_expand_dest = odArray_get(array, offset);
-	if (!OD_CHECK(*out_expand_dest != nullptr)) {
+	if (!OD_DEBUG_CHECK(*out_expand_dest != nullptr)) {
 		return false;
 	}
 
@@ -305,8 +309,7 @@ bool odArray_swap_pop(odArray* array, int32_t i) {
 	OD_TRACE("array=%s, i=%d", odArray_get_debug_string(array), i);
 
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK(i >= 0)
-		|| !OD_CHECK(i < array->count)) {
+		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->count))) {
 		return false;
 	}
 
@@ -320,13 +323,12 @@ bool odArray_swap_pop(odArray* array, int32_t i) {
 }
 void* odArray_get(odArray* array, int32_t i) {
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK(i >= 0)
-		|| !OD_CHECK(i < array->count)) {
+		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->count))) {
 		return nullptr;
 	}
 
 	void* elements = odAllocation_get(&array->allocation);
-	if (!OD_CHECK(elements != nullptr)) {
+	if (!OD_DEBUG_CHECK(elements != nullptr)) {
 		return nullptr;
 	}
 

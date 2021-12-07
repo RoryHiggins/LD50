@@ -89,10 +89,6 @@ endforeach()
 
 # third-party library parameters
 if(NOT("${EMSCRIPTEN}" EQUAL 1))
-	if(NOT ("${BUILD_SHARED_LIBS}" EQUAL 1))
-		set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
-	endif()
-
 	# native (non-emscripten) parameters
 	find_package(SDL2 REQUIRED)
 	find_package(OpenGL REQUIRED)
@@ -221,7 +217,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		target_link_options(${od_target} PUBLIC ${od_warning_options} ${od_profile_generation_options})
 
 		if(NOT ("${BUILD_SHARED_LIBS}" EQUAL 1))
-			set(od_static_link_options -static -static-libstdc++ -static-libgcc)
+			set(od_static_link_options -static-libstdc++ -static-libgcc)
 			target_compile_options(${od_target} PUBLIC ${od_static_link_options})
 			target_link_options(${od_target} PUBLIC ${od_static_link_options})
 
