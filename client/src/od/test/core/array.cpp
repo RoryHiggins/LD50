@@ -4,6 +4,8 @@
 
 #include <od/test/test.hpp>
 
+struct odArrayTestingContainer;
+
 struct odArrayTestingContainer {
 	const odArrayTestingContainer* original_self;
 	int32_t move_assign_count;
@@ -17,6 +19,9 @@ struct odArrayTestingContainer {
 	odArrayTestingContainer(odArrayTestingContainer&&) = delete;
 	odArrayTestingContainer& operator=(const odArrayTestingContainer&) = delete;
 };
+
+template struct odArrayT<odArrayTestingContainer>;
+
 odArrayTestingContainer::odArrayTestingContainer()
 	: original_self{this}, move_assign_count{0}, destruct_count{0} {
 }
@@ -30,9 +35,6 @@ odArrayTestingContainer& odArrayTestingContainer::operator=(odArrayTestingContai
 odArrayTestingContainer::~odArrayTestingContainer() {
 	destruct_count++;
 }
-
-template struct odArrayT<int32_t>;
-template struct odArrayT<odArrayTestingContainer>;
 
 OD_TEST(odTest_odArray_swap) {
 	odArray array1{odType_get_char()};

@@ -22,6 +22,7 @@
 #include <od/core/type.hpp>
 #include <od/core/array.hpp>
 #include <od/platform/vertex.h>
+#include <od/platform/primitive.h>
 
 
 #define OD_RENDERER_MESSAGE_BUFFER_SIZE 4096
@@ -813,55 +814,63 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 	return true;
 }
 bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
-							 const odBounds *opt_texture_bounds) {
+							 const odBounds* opt_src_bounds, const struct odMatrix4* opt_transform) {
 	if (!OD_DEBUG_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_DEBUG_CHECK(renderer != nullptr)
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)
 		|| !OD_DEBUG_CHECK(odRenderState_check_valid(state))
-		|| !OD_DEBUG_CHECK((opt_texture_bounds == nullptr) || odBounds_check_valid(opt_texture_bounds))) {
+		|| !OD_DEBUG_CHECK((opt_src_bounds == nullptr) || odBounds_check_valid(opt_src_bounds))
+		|| !OD_DEBUG_CHECK((opt_transform == nullptr) || odMatrix4_check_valid(opt_transform))) {
 		return false;
 	}
 
-	odBounds bounds{};
-	if (opt_texture_bounds != nullptr) {
-		bounds = *opt_texture_bounds;
-	} else {
-		int32_t width = 0;
-		int32_t height = 0;
-
-		if (!OD_CHECK(odTexture_get_size(state->src_texture, &width, &height))) {
-			return false;
-		}
-		bounds.width = static_cast<float>(width);
-		bounds.height = static_cast<float>(height);
+	int32_t src_width = 0;
+	int32_t src_height = 0;
+	if (!OD_CHECK(odTexture_get_size(state->src_texture, &src_width, &src_height))) {
+		return false;
 	}
 
-	/* Bounds triangle index positions (assumes front faces are counter-clockwise):
+	odBounds src_bounds = {0.0f, 0.0f, static_cast<float>(src_width), static_cast<float>(src_height)};
+	if (opt_src_bounds != nullptr) {
+		src_bounds = *opt_src_bounds;
+	}
+
+	odMatrix4 transform{};
+	odMatrix4_init(&transform, state->viewport.width, state->viewport.height, 1.0f, 0.0f, 0.0f, 0.0f);
+	if (opt_transform != nullptr) {
+		transform = *opt_transform;
+	}
+
+	/* triangle index positions (requires that front faces are counter-clockwise):
 		 0   2,3
 		1,4   5
 	*/
-	const int32_t vertices_count = 6;
-	const odVertex vertices[vertices_count] = {
-		{{bounds.x, bounds.y, 0.0f, 1.0f},
+	const int32_t vertices_count = OD_PRIMITIVE_QUAD_VERTEX_COUNT;
+	odVertex vertices[vertices_count] = {
+		{{0.0f, 0.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 0.0f, 0.0f},
-		{{bounds.x, bounds.y + bounds.height, 0.0f, 1.0f},
+		 src_bounds.x, src_bounds.y},
+		{{0.0f, 1.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 0.0f, bounds.y + bounds.height},
-		{{bounds.x + bounds.width, bounds.y, 0.0f, 1.0f},
+		 src_bounds.x, src_bounds.y + src_bounds.height},
+		{{1.0f, 0.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 bounds.x + bounds.width, 0.0f},
+		 src_bounds.x + src_bounds.width, src_bounds.y},
 
-		{{bounds.x + bounds.width, bounds.y, 0.0f, 1.0f},
+		{{1.0f, 0.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 bounds.x + bounds.width, 0.0f},
-		{{bounds.x, bounds.y + bounds.height, 0.0f, 1.0f},
+		 src_bounds.x + src_bounds.width, src_bounds.y},
+		{{0.0f, 1.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 0.0f, bounds.y + bounds.height},
-		{{bounds.x + bounds.width, bounds.y + bounds.height, 0.0f, 1.0f},
+		 src_bounds.x, src_bounds.y + src_bounds.height},
+		{{1.0f, 1.0f, 0.0f, 1.0f},
 		 {0xff, 0xff, 0xff, 0xff},
-		 bounds.x + bounds.width, bounds.y + bounds.height},
+		 src_bounds.x + src_bounds.width, src_bounds.y + src_bounds.height},
 	};
+
+	for (int32_t i = 0; i < vertices_count; i++) {
+		odVertex_transform(vertices + i, &transform);
+	}
 
 	return odRenderer_draw_vertices(renderer, state, vertices, vertices_count);
 }

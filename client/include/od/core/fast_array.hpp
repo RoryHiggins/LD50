@@ -7,83 +7,74 @@
 
 #include <od/core/debug.h>
 
-// fully templated small-size optimized array for trivial types
+// optimized to minimize resize cost while keeping template instantiation cost low
+// T must be trivially copyable+movable+constructible (incl. no destructor, safe to memcpy and memset to 0)
 template<typename T>
 struct odFastArrayT {
-	static constexpr int32_t inline_capacity = (sizeof(T) > 16) ? 1 : (16 / (sizeof(T)));
-	static constexpr int32_t inline_size = static_cast<int32_t>(sizeof(T)) * inline_capacity;
-
 	T* ptr;
 	int32_t capacity;
 	int32_t count;
-	T inline_data[inline_capacity];
 
-	T* begin() & {
+	OD_NO_DISCARD T* begin() & {
 		return ptr;
 	}
-	const T* begin() const & {
+	OD_NO_DISCARD const T* begin() const & {
 		return ptr;
 	}
-	T* end() & {
+	OD_NO_DISCARD T* end() & {
 		return ptr + count;
 	}
-	const T* end() const & {
+	OD_NO_DISCARD const T* end() const & {
 		return ptr + count;
 	}
-	T& operator[](int32_t i) & {
+	OD_NO_DISCARD T* operator[](int32_t i) & {
 		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
-			return inline_data[0];
+			return nullptr;
 		}
 
-		return ptr[i];
+		return ptr + i;
 	}
-	const T& operator[](int32_t i) const & {
+	OD_NO_DISCARD const T* operator[](int32_t i) const & {
 		if (!OD_DEBUG_CHECK((i >= 0) && (i < count))) {
-			return inline_data[0];
+			return nullptr;
 		}
 
-		return ptr[i];
+		return ptr + i;
 	}
 
 	void swap(odFastArrayT& other) {
 		T* swap_ptr = ptr;
 		int32_t swap_capacity = capacity;
 		int32_t swap_count = count;
-		T swap_inline_data[inline_capacity];
-		memcpy(
-			static_cast<void*>(swap_inline_data),
-			static_cast<const void*>(inline_data),
-			inline_size);
 
 		ptr = other.ptr;
 		capacity = other.capacity;
 		count = other.count;
-		memcpy(
-			static_cast<void*>(inline_data),
-			static_cast<const void*>(other.inline_data),
-			inline_size);
 
 		other.ptr = swap_ptr;
 		other.capacity = swap_capacity;
 		other.count = swap_count;
-		memcpy(
-			static_cast<void*>(other.inline_data),
-			static_cast<const void*>(swap_inline_data),
-			inline_size);
 	}
 	OD_NO_DISCARD bool set_capacity(int32_t new_capacity) {
-		T* new_ptr = nullptr;
-		if (new_capacity <= inline_capacity) {
-			if (capacity <= inline_capacity) {
-				return true;
-			}
+		if (new_capacity == 0) {
+			free(ptr);
+			ptr = nullptr;
+			capacity = 0;
+			count = 0;
 
-			new_ptr = inline_data;
-			new_capacity = inline_capacity;
-		} else {
-			new_ptr = static_cast<T*>(calloc(static_cast<size_t>(new_capacity), sizeof(T)));
+			return true;
 		}
 
+		int32_t min_start_capacity = 16;
+		if (new_capacity < min_start_capacity) {
+			new_capacity = min_start_capacity;
+		}
+
+		if (capacity == new_capacity) {
+			return true;
+		}
+		
+		T* new_ptr = static_cast<T*>(calloc(static_cast<size_t>(new_capacity), sizeof(T)));
 		if (!OD_DEBUG_CHECK(new_ptr != nullptr)) {
 			return false;
 		}
@@ -93,6 +84,7 @@ struct odFastArrayT {
 			static_cast<const void*>(ptr),
 			sizeof(T) * static_cast<size_t>(capacity));
 
+		free(ptr);
 		ptr = new_ptr;
 		capacity = new_capacity;
 		if (count > new_capacity) {
@@ -101,15 +93,15 @@ struct odFastArrayT {
 
 		return true;
 	}
-	OD_NO_DISCARD bool set_count(int32_t new_count, bool can_shrink=true) {
+	OD_NO_DISCARD bool set_count(int32_t new_count) {
 		bool ok = true;
 		OD_MAYBE_UNUSED(ok);
 
 		if (new_count > capacity) {
-			ok = set_capacity(new_count * 4);
+			ok = set_capacity(new_count * 4);  // grow 4x, to minimize reallocations
 		}
-		else if (can_shrink && (((new_count * 4) + 1) <= capacity)) {
-			ok = set_capacity(new_count);
+		else if ((new_count * 8) < capacity) {
+			ok = set_capacity(new_count);  // shrink at 2x grow rate so interleaved push+pop won't allocate
 		}
 
 		if (!OD_DEBUG_CHECK(ok)) {
@@ -161,8 +153,7 @@ struct odFastArrayT {
 	}
 
 	odFastArrayT()
-	: ptr{inline_data}, capacity{inline_capacity}, count{0} {
-		memset(static_cast<void*>(inline_data), 0, inline_size);
+	: ptr{nullptr}, capacity{0}, count{0} {
 	}
 	odFastArrayT(odFastArrayT const& other)
 	: odFastArrayT{} {
@@ -178,11 +169,7 @@ struct odFastArrayT {
 		bool ok = true;
 		OD_MAYBE_UNUSED(ok);
 
-		ok = set_count(0, /*can_shrink*/ false);
-		if (!OD_DEBUG_CHECK(ok)) {
-			return *this;
-		}
-
+		count = 0;
 		ok = extend(other.ptr, other.count);
 		if (!OD_DEBUG_CHECK(ok)) {
 			return *this;
@@ -195,12 +182,19 @@ struct odFastArrayT {
 		return *this;
 	}
 	~odFastArrayT() {
-		if ((capacity > inline_capacity) && OD_DEBUG_CHECK(ptr != nullptr)) {
-			free(ptr);
-		}
+		bool ok = true;
+		OD_MAYBE_UNUSED(ok);
 
-		capacity = inline_capacity;
-		count = 0;
-		ptr = inline_data;
+		ok = set_capacity(0);
+		if (!OD_DEBUG_CHECK(ok)) {
+			return;
+		}
 	}
+
+	T* begin() && = delete;
+	const T* begin() const && = delete;
+	T* end() && = delete;
+	const T* end() const && = delete;
 };
+
+OD_CORE_MODULE extern template struct odFastArrayT<int32_t>;

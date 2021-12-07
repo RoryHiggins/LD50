@@ -144,7 +144,10 @@ void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_leve
 	}
 
 	time_t time_val = time(nullptr);
-    fprintf(OD_DEBUG_OUT_STREAM, "[%.8s %s %s:%d %s] ", ctime(&time_val) + 11, odLogLevel_get_name(log_level), odLog_get_short_filename(log_context->file), log_context->line, log_context->function);
+	char time_str[9] = {};
+	strncpy(time_str, ctime(&time_val) + 11, 9);
+
+    fprintf(OD_DEBUG_OUT_STREAM, "[%.8s %s %s:%d %s] ", time_str, odLogLevel_get_name(log_level), odLog_get_short_filename(log_context->file), log_context->line, log_context->function);
 
 	vfprintf(OD_DEBUG_OUT_STREAM, format_c_str, args);
 

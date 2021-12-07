@@ -459,11 +459,14 @@ bool odWindow_step(odWindow* window) {
 		return false;
 	}
 
-	odMatrix4 view_matrix{};
-	odMatrix4_init_view_2d(&view_matrix, window->settings.game_width, window->settings.game_height);
+	odMatrix4 game_view_matrix{};
+	odMatrix4_init_view_2d(&game_view_matrix, window->settings.game_width, window->settings.game_height);
 
-	odRenderState view_state{
-		view_matrix,
+	odMatrix4 window_view_matrix{};
+	odMatrix4_init_view_2d(&window_view_matrix, window->settings.window_width, window->settings.window_height);
+
+	odRenderState game_state{
+		game_view_matrix,
 		*odMatrix4_get_identity(),
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.game_width), static_cast<float>(window->settings.game_height)},
 		&window->texture,
@@ -471,14 +474,14 @@ bool odWindow_step(odWindow* window) {
 	};
 
 	odRenderState window_state{
-		view_matrix,
+		window_view_matrix,
 		*odMatrix4_get_identity(),
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.window_width), static_cast<float>(window->settings.window_height)},
 		odRenderTexture_get_texture(&window->game_render_texture),
 		/* opt_render_texture*/ nullptr
 	};
 
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, &view_state, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, &game_state, odColor_get_white()))) {
 		return false;
 	}
 
@@ -503,13 +506,13 @@ bool odWindow_step(odWindow* window) {
 			 {0xff,0x00,0x00,0xff},
 			 0.0f,0.0f}
 		};
-		if (!OD_CHECK(odRenderer_draw_vertices(&window->renderer, &view_state, test_vertices, test_vertices_count))) {
+		if (!OD_CHECK(odRenderer_draw_vertices(&window->renderer, &game_state, test_vertices, test_vertices_count))) {
 			return false;
 		}
 	}
 	// END throwaway rendering test code - TODO remove
 
-	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, &window_state, nullptr))) {
+	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, &window_state, nullptr, nullptr))) {
 		return false;
 	}
 

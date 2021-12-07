@@ -2,8 +2,6 @@
 
 #include <od/test/test.hpp>
 
-template struct odFastArrayT<int32_t>;
-
 OD_TEST(odTest_odFastArray_swap) {
 	odFastArrayT<int32_t> array1;
 	odFastArrayT<int32_t> array2;
@@ -41,11 +39,11 @@ OD_TEST(odTest_odFastArray_set_count) {
 OD_TEST(odTest_odFastArray_swap_pop) {
 	odFastArrayT<int32_t> array;
 	OD_ASSERT(array.set_count(2));
-	array[0] = 1;
-	array[1] = 2;
+	*array[0] = 1;
+	*array[1] = 2;
 	OD_ASSERT(array.swap_pop(0));
 	OD_ASSERT(array.count == 1);
-	OD_ASSERT(array[0] == 2);
+	OD_ASSERT(*array[0] == 2);
 }
 OD_TEST(odTest_odFastArrayT_foreach) {
 	odFastArrayT<int32_t> array;
@@ -65,7 +63,7 @@ OD_TEST(odTest_odFastArrayT_extend) {
 	odFastArrayT<int32_t> array;
 	int32_t value = 2;
 	OD_ASSERT(array.extend(&value, 1));
-	OD_ASSERT(array[0] == 2);
+	OD_ASSERT(*array[0] == 2);
 	OD_ASSERT(array.count == 1);
 }
 

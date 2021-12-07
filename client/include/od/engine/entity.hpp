@@ -6,5 +6,4 @@
 #include <od/core/array.hpp>
 
 OD_ENGINE_MODULE extern template struct odFastArrayT<odEntityCollider>;
-OD_ENGINE_MODULE extern template struct odArrayT<odEntityCollider>;
-OD_ENGINE_MODULE extern template struct odArrayT<odEntity>;
+OD_ENGINE_MODULE extern template struct odFastArrayT<odEntity>;

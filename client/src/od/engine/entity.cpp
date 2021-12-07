@@ -4,6 +4,9 @@
 
 #include <od/core/debug.h>
 
+template struct odFastArrayT<odEntityCollider>;
+template struct odFastArrayT<odEntity>;
+
 const char* odEntityCollider_get_debug_string(const odEntityCollider* collider) {
 	if (collider == nullptr) {
 		return "null";
@@ -20,12 +23,8 @@ bool odEntityCollider_check_valid(const odEntityCollider* collider) {
 		return false;
 	}
 
-	odBounds floored_bounds = collider->bounds;
-	odBounds_floor(&floored_bounds);
-
 	if (!OD_CHECK(collider->id >= 0)
-		|| !OD_CHECK(odBounds_check_valid(&collider->bounds))
-		|| !OD_CHECK(odBounds_equals(&floored_bounds, &collider->bounds))) {
+		|| !OD_CHECK(odBounds_check_valid(&collider->bounds))) {
 		return false;
 	}
 
@@ -98,7 +97,3 @@ bool odEntity_check_valid(const odEntity* entity) {
 
 	return true;
 }
-
-template struct odFastArrayT<odEntityCollider>;
-template struct odArrayT<odEntityCollider>;
-template struct odArrayT<odEntity>;

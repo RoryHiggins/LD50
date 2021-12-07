@@ -1,8 +1,11 @@
-#include <od/platform/vertex.h>
+#include <od/platform/vertex.hpp>
 
 #include <cmath>
 
 #include <od/core/debug.h>
+#include <od/core/matrix.h>
+
+template struct odFastArrayT<odVertex>;
 
 const char* odVertex_get_debug_string(const odVertex* vertex) {
 	if (vertex == nullptr) {
@@ -10,9 +13,9 @@ const char* odVertex_get_debug_string(const odVertex* vertex) {
 	}
 
 	return odDebugString_format(
-		"{\"pos\": %s, \"col\": %s, \"u\": %g, \"v\": %g}",
+		"{\"pos\": %s, \"color\": %s, \"u\": %g, \"v\": %g}",
 		odVector4_get_debug_string(&vertex->pos),
-		odColor_get_debug_string(&vertex->col),
+		odColor_get_debug_string(&vertex->color),
 		static_cast<double>(vertex->u),
 		static_cast<double>(vertex->v));
 }
@@ -25,4 +28,12 @@ bool odVertex_check_valid(const odVertex* vertex) {
 	}
 
 	return true;
+}
+void odVertex_transform(struct odVertex* vertex, const struct odMatrix4* matrix) {
+	if (!OD_DEBUG_CHECK(vertex != nullptr)
+		|| !OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))) {
+		return;
+	}
+
+	odMatrix4_multiply_vector(matrix, &vertex->pos);
 }

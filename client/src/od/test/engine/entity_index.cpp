@@ -1,5 +1,6 @@
 #include <od/engine/entity_index.hpp>
 
+#include <od/platform/timer.h>
 #include <od/engine/entity.h>
 #include <od/test/test.hpp>
 
@@ -71,7 +72,7 @@ OD_TEST(odTest_odEntityIndex_search) {
 	entity.collider.id++;
 	entity.collider.bounds = {127.0f, 127.0f, 16.0f, 16.0f};
 	OD_ASSERT(odEntityIndex_set(&entity_index, &entity));
-	OD_ASSERT(odArray_get_count(&entity_index.entities) >= 2);
+	OD_ASSERT(entity_index.entities.count >= 2);
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 2);
 
 	entity.collider.id++;
@@ -119,30 +120,45 @@ OD_TEST(odTest_odEntityIndex_search) {
 	search.bounds = {-65.0f, -64.0f, 1.0f, 1.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 }
-OD_TEST_FILTERED(odTest_odEntityIndex_search_performance_realistic_case, OD_TEST_FILTER_SLOW) {
-	odEntityIndex entity_index{};
-
-	const int32_t grid_width_bits = (OD_WORLD_CHUNK_OPTIMUM_SCREEN_WIDTH_BITS - OD_WORLD_CHUNK_OPTIMUM_TILE_WIDTH_BITS);
+OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
+	const int32_t grid_width_bits = (
+		OD_ENTITY_CHUNK_OPTIMUM_WORLD_WIDTH_BITS - OD_ENTITY_CHUNK_OPTIMUM_CHUNK_WIDTH_BITS);
 	const int32_t grid_width = (1 << grid_width_bits);
 	const float grid_width_f = float(grid_width);
 	const int32_t grid_area = (grid_width * grid_width);
 
-	const int32_t small_searches_count = (4 * grid_area);
+	const int32_t entities_count = grid_area / 8;
+	const int32_t updates_count = entities_count / 16;
+	const int32_t small_searches_count = (entities_count * 2);
 	const int32_t large_searches_count = 4;
-	const int32_t frame_rate = 60;
+	const int32_t search_results_count = 1;
 
-	for (int32_t i = 0; i < grid_area; i++) {
+	const int32_t frame_rate = 60;
+	const int32_t seconds_to_test = 5;
+	const int32_t frames_to_test = frame_rate * seconds_to_test;
+	const float max_duration_seconds = float(seconds_to_test);
+
+	odEntityIndex entity_index{};
+	for (int32_t i = 0; i < entities_count; i++) {
 		odEntity entity{};
 		entity.collider.id = i;
 		entity.collider.bounds = odBounds{0.0f * float(i % 64), 0.0f * float(i / 64), 8.0f, 8.0f};
 		OD_ASSERT(odEntityIndex_set(&entity_index, &entity));
 	}
 
-	for (int32_t i = 0; i < frame_rate; i++) {
-		int32_t cumulative = 0;
+	odTimer timer;
+	odTimer_start(&timer);
 
+	for (int32_t i = 0; i < frames_to_test; i++) {
+		for (int32_t j = 0; j < updates_count; j++) {
+			odEntity entity{};
+			entity.collider.id = j;
+			entity.collider.bounds = odBounds{0.0f * float((i + j) % 64), 0.0f * float((i + j) / 64), 8.0f, 8.0f};
+			OD_ASSERT(odEntityIndex_set(&entity_index, &entity));
+		}
+
+		int32_t cumulative = 0;
 		for (int32_t j = 0; j < small_searches_count; j++) {
-			const int32_t search_results_count = 1;
 			int32_t search_results[search_results_count];
 			odEntitySearch search{
 				search_results,
@@ -155,20 +171,6 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance_realistic_case, OD_TEST
 
 		cumulative = 0;
 		for (int32_t j = 0; j < large_searches_count; j++) {
-			const int32_t search_results_count = 1;
-			int32_t search_results[search_results_count];
-			odEntitySearch search{
-				search_results,
-				search_results_count,
-				{-grid_width_f, -grid_width_f, grid_width_f, grid_width_f},
-				{}};
-			cumulative += odEntityIndex_search(&entity_index, &search);
-		}
-		OD_ASSERT(cumulative == 0);
-
-		cumulative = 0;
-		for (int32_t j = 0; j < large_searches_count; j++) {
-			const int32_t search_results_count = 1;
 			int32_t search_results[search_results_count];
 			odEntitySearch search{
 				search_results,
@@ -179,6 +181,8 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance_realistic_case, OD_TEST
 		}
 		OD_ASSERT(cumulative > 0);
 	}
+
+	OD_TIMER_WARN_IF_EXCEEDED(&timer, max_duration_seconds);
 }
 
 OD_TEST_SUITE(
@@ -186,5 +190,5 @@ OD_TEST_SUITE(
 	odTest_odEntityIndex_init_destroy,
 	odTest_odEntityIndex_set_get,
 	odTest_odEntityIndex_search,
-	odTest_odEntityIndex_search_performance_realistic_case,
+	odTest_odEntityIndex_search_performance,
 )

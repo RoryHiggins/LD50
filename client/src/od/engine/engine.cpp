@@ -7,7 +7,6 @@
 #include <od/core/debug.h>
 #include <od/platform/window.hpp>
 
-
 #if OD_BUILD_EMSCRIPTEN
 void odEngine_step_emscripten(void* engine_raw);
 #endif
@@ -67,7 +66,7 @@ OD_NO_DISCARD bool odEngine_run(odEngine* engine) {
 #endif
 
 odEngine::odEngine()
-	: window{}, is_initialized{false} {
+	: is_initialized{false}, window{}, tag_names{}, entity_index{}, lua_client{} {
 }
 odEngine::odEngine(odEngine&& other) = default;
 odEngine& odEngine::operator=(odEngine&& other) = default;

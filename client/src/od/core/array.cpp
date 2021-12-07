@@ -6,6 +6,8 @@
 #include <od/core/type.hpp>
 #include <od/core/allocation.hpp>
 
+template struct odArrayT<int32_t>;
+
 const odType* odArray_get_type_constructor() {
 	return odType_get<odArray>();
 }
@@ -381,5 +383,3 @@ odArray::~odArray() {
 
 	type = nullptr;
 }
-
-template struct odArrayT<int32_t>;

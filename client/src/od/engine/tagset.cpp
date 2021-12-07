@@ -25,7 +25,7 @@ const char* odTagset_get_debug_string(const odTagset* tagset) {
 }
 void odTagset_set(odTagset *tagset, int32_t tag_id, bool enabled) {
 	if (!OD_DEBUG_CHECK(tagset != nullptr)
-		|| !OD_DEBUG_CHECK((tag_id >= 0) && (tag_id <= OD_TAG_ID_MAX))) {
+		|| !OD_DEBUG_CHECK((tag_id >= 0) && (tag_id <= OD_TAG_ID_COUNT))) {
 		return;
 	}
 
@@ -39,7 +39,7 @@ void odTagset_set(odTagset *tagset, int32_t tag_id, bool enabled) {
 
 bool odTagset_get(const odTagset *tagset, int32_t required_tag_id) {
 	if (!OD_DEBUG_CHECK(tagset != nullptr)
-		|| !OD_DEBUG_CHECK((required_tag_id >= 0) && (required_tag_id <= OD_TAG_ID_MAX))) {
+		|| !OD_DEBUG_CHECK((required_tag_id >= 0) && (required_tag_id <= OD_TAG_ID_COUNT))) {
 		return false;
 	}
 

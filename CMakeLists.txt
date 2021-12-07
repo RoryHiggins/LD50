@@ -234,7 +234,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		endif()
 
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
-			set(od_debug_options -Og -ggdb3 -fno-omit-frame-pointer -fno-inline)
+			set(od_debug_options -O0 -ggdb3 -fno-omit-frame-pointer -fno-inline)
 			target_compile_options(${od_target} PUBLIC ${od_debug_options})
 			target_link_options(${od_target} PUBLIC ${od_debug_options})
 

@@ -227,15 +227,15 @@ OD_TEST_FILTERED(odTest_odRenderer_draw_texture, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
 	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &window.texture, nullptr};
-	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr));
+	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr, nullptr));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 
 	state.opt_render_texture = &window.game_render_texture;
-	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr));
+	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr, nullptr));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 
 	state.src_texture = odRenderTexture_get_texture(&window.game_render_texture);
-	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr));
+	OD_ASSERT(odRenderer_draw_texture(&window.renderer, &state, nullptr, nullptr));
 	OD_ASSERT(odRenderer_flush(&window.renderer));
 }
 OD_TEST_FILTERED(odTest_odRenderer_init_multiple_renderers, OD_TEST_FILTER_SLOW) {
@@ -267,7 +267,6 @@ OD_TEST(odTest_odRenderer_init_without_context_fails) {
 }
 OD_TEST(odTest_odRenderer_destroy_invalid) {
 	odRenderer renderer;
-
 	odRenderer_destroy(&renderer);
 }
 

@@ -78,4 +78,4 @@ odRenderer_draw_vertices(struct odRenderer* renderer, struct odRenderState* stat
 						 const struct odVertex* vertices, int32_t vertices_count);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odRenderer_draw_texture(struct odRenderer* renderer, struct odRenderState* state,
-						const struct odBounds *src_texture_bounds);
+						const struct odBounds* opt_src_bounds, const struct odMatrix4* opt_transform);

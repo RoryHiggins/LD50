@@ -34,7 +34,7 @@ run: $(CLIENT)
 test: $(CLIENT)
 	$(CLIENT) --no-client --test $(CLIENT_ARGS)
 gdb: $(CLIENT)
-	gdb --ex 'break main' --ex "break odDebug_error" --ex "run" --args $(CLIENT) --test --no-slow-test --debug $(CLIENT_ARGS)
+	gdb --ex 'break main' --ex "break odDebug_error" --ex "run" --args $(CLIENT) --test $(CLIENT_ARGS)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:

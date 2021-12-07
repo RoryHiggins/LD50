@@ -5,23 +5,24 @@
 #include <od/core/color.h>
 #include <od/core/bounds.h>
 #include <od/core/matrix.h>
-#include <od/core/array.hpp>
 #include <od/engine/tagset.h>
 
+typedef int32_t odEntityId;
+
 struct odEntityCollider {
-	int32_t id;
-	odTagset tagset;
-	odBounds bounds;
+	odEntityId id;
+	struct odTagset tagset;
+	struct odBounds bounds;
 };
 struct odEntitySprite {
+	struct odBounds texture_bounds;
+	struct odColor color;
 	float depth;
-	odColor color;
-	odBounds texture_bounds;
-	odMatrix4 transform;
+	struct odMatrix4 transform;
 };
 struct odEntity {
-	odEntityCollider collider;
-	odEntitySprite sprite;
+	struct odEntityCollider collider;
+	struct odEntitySprite sprite;
 };
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*

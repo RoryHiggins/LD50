@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#include <od/platform/timer.h>
+
 bool odTest_run(int32_t filters, char const* opt_name_filter) {
 	static const odTestSuite test_suites[] = {
 		odTestSuite_odFile(),
@@ -27,6 +29,9 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		OD_INFO("Skipping tests not matching name=\"%s\"", opt_name_filter);
 	}
 	
+	odTimer timer;
+	odTimer_start(&timer);
+
 	int32_t total_test_count = 0;
 	int32_t run_test_count = 0;
 	for (odTestSuite suite: test_suites) {
@@ -70,7 +75,8 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		OD_DEBUG("Successfully completed test suite \"%s\"", suite.name);
 	}
 
-	OD_INFO("Tests run successfully, %d run of %d", run_test_count, total_test_count);
+	double time_elapsed = static_cast<double>(odTimer_get_elapsed_seconds(&timer));
+	OD_INFO("Tests run successfully, %d run of %d in ~%g second(s)", run_test_count, total_test_count, time_elapsed);
 	return true;
 }
 

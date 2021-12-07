@@ -34,7 +34,7 @@ OD_TEST_FILTERED(odTest_odWindow_set_visible, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odWindow_set_visible(&window, true));
 	OD_ASSERT(odWindow_set_visible(&window, false));
 }
-OD_TEST_FILTERED(odTest_odWindow_set_visible_not_open_fails, OD_TEST_FILTER_SLOW) {
+OD_TEST(odTest_odWindow_set_visible_not_open_fails) {
 	odWindow window;
 
 	{

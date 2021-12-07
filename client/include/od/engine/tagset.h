@@ -8,12 +8,17 @@
 #define OD_TAGSET_BYTE_SIZE (OD_TAGSET_ELEMENT_COUNT * OD_TAGSET_ELEMENT_SIZE)
 #define OD_TAGSET_BIT_SIZE (8 * OD_TAGSET_BYTE_SIZE)
 
-#define OD_TAG_ID_MAX (OD_TAGSET_BIT_SIZE)
+#define OD_TAG_ID_COUNT (OD_TAGSET_BIT_SIZE)
+#define OD_TAG_NAME_CAPACITY 64
 
 typedef uint32_t odTagsetElement;
 
 struct odTagset {
 	odTagsetElement tagset[OD_TAGSET_ELEMENT_COUNT];
+};
+
+struct odTagNames {
+	char tag_names[OD_TAG_ID_COUNT][OD_TAG_NAME_CAPACITY];
 };
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*

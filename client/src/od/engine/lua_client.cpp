@@ -1,3 +1,5 @@
+#include <od/engine/lua_client.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
