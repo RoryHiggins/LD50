@@ -98,18 +98,16 @@ bool odEntity_check_valid(const odEntity* entity) {
 
 	return true;
 }
-bool odEntity_get_quad(const odEntity* entity, odPrimitiveQuad *out_quad) {
+void odEntity_get_rect(const odEntity* entity, odPrimitiveRect *out_rect) {
 	if (!OD_DEBUG_CHECK(odEntity_check_valid(entity))
-		|| !OD_DEBUG_CHECK(out_quad != nullptr)) {
-		return false;
+		|| !OD_DEBUG_CHECK(out_rect != nullptr)) {
+		return;
 	}
 
-	*out_quad = odPrimitiveQuad{
+	*out_rect = odPrimitiveRect{
 		entity->collider.bounds,
 		entity->sprite.texture_bounds,
 		entity->sprite.color,
 		entity->sprite.depth
 	};
-
-	return true;
 }

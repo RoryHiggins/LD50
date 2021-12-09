@@ -2,7 +2,7 @@
 
 #include <od/test/test.hpp>
 
-OD_TEST(odTest_odImage_allocate_release) {
+OD_TEST(odTest_odImage_init_release) {
 	int32_t allocated_width = -1;
 	int32_t allocated_height = -1;
 
@@ -14,14 +14,14 @@ OD_TEST(odTest_odImage_allocate_release) {
 
 	const int32_t width = 4;
 	const int32_t height = 4;
-	OD_ASSERT(odImage_allocate(&image, width, height));
+	OD_ASSERT(odImage_init(&image, width, height));
 	OD_ASSERT(odImage_get(&image) != nullptr);
 
 	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == width);
 	OD_ASSERT(allocated_height == height);
 
-	odImage_release(&image);
+	odImage_destroy(&image);
 	OD_ASSERT(odImage_get(&image) == nullptr);
 	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == 0);
@@ -59,7 +59,7 @@ OD_TEST(odTest_odImage_read_invalid_png_fails) {
 
 OD_TEST_SUITE(
 	odTestSuite_odImage,
-	odTest_odImage_allocate_release,
+	odTest_odImage_init_release,
 	odTest_odImage_read_png,
 	odTest_odImage_read_invalid_png_fails,
 )

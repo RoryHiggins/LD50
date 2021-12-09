@@ -440,7 +440,7 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 
 	return true;
 }
-bool odWindow_step(odWindow* window) {
+bool odWindow_step(odWindow* window, const odWindowFrame* frame) {
 	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
@@ -478,42 +478,36 @@ bool odWindow_step(odWindow* window) {
 		window_view_matrix,
 		*odMatrix4_get_identity(),
 		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.window_width), static_cast<float>(window->settings.window_height)},
-		odRenderTexture_get_texture(&window->game_render_texture),
+		&window->texture,
 		/* opt_render_texture*/ nullptr
 	};
+	odRenderState game_to_window_state{window_state};
+	game_to_window_state.src_texture = odRenderTexture_get_texture(&window->game_render_texture);
 
+	// draw game
 	if (!OD_CHECK(odRenderer_clear(&window->renderer, &game_state, odColor_get_white()))) {
 		return false;
 	}
-
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, &window_state, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_draw_vertices(
+		&window->renderer,
+		&game_state,
+		frame->game_vertices,
+		frame->game_vertices_count))) {
 		return false;
 	}
 
-	// BEGIN throwaway rendering test code - TODO remove
-	{
-		const int32_t test_offset = 0;
-		const int32_t test_width = window->settings.game_width;
-		const int32_t test_height = window->settings.game_height;
-		const int32_t test_vertices_count = 3;
-		const odVertex test_vertices[test_vertices_count] = {
-			{{float(test_offset),float(test_offset),0.0f,1.0f},
-			 {0xff,0x00,0x00,0xff},
-			 0.0f,0.0f},
-			{{float(test_offset),float(test_offset + test_height),0.0f,1.0f},
-			 {0xff,0x00,0x00,0xff},
-			 0.0f,0.0f},
-			{{float(test_offset + test_width),float(test_offset),0.0f,1.0f},
-			 {0xff,0x00,0x00,0xff},
-			 0.0f,0.0f}
-		};
-		if (!OD_CHECK(odRenderer_draw_vertices(&window->renderer, &game_state, test_vertices, test_vertices_count))) {
-			return false;
-		}
+	// draw window
+	if (!OD_CHECK(odRenderer_clear(&window->renderer, &window_state, odColor_get_white()))) {
+		return false;
 	}
-	// END throwaway rendering test code - TODO remove
-
-	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, &window_state, nullptr, nullptr))) {
+	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, &game_to_window_state, nullptr, nullptr))) {
+		return false;
+	}
+	if (!OD_CHECK(odRenderer_draw_vertices(
+		&window->renderer,
+		&window_state,
+		frame->window_vertices,
+		frame->window_vertices_count))) {
 		return false;
 	}
 

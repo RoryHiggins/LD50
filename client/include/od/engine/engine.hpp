@@ -2,17 +2,26 @@
 
 #include <od/engine/engine.h>
 
+#include <od/core/fast_array.hpp>
 #include <od/platform/window.hpp>
+#include <od/platform/vertex.hpp>
 #include <od/engine/tagset.h>
 #include <od/engine/entity_index.hpp>
-#include <od/engine/lua_wrapper.hpp>
+
+struct odEngineFrame {
+	int32_t counter;
+	odFastArrayT<odVertex> game_vertices;
+	odFastArrayT<odVertex> window_vertices;
+
+	odEngineFrame();
+};
 
 struct odEngine {
 	bool is_initialized;
 	odWindow window;
 	odTagNames tag_names;
 	odEntityIndex entity_index;
-	odLuaWrapper lua;
+	odEngineFrame frame;
 
 	OD_ENGINE_MODULE odEngine();
 	OD_ENGINE_MODULE odEngine(odEngine&& other);

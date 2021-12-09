@@ -20,8 +20,10 @@ OD_TEST_FILTERED(odTest_odWindow_step, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
 
+	odWindowFrame window_frame{nullptr, 0, nullptr, 0};
+
 	for (int32_t i = 0; i < 10; i++) {
-		OD_ASSERT(odWindow_step(&window));
+		OD_ASSERT(odWindow_step(&window, &window_frame));
 		OD_ASSERT(odWindow_check_valid(&window));
 	}
 }

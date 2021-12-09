@@ -557,9 +557,10 @@ bool odRenderer_init(odRenderer* renderer, void* render_context_native) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	// unnecessary as we will sort geometry
 	glDisable(GL_DEPTH_TEST);
 
-	glDisable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 
 	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
 		OD_ERROR("OpenGL error when configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
@@ -754,10 +755,14 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 							  const odVertex* vertices, int32_t vertices_count) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK(vertices != nullptr)
+		|| !OD_CHECK((vertices_count == 0) || (vertices != nullptr))
 		|| !OD_CHECK(vertices_count >= 0)
 		|| !OD_CHECK(SDL_GL_GetCurrentContext() == renderer->render_context_native)) {
 		return false;
+	}
+
+	if (vertices_count == 0) {
+		return true;
 	}
 
 	if (OD_BUILD_DEBUG) {
@@ -850,38 +855,20 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 		transform = *opt_transform;
 	}
 
-	/* triangle index positions (requires that front faces are counter-clockwise):
-		 0   2,3
-		1,4   5
-	*/
-	const int32_t vertices_count = OD_PRIMITIVE_QUAD_VERTEX_COUNT;
-	odVertex vertices[vertices_count] = {
-		{{0.0f, 0.0f, 0.0f, 1.0f},
-		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x1, src_bounds.y1},
-		{{0.0f, 1.0f, 0.0f, 1.0f},
-		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x1, src_bounds.y2},
-		{{1.0f, 0.0f, 0.0f, 1.0f},
-		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x2, src_bounds.y1},
-
-		{{1.0f, 0.0f, 0.0f, 1.0f},
-		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x2, src_bounds.y1},
-		{{0.0f, 1.0f, 0.0f, 1.0f},
-		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x1, src_bounds.y2},
-		{{1.0f, 1.0f, 0.0f, 1.0f},
-		 {0xff, 0xff, 0xff, 0xff},
-		 src_bounds.x2, src_bounds.y2},
+	odPrimitiveRect rect{
+		{0.0f, 0.0f, 1.0f, 1.0f},
+		{src_bounds.x1, src_bounds.y1, src_bounds.x2, src_bounds.y2},
+		*odColor_get_white(),
+		0.0f,
 	};
+	odVertex vertices[OD_PRIMITIVE_RECT_VERTEX_COUNT]{};
+	odPrimitiveRect_get_vertices(&rect, vertices);
 
-	for (int32_t i = 0; i < vertices_count; i++) {
+	for (int32_t i = 0; i < OD_PRIMITIVE_RECT_VERTEX_COUNT; i++) {
 		odVertex_transform(vertices + i, &transform);
 	}
 
-	return odRenderer_draw_vertices(renderer, state, vertices, vertices_count);
+	return odRenderer_draw_vertices(renderer, state, vertices, OD_PRIMITIVE_RECT_VERTEX_COUNT);
 }
 
 static void odRenderer_unbind() {

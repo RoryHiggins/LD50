@@ -27,6 +27,11 @@
 			"working_dir": "$project_path",
 		},
 		{
+			"name": "DEBUG build iteratively and run fast tests + client",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test",
+			"working_dir": "$project_path",
+		},
+		{
 			"name": "DEBUG build iteratively and run tests + client",
 			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test",
 			"working_dir": "$project_path",
@@ -60,21 +65,21 @@
 		// },
 
 
-		// {
-		// 	"name": "Emscripten debug generate and rebuild",
-		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S . -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "Emscripten debug iterative build",
-		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "Emscripten debug iterative build and host",
-		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "Emscripten debug generate and rebuild",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S . -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Emscripten debug iterative build",
+			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Emscripten debug iterative build and host",
+			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+		},
 
 
 		// {

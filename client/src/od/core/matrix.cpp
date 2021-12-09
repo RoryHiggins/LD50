@@ -50,12 +50,12 @@ void odMatrix4_init(odMatrix4* matrix,
 		return;
 	}
 
-	*matrix = {
+	*matrix = odMatrix4{{
 		scale_x, 0, 0, 0,
 		0, scale_y, 0, 0,
 		0, 0, scale_z, 0,
 		translate_x, translate_y, translate_z, 1
-	};
+	}};
 }
 void odMatrix4_init_view_2d(odMatrix4* matrix, int32_t width, int32_t height) {
 	if (!OD_DEBUG_CHECK(matrix != nullptr)) {
@@ -65,10 +65,10 @@ void odMatrix4_init_view_2d(odMatrix4* matrix, int32_t width, int32_t height) {
 	return odMatrix4_init(
 		matrix,
 		2.0f / static_cast<float>(width),
-		2.0f / static_cast<float>(height),
+		-2.0f / static_cast<float>(height),  // flipped from opengl default so y is down
 		1.0f / static_cast<float>(1 << 20),  // +/- 2^20, near the int limit for float32
-		-1.0f,
-		-1.0f,
+		-1.0f, // TODO revisit, why not 0?
+		1.0f, // TODO revisit, why not 0?
 		0.0f
 	);
 }
@@ -86,8 +86,8 @@ void odMatrix4_scale(odMatrix4* matrix, const odVector4* vector) {
 	m[10] *= v[2];
 }
 void odMatrix4_translate(odMatrix4* matrix, const odVector4* vector) {
-	if (!OD_DEBUG_CHECK(odVector4_check_valid(vector))
-		|| !OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))) {
+	if (!OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))
+		|| !OD_DEBUG_CHECK(odVector4_check_valid(vector))) {
 		return;
 	}
 
@@ -97,6 +97,23 @@ void odMatrix4_translate(odMatrix4* matrix, const odVector4* vector) {
 	m[12] += v[0];
 	m[13] += v[1];
 	m[14] += v[2];
+}
+void odMatrix4_rotate_clockwise_2d(odMatrix4* matrix, float angle_rad) {
+	if (!OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))
+		|| !OD_DEBUG_CHECK(std::isfinite(angle_rad))) {
+		return;
+	}
+
+	float angle_sin = sinf(angle_rad);
+	float angle_cos = cosf(angle_rad);
+
+	odMatrix4 rotation_matrix{{
+		angle_cos, -angle_sin, 0.0f, 0.0f,
+		angle_sin, angle_cos, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f,
+	}};
+	odMatrix4_multiply(matrix, &rotation_matrix);
 }
 void odMatrix4_multiply(odMatrix4* matrix, const odMatrix4* other) {
 	if (!OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))

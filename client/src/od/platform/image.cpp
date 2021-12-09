@@ -8,6 +8,7 @@
 #include <od/core/color.h>
 #include <od/core/type.hpp>
 #include <od/core/allocation.hpp>
+#include <od/platform/file.hpp>
 
 const odType* odImage_get_type_constructor() {
 	return odType_get<odImage>();
@@ -18,7 +19,7 @@ bool odImage_copy(odImage* image, const odImage* src_image) {
 		return false;
 	}
 
-	odImage_release(image);
+	odImage_destroy(image);
 
 	int32_t size = static_cast<int32_t>(sizeof(odColor)) * src_image->width * src_image->height;
 	if (size == 0) {
@@ -77,14 +78,14 @@ const char* odImage_get_debug_string(const odImage* image) {
 
 	return odDebugString_format("{\"width\": %d, \"height\": %d}", image->width, image->height);
 }
-bool odImage_allocate(odImage* image, int32_t width, int32_t height) {
+bool odImage_init(odImage* image, int32_t width, int32_t height) {
 	if (!OD_CHECK(image != nullptr)
 		|| !OD_CHECK(width >= 0)
 		|| !OD_CHECK(height >= 0)) {
 		return false;
 	}
 
-	odImage_release(image);
+	odImage_destroy(image);
 
 	int32_t size = static_cast<int32_t>(sizeof(odColor)) * width * height;
 	if (size == 0) {
@@ -105,7 +106,7 @@ bool odImage_allocate(odImage* image, int32_t width, int32_t height) {
 
 	return true;
 }
-void odImage_release(odImage* image) {
+void odImage_destroy(odImage* image) {
 	if (!OD_CHECK(image != nullptr)) {
 		return;
 	}
@@ -152,7 +153,7 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 		return false;
 	}
 
-	if (!OD_CHECK(odImage_allocate(image, image->width, image->height))) {
+	if (!OD_CHECK(odImage_init(image, image->width, image->height))) {
 		return false;
 	}
 
@@ -162,6 +163,33 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 	}
 
 	if (!OD_CHECK(png_image_finish_read(&png, /*background*/ nullptr, image_data, /*row_stride*/ 0, /*colormap*/ nullptr) != 0)) {
+		return false;
+	}
+
+	return true;
+}
+bool odImage_read_png_file(odImage* image, const char* file_path) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(file_path != nullptr)
+		|| !OD_CHECK(odFilePath_get_exists(file_path))) {
+		return false;
+	}
+
+	odImage_destroy(image);
+
+	struct odAllocation allocation{};
+	int32_t src_png_size = 0;
+	if (!OD_CHECK(odFilePath_read_all(file_path, "rb", &allocation, &src_png_size))) {
+		return false;
+	}
+
+	void* src_png = odAllocation_get(&allocation);
+	if (!OD_CHECK(src_png != nullptr)
+		|| !OD_CHECK(src_png_size > 0)) {
+		return false;
+	}
+
+	if (!OD_CHECK(odImage_read_png(image, src_png, src_png_size))) {
 		return false;
 	}
 
@@ -177,7 +205,6 @@ odColor* odImage_get(odImage* image) {
 const odColor* odImage_get_const(const odImage* image) {
 	return odImage_get(const_cast<odImage*>(image));
 }
-
 odImage::odImage() : allocation{}, width{0}, height{0} {
 }
 odImage::odImage(odImage const& other) : odImage{} {
@@ -199,5 +226,5 @@ odImage& odImage::operator=(odImage&& other) {
 	return *this;
 }
 odImage::~odImage() {
-	odImage_release(this);
+	odImage_destroy(this);
 }

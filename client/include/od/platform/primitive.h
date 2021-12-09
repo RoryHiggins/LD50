@@ -5,11 +5,11 @@
 #include <od/core/bounds.h>
 #include <od/core/color.h>
 
-#define OD_PRIMITIVE_QUAD_VERTEX_COUNT 6
+#define OD_PRIMITIVE_RECT_VERTEX_COUNT 6
 
 struct odVertex;
 
-struct odPrimitiveQuad {
+struct odPrimitiveRect {
 	struct odBounds bounds;
 	struct odBounds texture_bounds;
 	struct odColor color;
@@ -17,6 +17,6 @@ struct odPrimitiveQuad {
 };
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odPrimitiveQuad_check_valid(const struct odPrimitiveQuad* quad);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odPrimitiveQuad_get_vertices(const struct odPrimitiveQuad* quad, struct odVertex *out_vertices);
+odPrimitiveRect_check_valid(const struct odPrimitiveRect* rect);
+OD_API_C OD_PLATFORM_MODULE void
+odPrimitiveRect_get_vertices(const struct odPrimitiveRect* rect, struct odVertex *out_vertices);

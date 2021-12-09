@@ -209,7 +209,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			-Walloc-zero -Warray-bounds=2 -Wcast-align=strict -Wconversion -Wundef
 			-Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
 			-Wdisabled-optimization -Wfloat-conversion -Wlogical-op -Wmultichar
-			-Wplacement-new=2 -Wnon-virtual-dtor -Wnull-dereference -Woverloaded-virtual
+			-Wplacement-new=2 -Wnon-virtual-dtor -Woverloaded-virtual
 			-Wno-stringop-truncation -Wno-missing-profile)
 
 		target_link_libraries(${od_target} PRIVATE m)

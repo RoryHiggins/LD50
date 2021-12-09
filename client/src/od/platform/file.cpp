@@ -264,13 +264,13 @@ bool odFilePath_get_exists(const char* file_path) {
 	}
 
 	FILE* file = fopen(file_path, "r");
-	if (!OD_CHECK(fclose(file) != EOF)) {
+	if ((file != nullptr) && !OD_CHECK(fclose(file) != EOF)) {
 		OD_WARN("error closing file, file_path=%s, errno_str=%s", file_path, strerror(errno));
+		return false;
 	}
 
 	return (file != nullptr);
 }
-
 odFile::odFile() : native_file{nullptr} {
 }
 odFile::odFile(odFile&& other) : odFile{} {

@@ -16,6 +16,13 @@ struct odWindowSettings {
 	bool is_vsync_enabled;
 	bool is_visible;
 };
+struct odWindowFrame {
+	const struct odVertex* game_vertices;  // can be null if count is 0
+	int32_t game_vertices_count;
+
+	const struct odVertex* window_vertices;  // can be null if count is 0
+	int32_t window_vertices_count;
+};
 
 OD_API_C OD_PLATFORM_MODULE const char*
 odWindowSettings_get_debug_string(const struct odWindowSettings* settings);
@@ -37,7 +44,7 @@ odWindow_destroy(struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE void*
 odWindow_prepare_render_context(struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odWindow_step(struct odWindow* window);
+odWindow_step(struct odWindow* window, const struct odWindowFrame* opt_frame);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odWindow_set_visible(struct odWindow* window, bool is_visible);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool

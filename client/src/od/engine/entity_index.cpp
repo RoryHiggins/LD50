@@ -44,17 +44,17 @@ odEntityChunkIterator_contains_chunk_coords(const odEntityChunkIterator* iter, o
 static OD_NO_DISCARD bool
 odEntityChunkIterator_contains_chunk_id(const odEntityChunkIterator* iter, odEntityChunkId chunk_id);
 
-static odEntityChunkCoord
+static OD_NO_DISCARD odEntityChunkCoord
 odChunkCoord_init(float coord);
 
-static odEntityChunkId
+static OD_NO_DISCARD odEntityChunkId
 odEntityChunkId_init_chunk_coords(odEntityChunkCoord x, odEntityChunkCoord y);
-static odEntityChunkCoord
+static OD_NO_DISCARD odEntityChunkCoord
 odEntityChunkId_get_coord_x(odEntityChunkId chunk_id);
-static odEntityChunkCoord
+static OD_NO_DISCARD odEntityChunkCoord
 odEntityChunkId_get_coord_y(odEntityChunkId chunk_id);
 
-static const char*
+static OD_NO_DISCARD const char*
 odEntityIndex_chunk_get_debug_string(const odEntityChunk* chunk);
 static OD_NO_DISCARD bool
 odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id, int32_t* opt_out_chunk_index);
@@ -64,7 +64,7 @@ static OD_NO_DISCARD bool
 odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, const odEntityCollider* collider);
 static OD_NO_DISCARD bool
 odEntityIndex_ensure_count(odEntityIndex* entity_index, int32_t min_count);
-static odEntityStorage*
+static OD_NO_DISCARD odEntityStorage*
 odEntityIndex_get_or_allocate_storage(odEntityIndex* entity_index, odEntityId entity_id);
 static OD_NO_DISCARD bool
 odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEntityStorage* storage);
@@ -363,20 +363,16 @@ bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEnt
 		return false;
 	}
 
+	odPrimitiveRect rect{};
+	odEntity_get_rect(&storage->entity, &rect);
+
 	int32_t vertex_index = static_cast<int32_t>(storage->entity.collider.id) * 6;
 	odVertex* vertices = entity_index->entity_vertices[vertex_index];
 	if (!OD_DEBUG_CHECK(vertices != nullptr)) {
 		return false;
 	}
 
-	odPrimitiveQuad quad{};
-	if (!OD_CHECK(odEntity_get_quad(&storage->entity, &quad))) {
-		return false;
-	}
-
-	if (!OD_CHECK(odPrimitiveQuad_get_vertices(&quad, vertices))) {
-		return false;
-	}
+	odPrimitiveRect_get_vertices(&rect, vertices);
 
 	for (int32_t i = 0; i < OD_ENTITY_VERTEX_COUNT; i++) {
 		odVertex_transform(vertices + i, &storage->entity.sprite.transform);
