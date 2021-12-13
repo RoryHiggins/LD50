@@ -7,7 +7,7 @@
 #include <od/platform/vertex.h>
 #include <od/engine/entity.hpp>
 
-#define OD_ENTITY_VERTEX_COUNT (OD_PRIMITIVE_RECT_VERTEX_COUNT)
+#define OD_ENTITY_VERTEX_COUNT (OD_RECT_PRIMITIVE_VERTEX_COUNT)
 
 struct odEntityStorage;
 

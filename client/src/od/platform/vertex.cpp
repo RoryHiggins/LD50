@@ -29,7 +29,7 @@ bool odVertex_check_valid(const odVertex* vertex) {
 
 	return true;
 }
-void odVertex_transform(struct odVertex* vertex, const struct odMatrix4* matrix) {
+void odVertex_transform(odVertex* vertex, const struct odMatrix4* matrix) {
 	if (!OD_DEBUG_CHECK(vertex != nullptr)
 		|| !OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))) {
 		return;

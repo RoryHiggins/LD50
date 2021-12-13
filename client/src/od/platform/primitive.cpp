@@ -1,11 +1,14 @@
 #include <od/platform/primitive.h>
 
 #include <cmath>
+#include <cstdlib>
 
 #include <od/core/debug.h>
 #include <od/platform/vertex.h>
 
-bool odPrimitiveRect_check_valid(const odPrimitiveRect* rect) {
+static int odTriangleVertices_compare(const void* triangle1, const void* triangle2);
+
+bool odRectPrimitive_check_valid(const odRectPrimitive* rect) {
 	if (!OD_DEBUG_CHECK(rect != nullptr)) {
 		return false;
 	}
@@ -22,8 +25,8 @@ bool odPrimitiveRect_check_valid(const odPrimitiveRect* rect) {
 
 	return true;
 }
-void odPrimitiveRect_get_vertices(const odPrimitiveRect* rect, odVertex *out_vertices) {
-	if (!OD_DEBUG_CHECK(odPrimitiveRect_check_valid(rect))
+void odRectPrimitive_get_vertices(const odRectPrimitive* rect, odVertex *out_vertices) {
+	if (!OD_DEBUG_CHECK(odRectPrimitive_check_valid(rect))
 		|| (!OD_DEBUG_CHECK(out_vertices != nullptr))) {
 		return;
 	}
@@ -53,4 +56,30 @@ void odPrimitiveRect_get_vertices(const odPrimitiveRect* rect, odVertex *out_ver
 	out_vertices[i++] = top_right;
 	out_vertices[i++] = bottom_left;
 	out_vertices[i++] = bottom_right;
+}
+
+static int odTriangleVertices_compare(const void* triangle1, const void* triangle2) {
+	if (!OD_DEBUG_CHECK(triangle1 != nullptr)
+		|| !OD_DEBUG_CHECK(triangle2 != nullptr)) {
+		return false;
+	}
+
+	float z1 = static_cast<const odVertex*>(triangle1)->pos.vector[2];
+	float z2 = static_cast<const odVertex*>(triangle2)->pos.vector[2];
+
+	if (z1 < z2) {
+		return -1;
+	} else if (z1 > z2) {
+		return 1;
+	}
+
+	return 0;
+}
+void odTriangleVertices_sort_triangles(odVertex* triangles, int32_t triangles_count) {
+	if (!OD_DEBUG_CHECK((triangles_count == 0) || (triangles != nullptr))
+		|| !OD_DEBUG_CHECK(triangles_count >= 0)) {
+		return;
+	}
+
+	qsort(triangles, static_cast<size_t>(triangles_count), 3 * sizeof(odVertex), odTriangleVertices_compare);
 }

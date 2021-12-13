@@ -5,7 +5,6 @@
 #include <od/core/fast_array.hpp>
 #include <od/platform/window.hpp>
 #include <od/platform/vertex.hpp>
-#include <od/engine/tagset.h>
 #include <od/engine/entity_index.hpp>
 
 struct odEngineFrame {
@@ -17,9 +16,14 @@ struct odEngineFrame {
 };
 
 struct odEngine {
-	bool is_initialized;
+	odEngineSettings settings;
+
 	odWindow window;
-	odTagNames tag_names;
+	odRenderer renderer;
+	odTexture src_texture;
+	odRenderTexture game_render_texture;
+	bool is_initialized;
+
 	odEntityIndex entity_index;
 	odEngineFrame frame;
 

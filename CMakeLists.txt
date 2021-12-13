@@ -39,8 +39,8 @@ add_library(od_core)
 
 # od_platform
 add_library(od_platform)
-set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
 target_link_libraries(od_platform PRIVATE m od_core)
+set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)  # each CU has its own lib dependencies
 
 # od_engine
 add_library(od_engine)
@@ -73,12 +73,6 @@ foreach(od_target ${od_targets})
 		${od_target} PROPERTIES
 		CXX_STANDARD 11 CXX_STANDARD_REQUIRED 1 CXX_EXTENSIONS 0 LINKER_LANGUAGE CXX
 		LINK_DEPENDS_NO_SHARED 1)
-
-	# only set the UNITY_BUILD property if not set (allow explicit enabling/disabling per cu)
-	get_property(od_unity_build_set TARGET ${od_target} PROPERTY UNITY_BUILD SET)
-	if (NOT (${od_unity_build_set}))
-		set_target_properties(${od_target} PROPERTIES UNITY_BUILD 1)
-	endif()
 
 	target_compile_definitions(
 		${od_target} PUBLIC
@@ -117,8 +111,6 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 		list(APPEND OD_SDL2_LIBRARIES mingw32)
 	endif()
 
-	set(OD_GL_LIBRARIES OpenGL::GL OpenGL::GLU GLEW::glew)
-
 	if (NOT ("${LUAJIT_LIBRARY}" STREQUAL "") AND NOT ("${LUAJIT_INCLUDE_DIR}" STREQUAL ""))
 		set(OD_LUA_LIBRARY "${LUAJIT_LIBRARY}")
 		set(OD_LUA_INCLUDE_DIR "${LUAJIT_INCLUDE_DIR}")
@@ -129,7 +121,8 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 		set(OD_LUA_INCLUDE_DIR "${LUA_INCLUDE_DIR}")
 	endif()
 
-	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} ${OD_GL_LIBRARIES} ZLIB::ZLIB PNG::PNG)
+	target_link_libraries(od_platform PRIVATE ${OD_SDL2_LIBRARIES} OpenGL::GL OpenGL::GLU GLEW::glew ZLIB::ZLIB PNG::PNG)
+	target_compile_definitions(od_platform PRIVATE GLEW_STATIC)
 
 	target_link_libraries(od_engine PRIVATE ${OD_LUA_LIBRARY})
 	target_include_directories(od_engine PRIVATE ${OD_LUA_INCLUDE_DIR})

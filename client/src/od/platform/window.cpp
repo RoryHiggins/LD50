@@ -1,16 +1,28 @@
 #include <od/platform/window.hpp>
 
+#include <cstring>
 #include <SDL2/SDL.h>
+
+#if !OD_BUILD_EMSCRIPTEN
+#include <GL/glew.h>
+#endif  // !OD_BUILD_EMSCRIPTEN
+
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
-#include <od/core/color.h>
-#include <od/platform/vertex.h>
-#include <od/platform/rendering.h>
+
+OD_NO_DISCARD static bool
+odSDL_init_reentrant();
+static void
+odSDL_destroy_reentrant();
+
+static void odWindow_try_set_vsync_enabled(odWindow* window, bool is_vsync_enabled);
+OD_NO_DISCARD static bool
+odWindow_set_caption(odWindow* window, const char* caption);
 
 static int32_t odSDL_init_counter = 0;
 
-OD_NO_DISCARD static bool odSDL_init_reentrant() {
+bool odSDL_init_reentrant() {
 	OD_DEBUG("odSDL_init_counter=%d", odSDL_init_counter);
 
 	if (odSDL_init_counter == 0) {
@@ -46,13 +58,11 @@ const char* odWindowSettings_get_debug_string(const odWindowSettings* settings) 
 	}
 
 	return odDebugString_format(
-		"{\"caption\": %s, \"window_width\": %d, \"window_height\": %d, \"game_width\": %d, \"game_height\": %d, "
-		"\"fps_limit\": %d, \"is_fps_limit_enabled\": %d, \"is_vsync_enabled\": %d, \"is_visible\": %d}",
+		"{\"caption\": %s, \"window_width\": %d, \"window_height\": %d, \"fps_limit\": %d, "
+		"\"is_fps_limit_enabled\": %d, \"is_vsync_enabled\": %d, \"is_visible\": %d}",
 		settings->caption,
 		settings->window_width,
 		settings->window_height,
-		settings->game_width,
-		settings->game_height,
 		settings->fps_limit,
 		static_cast<int>(settings->is_fps_limit_enabled),
 		static_cast<int>(settings->is_vsync_enabled),
@@ -64,8 +74,6 @@ const odWindowSettings* odWindowSettings_get_defaults() {
 		/*caption*/ "",
 		/*window_width*/ 640,
 		/*window_height*/ 480,
-		/*game_width*/ 160,
-		/*game_height*/ 120,
 		/*fps_limit*/ 60,
 		/*is_fps_limit_enabled*/ true,
 		/*is_vsync_enabled"*/ true,
@@ -78,8 +86,6 @@ const odWindowSettings* odWindowSettings_get_headless_defaults() {
 		/*caption*/ "",
 		/*window_width*/ 640,
 		/*window_height*/ 480,
-		/*game_width*/ 160,
-		/*game_height*/ 120,
 		/*fps_limit*/ 60,
 		/*is_fps_limit_enabled*/ false,
 		/*is_vsync_enabled"*/ false,
@@ -122,6 +128,89 @@ const char* odWindow_get_debug_string(const odWindow* window) {
 		window->is_open,
 		odWindowSettings_get_debug_string(&window->settings));
 }
+bool odWindow_check_valid(const odWindow* window) {
+	if (!OD_CHECK(window != nullptr)
+		|| !OD_CHECK((!window->is_open) || (window->window_native != nullptr))
+		|| !OD_CHECK((!window->is_open) || (window->render_context_native != nullptr))) {
+		return false;
+	}
+
+	return true;
+}
+static bool odWindow_set_context_impl(void* window_native, void* render_context_native) {
+	if (!OD_CHECK(window_native != nullptr)
+		|| !OD_CHECK(render_context_native != nullptr)) {
+		return false;
+	}
+
+	if (!OD_CHECK(SDL_GL_MakeCurrent(
+		static_cast<SDL_Window*>(window_native),
+		static_cast<SDL_GLContext>(render_context_native)) == 0)) {
+		OD_ERROR("SDL_GL_MakeCurrent failed, error=%s", SDL_GetError());
+		return false;
+	}
+
+	return true;
+}
+#if !OD_BUILD_EMSCRIPTEN
+static void odRenderer_gl_message_callback(
+	GLenum /*source*/,
+	GLenum /*type*/,
+	GLuint /*id*/,
+	GLenum severity,
+	GLsizei /*length*/,
+	const GLchar* message,
+	const void* /*userParam*/) {
+	if (severity == GL_DEBUG_SEVERITY_HIGH) {
+		OD_ERROR("%s", message);
+		return;
+	}
+
+	if ((severity == GL_DEBUG_SEVERITY_MEDIUM) || severity == GL_DEBUG_SEVERITY_LOW) {
+		OD_WARN("%s", message);
+		return;
+	}
+
+	if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+		OD_DEBUG("%s", message);
+		return;
+	}
+
+	OD_MAYBE_UNUSED(message);
+}
+OD_NO_DISCARD static bool odWindow_gl_init() {
+	static bool is_initialized = false;
+
+	OD_DEBUG("is_initialized=%d", is_initialized);
+
+	if (is_initialized) {
+		return true;
+	}
+
+
+	glewExperimental = true;
+	GLenum glewResult = glewInit();
+	if (!OD_CHECK(glewResult == GLEW_OK)) {
+		OD_ERROR("glewInit() failed with error: %s", glewGetErrorString(glewResult));
+		return false;
+	}
+
+	if (OD_BUILD_DEBUG && GLEW_ARB_debug_output) {
+		OD_DEBUG("GLEW_ARB_debug_output=true, registering gl debug log callback");
+		glDebugMessageCallbackARB(odRenderer_gl_message_callback, nullptr);
+	}
+
+	is_initialized = true;
+
+	OD_TRACE("is_initialized=%d", is_initialized);
+
+	return true;
+}
+#else  // !OD_BUILD_EMSCRIPTEN
+OD_NO_DISCARD static bool odWindow_gl_init() {
+	return true;
+}
+#endif  // #else  // !OD_BUILD_EMSCRIPTEN
 bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
@@ -182,34 +271,16 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 		return false;
 	}
 
-	if (!OD_CHECK(SDL_GL_MakeCurrent(
-		static_cast<SDL_Window*>(window->window_native),
-		static_cast<SDL_GLContext*>(window->render_context_native)) == 0)) {
-		OD_ERROR("SDL_GL_MakeCurrent failed, error=%s", SDL_GetError());
+	if (!OD_CHECK(odWindow_set_context_impl(window->window_native, window->render_context_native))) {
 		return false;
 	}
 
-	if (window->settings.is_vsync_enabled) {
-		if (SDL_GL_SetSwapInterval(1) < 0) {
-			OD_INFO("SDL_GL_SetSwapInterval failed, message=\"%s\"\nDisabling vsync and continuing", SDL_GetError());
-			// Lack of vsync support is not fatal; we have a frame timer as backup
-			window->settings.is_vsync_enabled = false;
-		}
-	}
-
-	if (!OD_CHECK(odRenderer_init(&window->renderer, window->render_context_native))) {
+	if (!OD_CHECK(odWindow_gl_init())) {
 		return false;
 	}
-
-	if (!OD_CHECK(odTexture_init_blank(&window->texture, window->render_context_native))) {
-		return false;
-	}
-
-	if (!OD_CHECK(odRenderTexture_init(&window->game_render_texture, window->render_context_native, window->settings.game_width, window->settings.game_height))) {
-		return false;
-	}
-
 	window->is_open = true;
+
+	odWindow_try_set_vsync_enabled(window, window->settings.is_vsync_enabled);
 
 	OD_DEBUG("Window opened");
 
@@ -222,37 +293,28 @@ void odWindow_destroy(odWindow* window) {
 		return;
 	}
 
-	if ((window->window_native != nullptr)
-		&& (window->render_context_native != nullptr)
-		&& OD_CHECK(odWindow_prepare_render_context(window))) {
-		OD_TRACE("Destroying render texture");
-		odRenderTexture_destroy(&window->game_render_texture);
+	window->next_frame_ms = 0;
+	window->is_open = false;
 
-		OD_TRACE("Destroying texture");
-		odTexture_destroy(&window->texture);
-
-		OD_TRACE("Destroying renderer");
-		odRenderer_destroy(&window->renderer);
-
-		OD_TRACE("Destroying render context");
-		SDL_GL_DeleteContext(static_cast<SDL_GLContext*>(window->render_context_native));
+	if (window->is_sdl_init) {
+		odSDL_destroy_reentrant();
 	}
+	window->is_sdl_init = false;
 
 	window->render_context_native = nullptr;
 	window->window_native = nullptr;
+
+	if ((window->window_native != nullptr)
+		&& (window->render_context_native != nullptr)
+		&& OD_CHECK(odWindow_prepare_render_context(window))) {
+		OD_TRACE("Destroying opengl render context");
+		SDL_GL_DeleteContext(static_cast<SDL_GLContext*>(window->render_context_native));
+	}
 
 	if (window->window_native != nullptr) {
 		OD_TRACE("Destroying window");
 		SDL_DestroyWindow(static_cast<SDL_Window*>(window->window_native));
 	}
-
-	if (window->is_sdl_init) {
-		odSDL_destroy_reentrant();
-	}
-
-	window->is_sdl_init = false;
-
-	window->is_open = false;
 }
 void* odWindow_prepare_render_context(odWindow* window) {
 	if (!OD_CHECK(odWindow_check_valid(window))
@@ -266,52 +328,6 @@ void* odWindow_prepare_render_context(odWindow* window) {
 	}
 
 	return window->render_context_native;
-}
-bool odWindow_check_valid(const odWindow* window) {
-	if (!OD_CHECK(window != nullptr)
-		|| !OD_CHECK((!window->is_open) || (window->window_native != nullptr))
-		|| !OD_CHECK((!window->is_open) || (window->render_context_native != nullptr))) {
-		return false;
-	}
-
-	return true;
-}
-bool odWindow_set_visible(odWindow* window, bool is_visible) {
-	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
-
-	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
-		return false;
-	}
-
-	if (window->settings.is_visible == is_visible) {
-		return true;
-	}
-
-	if (is_visible) {
-		SDL_ShowWindow(static_cast<SDL_Window*>(window->window_native));
-	} else {
-		SDL_HideWindow(static_cast<SDL_Window*>(window->window_native));
-	}
-
-	window->settings.is_visible = is_visible;
-
-	return true;
-}
-bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
-	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
-
-	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
-		return false;
-	}
-
-	if ((width == window->settings.window_width) && (height == window->settings.window_height)) {
-		return true;
-	}
-
-	window->settings.window_width = width;
-	window->settings.window_height = height;
-
-	return true;
 }
 OD_NO_DISCARD static bool odWindow_handle_event(odWindow* window, const SDL_Event *event) {
 	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
@@ -440,8 +456,14 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 
 	return true;
 }
-bool odWindow_step(odWindow* window, const odWindowFrame* frame) {
+bool odWindow_step(odWindow* window) {
 	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
+		return false;
+	}
+
+	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));
+
+	if (!OD_CHECK(odWindow_wait_step(window))) {
 		return false;
 	}
 
@@ -460,66 +482,110 @@ bool odWindow_step(odWindow* window, const odWindowFrame* frame) {
 		return false;
 	}
 
-	odMatrix4 game_view_matrix{};
-	odMatrix4_init_view_2d(&game_view_matrix, window->settings.game_width, window->settings.game_height);
+	return true;
+}
+bool odWindow_set_visible(odWindow* window, bool is_visible) {
+	OD_DEBUG("window=%s, is_visible=%d", odWindow_get_debug_string(window), is_visible);
 
-	odMatrix4 window_view_matrix{};
-	odMatrix4_init_view_2d(&window_view_matrix, window->settings.window_width, window->settings.window_height);
-
-	odRenderState game_state{
-		game_view_matrix,
-		*odMatrix4_get_identity(),
-		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.game_width), static_cast<float>(window->settings.game_height)},
-		&window->texture,
-		&window->game_render_texture
-	};
-
-	odRenderState window_state{
-		window_view_matrix,
-		*odMatrix4_get_identity(),
-		odBounds{0.0f, 0.0f, static_cast<float>(window->settings.window_width), static_cast<float>(window->settings.window_height)},
-		&window->texture,
-		/* opt_render_texture*/ nullptr
-	};
-	odRenderState game_to_window_state{window_state};
-	game_to_window_state.src_texture = odRenderTexture_get_texture(&window->game_render_texture);
-
-	// draw game
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, &game_state, odColor_get_white()))) {
-		return false;
-	}
-	if (!OD_CHECK(odRenderer_draw_vertices(
-		&window->renderer,
-		&game_state,
-		frame->game_vertices,
-		frame->game_vertices_count))) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
 
-	// draw window
-	if (!OD_CHECK(odRenderer_clear(&window->renderer, &window_state, odColor_get_white()))) {
-		return false;
+	if (window->settings.is_visible == is_visible) {
+		return true;
 	}
-	if (!OD_CHECK(odRenderer_draw_texture(&window->renderer, &game_to_window_state, nullptr, nullptr))) {
-		return false;
+
+	if (is_visible) {
+		SDL_ShowWindow(static_cast<SDL_Window*>(window->window_native));
+	} else {
+		SDL_HideWindow(static_cast<SDL_Window*>(window->window_native));
 	}
-	if (!OD_CHECK(odRenderer_draw_vertices(
-		&window->renderer,
-		&window_state,
-		frame->window_vertices,
-		frame->window_vertices_count))) {
+
+	window->settings.is_visible = is_visible;
+
+	return true;
+}
+bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
+	OD_DEBUG("window=%s, width=%d, height=%d", odWindow_get_debug_string(window), width, height);
+
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odRenderer_flush(&window->renderer))) {
+	if ((width == window->settings.window_width) && (height == window->settings.window_height)) {
+		return true;
+	}
+
+	window->settings.window_width = width;
+	window->settings.window_height = height;
+
+	return true;
+}
+static void odWindow_try_set_vsync_enabled(odWindow* window, bool is_vsync_enabled) {
+	OD_DEBUG("window=%s, is_vsync_enabled=%d", odWindow_get_debug_string(window), int(is_vsync_enabled));
+
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
+		return;
+	}
+
+	if (is_vsync_enabled && (SDL_GL_GetSwapInterval() != static_cast<int>(is_vsync_enabled))) {
+		if (!OD_CHECK(SDL_GL_SetSwapInterval(static_cast<int>(is_vsync_enabled)) >= 0)) {
+			OD_WARN("SDL_GL_SetSwapInterval toggle failed, message=\"%s\"\n", SDL_GetError());
+			return;
+		}
+	}
+
+	window->settings.is_vsync_enabled = window->settings.is_vsync_enabled;
+}
+static bool odWindow_set_caption(odWindow* window, const char* caption) {
+	OD_DEBUG("window=%s, caption=%s", odWindow_get_debug_string(window), caption);
+
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))
+		|| !OD_CHECK(caption != nullptr)) {
 		return false;
 	}
 
-	SDL_GL_SwapWindow(static_cast<SDL_Window*>(window->window_native));
+	SDL_Window* sdl_window = static_cast<SDL_Window*>(window->window_native);
 
-	if (!OD_CHECK(odWindow_wait_step(window))) {
+	if (strcmp(window->settings.caption, caption) != 0) {
+		SDL_SetWindowTitle(sdl_window, caption);
+	}
+
+	window->settings.caption = window->settings.caption;
+
+	return true;
+}
+bool odWindow_set_settings(struct odWindow* window, const struct odWindowSettings* settings) {
+	if (!OD_CHECK(window != nullptr)
+		|| !OD_CHECK(settings != nullptr)) {
 		return false;
 	}
+
+	if (!window->is_open) {
+		window->settings = *settings;
+		return true;
+	}
+
+	if (!OD_CHECK(odWindow_check_valid(window))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odWindow_set_caption(window, settings->caption))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odWindow_set_size(window, settings->window_width, settings->window_height))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odWindow_set_visible(window, settings->is_visible))) {
+		return false;
+	}
+
+	// failing to set/unset vsync is not an error
+	odWindow_try_set_vsync_enabled(window, settings->is_vsync_enabled);
+
+	window->settings = *settings;
 
 	return true;
 }
@@ -530,10 +596,9 @@ const odWindowSettings* odWindow_get_settings(const odWindow* window) {
 
 	return &window->settings;
 }
-
 odWindow::odWindow()
 	: settings{*odWindowSettings_get_defaults()}, window_native{nullptr}, render_context_native{nullptr},
-	is_sdl_init{false}, is_open{false}, next_frame_ms{0}, texture{}, game_render_texture{} {
+	is_sdl_init{false}, is_open{false}, next_frame_ms{0} {
 }
 odWindow::odWindow(odWindow&& other) : odWindow{} {
 	odWindow_swap(this, &other);
@@ -544,4 +609,40 @@ odWindow& odWindow::operator=(odWindow&& other) {
 }
 odWindow::~odWindow() {
 	odWindow_destroy(this);
+}
+
+bool odWindowScope_bind(odWindowScope* scope, odWindow* window) {
+	if (!OD_CHECK(scope != nullptr)
+		|| !OD_CHECK(odWindow_check_valid(window))) {
+		return false;
+	}
+
+	scope->old_render_context_native = static_cast<void*>(SDL_GL_GetCurrentContext());
+	if (!OD_CHECK(odWindow_set_context_impl(window->window_native, window->render_context_native))) {
+		return false;
+	}
+
+	scope->window_native = window->window_native;
+
+	return true;
+}
+bool odWindowScope_try_bind(odWindowScope* scope, odWindow* window) {
+	if (!OD_CHECK(scope != nullptr)
+		|| (window == nullptr)
+		|| (window->window_native == nullptr)
+		|| (window->render_context_native == nullptr)) {
+		return false;
+	}
+	return odWindowScope_bind(scope, window);
+}
+odWindowScope::odWindowScope()
+: window_native{nullptr}, old_render_context_native{nullptr} {
+}
+odWindowScope::~odWindowScope() {
+	if ((window_native != nullptr) && (old_render_context_native != nullptr)) {
+		OD_DISCARD_RESULT(odWindow_set_context_impl(window_native, old_render_context_native));
+	}
+
+	window_native = nullptr;
+	old_render_context_native = nullptr;
 }

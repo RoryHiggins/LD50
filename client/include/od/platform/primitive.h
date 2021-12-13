@@ -5,18 +5,22 @@
 #include <od/core/bounds.h>
 #include <od/core/color.h>
 
-#define OD_PRIMITIVE_RECT_VERTEX_COUNT 6
+#define OD_RECT_PRIMITIVE_VERTEX_COUNT 6
+
+#define OD_RECT_PRIMITIVE_VERTEX_COUNT 6
 
 struct odVertex;
 
-struct odPrimitiveRect {
+struct odRectPrimitive {
 	struct odBounds bounds;
 	struct odBounds texture_bounds;
 	struct odColor color;
 	float depth;
 };
-
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odPrimitiveRect_check_valid(const struct odPrimitiveRect* rect);
+odRectPrimitive_check_valid(const struct odRectPrimitive* rect);
 OD_API_C OD_PLATFORM_MODULE void
-odPrimitiveRect_get_vertices(const struct odPrimitiveRect* rect, struct odVertex *out_vertices);
+odRectPrimitive_get_vertices(const struct odRectPrimitive* rect, struct odVertex *out_vertices);
+
+OD_API_C OD_PLATFORM_MODULE void
+odTriangleVertices_sort_triangles(struct odVertex* triangles, int32_t triangles_count);

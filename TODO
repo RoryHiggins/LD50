@@ -1,12 +1,16 @@
 
-odEntityIndex test cases to verify entity vertex generation and odEngine test code to validate end-to-end including texture loading
+
+Refactor TODOs:
+- ways to abstract away matrices in favor of vertices+viewport only?
+	- high-level api with named textures (including a window pseudo-texture)
+- Rename odEngine to odClient and move it into the client module?
 
 Major TODOs
-- Texture atlas
-- Sprite loader (using texture atlas)
+- odSpriteLoader - Texture atlasing
+- Audio loading
+- Audio mixing
 
 Minor TODOs
-- Triangle vertices sort function - no need for a queue or primitive list or anything else complex
 - Point to triangles converter function
 - Line to triangles converter function
 - Minimal font glyph support

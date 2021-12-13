@@ -23,12 +23,12 @@
 #endif
 #endif
 
-bool odBacktrace_print();
+bool odPlatform_backtrace_print();
 
 #if OD_BUILD_DEBUG && defined(_WIN32) && defined(OD_CORE_HAS_DBGHELP) && OD_CORE_HAS_DBGHELP
 // libbacktrace does not play well with gcc + mingw, so we use the winapi here instead
 
-bool odBacktrace_print() {
+bool odPlatform_backtrace_print() {
 #if defined(_M_AMD64) && _M_AMD64
 	auto check_windows_error = [](const char* message) -> bool {
 		if (GetLastError()) {
@@ -206,7 +206,7 @@ static backtrace_state* odDebug_create_backtrace_state() {
 		/*data*/ nullptr
 	);
 }
-bool odBacktrace_print() {
+bool odPlatform_backtrace_print() {
 	static backtrace_state* backtrace = odDebug_create_backtrace_state();
 
 	puts("backtrace:\n");
@@ -214,7 +214,7 @@ bool odBacktrace_print() {
 	return true;
 }
 #else
-bool odBacktrace_print() {
+bool odPlatform_backtrace_print() {
 	return false;
 }
 #endif
@@ -227,5 +227,5 @@ struct odPlatform {
 static odPlatform odPlatform_instance{};
 
 odPlatform::odPlatform() {
-	odDebug_set_backtrace_handler(&odBacktrace_print);
+	odDebug_set_backtrace_handler(&odPlatform_backtrace_print);
 }

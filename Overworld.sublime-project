@@ -3,7 +3,7 @@
 	[
 		{
 			"name": "DEBUG generate and rebuild shared",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_ARGS='-D BUILD_SHARED_LIBS=1'",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_ARGS='-D BUILD_SHARED_LIBS=1 -D CMAKE_UNITY_BUILD=1'",
 			"working_dir": "$project_path",
 		},
 		// {
@@ -18,7 +18,7 @@
 		},
 		{
 			"name": "DEBUG build iteratively and run tests by name",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name odTest_odBounds_collides",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name odTest_odRenderTexture_init_destroy",
 			"working_dir": "$project_path",
 		},
 		{
@@ -63,7 +63,6 @@
 		// 	"shell_cmd": "ninja -C .\\build\\RELEASE_ANY od_client.exe && .\\build\\RELEASE_ANY\\od_client.exe",
 		// 	"working_dir": "$project_path",
 		// },
-
 
 		{
 			"name": "Emscripten debug generate and rebuild",

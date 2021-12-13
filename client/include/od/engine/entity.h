@@ -9,7 +9,7 @@
 
 typedef int32_t odEntityId;
 
-struct odPrimitiveRect;
+struct odRectPrimitive;
 
 struct odEntityCollider {
 	odEntityId id;
@@ -44,4 +44,4 @@ odEntity_get_debug_string(const struct odEntity* entity);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odEntity_check_valid(const struct odEntity* entity);
 OD_API_C OD_ENGINE_MODULE void
-odEntity_get_rect(const struct odEntity* entity, struct odPrimitiveRect *out_rect);
+odEntity_get_rect(const struct odEntity* entity, struct odRectPrimitive *out_rect);

@@ -50,7 +50,7 @@ struct odArrayT : public odArray {
 		}
 		return begin() + i;
 	}
-	bool push(T&& moved_elem) & {
+	OD_NO_DISCARD bool push(T&& moved_elem) & {
 		return odArray_push(this, static_cast<void*>(&moved_elem), 1);
 	}
 

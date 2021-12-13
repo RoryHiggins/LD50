@@ -363,7 +363,7 @@ bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEnt
 		return false;
 	}
 
-	odPrimitiveRect rect{};
+	odRectPrimitive rect{};
 	odEntity_get_rect(&storage->entity, &rect);
 
 	int32_t vertex_index = static_cast<int32_t>(storage->entity.collider.id) * 6;
@@ -372,7 +372,7 @@ bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEnt
 		return false;
 	}
 
-	odPrimitiveRect_get_vertices(&rect, vertices);
+	odRectPrimitive_get_vertices(&rect, vertices);
 
 	for (int32_t i = 0; i < OD_ENTITY_VERTEX_COUNT; i++) {
 		odVertex_transform(vertices + i, &storage->entity.sprite.transform);
@@ -489,21 +489,7 @@ odEntityId odEntityIndex_get_count(const odEntityIndex* entity_index) {
 
 	return entity_index->entities.count;
 }
-const odEntity* odEntityIndex_get(const odEntityIndex* entity_index, odEntityId entity_id) {
-	if (!OD_DEBUG_CHECK(entity_index != nullptr)
-		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))) {
-		return nullptr;
-	}
-
-	const odEntityStorage* storage = entity_index->entities[entity_id];
-	if (!OD_DEBUG_CHECK(storage != nullptr)) {
-		return nullptr;
-	}
-
-	return &storage->entity;
-}
-OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const struct odVertex*
-odEntityIndex_get_vertices(const struct odEntityIndex* entity_index, odEntityId entity_id) {
+const struct odVertex* odEntityIndex_get_vertices(const odEntityIndex* entity_index, odEntityId entity_id) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))) {
 		return nullptr;
@@ -521,72 +507,100 @@ odEntityIndex_get_vertices(const struct odEntityIndex* entity_index, odEntityId 
 
 	return vertices;
 }
-bool odEntityIndex_set_collider(odEntityIndex* entity_index, const odEntityCollider* collider) {
+const struct odVertex* odEntityIndex_get_all_vertices(const odEntityIndex* entity_index, int32_t* out_vertex_count) {
+	if (!OD_DEBUG_CHECK(entity_index != nullptr)
+		|| !OD_DEBUG_CHECK(out_vertex_count != nullptr)) {
+		return nullptr;
+	}
+
+	*out_vertex_count = 0;
+
+	if (entity_index->entity_vertices.count == 0) {
+		return nullptr;
+	}
+
+	const odVertex* vertices = entity_index->entity_vertices.begin();
+	if (!OD_CHECK(vertices != nullptr)) {
+		return nullptr;
+	}
+
+	*out_vertex_count = entity_index->entity_vertices.count;
+	return vertices;
+}
+const odEntity* odEntityIndex_get(const odEntityIndex* entity_index, odEntityId entity_id) {
+	if (!OD_DEBUG_CHECK(entity_index != nullptr)
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))) {
+		return nullptr;
+	}
+
+	const odEntityStorage* storage = entity_index->entities[entity_id];
+	if (!OD_DEBUG_CHECK(storage != nullptr)) {
+		return nullptr;
+	}
+
+	return &storage->entity;
+}
+void odEntityIndex_set_collider(odEntityIndex* entity_index, const odEntityCollider* collider) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(collider))) {
-		return false;
+		return;
 	}
 
 	odEntityStorage* old_entity_storage = odEntityIndex_get_or_allocate_storage(entity_index, collider->id);
 	if (!OD_DEBUG_CHECK(odEntityStorage_check_valid(old_entity_storage))) {
-		return false;
+		return;
 	}
 
 	if (!OD_CHECK(odEntityIndex_set_collider_impl(entity_index, &old_entity_storage->entity.collider, collider))) {
-		return false;
+		return;
 	}
 
 	if (!OD_CHECK(odEntityIndex_update_vertices_impl(entity_index, old_entity_storage))) {
-		return false;
+		return;
 	}
-
-	return true;
 }
-bool odEntityIndex_set_sprite(odEntityIndex* entity_index, odEntityId entity_id, const odEntitySprite* sprite) {
+void odEntityIndex_set_sprite(odEntityIndex* entity_index, odEntityId entity_id, const odEntitySprite* sprite) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))
 		|| !OD_DEBUG_CHECK(odEntitySprite_check_valid(sprite))) {
-		return false;
+		return;
 	}
 
 	odEntityStorage* old_entity_storage = odEntityIndex_get_or_allocate_storage(entity_index, entity_id);
 	if (!OD_DEBUG_CHECK(odEntityStorage_check_valid(old_entity_storage))) {
-		return false;
+		return;
 	}
 
 	if (!OD_CHECK(odEntityIndex_set_sprite_impl(entity_index, &old_entity_storage->entity.sprite, sprite))) {
-		return false;
+		return;
 	}
 
 	if (!OD_CHECK(odEntityIndex_update_vertices_impl(entity_index, old_entity_storage))) {
-		return false;
+		return;
 	}
-
-	return true;
 }
-bool odEntityIndex_set(odEntityIndex* entity_index, const odEntity* entity) {
+void odEntityIndex_set(odEntityIndex* entity_index, const odEntity* entity) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK(odEntity_check_valid(entity))) {
-		return false;
+		return;
 	}
 
 	odEntityStorage* old_entity_storage = odEntityIndex_get_or_allocate_storage(entity_index, entity->collider.id);
 	if (!OD_DEBUG_CHECK(odEntityStorage_check_valid(old_entity_storage))) {
-		return false;
+		return;
 	}
 
 	if (!OD_CHECK(odEntityIndex_set_collider_impl(entity_index, &old_entity_storage->entity.collider, &entity->collider))) {
-		return false;
+		return;
 	}
 
 	if (!OD_CHECK(odEntityIndex_set_sprite_impl(entity_index, &old_entity_storage->entity.sprite, &entity->sprite))) {
-		return false;
+		return;
 	}
 
 	if (!OD_CHECK(odEntityIndex_update_vertices_impl(entity_index, old_entity_storage))) {
-		return false;
+		return;
 	}
-	return true;
 }
 /*num_results*/ int32_t odEntityIndex_search(const odEntityIndex* entity_index, const odEntitySearch* search) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)

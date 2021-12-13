@@ -62,13 +62,23 @@ void odMatrix4_init_view_2d(odMatrix4* matrix, int32_t width, int32_t height) {
 		return;
 	}
 
+	// transform from world space to view space:
+	// from x=0..width, y=0..height, z=...
+	// to x=-1..1, y=-1..1, z=-1..1
+	// it also flips y, so (0,0)=top left, (0,height)=bottom left
 	return odMatrix4_init(
 		matrix,
+		// coords are normally given in the in -1 to 1 range
+		// we scale by 2x window size and translate by 1 to
+		// translate screen coords (0, 0 at top left) into -1 to 1
+
 		2.0f / static_cast<float>(width),
 		-2.0f / static_cast<float>(height),  // flipped from opengl default so y is down
-		1.0f / static_cast<float>(1 << 20),  // +/- 2^20, near the int limit for float32
-		-1.0f, // TODO revisit, why not 0?
-		1.0f, // TODO revisit, why not 0?
+		1.0f / static_cast<float>(1 << 24),  // +/- 2^24, limits of a precise integer for float32
+
+		// translate is constant: our 2d camera pos is defined by viewport, not view matrix
+		-1.0f, // 0..width before scale -> 0..2 after scale -> -1..1 after scale+translate
+		1.0f,  // positive as we're scaling y by -1 so y is down
 		0.0f
 	);
 }

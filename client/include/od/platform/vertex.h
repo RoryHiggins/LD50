@@ -20,3 +20,7 @@ OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odVertex_check_valid(const struct odVertex* vertex);
 OD_API_C OD_PLATFORM_MODULE void
 odVertex_transform(struct odVertex* vertex, const struct odMatrix4* matrix);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odVertex_less(const struct odVertex* vertex, const struct odVertex* vertex2);
+OD_API_C OD_PLATFORM_MODULE void
+odVertex_sort_triangles(struct odVertex* vertices, int32_t vertices_count);

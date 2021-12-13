@@ -3,7 +3,8 @@
 #include <od/platform/rendering.h>
 
 struct odTexture {
-	void* render_context_native;
+	odWindow* window;
+
 	uint32_t texture;
 	int32_t width;
 	int32_t height;
@@ -20,6 +21,7 @@ struct odTexture {
 };
 struct odRenderTexture {
 	odTexture texture;
+
 	uint32_t fbo;
 
 	OD_PLATFORM_MODULE odRenderTexture();
@@ -31,7 +33,8 @@ struct odRenderTexture {
 	odRenderTexture& operator=(const odRenderTexture& other) = delete;
 };
 struct odRenderer {
-	void* render_context_native;
+	odWindow* window;
+
 	uint32_t vbo;
 	uint32_t vao;
 	uint32_t vertex_shader;

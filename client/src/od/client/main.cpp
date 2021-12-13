@@ -104,7 +104,8 @@ int main(int argc, char** argv) {
 
 	if (run_client) {
 		odEngine engine;
-		if (!odEngine_run(&engine)) {
+		odEngineSettings engine_settings{*odEngineSettings_get_defaults()};
+		if (!odEngine_run(&engine, &engine_settings)) {
 			return 1;
 		}
 	}

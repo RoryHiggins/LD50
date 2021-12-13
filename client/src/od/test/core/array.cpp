@@ -204,7 +204,7 @@ OD_TEST(odTest_odArrayT_foreach) {
 }
 OD_TEST(odTest_odArrayT_push) {
 	odArrayT<int32_t> array;
-	array.push(2);
+	OD_ASSERT(array.push(2));
 	OD_ASSERT(*array[0] == 2);
 	OD_ASSERT(odArray_get_count(&array) == 1);
 }
@@ -230,7 +230,7 @@ OD_TEST(odTest_odArrayT_push_pop_container) {
 
 	odArrayTestingContainer test_container{};
 
-	array.push(static_cast<odArrayTestingContainer&&>(test_container));
+	OD_ASSERT(array.push(static_cast<odArrayTestingContainer&&>(test_container)));
 	OD_ASSERT(odArray_get_count(&array) == 1);
 
 	const odArrayTestingContainer* pushed_container = array[0];
@@ -242,8 +242,8 @@ OD_TEST(odTest_odArrayT_push_pop_container) {
 	OD_ASSERT(odArray_swap_pop(&array, 0));
 	OD_ASSERT(odArray_get_count(&array) == 0);
 
-	array.push(static_cast<odArrayTestingContainer&&>(test_container));
-	array.push(static_cast<odArrayTestingContainer&&>(test_container));
+	OD_ASSERT(array.push(static_cast<odArrayTestingContainer&&>(test_container)));
+	OD_ASSERT(array.push(static_cast<odArrayTestingContainer&&>(test_container)));
 	OD_ASSERT(odArray_get_count(&array) == 2);
 	OD_ASSERT(array[0]->original_self == test_container.original_self);
 	OD_ASSERT(array[1]->original_self == test_container.original_self);

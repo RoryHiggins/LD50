@@ -6,6 +6,7 @@
 #include <od/core/matrix.h>
 
 struct odType;
+struct odWindow;
 
 struct odTexture;
 struct odRenderTexture;
@@ -31,10 +32,10 @@ odTexture_check_valid(const struct odTexture* texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odTexture_get_debug_string(const struct odTexture* texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odTexture_init(struct odTexture* texture, void* render_context_native,
+odTexture_init(struct odTexture* texture, struct odWindow* window,
 			   const struct odColor* opt_pixels, int32_t width, int32_t height);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odTexture_init_blank(struct odTexture* texture, void* render_context_native);
+odTexture_init_blank(struct odTexture* texture, struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE void
 odTexture_destroy(struct odTexture* texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
@@ -49,7 +50,8 @@ odRenderTexture_check_valid(const struct odRenderTexture* render_texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odRenderTexture_get_debug_string(const struct odRenderTexture* render_texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odRenderTexture_init(struct odRenderTexture* render_texture, void* render_context_native, int32_t width, int32_t height);
+odRenderTexture_init(struct odRenderTexture* render_texture, struct odWindow* window,
+					 int32_t width, int32_t height);
 OD_API_C OD_PLATFORM_MODULE void
 odRenderTexture_destroy(struct odRenderTexture* render_texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odTexture*
@@ -66,7 +68,7 @@ odRenderer_check_valid(const struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odRenderer_get_debug_string(const struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odRenderer_init(struct odRenderer* renderer, void* render_context_native);
+odRenderer_init(struct odRenderer* renderer, struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE void
 odRenderer_destroy(struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
