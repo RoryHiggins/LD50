@@ -1,42 +1,302 @@
 #include <od/core/array.hpp>
 
 #include <cstdio>
+#include <cstring>
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 #include <od/core/allocation.hpp>
 
+const struct odType* odTrivialArray_get_type_constructor() {
+	return odType_get<odTrivialArray>();
+}
+void odTrivialArray_swap(odTrivialArray* array1, odTrivialArray* array2) {
+	if (!OD_DEBUG_CHECK(array1 != nullptr)
+		|| !OD_DEBUG_CHECK(array2 != nullptr)) {
+		return;
+	}
+
+	int32_t swap_count = array1->count;
+	int32_t swap_capacity = array1->count;
+
+	array1->count = array2->count;
+	array1->capacity = array2->capacity;
+
+	array2->count = swap_count;
+	array2->capacity = swap_capacity;
+
+	odAllocation_swap(&array1->allocation, &array2->allocation);
+}
+bool odTrivialArray_check_valid(const odTrivialArray* array) {
+	if (!OD_CHECK(array != nullptr)
+		|| !OD_CHECK(array->count >= 0)
+		|| !OD_CHECK(array->capacity >= 0)
+		|| !OD_CHECK(odAllocation_check_valid(&array->allocation))) {
+		return false;
+	}
+
+	return true;
+}
+const char* odTrivialArray_get_debug_string(const odTrivialArray* array) {
+	if (array == nullptr) {
+		return "null";
+	}
+
+	return odDebugString_format("{\"count\": %d}",array->count);
+}
+bool odTrivialArray_init(odTrivialArray* array) {
+	if (!OD_DEBUG_CHECK(array != nullptr)) {
+		return false;
+	}
+
+	odTrivialArray_destroy(array);
+
+	return true;
+}
+void odTrivialArray_destroy(odTrivialArray* array) {
+	if (!OD_DEBUG_CHECK(array != nullptr)) {
+		return;
+	}
+
+	array->count = 0;
+	array->capacity = 0;
+	odAllocation_destroy(&array->allocation);
+}
+int32_t odTrivialArray_get_capacity(const odTrivialArray* array) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))) {
+		return 0;
+	}
+
+	return array->capacity;
+}
+bool odTrivialArray_set_capacity(odTrivialArray* array, int32_t new_capacity, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK(new_capacity >= 0)
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return false;
+	}
+
+	if (array->capacity == new_capacity) {
+		return true;
+	}
+
+	int32_t new_size = new_capacity * stride;
+
+	odAllocation new_allocation;
+	// over-allocate to guarantee null termination of allocated strings
+	int32_t new_allocation_size = new_size + static_cast<int32_t>(sizeof(char32_t));
+	if (!OD_CHECK(odAllocation_init(&new_allocation, new_allocation_size))) {
+		return false;
+	}
+
+	int32_t old_size = array->count * static_cast<int32_t>(stride);
+	int32_t moved_size = ((new_size < old_size) ? new_size : old_size);
+	if ((moved_size > 0) && OD_DEBUG_CHECK(array->allocation.ptr != nullptr)) {
+		memcpy(new_allocation.ptr, array->allocation.ptr, static_cast<size_t>(moved_size));
+	}
+
+	odAllocation_swap(&array->allocation, &new_allocation);
+	array->capacity = new_capacity;
+	array->count = (new_capacity < array->count) ? new_capacity : array->count;
+
+	return true;
+}
+static int32_t odTrivialArray_get_new_capacity(int32_t capacity, int32_t min_capacity) {
+	if (capacity >= min_capacity) {
+		return capacity;
+	}
+
+	int32_t new_capacity = min_capacity;
+
+	const int32_t start_capacity = 16;
+	if (min_capacity == 0) {
+		new_capacity = 0;
+	} else if (min_capacity <= start_capacity) {
+		new_capacity = start_capacity;
+	} else if (((capacity / 8) + 1) >= min_capacity) {
+		new_capacity = (capacity / 8) + 1;  // 2x grow rate so interleaved push+pop can't always reallocate
+	} else if ((capacity * 4) >= min_capacity) {
+		new_capacity = capacity * 4;
+	}
+
+	return new_capacity;
+}
+bool odTrivialArray_ensure_capacity(odTrivialArray* array, int32_t min_capacity, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return false;
+	}
+
+	int32_t new_capacity = odTrivialArray_get_new_capacity(array->capacity, min_capacity);
+	if (array->capacity == new_capacity) {
+		return true;
+	}
+
+	return odTrivialArray_set_capacity(array, new_capacity, stride);
+}
+int32_t odTrivialArray_get_count(const odTrivialArray* array) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))) {
+		return 0;
+	}
+
+	return array->count;
+}
+bool odTrivialArray_set_count(odTrivialArray* array, int32_t new_count, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK(new_count >= 0)
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return false;
+	}
+
+	if (!OD_CHECK(odTrivialArray_ensure_capacity(array, new_count, stride))) {
+		return false;
+	}
+
+	if (new_count < array->count) {
+		int32_t popped_count = array->count - new_count;
+		void* popped_elements = odTrivialArray_get(array, new_count, stride);
+		memset(popped_elements, 0, static_cast<size_t>(popped_count * stride));
+	}
+
+	array->count = new_count;
+
+	return true;
+}
+bool odTrivialArray_extend(odTrivialArray* array, const void* extend_src, int32_t extend_count, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK((extend_count == 0) || (extend_src != nullptr))
+		|| !OD_DEBUG_CHECK(extend_count >= 0)
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return false;
+	}
+
+	if (extend_count == 0) {
+		return true;
+	}
+
+	int32_t old_count = array->count;
+	if (!OD_CHECK(odTrivialArray_set_count(array, old_count + extend_count, stride))) {
+		return false;
+	}
+
+	void* extend_dest = odTrivialArray_get(array, old_count, stride);
+	if (!OD_CHECK(extend_dest != nullptr)) {
+		return false;
+	}
+
+	memcpy(extend_dest, extend_src, static_cast<size_t>(extend_count * stride));
+	return true;
+}
+bool odTrivialArray_pop(odTrivialArray* array, int32_t pop_count, int32_t stride) {
+	if (!OD_DEBUG_CHECK(pop_count >= 0)) {
+		return false;
+	}
+
+	return odTrivialArray_set_count(array, array->count - pop_count, stride);
+}
+bool odTrivialArray_swap_pop(odTrivialArray* array, int32_t i, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->count))
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return false;
+	}
+
+	void* elem = odTrivialArray_get(array, i, stride);
+	void* last_elem = odTrivialArray_get(array, array->count - 1, stride);
+
+	if (!OD_DEBUG_CHECK(elem != nullptr)
+		|| !OD_DEBUG_CHECK(last_elem != nullptr)) {
+		return false;
+	}
+
+	memmove(elem, last_elem, static_cast<size_t>(1 * stride));
+
+	return odTrivialArray_pop(array, 1, stride);
+}
+bool odTrivialArray_assign(odTrivialArray* array, const void* assign_src, int32_t assign_count, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK((assign_count == 0) || (assign_src != nullptr))
+		|| !OD_DEBUG_CHECK(assign_count >= 0)
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return false;
+	}
+
+	if (!OD_CHECK(odTrivialArray_set_count(array, 0, stride))) {
+		return false;
+	}
+
+	return odTrivialArray_extend(array, assign_src, assign_count, stride);
+}
+void* odTrivialArray_get(odTrivialArray* array, int32_t i, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->count))
+		|| !OD_DEBUG_CHECK(stride > 0)
+		|| !OD_DEBUG_CHECK(array->allocation.ptr != nullptr)) {
+		return nullptr;
+	}
+
+	return static_cast<void*>(static_cast<char*>(array->allocation.ptr) + (i * stride));
+}
+const void* odTrivialArray_get_const(const odTrivialArray* array, int32_t i, int32_t stride) {
+	return odTrivialArray_get(const_cast<odTrivialArray*>(array), i, stride);
+}
+void* odTrivialArray_begin(odTrivialArray* array) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))) {
+		return nullptr;
+	}
+
+	return array->allocation.ptr;
+}
+const void* odTrivialArray_begin_const(const odTrivialArray* array) {
+	return odTrivialArray_begin(const_cast<odTrivialArray*>(array));
+}
+void* odTrivialArray_end(odTrivialArray* array, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK((array->count == 0) || (array->allocation.ptr != nullptr))
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return nullptr;
+	}
+
+	return static_cast<void*>(static_cast<char*>(array->allocation.ptr) + (array->count * stride));
+}
+const void* odTrivialArray_end_const(const odTrivialArray* array, int32_t stride) {
+	return odTrivialArray_end(const_cast<odTrivialArray*>(array), stride);
+}
+odTrivialArray::odTrivialArray()
+: allocation{}, capacity{0}, count{0} {
+}
+odTrivialArray::odTrivialArray(odTrivialArray&& other)
+: odTrivialArray{} {
+	odTrivialArray_swap(this, &other);
+}
+odTrivialArray& odTrivialArray::operator=(odTrivialArray&& other) {
+	odTrivialArray_swap(this, &other);
+	return *this;
+}
+odTrivialArray::~odTrivialArray() {
+	odTrivialArray_destroy(this);
+}
+
 const odType* odArray_get_type_constructor() {
 	return odType_get<odArray>();
 }
 void odArray_swap(odArray* array1, odArray* array2) {
-	OD_TRACE("array1=%s, array2=%s", odArray_get_debug_string(array1), odArray_get_debug_string(array2));
-
 	if (!OD_DEBUG_CHECK(array1 != nullptr)
 		|| !OD_DEBUG_CHECK(array2 != nullptr)) {
 		return;
 	}
 
 	const odType* swap_type = array1->type;
-	int32_t swap_count = array1->count;
-	int32_t swap_capacity = array1->count;
-
+	
 	array1->type = array2->type;
-	array1->count = array2->count;
-	array1->capacity = array2->capacity;
 
 	array2->type = swap_type;
-	array2->count = swap_count;
-	array2->capacity = swap_capacity;
 
-	odAllocation_swap(&array1->allocation, &array2->allocation);
+	odTrivialArray_swap(&array1->array, &array2->array);
 }
 bool odArray_check_valid(const odArray* array) {
-	if (!OD_CHECK(array != nullptr)
-		|| !OD_CHECK(array->count >= 0)
-		|| !OD_CHECK(array->capacity >= 0)
-		|| !OD_CHECK(odType_check_valid(array->type))
-		|| !OD_CHECK(odAllocation_check_valid(&array->allocation))) {
+	if (!OD_CHECK(odTrivialArray_check_valid(&array->array))
+		|| !OD_CHECK(odType_check_valid(array->type))) {
 		return false;
 	}
 
@@ -47,63 +307,29 @@ const char* odArray_get_debug_string(const odArray* array) {
 		return "null";
 	}
 
-	if (array->type == nullptr) {
-		return "{\"type\": null, \"count\": 0, \"data\": \"\"}";
-	}
-
-	const char* bytes_hex_str = "...";
-	int32_t bytes_hex_str_size = 3;
-
-	int32_t size = array->count * array->type->size;
-	int32_t bytes_hex_str_buf_size = (2 * size) + 1;
-
-	if (bytes_hex_str_buf_size < 4096) {
-		char* bytes_hex_str_buf = static_cast<char*>(odDebugString_allocate(bytes_hex_str_buf_size, 1));
-
-		const char* bytes = static_cast<const char*>(array->allocation.ptr);
-		if ((bytes_hex_str_buf != nullptr) && (bytes != nullptr)) {
-			for (int32_t i = 0; i < size; i++) {
-				const int32_t byte_hex_str_size = 16;
-				char byte_hex_str[byte_hex_str_size]{};
-				snprintf(byte_hex_str, byte_hex_str_size, "%02X", static_cast<unsigned>(bytes[i]));
-
-				sprintf(bytes_hex_str_buf + (2 * i), "%2s", byte_hex_str);
-			}
-			bytes_hex_str = bytes_hex_str_buf;
-			bytes_hex_str_size = bytes_hex_str_buf_size - 1;
-		}
-	}
-
-	return odDebugString_format(
-		"{\"type\": %s, \"count\": %d, \"data\": \"0x%*s\"}",
-		odType_get_debug_string(array->type),
-		array->count,
-		bytes_hex_str_size,
-		bytes_hex_str);
+	return odTrivialArray_get_debug_string(&array->array);
 }
 bool odArray_init(odArray* array, const odType* type) {
-	OD_TRACE("array=%s, type=%s", odArray_get_debug_string(array), odType_get_debug_string(type));
-
 	if (!OD_DEBUG_CHECK(array != nullptr)
-		|| !OD_DEBUG_CHECK(odType_check_valid(type))) {
+		|| !OD_DEBUG_CHECK(type != nullptr)) {
 		return false;
 	}
 
 	odArray_destroy(array);
 
+	if (!OD_CHECK(odTrivialArray_init(&array->array))) {
+		return false;
+	}
+
 	array->type = type;
 	return true;
 }
 void odArray_destroy(odArray* array) {
-	OD_TRACE("array=%s", odArray_get_debug_string(array));
-
 	if (!OD_DEBUG_CHECK(array != nullptr)) {
 		return;
 	}
 
-	array->count = 0;
-	array->capacity = 0;
-	odAllocation_destroy(&array->allocation);
+	odTrivialArray_destroy(&array->array);
 }
 const odType* odArray_get_type(const odArray* array) {
 	if (!OD_DEBUG_CHECK(array != nullptr)) {
@@ -117,32 +343,30 @@ int32_t odArray_get_capacity(const odArray* array) {
 		return 0;
 	}
 
-	return array->capacity;
+	return array->array.capacity;
 }
 bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
-	OD_TRACE("array=%s, new_capacity=%d", odArray_get_debug_string(array), new_capacity);
-
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(new_capacity >= 0)) {
 		return false;
 	}
 
-	int32_t new_count = (new_capacity < array->count) ? new_capacity : array->count;
-	OD_TRACE("new_count=%d", new_count);
+	if (array->array.capacity == new_capacity) {
+		return true;
+	}
 
 	odAllocation new_allocation;
 	if (!OD_CHECK(odAllocation_init(&new_allocation, new_capacity * array->type->size))) {
 		return false;
 	}
-	OD_TRACE("new_allocation=%s", odAllocation_get_debug_string(&new_allocation));
 
 	void* new_allocation_ptr = odAllocation_get(&new_allocation);
 	if (!OD_DEBUG_CHECK((new_allocation_ptr != nullptr) || (new_capacity == 0))) {
 		return false;
 	}
 
-	void* old_allocation_ptr = odAllocation_get(&array->allocation);
-	if (!OD_DEBUG_CHECK((old_allocation_ptr != nullptr) || (array->capacity == 0))) {
+	void* old_allocation_ptr = odAllocation_get(&array->array.allocation);
+	if (!OD_DEBUG_CHECK((old_allocation_ptr != nullptr) || (array->array.capacity == 0))) {
 		return false;
 	}
 
@@ -150,41 +374,29 @@ bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 		array->type->default_construct_fn(new_allocation_ptr, new_capacity);
 	}
 
+	int32_t new_count = (new_capacity < array->array.count) ? new_capacity : array->array.count;
 	if ((old_allocation_ptr != nullptr) && (new_allocation_ptr != nullptr) && (new_count > 0)) {
 		array->type->move_assign_fn(new_allocation_ptr, old_allocation_ptr, new_count);
 	}
 
-	if ((old_allocation_ptr != nullptr) && (array->capacity > 0)) {
-		array->type->destruct_fn(old_allocation_ptr, array->capacity);
+	if ((old_allocation_ptr != nullptr) && (array->array.capacity > 0)) {
+		array->type->destruct_fn(old_allocation_ptr, array->array.capacity);
 	}
 
-	odAllocation_swap(&array->allocation, &new_allocation);
-	array->capacity = new_capacity;
-	array->count = new_count;
+	odAllocation_swap(&array->array.allocation, &new_allocation);
+	array->array.capacity = new_capacity;
+	array->array.count = new_count;
 
 	return true;
 }
 bool odArray_ensure_capacity(odArray* array, int32_t min_capacity) {
-	OD_TRACE("array=%s, min_capacity=%d", odArray_get_debug_string(array), min_capacity);
-
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
 		return false;
 	}
 
-	int32_t capacity = odArray_get_capacity(array);
-	if (capacity >= min_capacity) {
+	int32_t new_capacity = odTrivialArray_get_new_capacity(array->array.capacity, min_capacity);
+	if (array->array.capacity == new_capacity) {
 		return true;
-	}
-
-	int32_t new_capacity = 0;
-
-	const int32_t start_capacity = 16;
-	if (min_capacity <= start_capacity) {
-		new_capacity = start_capacity;
-	} else if ((capacity * 2) >= min_capacity) {
-		new_capacity = capacity * 2;
-	} else {
-		new_capacity = min_capacity;
 	}
 
 	return odArray_set_capacity(array, new_capacity);
@@ -194,11 +406,9 @@ int32_t odArray_get_count(const odArray* array) {
 		return 0;
 	}
 
-	return array->count;
+	return array->array.count;
 }
 bool odArray_set_count(odArray* array, int32_t new_count) {
-	OD_TRACE("array=%s, new_count=%d", odArray_get_debug_string(array), new_count);
-
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(new_count >= 0)) {
 		return false;
@@ -208,133 +418,72 @@ bool odArray_set_count(odArray* array, int32_t new_count) {
 		return false;
 	}
 
-	if (new_count < array->count) {
-		int32_t default_count = array->count - new_count;
+	if (new_count < array->array.count) {
+		int32_t popped_count = array->array.count - new_count;
 		void* popped_elements = odArray_get(array, new_count);
-		array->type->destruct_fn(popped_elements, default_count);
-		array->type->default_construct_fn(popped_elements, default_count);
+		array->type->destruct_fn(popped_elements, popped_count);
+		array->type->default_construct_fn(popped_elements, popped_count);
 	}
 
-	array->count = new_count;
+	array->array.count = new_count;
 
 	return true;
 }
-bool odArray_ensure_count(struct odArray* array, int32_t min_count) {
-	OD_TRACE("array=%s, min_count=%d", odArray_get_debug_string(array), min_count);
-
+bool odArray_extend(odArray* array, void* moved_src, int32_t moved_count) {
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK(min_count >= 0)) {
+		|| !OD_DEBUG_CHECK(moved_src != nullptr)
+		|| !OD_DEBUG_CHECK(moved_count >= 0)) {
 		return false;
 	}
 
-	if (array->count < min_count) {
-		return odArray_set_count(array, min_count);
-	}
-
-	return true;
-}
-bool odArray_expand(odArray* array, void** out_expand_dest, int32_t expand_count) {
-	OD_TRACE(
-		"array=%s, out_expand_dest=%p, expand_count=%d",
-		odArray_get_debug_string(array),
-		static_cast<const void*>(out_expand_dest),
-		expand_count);
-
-	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK(out_expand_dest != nullptr)
-		|| !OD_DEBUG_CHECK(expand_count >= 0)) {
-		return false;
-	}
-
-	*out_expand_dest = nullptr;
-
-	if (expand_count == 0) {
+	if (moved_count == 0) {
 		return true;
 	}
 
-	int32_t offset = array->count;
-	if (!OD_CHECK(odArray_set_count(array, array->count + expand_count))) {
+	int32_t old_count = array->array.count;
+	if (!OD_CHECK(odArray_set_count(array, old_count + moved_count))) {
 		return false;
 	}
 
-	*out_expand_dest = odArray_get(array, offset);
-	if (!OD_DEBUG_CHECK(*out_expand_dest != nullptr)) {
+	void* extend_dest = odArray_get(array, old_count);
+	if (!OD_CHECK(extend_dest != nullptr)) {
 		return false;
 	}
 
+	array->type->move_assign_fn(extend_dest, moved_src, moved_count);
 	return true;
 }
-bool odArray_push(odArray* array, void* moved_src, int32_t moved_count) {
-	OD_TRACE(
-		"array=%s, moved_src=%p, moved_count=%d",
-		odArray_get_debug_string(array),
-		static_cast<const void*>(moved_src),
-		moved_count);
-
-	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK(moved_src != nullptr)
-		|| !OD_DEBUG_CHECK(moved_count > 0)) {
+bool odArray_pop(odArray* array, int32_t pop_count) {
+	if (!OD_CHECK(pop_count >= 0)) {
 		return false;
 	}
 
-	void* push_dest = nullptr;
-	if (!OD_CHECK(odArray_expand(array, &push_dest, moved_count))) {
-		return false;
-	}
-
-	OD_TRACE("push_dest=%p", static_cast<const void*>(push_dest));
-
-	array->type->move_assign_fn(push_dest, moved_src, moved_count);
-
-	return true;
-}
-bool odArray_pop(odArray* array, int32_t count) {
-	OD_TRACE("array=%s, count=%d", odArray_get_debug_string(array), count);
-
-	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK(count > 0)
-		|| !OD_DEBUG_CHECK(array->count >= count)) {
-		return false;
-	}
-
-	if (!OD_CHECK(odArray_set_count(array, array->count - count))) {
-		return false;
-	}
-
-	return true;
+	return odArray_set_count(array, array->array.count - pop_count);
 }
 bool odArray_swap_pop(odArray* array, int32_t i) {
-	OD_TRACE("array=%s, i=%d", odArray_get_debug_string(array), i);
-
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->count))) {
+		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->array.count))) {
 		return false;
 	}
 
-	array->type->move_assign_fn(odArray_get(array, i), odArray_get(array, array->count - 1), 1);
+	void* elem = odArray_get(array, i);
+	void* last_elem = odArray_get(array, array->array.count - 1);
 
-	if (!OD_CHECK(odArray_set_count(array, array->count - 1))) {
+	if (!OD_DEBUG_CHECK(elem != nullptr)
+		|| !OD_DEBUG_CHECK(last_elem != nullptr)) {
 		return false;
 	}
 
-	return true;
+	array->type->move_assign_fn(elem, last_elem, 1);
+
+	return odArray_pop(array, 1);
 }
 void* odArray_get(odArray* array, int32_t i) {
-	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
-		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->count))) {
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
 		return nullptr;
 	}
 
-	void* elements = odAllocation_get(&array->allocation);
-	if (!OD_DEBUG_CHECK(elements != nullptr)) {
-		return nullptr;
-	}
-
-	void* result = odType_index(array->type, elements, i);
-	if (!OD_DEBUG_CHECK(result != nullptr)) {
-		return nullptr;
-	}
-	return result;
+	return odTrivialArray_get(&array->array, i, array->type->size);
 }
 const void* odArray_get_const(const odArray* array, int32_t i) {
 	return odArray_get(const_cast<odArray*>(array), i);
@@ -344,32 +493,30 @@ void* odArray_begin(odArray* array) {
 		return nullptr;
 	}
 
-	return array->allocation.ptr;
+	return odTrivialArray_begin(&array->array);
 }
 const void* odArray_begin_const(const odArray* array) {
 	return odArray_begin(const_cast<odArray*>(array));
 }
 void* odArray_end(odArray* array) {
-	if (!OD_DEBUG_CHECK(array != nullptr)
-		|| !OD_DEBUG_CHECK(array->count >= 0)) {
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
 		return nullptr;
 	}
 
-	void* result = odType_index(array->type, array->allocation.ptr, array->count);
-	if (!OD_DEBUG_CHECK(result != nullptr)) {
-		return nullptr;
-	}
-	return result;
+	return odTrivialArray_end(&array->array, array->type->size);
 }
 const void* odArray_end_const(const odArray* array) {
 	return odArray_end(const_cast<odArray*>(array));
 }
-odArray::odArray() : allocation{}, type{nullptr}, capacity{0}, count{0} {
+odArray::odArray()
+: array{}, type{nullptr} {
 }
-odArray::odArray(const odType* in_type) : odArray{} {
+odArray::odArray(const odType* in_type)
+: odArray{} {
 	OD_ASSERT(odArray_init(this, in_type));
 }
-odArray::odArray(odArray&& other) : odArray{} {
+odArray::odArray(odArray&& other)
+: odArray{} {
 	odArray_swap(this, &other);
 }
 odArray& odArray::operator=(odArray&& other) {
@@ -377,11 +524,7 @@ odArray& odArray::operator=(odArray&& other) {
 	return *this;
 }
 odArray::~odArray() {
-	OD_TRACE("array=%s", odArray_get_debug_string(this));
-
 	odArray_destroy(this);
-
-	type = nullptr;
 }
 
 template struct odArrayT<int32_t>;

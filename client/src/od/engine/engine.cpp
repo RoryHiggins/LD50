@@ -1,5 +1,7 @@
 #include <od/engine/engine.hpp>
 
+#include <cstring>
+
 #if OD_BUILD_EMSCRIPTEN
 #include <emscripten.h>
 #endif   // OD_BUILD_EMSCRIPTEN
@@ -164,8 +166,8 @@ bool odEngine_step(odEngine* engine) {
 		odVertex vertices[vertices_count];
 		odRectPrimitive_get_vertices(&rect, vertices);
 
-		// OD_DISCARD_RESULT(engine->frame.game_vertices.extend(vertices, vertices_count));
-		OD_DISCARD_RESULT(engine->frame.window_vertices.extend(vertices, vertices_count));
+		// OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
+		OD_DISCARD(engine->frame.window_vertices.extend(vertices, vertices_count));
 	}
 	{
 		const int32_t vertices_count = 3;
@@ -189,7 +191,7 @@ bool odEngine_step(odEngine* engine) {
 		for (odVertex& vertex: vertices) {
 			odVertex_transform(&vertex, &matrix);
 		}
-		OD_DISCARD_RESULT(engine->frame.game_vertices.extend(vertices, vertices_count));
+		OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 
 		for (int32_t i = 0; i < 12; i++) {
 			memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
@@ -204,7 +206,7 @@ bool odEngine_step(odEngine* engine) {
 				}
 				vertex.pos.vector[2] = float(1 + i);
 			}
-			OD_DISCARD_RESULT(engine->frame.game_vertices.extend(vertices, vertices_count));
+			OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 		}
 	}
 	// END throwaway rendering test code - TODO remove

@@ -12,11 +12,11 @@ struct odArrayTestingContainer {
 	int32_t destruct_count;
 
 	odArrayTestingContainer();
+	odArrayTestingContainer(odArrayTestingContainer&&);
 	odArrayTestingContainer& operator=(odArrayTestingContainer&& other);
 	~odArrayTestingContainer();
 
 	odArrayTestingContainer(const odArrayTestingContainer&) = delete;
-	odArrayTestingContainer(odArrayTestingContainer&&) = delete;
 	odArrayTestingContainer& operator=(const odArrayTestingContainer&) = delete;
 };
 
@@ -24,6 +24,11 @@ template struct odArrayT<odArrayTestingContainer>;
 
 odArrayTestingContainer::odArrayTestingContainer()
 	: original_self{this}, move_assign_count{0}, destruct_count{0} {
+}
+odArrayTestingContainer::odArrayTestingContainer(odArrayTestingContainer&& other) {
+	original_self = other.original_self;
+	move_assign_count = other.move_assign_count + 1;
+	destruct_count = other.destruct_count;
 }
 odArrayTestingContainer& odArrayTestingContainer::operator=(odArrayTestingContainer&& other) {
 	original_self = other.original_self;
@@ -253,11 +258,6 @@ OD_TEST(odTest_odArrayT_push_pop_container) {
 	OD_ASSERT(array[0]->original_self == test_container.original_self);
 }
 
-OD_TEST(odTest_odTrivialArrayT_swap) {
-	odTrivialArrayT<int32_t> array1;
-	odTrivialArrayT<int32_t> array2;
-	array1.swap(array2);
-}
 OD_TEST(odTest_odTrivialArrayT_set_capacity) {
 	odTrivialArrayT<int32_t> array;
 	int32_t test_sizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
@@ -337,7 +337,6 @@ OD_TEST_SUITE(
 	odTest_odArrayT_push,
 	odTest_odArrayT_debug_get_out_of_bounds_fails,
 	odTest_odArrayT_push_pop_container,
-	odTest_odTrivialArrayT_swap,
 	odTest_odTrivialArrayT_set_capacity,
 	odTest_odTrivialArrayT_set_capacity_zero,
 	odTest_odTrivialArrayT_set_count,

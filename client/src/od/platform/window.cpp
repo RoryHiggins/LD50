@@ -640,7 +640,7 @@ odWindowScope::odWindowScope()
 }
 odWindowScope::~odWindowScope() {
 	if ((window_native != nullptr) && (old_render_context_native != nullptr)) {
-		OD_DISCARD_RESULT(odWindow_set_context_impl(window_native, old_render_context_native));
+		OD_DISCARD(odWindow_set_context_impl(window_native, old_render_context_native));
 	}
 
 	window_native = nullptr;

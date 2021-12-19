@@ -1,4 +1,9 @@
 
+Refactoring
+- odTrivialArray
+- Move most of odTrivialArray into non-templated c functions
+- Update odString to reuse odTrivialArray
+
 Major TODOs
 - odTextureAtlas - to be used with sprite loading in Lua sprite module
 - Audio loading

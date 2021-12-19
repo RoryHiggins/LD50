@@ -7,7 +7,6 @@
 bool odTest_run(int32_t filters, char const* opt_name_filter) {
 	static const odTestSuite test_suites[] = {
 		odTestSuite_odDebug(),
-		odTestSuite_odType(),
 		odTestSuite_odAllocation(),
 		odTestSuite_odArray(),
 		odTestSuite_odBounds(),

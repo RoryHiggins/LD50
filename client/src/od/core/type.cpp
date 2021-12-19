@@ -21,18 +21,6 @@ const char* odType_get_debug_string(const odType* type) {
 
 	return odDebugString_format("{\"size\": %d}", type->size);
 }
-void* odType_index(const odType* type, void* array, int32_t i) {
-	if (!OD_DEBUG_CHECK(odType_check_valid(type))
-		|| !OD_DEBUG_CHECK(array != nullptr)
-		|| !OD_DEBUG_CHECK(i >= 0)) {
-		return nullptr;
-	}
-
-	return static_cast<void*>(static_cast<char*>(array) + (type->size * i));
-}
-const void* odType_index_const(const odType* type, const void* array, int32_t i) {
-	return odType_index(type, const_cast<void*>(array), i);
-}
 static void odType_char_default_construct_fn(void* ptr, int32_t count) {
 	if (!OD_DEBUG_CHECK(ptr != nullptr)
 		|| !OD_DEBUG_CHECK(count >= 0)) {

@@ -21,7 +21,7 @@
 #define OD_LOG(...)
 #endif
 
-#define OD_DISCARD_RESULT(EXPR) odDebug_discard_result(EXPR)
+#define OD_DISCARD(EXPR) odDebug_discard_result(EXPR)
 #define OD_CHECK(EXPR) ((EXPR) ? true : odLog_check(OD_LOG_SET_CONTEXT(), false, #EXPR))
 #define OD_ASSERT(EXPR) ((EXPR) ? true : odLog_assert(OD_LOG_SET_CONTEXT(), false, #EXPR))
 #define OD_ERROR(...) OD_LOG(OD_LOG_LEVEL_ERROR, __VA_ARGS__)
