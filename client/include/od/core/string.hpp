@@ -2,12 +2,10 @@
 
 #include <od/core/string.h>
 
-#include <od/core/allocation.hpp>
+#include <od/core/array.hpp>
 
 struct odString {
-	struct odAllocation allocation;
-	int32_t capacity;
-	int32_t count;
+	odTrivialArray array;
 
 	OD_CORE_MODULE odString();
 	OD_CORE_MODULE odString(odString&& other);

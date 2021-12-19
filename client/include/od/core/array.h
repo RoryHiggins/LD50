@@ -20,6 +20,8 @@ odTrivialArray_init(struct odTrivialArray* array);
 OD_API_C OD_CORE_MODULE void
 odTrivialArray_destroy(struct odTrivialArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
+odTrivialArray_compare(const struct odTrivialArray* array1, const struct odTrivialArray* array2, int32_t stride);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
 odTrivialArray_get_capacity(const struct odTrivialArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odTrivialArray_set_capacity(struct odTrivialArray* array, int32_t new_capacity, int32_t stride);

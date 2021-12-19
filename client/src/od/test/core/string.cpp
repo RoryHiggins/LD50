@@ -130,35 +130,24 @@ OD_TEST(odTest_odString_compare) {
 	const char* hello = "hello ";
 	const char* loser = "loser ";
 
-	OD_ASSERT(odString_push(&string1, hello, static_cast<int32_t>(strlen(hello))));
+	OD_ASSERT(odString_extend(&string1, hello, static_cast<int32_t>(strlen(hello))));
 	OD_ASSERT(odString_compare(&string1, &string2) == 1);  // {"hello", ""}
 
-	OD_ASSERT(odString_push(&string2, hello, static_cast<int32_t>(strlen(hello))));
+	OD_ASSERT(odString_extend(&string2, hello, static_cast<int32_t>(strlen(hello))));
 	OD_ASSERT(odString_compare(&string1, &string2) == 0);  // {"hello", "hello"}
 
-	OD_ASSERT(odString_push(&string2, loser, static_cast<int32_t>(strlen(loser))));
+	OD_ASSERT(odString_extend(&string2, loser, static_cast<int32_t>(strlen(loser))));
 	OD_ASSERT(odString_compare(&string1, &string2) < 0);  // {"hello ", "hello loser "}
 
 	OD_ASSERT(odString_set_count(&string1, 0));
 	OD_ASSERT(odString_set_count(&string2, 0));
-	OD_ASSERT(odString_push(&string1, hello, static_cast<int32_t>(strlen(hello))));
-	OD_ASSERT(odString_push(&string2, loser, static_cast<int32_t>(strlen(loser))));
+	OD_ASSERT(odString_extend(&string1, hello, static_cast<int32_t>(strlen(hello))));
+	OD_ASSERT(odString_extend(&string2, loser, static_cast<int32_t>(strlen(loser))));
 	OD_ASSERT(odString_compare(&string1, &string2) < 0);  // {"hello ", "loser "}
 }
-OD_TEST(odTest_odString_copy) {
-	odString str1;
-	OD_ASSERT(odString_push(&str1, "yep", 3));
-
-	odString str2;
-	OD_ASSERT(odString_copy(&str2, &str1));
-
-	const char* str2_data = odString_get_const(&str2, 0);
-	OD_ASSERT(str2_data != nullptr);
-	OD_ASSERT(strncmp(str2_data, "yep", 3) == 0);
-}
-OD_TEST(odTest_odString_push_formatted) {
+OD_TEST(odTest_odString_extend_formatted) {
 	odString str;
-	OD_ASSERT(odString_push_formatted(&str, "%s %d", "yep", 123));
+	OD_ASSERT(odString_extend_formatted(&str, "%s %d", "yep", 123));
 
 	const char* str_data = odString_get_const(&str, 0);
 	OD_ASSERT(str_data != nullptr);
@@ -177,6 +166,5 @@ OD_TEST_SUITE(
 	odTest_odString_set_count_truncate,
 	odTest_odString_debug_get_out_of_bounds_fails,
 	odTest_odString_compare,
-	odTest_odString_copy,
-	odTest_odString_push_formatted,
+	odTest_odString_extend_formatted,
 )

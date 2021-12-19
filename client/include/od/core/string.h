@@ -8,20 +8,18 @@ struct odString;
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odType*
 odString_get_type_constructor(void);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_copy(struct odString* string, const struct odString* src_string);
 OD_API_C OD_CORE_MODULE void
 odString_swap(struct odString* string1, struct odString* string2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_check_valid(const struct odString* string);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
-odString_compare(const struct odString* string1, const struct odString* string2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odString_get_debug_string(const struct odString* string);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_init(struct odString* string);
 OD_API_C OD_CORE_MODULE void
 odString_destroy(struct odString* string);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
+odString_compare(const struct odString* string1, const struct odString* string2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
 odString_get_capacity(const struct odString* string);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
@@ -33,13 +31,13 @@ odString_get_count(const struct odString* string);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_set_count(struct odString* string, int32_t new_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_expand(struct odString* string, char** out_expand_dest, int32_t expand_count);
+odString_extend(struct odString* string, const char* extend_src, int32_t extend_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_push(struct odString* string, const char* str, int32_t str_count);
+odString_extend_formatted_variadic(struct odString* string, const char* format_c_str, va_list args);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_push_formatted_variadic(struct odString* string, const char* format_c_str, va_list args);
+odString_extend_formatted(struct odString* string, const char* format_c_str, ...);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_push_formatted(struct odString* string, const char* format_c_str, ...);
+odString_assign(struct odString* string, const char* assign_src, int32_t assign_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odString_get_c_str(const struct odString* string);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD char*

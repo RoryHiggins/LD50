@@ -62,6 +62,43 @@ void odTrivialArray_destroy(odTrivialArray* array) {
 	array->capacity = 0;
 	odAllocation_destroy(&array->allocation);
 }
+int32_t odTrivialArray_compare(const odTrivialArray* array1, const odTrivialArray* array2, int32_t stride) {
+	if (!OD_DEBUG_CHECK(array1 != nullptr)
+		|| !OD_DEBUG_CHECK(array2 != nullptr)
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return 0;
+	}
+
+	const void* bytes1_ptr = odTrivialArray_begin_const(array1);
+	const void* bytes2_ptr = odTrivialArray_begin_const(array2);
+
+	bytes1_ptr = bytes1_ptr ? bytes1_ptr : "";
+	bytes2_ptr = bytes2_ptr ? bytes2_ptr : "";
+
+	int32_t bytes1_count = odTrivialArray_get_count(array1) * stride;
+	int32_t bytes2_count = odTrivialArray_get_count(array2) * stride;
+
+	if (!OD_CHECK((bytes1_count == 0) || ((bytes1_ptr != nullptr)))
+		|| !OD_CHECK((bytes2_count == 0) || ((bytes2_ptr != nullptr)))) {
+		return false;
+	}
+
+	const int32_t ordering_equal = 0;
+	const int32_t ordering_lhs_first = -1;
+	const int32_t ordering_rhs_first = 1;
+
+	int32_t min_count = (bytes1_count <= bytes2_count) ? bytes1_count : bytes2_count;
+	int32_t order = ordering_equal;
+	if (min_count > 0) {
+		order = static_cast<int32_t>(memcmp(bytes1_ptr, bytes2_ptr, static_cast<size_t>(min_count)));
+	}
+
+	if ((order == ordering_equal) && (bytes1_count != bytes2_count)) {
+		order = (bytes1_count <= bytes2_count) ? ordering_lhs_first : ordering_rhs_first;
+	}
+
+	return order;
+}
 int32_t odTrivialArray_get_capacity(const odTrivialArray* array) {
 	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))) {
 		return 0;
@@ -489,7 +526,7 @@ const void* odArray_get_const(const odArray* array, int32_t i) {
 	return odArray_get(const_cast<odArray*>(array), i);
 }
 void* odArray_begin(odArray* array) {
-	if (!OD_DEBUG_CHECK(array != nullptr)) {
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
 		return nullptr;
 	}
 
