@@ -8,7 +8,8 @@
 #include <od/core/debug.h>
 #include <od/platform/primitive.h>
 #include <od/platform/image.hpp>
-#include <od/platform/rendering.hpp>
+#include <od/platform/texture.hpp>
+#include <od/platform/renderer.hpp>
 #include <od/platform/window.hpp>
 
 static void odEngineFrame_start_next(odEngineFrame* frame);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <od/platform/rendering.h>
+#include <od/platform/texture.h>
 
 struct odTexture {
 	odWindow* window;
@@ -31,21 +31,4 @@ struct odRenderTexture {
 
 	odRenderTexture(odRenderTexture const& other) = delete;
 	odRenderTexture& operator=(const odRenderTexture& other) = delete;
-};
-struct odRenderer {
-	odWindow* window;
-
-	uint32_t vbo;
-	uint32_t vao;
-	uint32_t vertex_shader;
-	uint32_t fragment_shader;
-	uint32_t program;
-
-	OD_PLATFORM_MODULE odRenderer();
-	OD_PLATFORM_MODULE odRenderer(odRenderer&& other);
-	OD_PLATFORM_MODULE odRenderer& operator=(odRenderer&& other);
-	OD_PLATFORM_MODULE ~odRenderer();
-
-	odRenderer(odRenderer const& other) = delete;
-	odRenderer& operator=(const odRenderer& other) = delete;
 };

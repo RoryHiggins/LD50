@@ -1,1 +1,1 @@
-target_sources(od_test PRIVATE file.cpp image.cpp rendering.cpp window.cpp)
+target_sources(od_test PRIVATE file.cpp image.cpp texture.cpp renderer.cpp window.cpp)

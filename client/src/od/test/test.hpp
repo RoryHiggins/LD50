@@ -36,8 +36,9 @@ struct odTestSuite {
 
 OD_TEST_SUITE_DECLARE(odTestSuite_odFile)
 OD_TEST_SUITE_DECLARE(odTestSuite_odImage)
-OD_TEST_SUITE_DECLARE(odTestSuite_odRendering)
 OD_TEST_SUITE_DECLARE(odTestSuite_odWindow)
+OD_TEST_SUITE_DECLARE(odTestSuite_odTexture)
+OD_TEST_SUITE_DECLARE(odTestSuite_odRenderer)
 OD_TEST_SUITE_DECLARE(odTestSuite_odEntityIndex)
 OD_TEST_SUITE_DECLARE(odTestSuite_odAllocation)
 OD_TEST_SUITE_DECLARE(odTestSuite_odArray)

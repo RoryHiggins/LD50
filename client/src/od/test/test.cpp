@@ -8,8 +8,9 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 	static const odTestSuite test_suites[] = {
 		odTestSuite_odFile(),
 		odTestSuite_odImage(),
-		odTestSuite_odRendering(),
 		odTestSuite_odWindow(),
+		odTestSuite_odTexture(),
+		odTestSuite_odRenderer(),
 		odTestSuite_odEntityIndex(),
 		odTestSuite_odAllocation(),
 		odTestSuite_odArray(),

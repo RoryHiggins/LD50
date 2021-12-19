@@ -2,8 +2,6 @@
 
 #include <od/platform/window.h>
 
-#include <od/platform/rendering.hpp>
-
 struct odWindow {
 	struct odWindowSettings settings;
 	void* window_native;
