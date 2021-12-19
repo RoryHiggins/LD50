@@ -2,7 +2,6 @@
 
 #include <od/engine/entity_index.h>
 
-#include <od/core/trivial_array.hpp>
 #include <od/core/array.hpp>
 #include <od/core/vertex.h>
 #include <od/engine/entity.hpp>

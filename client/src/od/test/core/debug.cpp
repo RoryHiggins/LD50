@@ -21,6 +21,6 @@ OD_TEST(odTest_odLog_get_level_name) {
 }
 
 OD_TEST_SUITE(
-	odTestSuite_odLog,
+	odTestSuite_odDebug,
 	odTest_odLog_get_level_name,
 )

@@ -6,19 +6,18 @@
 
 bool odTest_run(int32_t filters, char const* opt_name_filter) {
 	static const odTestSuite test_suites[] = {
+		odTestSuite_odDebug(),
+		odTestSuite_odType(),
+		odTestSuite_odAllocation(),
+		odTestSuite_odArray(),
+		odTestSuite_odBounds(),
+		odTestSuite_odString(),
 		odTestSuite_odFile(),
 		odTestSuite_odImage(),
 		odTestSuite_odWindow(),
 		odTestSuite_odTexture(),
 		odTestSuite_odRenderer(),
 		odTestSuite_odEntityIndex(),
-		odTestSuite_odAllocation(),
-		odTestSuite_odArray(),
-		odTestSuite_odBounds(),
-		odTestSuite_odLog(),
-		odTestSuite_odFastArray(),
-		odTestSuite_odString(),
-		odTestSuite_odType(),
 	};
 
 	OD_INFO("Running tests");

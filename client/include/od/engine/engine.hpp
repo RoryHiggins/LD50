@@ -2,7 +2,7 @@
 
 #include <od/engine/engine.h>
 
-#include <od/core/trivial_array.hpp>
+#include <od/core/array.hpp>
 #include <od/core/vertex.hpp>
 #include <od/platform/window.hpp>
 #include <od/platform/texture.hpp>
