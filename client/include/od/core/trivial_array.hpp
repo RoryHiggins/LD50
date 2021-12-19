@@ -10,7 +10,7 @@
 // optimized to minimize resize cost while keeping template instantiation cost low
 // T must be trivially copyable+movable+constructible (incl. no destructor, safe to memcpy and memset to 0)
 template<typename T>
-struct odFastArrayT {
+struct odTrivialArrayT {
 	odAllocation allocation;
 	int32_t capacity;
 	int32_t count;
@@ -42,7 +42,7 @@ struct odFastArrayT {
 		return begin() + i;
 	}
 
-	void swap(odFastArrayT& other) {
+	void swap(odTrivialArrayT& other) {
 		int32_t swap_capacity = capacity;
 		int32_t swap_count = count;
 
@@ -136,20 +136,20 @@ struct odFastArrayT {
 		return true;
 	}
 
-	odFastArrayT()
+	odTrivialArrayT()
 	: allocation{}, capacity{0}, count{0} {
 	}
-	odFastArrayT(odFastArrayT const& other)
-	: odFastArrayT{} {
+	odTrivialArrayT(odTrivialArrayT const& other)
+	: odTrivialArrayT{} {
 		if (!OD_CHECK(extend(other.begin(), other.count))) {
 			return;
 		}
 	}
-	odFastArrayT(odFastArrayT&& other)
-	: odFastArrayT{} {
+	odTrivialArrayT(odTrivialArrayT&& other)
+	: odTrivialArrayT{} {
 		swap(other);
 	}
-	odFastArrayT& operator=(const odFastArrayT& other) {
+	odTrivialArrayT& operator=(const odTrivialArrayT& other) {
 		count = 0;
 		if (!OD_CHECK(extend(other.begin(), other.count))) {
 			return *this;
@@ -157,11 +157,11 @@ struct odFastArrayT {
 
 		return *this;
 	}
-	odFastArrayT& operator=(odFastArrayT&& other) {
+	odTrivialArrayT& operator=(odTrivialArrayT&& other) {
 		swap(other);
 		return *this;
 	}
-	~odFastArrayT() {
+	~odTrivialArrayT() {
 		count = 0;
 		capacity = 0;
 		odAllocation_destroy(&allocation);
@@ -173,4 +173,4 @@ struct odFastArrayT {
 	const T* end() const && = delete;
 };
 
-OD_CORE_MODULE extern template struct odFastArrayT<int32_t>;
+OD_CORE_MODULE extern template struct odTrivialArrayT<int32_t>;

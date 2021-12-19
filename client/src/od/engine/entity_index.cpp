@@ -73,7 +73,7 @@ odEntityIndex_set_collider_impl(odEntityIndex* entity_index, odEntityCollider* o
 static OD_NO_DISCARD bool
 odEntityIndex_set_sprite_impl(odEntityIndex* entity_index, odEntitySprite* old_sprite, const odEntitySprite* sprite);
 
-template struct odFastArrayT<odEntityStorage>;
+template struct odTrivialArrayT<odEntityStorage>;
 
 bool odEntityStorage_check_valid(const odEntityStorage* storage) {
 	if (!OD_CHECK(storage != nullptr)) {

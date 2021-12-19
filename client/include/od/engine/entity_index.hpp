@@ -2,7 +2,7 @@
 
 #include <od/engine/entity_index.h>
 
-#include <od/core/fast_array.hpp>
+#include <od/core/trivial_array.hpp>
 #include <od/core/array.hpp>
 #include <od/core/vertex.h>
 #include <od/engine/entity.hpp>
@@ -12,14 +12,14 @@
 struct odEntityStorage;
 
 struct odEntityChunk {
-	odFastArrayT<odEntityCollider> colliders;
+	odTrivialArrayT<odEntityCollider> colliders;
 };
 
-OD_ENGINE_MODULE extern template struct odFastArrayT<odEntityStorage>;
+OD_ENGINE_MODULE extern template struct odTrivialArrayT<odEntityStorage>;
 
 struct odEntityIndex {
-	odFastArrayT<odEntityStorage> entities;
-	odFastArrayT<odVertex> entity_vertices;
+	odTrivialArrayT<odEntityStorage> entities;
+	odTrivialArrayT<odVertex> entity_vertices;
 	odEntityChunk chunks[OD_ENTITY_CHUNK_ID_COUNT];
 
 	OD_ENGINE_MODULE odEntityIndex();

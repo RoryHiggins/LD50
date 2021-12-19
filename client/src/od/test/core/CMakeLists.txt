@@ -1,1 +1,1 @@
-target_sources(od_test PRIVATE allocation.cpp array.cpp bounds.cpp debug.cpp fast_array.cpp string.cpp type.cpp)
+target_sources(od_test PRIVATE debug.cpp type.cpp allocation.cpp array.cpp trivial_array.cpp bounds.cpp string.cpp)

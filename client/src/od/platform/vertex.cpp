@@ -5,7 +5,7 @@
 #include <od/core/debug.h>
 #include <od/core/matrix.h>
 
-template struct odFastArrayT<odVertex>;
+template struct odTrivialArrayT<odVertex>;
 
 const char* odVertex_get_debug_string(const odVertex* vertex) {
 	if (vertex == nullptr) {

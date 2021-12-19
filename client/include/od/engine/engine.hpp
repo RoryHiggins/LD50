@@ -2,7 +2,7 @@
 
 #include <od/engine/engine.h>
 
-#include <od/core/fast_array.hpp>
+#include <od/core/trivial_array.hpp>
 #include <od/core/vertex.hpp>
 #include <od/platform/window.hpp>
 #include <od/platform/texture.hpp>
@@ -11,8 +11,8 @@
 
 struct odEngineFrame {
 	int32_t counter;
-	odFastArrayT<odVertex> game_vertices;
-	odFastArrayT<odVertex> window_vertices;
+	odTrivialArrayT<odVertex> game_vertices;
+	odTrivialArrayT<odVertex> window_vertices;
 
 	odEngineFrame();
 };

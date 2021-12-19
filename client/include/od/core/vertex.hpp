@@ -2,7 +2,7 @@
 
 #include <od/core/vertex.h>
 
-#include <od/core/fast_array.hpp>
+#include <od/core/trivial_array.hpp>
 
-OD_CORE_MODULE extern template struct odFastArrayT<odVertex>;
+OD_CORE_MODULE extern template struct odTrivialArrayT<odVertex>;
 

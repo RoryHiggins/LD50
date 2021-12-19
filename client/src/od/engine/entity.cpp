@@ -5,8 +5,8 @@
 #include <od/platform/primitive.h>
 #include <od/core/debug.h>
 
-template struct odFastArrayT<odEntityCollider>;
-template struct odFastArrayT<odEntity>;
+template struct odTrivialArrayT<odEntityCollider>;
+template struct odTrivialArrayT<odEntity>;
 
 const char* odEntityCollider_get_debug_string(const odEntityCollider* collider) {
 	if (collider == nullptr) {
