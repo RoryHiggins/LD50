@@ -7,7 +7,7 @@
 #include <od/core/type.hpp>
 #include <od/core/array.hpp>
 #include <od/platform/window.hpp>
-#include <od/platform/vertex.h>
+#include <od/core/vertex.h>
 #include <od/test/test.hpp>
 
 OD_TEST_FILTERED(odTest_odTexture_init_destroy, OD_TEST_FILTER_SLOW) {

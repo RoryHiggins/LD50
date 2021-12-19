@@ -3,7 +3,7 @@
 #include <od/engine/engine.h>
 
 #include <od/core/fast_array.hpp>
-#include <od/platform/vertex.hpp>
+#include <od/core/vertex.hpp>
 #include <od/platform/window.hpp>
 #include <od/platform/texture.hpp>
 #include <od/platform/renderer.hpp>

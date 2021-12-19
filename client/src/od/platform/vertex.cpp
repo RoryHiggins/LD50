@@ -1,4 +1,4 @@
-#include <od/platform/vertex.hpp>
+#include <od/core/vertex.hpp>
 
 #include <cmath>
 

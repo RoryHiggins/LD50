@@ -4,7 +4,7 @@
 #include <cstdlib>
 
 #include <od/core/debug.h>
-#include <od/platform/vertex.h>
+#include <od/core/vertex.h>
 
 static int odTriangleVertices_compare(const void* triangle1, const void* triangle2);
 

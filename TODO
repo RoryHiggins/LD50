@@ -1,12 +1,6 @@
 
-
-Refactor TODOs:
-- ways to abstract away matrices in favor of vertices+viewport only?
-	- high-level api with named textures (including a window pseudo-texture)
-- Rename odEngine to odClient and move it into the client module?
-
 Major TODOs
-- odSpriteLoader - Texture atlasing
+- odTextureAtlas - to be used with sprite loading in Lua sprite module
 - Audio loading
 - Audio mixing
 

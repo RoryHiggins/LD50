@@ -6,7 +6,7 @@
 #include <od/core/color.h>
 #include <od/core/type.hpp>
 #include <od/core/vector.h>
-#include <od/platform/vertex.h>
+#include <od/core/vertex.h>
 #include <od/platform/primitive.h>
 #include <od/platform/window.hpp>
 #include <od/platform/texture.hpp>

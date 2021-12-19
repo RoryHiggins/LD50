@@ -5,7 +5,7 @@
 
 #include <od/core/bounds.h>
 #include <od/core/array.hpp>
-#include <od/platform/vertex.h>
+#include <od/core/vertex.h>
 #include <od/platform/primitive.h>
 #include <od/engine/tagset.h>
 #include <od/engine/entity.hpp>

@@ -4,7 +4,7 @@
 
 #include <od/core/fast_array.hpp>
 #include <od/core/array.hpp>
-#include <od/platform/vertex.h>
+#include <od/core/vertex.h>
 #include <od/engine/entity.hpp>
 
 #define OD_ENTITY_VERTEX_COUNT (OD_RECT_PRIMITIVE_VERTEX_COUNT)
