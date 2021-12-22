@@ -20,7 +20,7 @@ struct odArrayTestingContainer {
 	odArrayTestingContainer& operator=(const odArrayTestingContainer&) = delete;
 };
 
-template struct odArrayT<odArrayTestingContainer>;
+extern template struct odArrayT<odArrayTestingContainer>;
 
 odArrayTestingContainer::odArrayTestingContainer()
 	: original_self{this}, move_assign_count{0}, destruct_count{0} {
@@ -41,161 +41,207 @@ odArrayTestingContainer::~odArrayTestingContainer() {
 	destruct_count++;
 }
 
-OD_TEST(odTest_odArray_swap) {
-	odArray array1{odType_get_char()};
-	odArray array2{odType_get_char()};
-	OD_ASSERT(odArray_set_count(&array1, 1));
-	OD_ASSERT(odArray_set_count(&array2, 2));
-	OD_ASSERT(odArray_get(&array1, 0) != nullptr);
-	OD_ASSERT(odArray_get(&array2, 0) != nullptr);
+OD_TEST(odTest_odTrivialArray_init_destroy) {
+	odTrivialArrayT<int32_t> array;
+	OD_ASSERT(odTrivialArray_check_valid(&array));
 
-	void* ptr1_old_ptr = odArray_get(&array1, 0);
-	void* ptr2_old_ptr = odArray_get(&array2, 0);
+	// double init
+	OD_ASSERT(odTrivialArray_init(&array));
+	OD_ASSERT(odTrivialArray_check_valid(&array));
 
-	odArray_swap(&array1, &array2);
-	OD_ASSERT(odArray_get(&array1, 0) == ptr2_old_ptr);
-	OD_ASSERT(odArray_get_count(&array1) == 2);
-	OD_ASSERT(odArray_get(&array2, 0) == ptr1_old_ptr);
-	OD_ASSERT(odArray_get_count(&array2) == 1);
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(odTrivialArray_check_valid(&array));
+	OD_ASSERT(array.begin() != nullptr);
+	OD_ASSERT(array.get_count() == 1);
+	OD_ASSERT(array.get_capacity() >= 1);
+
+	odTrivialArray_destroy(&array);
+	OD_ASSERT(array.get_count() == 0);
+	OD_ASSERT(array.get_capacity() == 0);
+
+	// double destroy
+	odTrivialArray_destroy(&array);
+
+	// reinit
+	OD_ASSERT(odTrivialArray_init(&array));
+	OD_ASSERT(odTrivialArray_check_valid(&array));
+
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(odTrivialArray_check_valid(&array));
+	OD_ASSERT(array.begin() != nullptr);
+	OD_ASSERT(array.get_count() == 1);
+	OD_ASSERT(array.get_capacity() >= 1);
 }
-OD_TEST(odTest_odArray_init_destroy) {
-	odArray array{odType_get_char()};
+OD_TEST(odTest_odTrivialArray_swap) {
+	odTrivialArrayT<int32_t> array1;
+	odTrivialArrayT<int32_t> array2;
+	OD_ASSERT(array1.set_count(1));
+	OD_ASSERT(array2.set_count(2));
+	OD_ASSERT(array1.get(0) != nullptr);
+	OD_ASSERT(array2.get(0) != nullptr);
 
-	OD_ASSERT(odArray_set_count(&array, 1));
-	OD_ASSERT(odArray_get(&array, 0) != nullptr);
-	OD_ASSERT(odArray_get_count(&array) == 1);
-	OD_ASSERT(odArray_get_capacity(&array) >= 1);
+	void* ptr1_old_ptr = array1.get(0);
+	void* ptr2_old_ptr = array2.get(0);
 
-	odArray_destroy(&array);
-	OD_ASSERT(odArray_get_count(&array) == 0);
-	OD_ASSERT(odArray_get_capacity(&array) == 0);
+	odTrivialArray_swap(&array1, &array2);
+
+	OD_ASSERT(array1.get_count() == 2);
+	OD_ASSERT(array2.get_count() == 1);
+
+	// ensure allocations are preseved by the swap
+	OD_ASSERT(array1.get(0) == ptr2_old_ptr);
+	OD_ASSERT(array2.get(0) == ptr1_old_ptr);
 }
-OD_TEST(odTest_odArray_set_capacity) {
-	odArray array{odType_get_char()};
+OD_TEST(odTest_odTrivialArray_compare) {
+	odTrivialArrayT<int32_t> array1;
+	odTrivialArrayT<int32_t> array2;
+
+	OD_ASSERT(array1.compare(array2) == 0);
+
+	OD_ASSERT(array1.set_count(1));
+	OD_ASSERT(array1.compare(array2) > 0);
+
+	OD_ASSERT(array2.set_count(1));
+	OD_ASSERT(array1.compare(array2) == 0);
+
+	array2[0] = 1;
+	OD_ASSERT(array1.compare(array2) < 0);
+}
+OD_TEST(odTest_odTrivialArray_get_set_capacity) {
+	odTrivialArrayT<int32_t> array;
 	int32_t test_sizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
 	for (int32_t test_size: test_sizes) {
-		OD_ASSERT(odArray_set_capacity(&array, test_size));
-		OD_ASSERT(odArray_get_capacity(&array) == test_size);
-		OD_ASSERT(odArray_get_count(&array) == 0);
+		OD_ASSERT(array.set_capacity(test_size));
+		OD_ASSERT(array.get_capacity() == test_size);
+		OD_ASSERT(array.get_count() == 0);
 	}
 }
-OD_TEST(odTest_odArray_set_capacity_zero) {
-	odArray array{odType_get_char()};
-	OD_ASSERT(odArray_set_capacity(&array, 0));
+OD_TEST(odTest_odTrivialArray_set_capacity_zero) {
+	odTrivialArrayT<int32_t> array;
+	OD_ASSERT(array.set_capacity(0));
+
+	OD_ASSERT(array.set_capacity(1));
+	OD_ASSERT(array.set_capacity(0));
 }
-OD_TEST(odTest_odArray_ensure_capacity) {
-	odArray array{odType_get_char()};
+OD_TEST(odTest_odTrivialArray_ensure_capacity) {
+	odTrivialArrayT<int32_t> array;
 
 	const int32_t start_capacity = 2;
-	OD_ASSERT(odArray_set_capacity(&array, start_capacity));
-	OD_ASSERT(odArray_get_capacity(&array) == start_capacity);
-	OD_ASSERT(odArray_get_count(&array) == 0);
+	OD_ASSERT(array.set_capacity(start_capacity));
+	OD_ASSERT(array.get_capacity() == start_capacity);
+	OD_ASSERT(array.get_count() == 0);
 
-	OD_ASSERT(odArray_ensure_capacity(&array, start_capacity - 1));
-	OD_ASSERT(odArray_get_capacity(&array) == start_capacity);
-	OD_ASSERT(odArray_get_count(&array) == 0);
+	OD_ASSERT(array.ensure_capacity(start_capacity - 1));
+	OD_ASSERT(array.get_capacity() == start_capacity);
+	OD_ASSERT(array.get_count() == 0);
 
-	OD_ASSERT(odArray_ensure_capacity(&array, (start_capacity + 1)));
-	OD_ASSERT(odArray_get_capacity(&array) >= (start_capacity + 1));
-	OD_ASSERT(odArray_get_count(&array) == 0);
+	OD_ASSERT(array.ensure_capacity((start_capacity + 1)));
+	OD_ASSERT(array.get_capacity() >= (start_capacity + 1));
+	OD_ASSERT(array.get_count() == 0);
 }
-OD_TEST(odTest_odArray_set_count) {
-	odArray array{odType_get_char()};
-	OD_ASSERT(odArray_set_count(&array, 1));
-	OD_ASSERT(odArray_get_capacity(&array) >= 1);
-	OD_ASSERT(odArray_get_count(&array) == 1);
+OD_TEST(odTest_odTrivialArray_get_set_count) {
+	odTrivialArrayT<int32_t> array;
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(array.get_capacity() >= 1);
+	OD_ASSERT(array.get_count() == 1);
 }
-OD_TEST(odTest_odArray_set_count_expand) {
-	odArray array{odType_get_char()};
-	OD_ASSERT(odArray_set_capacity(&array, 1));
-	OD_ASSERT(odArray_set_count(&array, 1));
-	OD_ASSERT(odArray_get_capacity(&array) == 1);
-	OD_ASSERT(odArray_get_count(&array) == 1);
+OD_TEST(odTest_odTrivialArray_set_count_expand) {
+	odTrivialArrayT<char> array;
+	OD_ASSERT(array.set_capacity(1));
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(array.get_capacity() == 1);
+	OD_ASSERT(array.get_count() == 1);
 
-	char* array_ptr = static_cast<char*>(odArray_get(&array, 0));
-	OD_ASSERT(array_ptr != nullptr);
-
-	array_ptr[0] = '!';
+	array[0] = '!';
 
 	const int32_t final_count = 4;
-	OD_ASSERT(odArray_set_count(&array, final_count));
-	OD_ASSERT(odArray_get_capacity(&array) >= final_count);
-	OD_ASSERT(odArray_get_count(&array) == final_count);
-	OD_ASSERT(static_cast<char*>(odArray_get(&array, 0)) != array_ptr);
+	OD_ASSERT(array.set_count(final_count));
+	OD_ASSERT(array.get_capacity() >= final_count);
+	OD_ASSERT(array.get_count() == final_count);
 
-	array_ptr = static_cast<char*>(odArray_get(&array, 0));
-	OD_ASSERT(array_ptr != nullptr);
-	OD_ASSERT(array_ptr[0] == '!');
+	OD_ASSERT(array[0] == '!');
 	for (int32_t i = 1; i < final_count; i++) {
-		array_ptr[i] = '\0';
+		array[i] = '\0';
 	}
 }
-OD_TEST(odTest_odArray_set_count_truncate) {
-	odArray array{odType_get_char()};
+OD_TEST(odTest_odTrivialArray_set_count_truncate) {
+	odTrivialArrayT<char> array;
 	const int32_t start_count = 4;
-	OD_ASSERT(odArray_set_count(&array, start_count));
+	OD_ASSERT(array.set_count(start_count));
 
-	char* array_ptr = static_cast<char*>(odArray_get(&array, 0));
+	char* array_ptr = static_cast<char*>(array.begin());
 	OD_ASSERT(array_ptr != nullptr);
 	for (int32_t i = 0; i < start_count; i++) {
 		array_ptr[i] = '!';
 	}
 
-	OD_ASSERT(odArray_set_count(&array, 1));
-	OD_ASSERT(odArray_set_count(&array, 4));
-	OD_ASSERT(static_cast<char*>(odArray_get(&array, 0)) == array_ptr);
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(array.set_count(4));
+	OD_ASSERT(static_cast<char*>(array.begin()) == array_ptr);
 	OD_ASSERT(array_ptr[0] == '!');
 	for (int32_t i = 1; i < start_count; i++) {
 		OD_ASSERT(array_ptr[i] == '\0');
 	}
 }
-OD_TEST(odTest_odArray_pop) {
-	odArray array{odType_get_char()};
-	OD_ASSERT(odArray_set_count(&array, 1));
-	OD_ASSERT(odArray_get_count(&array) == 1);
+OD_TEST(odTest_odTrivialArray_extend_push) {
+	odTrivialArrayT<char> array;
+	OD_ASSERT(array.extend("hello", 5));
+	OD_ASSERT(array.get_count() == 5);
+	OD_ASSERT(strncmp(array.begin(), "hello", 5) == 0);
 
-	OD_ASSERT(odArray_pop(&array, 1));
-	OD_ASSERT(odArray_get_count(&array) == 0);
+	OD_ASSERT(array.push('!'));
+	OD_ASSERT(array.get_count() == 6);
+	OD_ASSERT(strncmp(array.begin(), "hello!", 6) == 0);
 }
-OD_TEST(odTest_odArray_swap_pop) {
-	odArray array{odType_get_char()};
-	OD_ASSERT(odArray_set_count(&array, 4));
+OD_TEST(odTest_odTrivialArray_pop) {
+	odTrivialArrayT<char> array;
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(array.get_count() == 1);
 
-	char* array_ptr = static_cast<char*>(odArray_get(&array, 0));
+	OD_ASSERT(array.pop(1));
+	OD_ASSERT(array.get_count() == 0);
+}
+OD_TEST(odTest_odTrivialArray_swap_pop) {
+	odTrivialArrayT<char> array;
+	OD_ASSERT(array.set_count(4));
+
+	char* array_ptr = static_cast<char*>(array.begin());
 	OD_ASSERT(array_ptr != nullptr);
 	strncpy(array_ptr, "123", 4);
 
-	OD_ASSERT(odArray_swap_pop(&array, 1));
-	OD_ASSERT(odArray_get_count(&array) == 3);
-	OD_ASSERT(odArray_set_count(&array, 4));
-	array_ptr = static_cast<char*>(odArray_get(&array, 0));
+	OD_ASSERT(array.swap_pop(1));
+	OD_ASSERT(array.get_count() == 3);
+	OD_ASSERT(array.set_count(4));
+	array_ptr = static_cast<char*>(array.begin());
 	OD_ASSERT(array_ptr != nullptr);
 	OD_ASSERT(strncmp(array_ptr, "13\0\0", 4));
 }
-OD_TEST(odTest_odArray_debug_get_out_of_bounds_fails) {
-	if (OD_BUILD_DEBUG) {
-		odArray array{odType_get_char()};
-		OD_ASSERT(odArray_set_count(&array, 2));
-		OD_ASSERT(odArray_get(&array, 0) != nullptr);
-		{
-			odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-			OD_ASSERT(odArray_get(&array, 2) == nullptr);
-		}
+OD_TEST(odTest_odTrivialArray_assign) {
+	odTrivialArrayT<char> array;
+	OD_ASSERT(array.extend("hello", 5));
+	OD_ASSERT(strncmp(array.begin(), "hello", 5) == 0);
+
+	OD_ASSERT(array.assign("goodbye", 7));
+	OD_ASSERT(strncmp(array.begin(), "goodbye", 7) == 0);
+}
+OD_TEST(odTest_odTrivialArray_get) {
+	odTrivialArrayT<int32_t> array;
+	OD_ASSERT(array.set_count(2));
+	OD_ASSERT(array.get_count() == 2);
+	OD_ASSERT(array.get(0) != nullptr);
+
+	OD_ASSERT(*array.get(1) == 0);
+	*array.get(1) = 2;
+	OD_ASSERT(*array.get(1) == 2);
+
+	for (int32_t i = 0; i < array.get_count(); i++) {
+		OD_ASSERT(array[i] == *array.get(i));
+		OD_ASSERT(&array[i] == array.get(i));
 	}
 }
-
-OD_TEST(odTest_odArrayT_get) {
-	odArrayT<int32_t> array;
-	OD_ASSERT(odArray_set_count(&array, 2));
-	OD_ASSERT(array[0] != nullptr);
-
-	OD_ASSERT(*array[1] == 0);
-	*array[1] = 2;
-	OD_ASSERT(*array[1] == 2);
-}
-OD_TEST(odTest_odArrayT_foreach) {
-	odArrayT<int32_t> array;
-	OD_ASSERT(odArray_set_count(&array, 2));
+OD_TEST(odTest_odTrivialArray_begin_end) {
+	odTrivialArrayT<int32_t> array;
+	OD_ASSERT(array.set_count(2));
 	for (int32_t elem: array) {
 		OD_ASSERT(elem == 0);
 	}
@@ -207,140 +253,221 @@ OD_TEST(odTest_odArrayT_foreach) {
 		OD_ASSERT(elem == 2);
 	}
 }
-OD_TEST(odTest_odArrayT_push) {
-	odArrayT<int32_t> array;
-	OD_ASSERT(array.push(2));
-	OD_ASSERT(*array[0] == 2);
-	OD_ASSERT(odArray_get_count(&array) == 1);
-}
-OD_TEST(odTest_odArrayT_debug_get_out_of_bounds_fails) {
-	if (OD_BUILD_DEBUG) {
-		odArrayT<int32_t> array;
-		OD_ASSERT(odArray_set_count(&array, 2));
-		{
-			odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-			OD_ASSERT(array[2] == nullptr);
-		}
-		OD_ASSERT(array[0] != nullptr);
 
-		OD_ASSERT(odArray_set_count(&array, 0));
-		{
-			odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-			OD_ASSERT(array[0] == nullptr);
-		}
-	}
-}
-OD_TEST(odTest_odArrayT_push_pop_container) {
+OD_TEST(odTest_odArray_init_destroy) {
 	odArrayT<odArrayTestingContainer> array;
+	OD_ASSERT(odArray_check_valid(&array));
 
-	odArrayTestingContainer test_container{};
+	// double init
+	OD_ASSERT(odArray_init(&array, odType_get<odArrayTestingContainer>()));
+	OD_ASSERT(odArray_check_valid(&array));
 
-	OD_ASSERT(array.push(static_cast<odArrayTestingContainer&&>(test_container)));
-	OD_ASSERT(odArray_get_count(&array) == 1);
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(odArray_check_valid(&array));
+	OD_ASSERT(array.begin() != nullptr);
+	OD_ASSERT(array.get_count() == 1);
+	OD_ASSERT(array.get_capacity() >= 1);
 
-	const odArrayTestingContainer* pushed_container = array[0];
-	OD_ASSERT(pushed_container != nullptr);
-	OD_ASSERT(pushed_container->original_self == test_container.original_self);
-	OD_ASSERT(pushed_container->destruct_count == 0);
-	OD_ASSERT(pushed_container->move_assign_count > 0);
+	odArray_destroy(&array);
+	OD_ASSERT(array.get_count() == 0);
+	OD_ASSERT(array.get_capacity() == 0);
 
-	OD_ASSERT(odArray_swap_pop(&array, 0));
-	OD_ASSERT(odArray_get_count(&array) == 0);
+	// double destroy
+	odArray_destroy(&array);
 
-	OD_ASSERT(array.push(static_cast<odArrayTestingContainer&&>(test_container)));
-	OD_ASSERT(array.push(static_cast<odArrayTestingContainer&&>(test_container)));
-	OD_ASSERT(odArray_get_count(&array) == 2);
-	OD_ASSERT(array[0]->original_self == test_container.original_self);
-	OD_ASSERT(array[1]->original_self == test_container.original_self);
+	// reinit
+	OD_ASSERT(odArray_init(&array, odType_get<odArrayTestingContainer>()));
+	OD_ASSERT(odArray_check_valid(&array));
 
-	OD_ASSERT(odArray_swap_pop(&array, 0));
-	OD_ASSERT(odArray_get_count(&array) == 1);
-	OD_ASSERT(array[0]->original_self == test_container.original_self);
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(odArray_check_valid(&array));
+	OD_ASSERT(array.begin() != nullptr);
+	OD_ASSERT(array.get_count() == 1);
+	OD_ASSERT(array.get_capacity() >= 1);
 }
+OD_TEST(odTest_odArray_swap) {
+	odArrayT<odArrayTestingContainer> array1;
+	odArrayT<odArrayTestingContainer> array2;
+	OD_ASSERT(array1.set_count(1));
+	OD_ASSERT(array2.set_count(2));
+	OD_ASSERT(array1.get(0) != nullptr);
+	OD_ASSERT(array2.get(0) != nullptr);
 
-OD_TEST(odTest_odTrivialArrayT_set_capacity) {
-	odTrivialArrayT<int32_t> array;
+	void* ptr1_old_ptr = array1.get(0);
+	void* ptr2_old_ptr = array2.get(0);
+
+	odArray_swap(&array1, &array2);
+
+	OD_ASSERT(array1.get_count() == 2);
+	OD_ASSERT(array2.get_count() == 1);
+
+	// ensure allocations are preseved by the swap
+	OD_ASSERT(array1.get(0) == ptr2_old_ptr);
+	OD_ASSERT(array2.get(0) == ptr1_old_ptr);
+}
+OD_TEST(odTest_odArray_get_set_capacity) {
+	odArrayT<odArrayTestingContainer> array;
 	int32_t test_sizes[] = {1, 4, 16, 64, (64 * 1024), (4 * 1024 * 1024)};
 	for (int32_t test_size: test_sizes) {
-		OD_ASSERT((array.set_capacity(test_size)));
-		OD_ASSERT((array.capacity >= test_size));
-		OD_ASSERT(array.count == 0);
+		OD_ASSERT(array.set_capacity(test_size));
+		OD_ASSERT(array.get_capacity() == test_size);
+		OD_ASSERT(array.get_count() == 0);
 	}
 }
-OD_TEST(odTest_odTrivialArrayT_set_capacity_zero) {
-	odTrivialArrayT<int32_t> array;
+OD_TEST(odTest_odArray_set_capacity_zero) {
+	odArrayT<odArrayTestingContainer> array;
+	OD_ASSERT(array.set_capacity(0));
+
+	OD_ASSERT(array.set_capacity(1));
 	OD_ASSERT(array.set_capacity(0));
 }
-OD_TEST(odTest_odTrivialArrayT_set_count) {
-	odTrivialArrayT<int32_t> array;
+OD_TEST(odTest_odArray_ensure_capacity) {
+	odArrayT<odArrayTestingContainer> array;
+
+	const int32_t start_capacity = 2;
+	OD_ASSERT(array.set_capacity(start_capacity));
+	OD_ASSERT(array.get_capacity() == start_capacity);
+	OD_ASSERT(array.get_count() == 0);
+
+	OD_ASSERT(array.ensure_capacity(start_capacity - 1));
+	OD_ASSERT(array.get_capacity() == start_capacity);
+	OD_ASSERT(array.get_count() == 0);
+
+	OD_ASSERT(array.ensure_capacity((start_capacity + 1)));
+	OD_ASSERT(array.get_capacity() >= (start_capacity + 1));
+	OD_ASSERT(array.get_count() == 0);
+}
+OD_TEST(odTest_odArray_get_set_count) {
+	odArrayT<odArrayTestingContainer> array;
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(array.get_capacity() >= 1);
+	OD_ASSERT(array.get_count() == 1);
+}
+OD_TEST(odTest_odArray_set_count_expand) {
+	odArrayT<char> array;
 	OD_ASSERT(array.set_capacity(1));
 	OD_ASSERT(array.set_count(1));
-	OD_ASSERT(array.capacity >= 1);
-	OD_ASSERT(array.count == 1);
+	OD_ASSERT(array.get_capacity() == 1);
+	OD_ASSERT(array.get_count() == 1);
+
+	array[0] = '!';
 
 	const int32_t final_count = 4;
 	OD_ASSERT(array.set_count(final_count));
-	OD_ASSERT(array.capacity >= final_count);
-	OD_ASSERT(array.count == final_count);
+	OD_ASSERT(array.get_capacity() >= final_count);
+	OD_ASSERT(array.get_count() == final_count);
+
+	OD_ASSERT(array[0] == '!');
+	for (int32_t i = 1; i < final_count; i++) {
+		array[i] = '\0';
+	}
+}
+OD_TEST(odTest_odArray_set_count_truncate) {
+	odArrayT<char> array;
+	const int32_t start_count = 4;
+	OD_ASSERT(array.set_count(start_count));
+
+	char* array_ptr = static_cast<char*>(array.begin());
+	OD_ASSERT(array_ptr != nullptr);
+	for (int32_t i = 0; i < start_count; i++) {
+		array_ptr[i] = '!';
+	}
 
 	OD_ASSERT(array.set_count(1));
-	OD_ASSERT(array.capacity >= 1);
-	OD_ASSERT(array.count == 1);
+	OD_ASSERT(array.set_count(4));
+	OD_ASSERT(static_cast<char*>(array.begin()) == array_ptr);
+	OD_ASSERT(array_ptr[0] == '!');
+	for (int32_t i = 1; i < start_count; i++) {
+		OD_ASSERT(array_ptr[i] == '\0');
+	}
 }
-OD_TEST(odTest_odTrivialArrayT_swap_pop) {
-	odTrivialArrayT<int32_t> array;
-	OD_ASSERT(array.set_count(2));
-	*array[0] = 1;
-	*array[1] = 2;
-	OD_ASSERT(array.swap_pop(0));
-	OD_ASSERT(array.count == 1);
-	OD_ASSERT(*array[0] == 2);
+OD_TEST(odTest_odArray_push) {
+	odArrayT<char> array;
+	OD_ASSERT(array.push('!'));
+	OD_ASSERT(array.get_count() == 1);
+	OD_ASSERT(strncmp(array.begin(), "!", 1) == 0);
 }
-OD_TEST(odTest_odTrivialArrayT_foreach) {
-	odTrivialArrayT<int32_t> array;
+OD_TEST(odTest_odArray_pop) {
+	odArrayT<char> array;
+	OD_ASSERT(array.set_count(1));
+	OD_ASSERT(array.get_count() == 1);
+
+	OD_ASSERT(array.pop(1));
+	OD_ASSERT(array.get_count() == 0);
+}
+OD_TEST(odTest_odArray_swap_pop) {
+	odArrayT<char> array;
+	OD_ASSERT(array.set_count(4));
+
+	char* array_ptr = static_cast<char*>(array.begin());
+	OD_ASSERT(array_ptr != nullptr);
+	strncpy(array_ptr, "123", 4);
+
+	OD_ASSERT(array.swap_pop(1));
+	OD_ASSERT(array.get_count() == 3);
+	OD_ASSERT(array.set_count(4));
+	array_ptr = static_cast<char*>(array.begin());
+	OD_ASSERT(array_ptr != nullptr);
+	OD_ASSERT(strncmp(array_ptr, "13\0\0", 4));
+}
+OD_TEST(odTest_odArray_get) {
+	odArrayT<odArrayTestingContainer> array;
 	OD_ASSERT(array.set_count(2));
-	for (int32_t elem: array) {
-		OD_ASSERT(elem == 0);
+	OD_ASSERT(array.get_count() == 2);
+
+	for (int32_t i = 0; i < array.get_count(); i++) {
+		OD_ASSERT(array.get(i) != nullptr);
+		OD_ASSERT(&array[i] == array.get(i));
+	}
+}
+OD_TEST(odTest_odArray_begin_end) {
+	odArrayT<odArrayTestingContainer> array;
+	OD_ASSERT(array.set_count(2));
+	for (const odArrayTestingContainer& elem: array) {
+		OD_ASSERT(&elem == elem.original_self);
 	}
 
-	for (int32_t &elem: array) {
-		elem = 2;
+	OD_ASSERT(array.set_count(32));
+	for (odArrayTestingContainer& elem: array) {
+		elem.original_self = &elem;
 	}
-	for (int32_t elem: array) {
-		OD_ASSERT(elem == 2);
+	for (odArrayTestingContainer& elem: array) {
+		OD_ASSERT(&elem == elem.original_self);
 	}
-}
-OD_TEST(odTest_odTrivialArrayT_extend) {
-	odTrivialArrayT<int32_t> array;
-	int32_t value = 2;
-	OD_ASSERT(array.extend(&value, 1));
-	OD_ASSERT(*array[0] == 2);
-	OD_ASSERT(array.count == 1);
 }
 
 
 OD_TEST_SUITE(
 	odTestSuite_odArray,
-	odTest_odArray_swap,
+	odTest_odTrivialArray_init_destroy,
+	odTest_odTrivialArray_swap,
+	odTest_odTrivialArray_compare,
+	odTest_odTrivialArray_get_set_capacity,
+	odTest_odTrivialArray_set_capacity_zero,
+	odTest_odTrivialArray_ensure_capacity,
+	odTest_odTrivialArray_get_set_count,
+	odTest_odTrivialArray_set_count_expand,
+	odTest_odTrivialArray_set_count_truncate,
+	odTest_odTrivialArray_extend_push,
+	odTest_odTrivialArray_pop,
+	odTest_odTrivialArray_swap_pop,
+	odTest_odTrivialArray_assign,
+	odTest_odTrivialArray_get,
+	odTest_odTrivialArray_begin_end,
+
 	odTest_odArray_init_destroy,
-	odTest_odArray_set_capacity,
+	odTest_odArray_swap,
+	odTest_odArray_get_set_capacity,
 	odTest_odArray_set_capacity_zero,
 	odTest_odArray_ensure_capacity,
-	odTest_odArray_set_count,
+	odTest_odArray_get_set_count,
 	odTest_odArray_set_count_expand,
 	odTest_odArray_set_count_truncate,
+	odTest_odArray_push,
 	odTest_odArray_pop,
 	odTest_odArray_swap_pop,
-	odTest_odArray_debug_get_out_of_bounds_fails,
-	odTest_odArrayT_get,
-	odTest_odArrayT_foreach,
-	odTest_odArrayT_push,
-	odTest_odArrayT_debug_get_out_of_bounds_fails,
-	odTest_odArrayT_push_pop_container,
-	odTest_odTrivialArrayT_set_capacity,
-	odTest_odTrivialArrayT_set_capacity_zero,
-	odTest_odTrivialArrayT_set_count,
-	odTest_odTrivialArrayT_swap_pop,
-	odTest_odTrivialArrayT_foreach,
-	odTest_odTrivialArrayT_extend,
+	odTest_odArray_get,
+	odTest_odArray_begin_end,
 )
+
+template struct odArrayT<odArrayTestingContainer>;

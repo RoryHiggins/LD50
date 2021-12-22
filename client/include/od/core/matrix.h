@@ -30,5 +30,7 @@ OD_API_C OD_CORE_MODULE void
 odMatrix4_multiply(struct odMatrix4* matrix, const struct odMatrix4* other);
 OD_API_C OD_CORE_MODULE void
 odMatrix4_multiply_vector(const struct odMatrix4* matrix, struct odVector4* vector);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odMatrix4_equals(const struct odMatrix4* matrix1, const struct odMatrix4* matrix2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odMatrix4*
 odMatrix4_get_identity(void);

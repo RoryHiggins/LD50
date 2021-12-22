@@ -7,8 +7,6 @@
 
 #define OD_RECT_PRIMITIVE_VERTEX_COUNT 6
 
-#define OD_RECT_PRIMITIVE_VERTEX_COUNT 6
-
 struct odVertex;
 
 struct odRectPrimitive {

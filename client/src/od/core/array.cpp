@@ -1,32 +1,11 @@
 #include <od/core/array.hpp>
 
-#include <cstdio>
 #include <cstring>
 
 #include <od/core/debug.h>
-#include <od/core/type.hpp>
-#include <od/core/allocation.hpp>
+#include <od/core/type.h>
+#include <od/core/allocation.h>
 
-const struct odType* odTrivialArray_get_type_constructor() {
-	return odType_get<odTrivialArray>();
-}
-void odTrivialArray_swap(odTrivialArray* array1, odTrivialArray* array2) {
-	if (!OD_DEBUG_CHECK(array1 != nullptr)
-		|| !OD_DEBUG_CHECK(array2 != nullptr)) {
-		return;
-	}
-
-	int32_t swap_count = array1->count;
-	int32_t swap_capacity = array1->count;
-
-	array1->count = array2->count;
-	array1->capacity = array2->capacity;
-
-	array2->count = swap_count;
-	array2->capacity = swap_capacity;
-
-	odAllocation_swap(&array1->allocation, &array2->allocation);
-}
 bool odTrivialArray_check_valid(const odTrivialArray* array) {
 	if (!OD_CHECK(array != nullptr)
 		|| !OD_CHECK(array->count >= 0)
@@ -42,7 +21,7 @@ const char* odTrivialArray_get_debug_string(const odTrivialArray* array) {
 		return "null";
 	}
 
-	return odDebugString_format("{\"count\": %d}",array->count);
+	return odDebugString_format("{\"count\": %d}", array->count);
 }
 bool odTrivialArray_init(odTrivialArray* array) {
 	if (!OD_DEBUG_CHECK(array != nullptr)) {
@@ -61,6 +40,23 @@ void odTrivialArray_destroy(odTrivialArray* array) {
 	array->count = 0;
 	array->capacity = 0;
 	odAllocation_destroy(&array->allocation);
+}
+void odTrivialArray_swap(odTrivialArray* array1, odTrivialArray* array2) {
+	if (!OD_DEBUG_CHECK(array1 != nullptr)
+		|| !OD_DEBUG_CHECK(array2 != nullptr)) {
+		return;
+	}
+
+	int32_t swap_count = array1->count;
+	int32_t swap_capacity = array1->count;
+
+	array1->count = array2->count;
+	array1->capacity = array2->capacity;
+
+	array2->count = swap_count;
+	array2->capacity = swap_capacity;
+
+	odAllocation_swap(&array1->allocation, &array2->allocation);
 }
 int32_t odTrivialArray_compare(const odTrivialArray* array1, const odTrivialArray* array2, int32_t stride) {
 	if (!OD_DEBUG_CHECK(array1 != nullptr)
@@ -128,8 +124,11 @@ bool odTrivialArray_set_capacity(odTrivialArray* array, int32_t new_capacity, in
 
 	int32_t old_size = array->count * static_cast<int32_t>(stride);
 	int32_t moved_size = ((new_size < old_size) ? new_size : old_size);
-	if ((moved_size > 0) && OD_DEBUG_CHECK(array->allocation.ptr != nullptr)) {
-		memcpy(new_allocation.ptr, array->allocation.ptr, static_cast<size_t>(moved_size));
+	if ((moved_size > 0) && OD_DEBUG_CHECK(odAllocation_get(&array->allocation) != nullptr)) {
+		memcpy(
+			odAllocation_get(&new_allocation),
+			odAllocation_get(&array->allocation),
+			static_cast<size_t>(moved_size));
 	}
 
 	odAllocation_swap(&array->allocation, &new_allocation);
@@ -314,23 +313,6 @@ odTrivialArray::~odTrivialArray() {
 	odTrivialArray_destroy(this);
 }
 
-const odType* odArray_get_type_constructor() {
-	return odType_get<odArray>();
-}
-void odArray_swap(odArray* array1, odArray* array2) {
-	if (!OD_DEBUG_CHECK(array1 != nullptr)
-		|| !OD_DEBUG_CHECK(array2 != nullptr)) {
-		return;
-	}
-
-	const odType* swap_type = array1->type;
-	
-	array1->type = array2->type;
-
-	array2->type = swap_type;
-
-	odTrivialArray_swap(&array1->array, &array2->array);
-}
 bool odArray_check_valid(const odArray* array) {
 	if (!OD_CHECK(odTrivialArray_check_valid(&array->array))
 		|| !OD_CHECK(odType_check_valid(array->type))) {
@@ -345,6 +327,20 @@ const char* odArray_get_debug_string(const odArray* array) {
 	}
 
 	return odTrivialArray_get_debug_string(&array->array);
+}
+void odArray_swap(odArray* array1, odArray* array2) {
+	if (!OD_DEBUG_CHECK(array1 != nullptr)
+		|| !OD_DEBUG_CHECK(array2 != nullptr)) {
+		return;
+	}
+
+	const odType* swap_type = array1->type;
+	
+	array1->type = array2->type;
+
+	array2->type = swap_type;
+
+	odTrivialArray_swap(&array1->array, &array2->array);
 }
 bool odArray_init(odArray* array, const odType* type) {
 	if (!OD_DEBUG_CHECK(array != nullptr)
@@ -367,13 +363,6 @@ void odArray_destroy(odArray* array) {
 	}
 
 	odTrivialArray_destroy(&array->array);
-}
-const odType* odArray_get_type(const odArray* array) {
-	if (!OD_DEBUG_CHECK(array != nullptr)) {
-		return nullptr;
-	}
-
-	return array->type;
 }
 int32_t odArray_get_capacity(const odArray* array) {
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {
@@ -564,6 +553,5 @@ odArray::~odArray() {
 	odArray_destroy(this);
 }
 
-template struct odArrayT<int32_t>;
-
+template struct odTrivialArrayT<char>;
 template struct odTrivialArrayT<int32_t>;

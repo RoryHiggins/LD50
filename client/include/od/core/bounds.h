@@ -9,10 +9,10 @@ struct odBounds {
 	float y2;
 };
 
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
-odBounds_get_debug_string(const struct odBounds* bounds);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odBounds_check_valid(const struct odBounds* bounds);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
+odBounds_get_debug_string(const struct odBounds* bounds);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odBounds_is_collidable(const struct odBounds* bounds);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool

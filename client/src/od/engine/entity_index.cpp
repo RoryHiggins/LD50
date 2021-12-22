@@ -36,6 +36,8 @@ struct odEntityChunkIterator {
 	odEntityChunkId operator*();
 };
 
+extern template struct odTrivialArrayT<odEntityStorage>;
+
 OD_NO_DISCARD bool
 odEntityStorage_check_valid(const odEntityStorage* storage);
 
@@ -72,8 +74,6 @@ static OD_NO_DISCARD bool
 odEntityIndex_set_collider_impl(odEntityIndex* entity_index, odEntityCollider* old_collider, const odEntityCollider* collider);
 static OD_NO_DISCARD bool
 odEntityIndex_set_sprite_impl(odEntityIndex* entity_index, odEntitySprite* old_sprite, const odEntitySprite* sprite);
-
-template struct odTrivialArrayT<odEntityStorage>;
 
 bool odEntityStorage_check_valid(const odEntityStorage* storage) {
 	if (!OD_CHECK(storage != nullptr)) {
@@ -251,7 +251,7 @@ bool odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChun
 	int32_t chunk_index = 0;
 	bool found = false;
 	for (int32_t i = 0; i < chunk.colliders.count; i++) {
-		if (chunk.colliders[i]->id == entity_id) {
+		if (chunk.colliders[i].id == entity_id) {
 			chunk_index = i;
 			found = true;
 			break;
@@ -310,12 +310,7 @@ bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunk
 		return false;
 	}
 
-	odEntityCollider* old_collider = chunk.colliders[chunk_index];
-	if (!OD_DEBUG_CHECK(collider != nullptr)) {
-		return false;
-	}
-
-	*old_collider = *collider;
+	chunk.colliders[chunk_index] = *collider;
 
 	return true;
 }
@@ -350,7 +345,7 @@ odEntityStorage* odEntityIndex_get_or_allocate_storage(odEntityIndex* entity_ind
 		return nullptr;
 	}
 
-	odEntityStorage* old_entity = entity_index->entities[entity_id];
+	odEntityStorage* old_entity = entity_index->entities.get(entity_id);
 	if (!OD_DEBUG_CHECK(odEntityStorage_check_valid(old_entity))) {
 		return nullptr;
 	}
@@ -366,9 +361,14 @@ bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEnt
 	odRectPrimitive rect{};
 	odEntity_get_rect(&storage->entity, &rect);
 
-	int32_t vertex_index = static_cast<int32_t>(storage->entity.collider.id) * 6;
-	odVertex* vertices = entity_index->entity_vertices[vertex_index];
-	if (!OD_DEBUG_CHECK(vertices != nullptr)) {
+	int32_t vertex_index = static_cast<int32_t>(storage->entity.collider.id) * OD_RECT_PRIMITIVE_VERTEX_COUNT;
+
+	if (!OD_DEBUG_CHECK((vertex_index + OD_RECT_PRIMITIVE_VERTEX_COUNT) <= entity_index->entity_vertices.get_count())) {
+		return false;
+	}
+
+	odVertex* vertices = entity_index->entity_vertices.get(vertex_index);
+	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch(vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT))) {
 		return false;
 	}
 
@@ -500,8 +500,8 @@ const struct odVertex* odEntityIndex_get_vertices(const odEntityIndex* entity_in
 		return nullptr;
 	}
 
-	const odVertex* vertices = entity_index->entity_vertices[vertex_index];
-	if (!OD_DEBUG_CHECK(vertices != nullptr)) {
+	const odVertex* vertices = entity_index->entity_vertices.get(vertex_index);
+	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch(vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT))) {
 		return nullptr;
 	}
 
@@ -533,12 +533,7 @@ const odEntity* odEntityIndex_get(const odEntityIndex* entity_index, odEntityId 
 		return nullptr;
 	}
 
-	const odEntityStorage* storage = entity_index->entities[entity_id];
-	if (!OD_DEBUG_CHECK(storage != nullptr)) {
-		return nullptr;
-	}
-
-	return &storage->entity;
+	return &entity_index->entities[entity_id].entity;
 }
 void odEntityIndex_set_collider(odEntityIndex* entity_index, const odEntityCollider* collider) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
@@ -687,6 +682,8 @@ bool odEntitySearch_matches_collider(const odEntitySearch* search, const odEntit
 
 	return true;
 }
+
+template struct odTrivialArrayT<odEntityStorage>;
 
 static_assert(
 	OD_ENTITY_CHUNK_COORD_MASK_BITS <= (8 * sizeof(odEntityChunkCoord)),

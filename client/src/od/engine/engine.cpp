@@ -151,8 +151,6 @@ bool odEngine_step(odEngine* engine) {
 	}
 
 	// BEGIN throwaway rendering test code - TODO remove
-	const int32_t scale_x = engine->settings.game_width / 2;
-	const int32_t scale_y = engine->settings.game_height / 2;
 	{
 		// float u = 80.0f + (8.0f * float((engine->frame.counter >> 3) % 4));
 		// float v = 40.0f;
@@ -183,14 +181,21 @@ bool odEngine_step(odEngine* engine) {
 			 0.0f,0.0f},
 		};
 
+		const int32_t scale_x = engine->settings.game_width / 2;
+		const int32_t scale_y = engine->settings.game_height / 2;
+
+		const int32_t translate_x = scale_x;
+		const int32_t translate_y = scale_y;
+
 		odMatrix4 matrix{};
-		odMatrix4_init(&matrix, float(scale_x), float(scale_y), 1.0f, float(scale_x), float(scale_y), 0.0f);
+		odMatrix4_init(
+			&matrix,
+			float(scale_x), float(scale_y), 1.0f,
+			/*0.0f, 0.0f*/float(translate_x), float(translate_y), 0.0f);
 		odMatrix4_rotate_clockwise_2d(&matrix, (1.0f / 256.0f) * float(engine->frame.counter) * OD_MATH_PI);
 		odVertex vertices[vertices_count]{};
 		memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
-		for (odVertex& vertex: vertices) {
-			odVertex_transform(&vertex, &matrix);
-		}
+		odVertex_transform_batch(vertices, vertices_count, &matrix);
 		OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 
 		for (int32_t i = 0; i < 12; i++) {

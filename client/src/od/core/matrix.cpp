@@ -46,7 +46,13 @@ bool odMatrix4_check_valid(const odMatrix4* matrix) {
 void odMatrix4_init(odMatrix4* matrix,
 				   float scale_x, float scale_y, float scale_z,
 				   float translate_x, float translate_y, float translate_z) {
-	if (!OD_DEBUG_CHECK(matrix != nullptr)) {
+	if (!OD_DEBUG_CHECK(matrix != nullptr)
+		|| !OD_DEBUG_CHECK(std::isnormal(scale_x))
+		|| !OD_DEBUG_CHECK(std::isnormal(scale_y))
+		|| !OD_DEBUG_CHECK(std::isnormal(scale_z))
+		|| !OD_DEBUG_CHECK(std::isfinite(translate_x))
+		|| !OD_DEBUG_CHECK(std::isfinite(translate_y))
+		|| !OD_DEBUG_CHECK(std::isfinite(translate_z))) {
 		return;
 	}
 
@@ -58,7 +64,9 @@ void odMatrix4_init(odMatrix4* matrix,
 	}};
 }
 void odMatrix4_init_view_2d(odMatrix4* matrix, int32_t width, int32_t height) {
-	if (!OD_DEBUG_CHECK(matrix != nullptr)) {
+	if (!OD_DEBUG_CHECK(matrix != nullptr)
+		|| !OD_DEBUG_CHECK(width > 0)
+		|| !OD_DEBUG_CHECK(height > 0)) {
 		return;
 	}
 
@@ -73,12 +81,12 @@ void odMatrix4_init_view_2d(odMatrix4* matrix, int32_t width, int32_t height) {
 		// translate screen coords (0, 0 at top left) into -1 to 1
 
 		2.0f / static_cast<float>(width),
-		-2.0f / static_cast<float>(height),  // flipped from opengl default so y is down
+		-2.0f / static_cast<float>(height),  // flipped so y in world space starts at top of screen
 		1.0f / static_cast<float>(1 << 24),  // +/- 2^24, limits of a precise integer for float32
 
 		// translate is constant: our 2d camera pos is defined by viewport, not view matrix
 		-1.0f, // 0..width before scale -> 0..2 after scale -> -1..1 after scale+translate
-		1.0f,  // positive as we're scaling y by -1 so y is down
+		1.0f,  // positive as we're scaling y by -1 so y in world space starts at top of screen
 		0.0f
 	);
 }
@@ -169,7 +177,21 @@ void odMatrix4_multiply_vector(const odMatrix4* matrix, odVector4* vector) {
 		(m[3] * v[0]) + (m[7] * v[1]) + (m[11] * v[2]) + (m[15] * v[3])
 	}};
 }
-const struct odMatrix4* odMatrix4_get_identity() {
+bool odMatrix4_equals(const odMatrix4* matrix1, const odMatrix4* matrix2) {
+	if (!OD_DEBUG_CHECK(odMatrix4_check_valid(matrix1))
+		|| !OD_DEBUG_CHECK(odMatrix4_check_valid(matrix2))) {
+		return false;
+	}
+
+	for (int32_t i = 0; i < OD_MATRIX4_ELEM_COUNT; i++) {
+		if (matrix1->matrix[i] != matrix2->matrix[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+const odMatrix4* odMatrix4_get_identity() {
 	static const odMatrix4 matrix{
 		1, 0, 0, 0,
 		0, 1, 0, 0,

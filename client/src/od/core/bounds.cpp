@@ -16,6 +16,17 @@ bool odBounds_check_valid_coord(float x) {
 	}
 	return true;
 }
+bool odBounds_check_valid(const odBounds* bounds) {
+	if (!OD_CHECK(bounds != nullptr)
+		|| !OD_CHECK(odBounds_check_valid_coord(bounds->x1))
+		|| !OD_CHECK(odBounds_check_valid_coord(bounds->y1))
+		|| !OD_CHECK(odBounds_check_valid_coord(bounds->x2) && (bounds->x2 >= bounds->x1))
+		|| !OD_CHECK(odBounds_check_valid_coord(bounds->y2) && (bounds->y2 >= bounds->y1))) {
+		return false;
+	}
+
+	return true;
+}
 const char* odBounds_get_debug_string(const odBounds* bounds) {
 	if (bounds == nullptr) {
 		return "null";
@@ -27,17 +38,6 @@ const char* odBounds_get_debug_string(const odBounds* bounds) {
 		static_cast<double>(bounds->x2),
 		static_cast<double>(bounds->y1),
 		static_cast<double>(bounds->y2));
-}
-bool odBounds_check_valid(const odBounds* bounds) {
-	if (!OD_CHECK(bounds != nullptr)
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->x1))
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->y1))
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->x2) && (bounds->x2 >= bounds->x1))
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->y2) && (bounds->y2 >= bounds->y1))) {
-		return false;
-	}
-
-	return true;
 }
 bool odBounds_is_collidable(const odBounds* bounds) {
 	if (!OD_DEBUG_CHECK(odBounds_check_valid(bounds))) {

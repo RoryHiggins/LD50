@@ -29,11 +29,35 @@ bool odVertex_check_valid(const odVertex* vertex) {
 
 	return true;
 }
-void odVertex_transform(odVertex* vertex, const struct odMatrix4* matrix) {
+bool odVertex_check_valid_batch(const odVertex* vertices, int32_t vertices_count) {
+	if (!OD_CHECK((vertices_count == 0) || (vertices != nullptr))
+		|| !OD_CHECK(vertices_count >= 0)) {
+		return false;
+	}
+
+	for (int32_t i = 0; i < vertices_count; i++) {
+		if (!OD_CHECK(odVertex_check_valid(vertices + i))) {
+			return false;
+		}
+	}
+
+	return true;
+}
+void odVertex_transform(odVertex* vertex, const odMatrix4* matrix) {
 	if (!OD_DEBUG_CHECK(vertex != nullptr)
 		|| !OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))) {
 		return;
 	}
 
 	odMatrix4_multiply_vector(matrix, &vertex->pos);
+}
+void odVertex_transform_batch(odVertex* vertices, int32_t vertices_count, const odMatrix4* matrix) {
+	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch(vertices, vertices_count))
+		|| !OD_DEBUG_CHECK(vertices_count >= 0)) {
+		return;
+	}
+
+	for (int32_t i = 0; i < vertices_count; i++) {
+		odVertex_transform(vertices + i, matrix);
+	}
 }

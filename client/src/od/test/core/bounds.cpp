@@ -51,8 +51,71 @@ OD_TEST(odTest_odBounds_collides) {
 		}
 	}
 }
+OD_TEST(odTest_odBounds_equals) {
+	odBounds bounds_comparisons[] = {
+		{0, 0, 0, 0},
+		{0, 0, 0, 1},
+		{0, 0, 1, 0},
+		{8, 8, 8, 8},
+	};
+	for (const odBounds& bounds: bounds_comparisons) {
+		OD_ASSERT(odBounds_equals(&bounds, &bounds));
+
+		odBounds non_match{-1,-1,0,0};
+		OD_ASSERT(!odBounds_equals(&bounds, &non_match));
+	}
+}
+OD_TEST(odTest_odBounds_get_width) {
+	odBounds bounds_width_8[] = {
+		{0, 0, 8, 0},
+		{8, 3, 16, 4},
+		{-8, 11, 0, 11},
+	};
+	for (const odBounds& bounds: bounds_width_8) {
+		OD_ASSERT(odBounds_get_width(&bounds) == 8);
+	}
+
+	odBounds bounds_width_0[] = {
+		{0, 0, 0, 0},
+		{8, 3, 8, 4},
+		{-8, 11, -8, 11},
+	};
+	for (const odBounds& bounds: bounds_width_0) {
+		OD_ASSERT(odBounds_get_width(&bounds) == 0);
+	}
+}
+OD_TEST(odTest_odBounds_get_height) {
+	odBounds bounds_height_8[] = {
+		{0, 0, 8, 8},
+		{3, 8, 4, 16},
+		{-8, -8, 3, 0},
+	};
+	for (const odBounds& bounds: bounds_height_8) {
+		OD_ASSERT(odBounds_get_height(&bounds) == 8);
+	}
+
+	odBounds bounds_height_0[] = {
+		{0, 0, 0, 0},
+		{8, 3, 8, 3},
+		{-8, 11, -8, 11},
+	};
+	for (const odBounds& bounds: bounds_height_0) {
+		OD_ASSERT(odBounds_get_height(&bounds) == 0);
+	}
+}
+OD_TEST(odTest_odBounds_floor) {
+	odBounds bounds{-2.1f, -2.5f, 3.4f, 3.99f};
+	odBounds_floor(&bounds);
+
+	odBounds expected_bounds{-3, -3, 3, 3};
+	OD_ASSERT(odBounds_equals(&bounds, &expected_bounds));
+}
 
 OD_TEST_SUITE(
 	odTestSuite_odBounds,
 	odTest_odBounds_collides,
+	odTest_odBounds_equals,
+	odTest_odBounds_get_width,
+	odTest_odBounds_get_height,
+	odTest_odBounds_floor,
 )

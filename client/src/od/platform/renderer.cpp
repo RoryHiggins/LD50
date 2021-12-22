@@ -12,6 +12,12 @@
 #include <od/platform/texture.hpp>
 #include <od/platform/gl.h>
 
+#if OD_BUILD_EMSCRIPTEN
+#define OD_RENDERER_FRAGMENT_SHADER_PLATFORM_HEADER "precision mediump float;\n"
+#else
+#define OD_RENDERER_FRAGMENT_SHADER_PLATFORM_HEADER ""
+#endif
+
 struct odRendererScope {
 	explicit odRendererScope(odRenderer* renderer);
 	~odRendererScope();
@@ -20,8 +26,8 @@ struct odRendererScope {
 
 /*https://www.khronos.org/registry/OpenGL/specs/gl/glspec21.pdf*/
 /*https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.20.pdf*/
-static const char odRenderer_vertex_shader[] = R"(
-	// there is no model space: all inputs are required to be in entity_index space
+static const char odRenderer_vertex_shader[] =
+	R"(
 	uniform mat4 view;
 	uniform mat4 projection;
 	uniform vec2 uv_scale;
@@ -39,9 +45,9 @@ static const char odRenderer_vertex_shader[] = R"(
 		uv = src_uv * uv_scale;
 	}
 )";
-#if OD_BUILD_EMSCRIPTEN
-static const char odRenderer_fragment_shader[] = R"(
-	precision mediump float;
+static const char odRenderer_fragment_shader[] =
+	OD_RENDERER_FRAGMENT_SHADER_PLATFORM_HEADER
+	R"(
 	uniform sampler2D src_texture;
 
 	varying vec4 col;
@@ -51,18 +57,6 @@ static const char odRenderer_fragment_shader[] = R"(
 		gl_FragColor = texture2D(src_texture, uv).rgba * col;
 	}
 )";
-#else   // !OD_BUILD_EMSCRIPTEN
-static const char odRenderer_fragment_shader[] = R"(
-	uniform sampler2D src_texture;
-
-	varying vec4 col;
-	varying vec2 uv;
-
-	void main() {
-		gl_FragColor = texture2D(src_texture, uv).rgba * col;
-	}
-)";
-#endif
 
 bool odRenderState_check_valid(const odRenderState* state) {
 	if (!OD_CHECK(state != nullptr)
@@ -349,27 +343,22 @@ bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor*
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	if (!OD_CHECK(odRenderer_flush(renderer))) {
+		return false;
+	}
+
 	return true;
 }
 bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 							  const odVertex* vertices, int32_t vertices_count) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK((vertices_count == 0) || (vertices != nullptr))
-		|| !OD_CHECK(vertices_count >= 0)) {
+		|| !OD_CHECK(odVertex_check_valid_batch(vertices, vertices_count))) {
 		return false;
 	}
 
 	if (vertices_count == 0) {
 		return true;
-	}
-
-	if (OD_BUILD_DEBUG) {
-		for (int32_t i = 0; i < vertices_count; i++) {
-			if (!OD_DEBUG_CHECK(odVertex_check_valid(&vertices[i]))) {
-				return false;
-			}
-		}
 	}
 
 	int32_t texture_width = 0;
@@ -420,6 +409,10 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 		return false;
 	}
 
+	if (!OD_CHECK(odRenderer_flush(renderer))) {
+		return false;
+	}
+
 	return true;
 }
 bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
@@ -467,9 +460,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	odVertex vertices[OD_RECT_PRIMITIVE_VERTEX_COUNT]{};
 	odRectPrimitive_get_vertices(&rect, vertices);
 
-	for (int32_t i = 0; i < OD_RECT_PRIMITIVE_VERTEX_COUNT; i++) {
-		odVertex_transform(vertices + i, &transform);
-	}
+	odVertex_transform_batch(vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT, &transform);
 
 	return odRenderer_draw_vertices(renderer, state, vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT);
 }

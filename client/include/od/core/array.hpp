@@ -70,11 +70,22 @@ struct odArrayT : public odArray {
 	OD_NO_DISCARD const T* end() const & {
 		return static_cast<const T*>(odArray_end_const(this));
 	}
-	OD_NO_DISCARD T* operator[](int32_t i) & {
+	OD_NO_DISCARD T* get(int32_t i) & {
 		return static_cast<T*>(odArray_get(this, i));
 	}
-	OD_NO_DISCARD const T* operator[](int32_t i) const & {
+	OD_NO_DISCARD const T* get(int32_t i) const & {
 		return static_cast<const T*>(odArray_get_const(this, i));
+	}
+	OD_NO_DISCARD T& operator[](int32_t i) & {
+		T* elem = get(i);
+		if (!OD_DEBUG_CHECK(elem != nullptr)) {
+			static T default_elem;
+			elem = &default_elem;
+		}
+		return *elem;
+	}
+	OD_NO_DISCARD const T& operator[](int32_t i) const & {
+		return const_cast<odArrayT*>(this)->operator[](i);
 	}
 
 	odArrayT()
@@ -100,40 +111,41 @@ struct odArrayT : public odArray {
 // T must be trivially copyable+movable+constructible (incl. no destructor, safe to memcpy and memset to 0)
 template<typename T>
 struct odTrivialArrayT : public odTrivialArray {
-	static constexpr int32_t stride = sizeof(T);
-
+	OD_NO_DISCARD static constexpr int32_t get_stride() {
+		return sizeof(T);
+	}
 	OD_NO_DISCARD int32_t compare(const struct odTrivialArrayT<T>& other) {
-		return odTrivialArray_compare(this, &other, stride);
+		return odTrivialArray_compare(this, &other, get_stride());
 	}
 	OD_NO_DISCARD int32_t get_capacity() const {
 		return odTrivialArray_get_capacity(this);
 	}
 	OD_NO_DISCARD bool set_capacity(int32_t new_capacity) {
-		return odTrivialArray_set_capacity(this, new_capacity, stride);
+		return odTrivialArray_set_capacity(this, new_capacity, get_stride());
 	}
 	OD_NO_DISCARD bool ensure_capacity(int32_t min_capacity) {
-		return odTrivialArray_ensure_capacity(this, min_capacity, stride);
+		return odTrivialArray_ensure_capacity(this, min_capacity, get_stride());
 	}
 	OD_NO_DISCARD int32_t get_count() const {
 		return odTrivialArray_get_count(this);
 	}
 	OD_NO_DISCARD bool set_count(int32_t new_count) {
-		return odTrivialArray_set_count(this, new_count, stride);
+		return odTrivialArray_set_count(this, new_count, get_stride());
 	}
 	OD_NO_DISCARD bool extend(const T* extend_src, int32_t extend_count) {
-		return odTrivialArray_extend(this, static_cast<const void*>(extend_src), extend_count, stride);
+		return odTrivialArray_extend(this, static_cast<const void*>(extend_src), extend_count, get_stride());
 	}
 	OD_NO_DISCARD bool push(const T& elem) {
 		return extend(&elem, 1);
 	}
 	OD_NO_DISCARD bool pop(int32_t pop_count = 1) {
-		return odTrivialArray_pop(this, pop_count, stride);
+		return odTrivialArray_pop(this, pop_count, get_stride());
 	}
 	OD_NO_DISCARD bool swap_pop(int32_t i) {
-		return odTrivialArray_swap_pop(this, i, stride);
+		return odTrivialArray_swap_pop(this, i, get_stride());
 	}
 	OD_NO_DISCARD bool assign(const T* assign_src, int32_t assign_count) {
-		return odTrivialArray_extend(this, assign_src, assign_count, stride);
+		return odTrivialArray_assign(this, assign_src, assign_count, get_stride());
 	}
 	OD_NO_DISCARD T* begin() & {
 		return static_cast<T*>(odTrivialArray_begin(this));
@@ -142,16 +154,27 @@ struct odTrivialArrayT : public odTrivialArray {
 		return static_cast<const T*>(odTrivialArray_begin_const(this));
 	}
 	OD_NO_DISCARD T* end() & {
-		return static_cast<T*>(odTrivialArray_end(this, stride));
+		return static_cast<T*>(odTrivialArray_end(this, get_stride()));
 	}
 	OD_NO_DISCARD const T* end() const & {
-		return static_cast<const T*>(odTrivialArray_end_const(this, stride));
+		return static_cast<const T*>(odTrivialArray_end_const(this, get_stride()));
 	}
-	OD_NO_DISCARD T* operator[](int32_t i) & {
-		return static_cast<T*>(odTrivialArray_get(this, i, stride));
+	OD_NO_DISCARD T* get(int32_t i) & {
+		return static_cast<T*>(odTrivialArray_get(this, i, get_stride()));
 	}
-	OD_NO_DISCARD const T* operator[](int32_t i) const & {
-		return static_cast<const T*>(odTrivialArray_get_const(this, i, stride));
+	OD_NO_DISCARD const T* get(int32_t i) const & {
+		return static_cast<const T*>(odTrivialArray_get_const(this, i, get_stride()));
+	}
+	OD_NO_DISCARD T& operator[](int32_t i) & {
+		T* elem = get(i);
+		if (!OD_DEBUG_CHECK(elem != nullptr)) {
+			static T default_elem;
+			elem = &default_elem;
+		}
+		return *elem;
+	}
+	OD_NO_DISCARD const T& operator[](int32_t i) const & {
+		return const_cast<odTrivialArrayT*>(this)->operator[](i);
 	}
 
 	odTrivialArrayT() = default;
@@ -177,6 +200,5 @@ struct odTrivialArrayT : public odTrivialArray {
 	bool push(T&& moved_elem) && = delete;
 };
 
-OD_CORE_MODULE extern template struct odArrayT<int32_t>;
-
+OD_CORE_MODULE extern template struct odTrivialArrayT<char>;
 OD_CORE_MODULE extern template struct odTrivialArrayT<int32_t>;

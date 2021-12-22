@@ -3,23 +3,7 @@
 #include <cstdlib>
 
 #include <od/core/debug.h>
-#include <od/core/type.hpp>
 
-const odType* odAllocation_get_type_constructor(void) {
-	return odType_get<odAllocation>();
-}
-void odAllocation_swap(odAllocation* allocation1, odAllocation* allocation2) {
-	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation1))
-		|| !OD_DEBUG_CHECK(odAllocation_check_valid(allocation1))) {
-		return;
-	}
-
-	void* swap_ptr = allocation1->ptr;
-
-	allocation1->ptr = allocation2->ptr;
-
-	allocation2->ptr = swap_ptr;
-}
 bool odAllocation_check_valid(const odAllocation* allocation) {
 	if (!OD_CHECK(allocation != nullptr)) {
 		return false;
@@ -69,12 +53,24 @@ void odAllocation_destroy(odAllocation* allocation) {
 
 	allocation->ptr = nullptr;
 }
+void odAllocation_swap(odAllocation* allocation1, odAllocation* allocation2) {
+	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation1))
+		|| !OD_DEBUG_CHECK(odAllocation_check_valid(allocation1))) {
+		return;
+	}
+
+	void* swap_ptr = allocation1->ptr;
+
+	allocation1->ptr = allocation2->ptr;
+
+	allocation2->ptr = swap_ptr;
+}
 void* odAllocation_get(odAllocation* allocation) {
 	if (!OD_DEBUG_CHECK(odAllocation_check_valid(allocation))) {
 		return nullptr;
 	}
 
-	return static_cast<void*>(static_cast<char*>(allocation->ptr));
+	return allocation->ptr;
 }
 const void* odAllocation_get_const(const odAllocation* allocation) {
 	return odAllocation_get(const_cast<odAllocation*>(allocation));
