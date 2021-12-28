@@ -14,10 +14,10 @@ struct odRectPrimitive;
 struct odEntityCollider {
 	odEntityId id;
 	struct odTagset tagset;
-	struct odBounds bounds;
+	struct odBounds2 bounds;
 };
 struct odEntitySprite {
-	struct odBounds texture_bounds;
+	struct odBounds2 texture_bounds;
 	struct odColor color;
 	float depth;
 	struct odMatrix4 transform;

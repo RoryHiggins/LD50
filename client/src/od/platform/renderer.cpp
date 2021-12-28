@@ -40,9 +40,9 @@ static const char odRenderer_vertex_shader[] =
 	varying vec2 uv;
 
 	void main() {
-		gl_Position = projection * view * vec4(src_pos.xyz, 1);
+		gl_Position = projection * view * src_pos;
 		col = src_col;
-		uv = src_uv * uv_scale;
+		uv = uv_scale * src_uv;
 	}
 )";
 static const char odRenderer_fragment_shader[] =
@@ -62,7 +62,7 @@ bool odRenderState_check_valid(const odRenderState* state) {
 	if (!OD_CHECK(state != nullptr)
 		|| !OD_CHECK(odMatrix4_check_valid(&state->view))
 		|| !OD_CHECK(odMatrix4_check_valid(&state->projection))
-		|| !OD_CHECK(odBounds_check_valid(&state->viewport))
+		|| !OD_CHECK(odBounds2_check_valid(&state->viewport))
 		|| !OD_CHECK(odTexture_check_valid(state->src_texture))
 		|| !OD_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_check_valid(state->opt_render_texture))) {
 		return false;
@@ -143,7 +143,7 @@ bool odRenderer_init(odRenderer* renderer, odWindow* window) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// unnecessary as we will sort geometry
+	// we sort geometry instead, to properly support transparency
 	glDisable(GL_DEPTH_TEST);
 
 	glEnable(GL_CULL_FACE);
@@ -390,8 +390,8 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 	glViewport(
 		static_cast<GLint>(state->viewport.x1),
 		static_cast<GLint>(state->viewport.y1),
-		static_cast<GLint>(odBounds_get_width(&state->viewport)),
-		static_cast<GLint>(odBounds_get_height(&state->viewport)));
+		static_cast<GLint>(odBounds2_get_width(&state->viewport)),
+		static_cast<GLint>(odBounds2_get_height(&state->viewport)));
 
 	glBufferData(
 		GL_ARRAY_BUFFER,
@@ -416,11 +416,11 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 	return true;
 }
 bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
-							 const odBounds* opt_src_bounds, const struct odMatrix4* opt_transform) {
+							 const odBounds2* opt_src_bounds, const struct odMatrix4* opt_transform) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK((opt_src_bounds == nullptr) || odBounds_check_valid(opt_src_bounds))
+		|| !OD_CHECK((opt_src_bounds == nullptr) || odBounds2_check_valid(opt_src_bounds))
 		|| !OD_CHECK((opt_transform == nullptr) || odMatrix4_check_valid(opt_transform))) {
 		return false;
 	}
@@ -431,16 +431,16 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 		return false;
 	}
 
-	odBounds src_bounds = {0.0f, 0.0f, static_cast<float>(src_width), static_cast<float>(src_height)};
+	odBounds2 src_bounds = {0.0f, 0.0f, static_cast<float>(src_width), static_cast<float>(src_height)};
 	if (opt_src_bounds != nullptr) {
 		src_bounds = *opt_src_bounds;
 	}
 
 	odMatrix4 transform{};
-	odMatrix4_init(
+	odMatrix4_init_transform_3d(
 		&transform,
-		odBounds_get_width(&state->viewport),
-		odBounds_get_height(&state->viewport),
+		odBounds2_get_width(&state->viewport),
+		odBounds2_get_height(&state->viewport),
 		1.0f,
 		0.0f,
 		0.0f,

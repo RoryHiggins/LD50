@@ -3,31 +3,20 @@
 #include <cmath>
 
 #include <od/core/debug.h>
+#include <od/core/math.h>
 
-static bool odBounds_check_valid_coord(float x);
-
-bool odBounds_check_valid_coord(float x) {
-	const float max = (1 << 24);
-	const float min = -max;
-
-	if (!OD_CHECK(std::isfinite(x))
-		|| !OD_CHECK((x >= min) && (x <= max))) {
-		return false;
-	}
-	return true;
-}
-bool odBounds_check_valid(const odBounds* bounds) {
+bool odBounds2_check_valid(const odBounds2* bounds) {
 	if (!OD_CHECK(bounds != nullptr)
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->x1))
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->y1))
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->x2) && (bounds->x2 >= bounds->x1))
-		|| !OD_CHECK(odBounds_check_valid_coord(bounds->y2) && (bounds->y2 >= bounds->y1))) {
+		|| !OD_CHECK(odFloat_is_precise_int(bounds->x1))
+		|| !OD_CHECK(odFloat_is_precise_int(bounds->y1))
+		|| !OD_CHECK(odFloat_is_precise_int(bounds->x2) && (bounds->x2 >= bounds->x1))
+		|| !OD_CHECK(odFloat_is_precise_int(bounds->y2) && (bounds->y2 >= bounds->y1))) {
 		return false;
 	}
 
 	return true;
 }
-const char* odBounds_get_debug_string(const odBounds* bounds) {
+const char* odBounds2_get_debug_string(const odBounds2* bounds) {
 	if (bounds == nullptr) {
 		return "null";
 	}
@@ -39,8 +28,8 @@ const char* odBounds_get_debug_string(const odBounds* bounds) {
 		static_cast<double>(bounds->y1),
 		static_cast<double>(bounds->y2));
 }
-bool odBounds_is_collidable(const odBounds* bounds) {
-	if (!OD_DEBUG_CHECK(odBounds_check_valid(bounds))) {
+bool odBounds2_is_collidable(const odBounds2* bounds) {
+	if (!OD_DEBUG_CHECK(odBounds2_check_valid(bounds))) {
 		return false;
 	}
 
@@ -51,11 +40,11 @@ bool odBounds_is_collidable(const odBounds* bounds) {
 
 	return true;
 }
-bool odBounds_collides(const odBounds* a, const odBounds* b) {
-	if (!OD_DEBUG_CHECK(odBounds_check_valid(a))
-		|| !OD_DEBUG_CHECK(odBounds_check_valid(b))
-		|| !OD_DEBUG_CHECK(odBounds_is_collidable(a))
-		|| !OD_DEBUG_CHECK(odBounds_is_collidable(b))) {
+bool odBounds2_collides(const odBounds2* a, const odBounds2* b) {
+	if (!OD_DEBUG_CHECK(odBounds2_check_valid(a))
+		|| !OD_DEBUG_CHECK(odBounds2_check_valid(b))
+		|| !OD_DEBUG_CHECK(odBounds2_is_collidable(a))
+		|| !OD_DEBUG_CHECK(odBounds2_is_collidable(b))) {
 		return false;
 	}
 
@@ -68,9 +57,9 @@ bool odBounds_collides(const odBounds* a, const odBounds* b) {
 
 	return true;
 }
-bool odBounds_equals(const odBounds* a, const odBounds* b) {
-	if (!OD_DEBUG_CHECK(odBounds_check_valid(a))
-		|| !OD_DEBUG_CHECK(odBounds_check_valid(b))) {
+bool odBounds2_equals(const odBounds2* a, const odBounds2* b) {
+	if (!OD_DEBUG_CHECK(odBounds2_check_valid(a))
+		|| !OD_DEBUG_CHECK(odBounds2_check_valid(b))) {
 		return false;
 	}
 
@@ -83,22 +72,22 @@ bool odBounds_equals(const odBounds* a, const odBounds* b) {
 
 	return true;
 }
-float odBounds_get_width(const odBounds* bounds) {
-	if (!OD_DEBUG_CHECK(odBounds_check_valid(bounds))) {
+float odBounds2_get_width(const odBounds2* bounds) {
+	if (!OD_DEBUG_CHECK(odBounds2_check_valid(bounds))) {
 		return 0.0f;
 	}
 
 	return (bounds->x2 - bounds->x1);
 }
-float odBounds_get_height(const odBounds* bounds) {
-	if (!OD_DEBUG_CHECK(odBounds_check_valid(bounds))) {
+float odBounds2_get_height(const odBounds2* bounds) {
+	if (!OD_DEBUG_CHECK(odBounds2_check_valid(bounds))) {
 		return 0.0f;
 	}
 
 	return (bounds->y2 - bounds->y1);
 }
-void odBounds_floor(odBounds* bounds) {
-	if (!OD_DEBUG_CHECK(odBounds_check_valid(bounds))) {
+void odBounds2_floor(odBounds2* bounds) {
+	if (!OD_DEBUG_CHECK(odBounds2_check_valid(bounds))) {
 		return;
 	}
 

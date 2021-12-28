@@ -10,8 +10,8 @@
 struct odVertex;
 
 struct odRectPrimitive {
-	struct odBounds bounds;
-	struct odBounds texture_bounds;
+	struct odBounds2 bounds;
+	struct odBounds2 texture_bounds;
 	struct odColor color;
 	float depth;
 };

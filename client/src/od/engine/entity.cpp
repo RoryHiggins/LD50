@@ -17,7 +17,7 @@ const char* odEntityCollider_get_debug_string(const odEntityCollider* collider) 
 		"{\"id\": %d, \"tagset\": %s, \"bounds\": %s}",
 		collider->id,
 		odTagset_get_debug_string(&collider->tagset),
-		odBounds_get_debug_string(&collider->bounds));
+		odBounds2_get_debug_string(&collider->bounds));
 }
 bool odEntityCollider_check_valid(const odEntityCollider* collider) {
 	if (!OD_CHECK(collider != nullptr)) {
@@ -25,7 +25,7 @@ bool odEntityCollider_check_valid(const odEntityCollider* collider) {
 	}
 
 	if (!OD_CHECK(collider->id >= 0)
-		|| !OD_CHECK(odBounds_check_valid(&collider->bounds))) {
+		|| !OD_CHECK(odBounds2_check_valid(&collider->bounds))) {
 		return false;
 	}
 
@@ -39,7 +39,7 @@ bool odEntityCollider_equals(const odEntityCollider* a, const odEntityCollider* 
 
 	if ((a->id != b->id)
 		|| (!odTagset_equals(&a->tagset, &b->tagset))
-		|| (!odBounds_equals(&a->bounds, &b->bounds))) {
+		|| (!odBounds2_equals(&a->bounds, &b->bounds))) {
 		return false;
 	}
 
@@ -55,7 +55,7 @@ const char* odEntitySprite_get_debug_string(const odEntitySprite* sprite) {
 		"{\"depth\": %g, \"color\": %s, \"texture_bounds\": %s, \"transform\": %s}",
 		static_cast<double>(sprite->depth),
 		odColor_get_debug_string(&sprite->color),
-		odBounds_get_debug_string(&sprite->texture_bounds),
+		odBounds2_get_debug_string(&sprite->texture_bounds),
 		odMatrix4_get_debug_string(&sprite->transform));
 }
 bool odEntitySprite_check_valid(const odEntitySprite* sprite) {
@@ -63,12 +63,12 @@ bool odEntitySprite_check_valid(const odEntitySprite* sprite) {
 		return false;
 	}
 
-	odBounds floored_texture_bounds = sprite->texture_bounds;
-	odBounds_floor(&floored_texture_bounds);
+	odBounds2 floored_texture_bounds = sprite->texture_bounds;
+	odBounds2_floor(&floored_texture_bounds);
 
 	if (!OD_CHECK(std::isfinite(sprite->depth))
-		|| (!OD_CHECK(odBounds_check_valid(&sprite->texture_bounds)))
-		|| (!OD_CHECK(odBounds_equals(&floored_texture_bounds, &sprite->texture_bounds)))
+		|| (!OD_CHECK(odBounds2_check_valid(&sprite->texture_bounds)))
+		|| (!OD_CHECK(odBounds2_equals(&floored_texture_bounds, &sprite->texture_bounds)))
 		|| (!OD_CHECK(odMatrix4_check_valid(&sprite->transform)))) {
 		return false;
 	}

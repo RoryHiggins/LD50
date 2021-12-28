@@ -155,8 +155,8 @@ bool odEngine_step(odEngine* engine) {
 		// float u = 80.0f + (8.0f * float((engine->frame.counter >> 3) % 4));
 		// float v = 40.0f;
 		odRectPrimitive rect{
-			odBounds{0.0f, 0.0f, 288.0f, 128.0f},
-			odBounds{0.0f, 0.0f, 144.0f, 64.0f},
+			odBounds2{0.0f, 0.0f, 288.0f, 128.0f},
+			odBounds2{0.0f, 0.0f, 144.0f, 64.0f},
 			*odColor_get_white(),
 			0.0f,
 		};
@@ -171,13 +171,13 @@ bool odEngine_step(odEngine* engine) {
 		const int32_t vertices_count = 3;
 		odVertex vertices_base[vertices_count] = {
 			{{0.0f,0.0f,0.0f,1.0f},
-			 {0x00,0x00,0x00,0xff},
+			 {0xff,0x00,0x00,0xff},
 			 0.0f,0.0f},
 			{{0.0f,1.0f,0.0f,1.0f},
-			 {0x00,0xff,0x00,0xff},
+			 {0xff,0xff,0x00,0xff},
 			 0.0f,0.0f},
 			{{1.0f,0.0f,0.0f,1.0f},
-			 {0x00,0xff,0x00,0xff},
+			 {0xff,0xff,0x00,0xff},
 			 0.0f,0.0f},
 		};
 
@@ -188,28 +188,22 @@ bool odEngine_step(odEngine* engine) {
 		const int32_t translate_y = scale_y;
 
 		odMatrix4 matrix{};
-		odMatrix4_init(
+		odMatrix4_init_transform_3d(
 			&matrix,
 			float(scale_x), float(scale_y), 1.0f,
-			/*0.0f, 0.0f*/float(translate_x), float(translate_y), 0.0f);
-		odMatrix4_rotate_clockwise_2d(&matrix, (1.0f / 256.0f) * float(engine->frame.counter) * OD_MATH_PI);
+			float(translate_x), float(translate_y), 0.0f);
+		odMatrix4_rotate_clockwise_z(&matrix, float(engine->frame.counter));
 		odVertex vertices[vertices_count]{};
-		memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
-		odVertex_transform_batch(vertices, vertices_count, &matrix);
-		OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 
 		for (int32_t i = 0; i < 12; i++) {
 			memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
-			odMatrix4_rotate_clockwise_2d(&matrix, 0.16666f * OD_MATH_PI);
+			odMatrix4_rotate_clockwise_z(&matrix, 30.0f);
 
 			for (odVertex& vertex: vertices) {
 				odVertex_transform(&vertex, &matrix);
-				if (vertex.color.r == 0) {
-					vertex.color.r = uint8_t(6 * i);
-					vertex.color.b = uint8_t(6 * i);
-					vertex.color.g = 255 - uint8_t(6 * i);
-				}
-				vertex.pos.vector[2] = float(1 + i);
+				vertex.color.b = uint8_t(3 * i);
+				vertex.color.g = 192 - uint8_t(4 * i);
+				vertex.pos.vector[2] = float(i);
 			}
 			OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 		}
@@ -232,7 +226,7 @@ bool odEngine_step(odEngine* engine) {
 	odRenderState draw_to_view{
 		view_matrix,
 		*odMatrix4_get_identity(),
-		odBounds{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
+		odBounds2{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
 		&engine->src_texture,
 		&engine->game_render_texture
 	};
@@ -240,7 +234,7 @@ bool odEngine_step(odEngine* engine) {
 	odRenderState draw_to_window{
 		window_view_matrix,
 		*odMatrix4_get_identity(),
-		odBounds{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
+		odBounds2{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
 		&engine->src_texture,
 		/* opt_render_texture*/ nullptr
 	};

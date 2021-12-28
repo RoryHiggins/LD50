@@ -27,13 +27,13 @@ OD_TEST(odTest_odEntityIndex_set_get) {
 	OD_ASSERT(odEntityCollider_equals(&entity.collider,
 									  &odEntityIndex_get(&entity_index, entity.collider.id)->collider));
 
-	entity.collider.bounds = odBounds{0.0f, 0.0f, 16.0f, 16.0f};
+	entity.collider.bounds = odBounds2{0.0f, 0.0f, 16.0f, 16.0f};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_get(&entity_index, entity.collider.id) != nullptr);
 	OD_ASSERT(odEntityCollider_equals(&entity.collider,
 									  &odEntityIndex_get(&entity_index, entity.collider.id)->collider));
 
-	entity.collider.bounds = odBounds{};
+	entity.collider.bounds = odBounds2{};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_get(&entity_index, entity.collider.id) != nullptr);
 	OD_ASSERT(odEntityCollider_equals(&entity.collider,
@@ -57,7 +57,7 @@ OD_TEST(odTest_odEntityIndex_search) {
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 
 	odEntity entity{};
-	entity.collider.bounds = odBounds{0.0f, 0.0f, 16.0f, 16.0f};
+	entity.collider.bounds = odBounds2{0.0f, 0.0f, 16.0f, 16.0f};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 1);
 
@@ -65,59 +65,59 @@ OD_TEST(odTest_odEntityIndex_search) {
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 	search.tagset = {};
 
-	search.bounds = odBounds{};
+	search.bounds = odBounds2{};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
-	search.bounds = odBounds{0.0f, 0.0f, 128.0f, 128.0f};
+	search.bounds = odBounds2{0.0f, 0.0f, 128.0f, 128.0f};
 
 	entity.collider.id++;
-	entity.collider.bounds = odBounds{127.0f, 127.0f, 143.0f, 143.0f};
+	entity.collider.bounds = odBounds2{127.0f, 127.0f, 143.0f, 143.0f};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(entity_index.entities.count >= 2);
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 2);
 
 	entity.collider.id++;
-	entity.collider.bounds = odBounds{128.0f, 128.0f, 144.0f, 144.0f};
+	entity.collider.bounds = odBounds2{128.0f, 128.0f, 144.0f, 144.0f};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 2);
 
-	search.bounds = odBounds{0.0f, 0.0f, 129.0f, 129.0f};
+	search.bounds = odBounds2{0.0f, 0.0f, 129.0f, 129.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 3);
 
-	search.bounds = odBounds{-1.0f, -1.0f, 129.0f, 129.0f};
+	search.bounds = odBounds2{-1.0f, -1.0f, 129.0f, 129.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 3);
 
-	search.bounds = odBounds{-64.0f, -64.0f, 129.0f, 129.0f};
+	search.bounds = odBounds2{-64.0f, -64.0f, 129.0f, 129.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 3);
 
-	search.bounds = odBounds{-64.0f, -64.0f, 128.0f, 128.0f};
+	search.bounds = odBounds2{-64.0f, -64.0f, 128.0f, 128.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 2);
 
-	search.bounds = odBounds{-64.0f, -64.0f, 1.0f, 1.0f};
+	search.bounds = odBounds2{-64.0f, -64.0f, 1.0f, 1.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 1);
 
-	search.bounds = odBounds{-64.0f, -64.0f, 0.0f, 0.0f};
+	search.bounds = odBounds2{-64.0f, -64.0f, 0.0f, 0.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 
-	search.bounds = odBounds{-64.0f, -64.0f, -63.0f, -63.0f};
+	search.bounds = odBounds2{-64.0f, -64.0f, -63.0f, -63.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 
 	entity.collider.id++;
-	entity.collider.bounds = odBounds{-64.0f, -64.0f, -63.0f, -63.0f};
+	entity.collider.bounds = odBounds2{-64.0f, -64.0f, -63.0f, -63.0f};
 	odEntityIndex_set(&entity_index, &entity);
 
-	search.bounds = odBounds{-64.0f, -64.0f, -63.0f, -63.0f};
+	search.bounds = odBounds2{-64.0f, -64.0f, -63.0f, -63.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 1);
 
-	search.bounds = odBounds{-63.0f, -63.0f, -62.0f, -62.0f};
+	search.bounds = odBounds2{-63.0f, -63.0f, -62.0f, -62.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 
-	search.bounds = odBounds{-65.0f, -65.0f, -65.0f, -65.0f};
+	search.bounds = odBounds2{-65.0f, -65.0f, -65.0f, -65.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 
-	search.bounds = odBounds{-64.0f, -65.0f, -63.0f, -64.0f};
+	search.bounds = odBounds2{-64.0f, -65.0f, -63.0f, -64.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 
-	search.bounds = odBounds{-65.0f, -64.0f, -64.0f, -63.0f};
+	search.bounds = odBounds2{-65.0f, -64.0f, -64.0f, -63.0f};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 }
 OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
@@ -146,7 +146,7 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 
 		odEntity entity{};
 		entity.collider.id = i;
-		entity.collider.bounds = odBounds{x, y, x + tile_width_f, y + tile_width_f};
+		entity.collider.bounds = odBounds2{x, y, x + tile_width_f, y + tile_width_f};
 		odEntityIndex_set(&entity_index, &entity);
 	}
 
@@ -160,7 +160,7 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 
 			odEntity entity{};
 			entity.collider.id = j;
-			entity.collider.bounds = odBounds{x, y, x + tile_width_f, y + tile_width_f};
+			entity.collider.bounds = odBounds2{x, y, x + tile_width_f, y + tile_width_f};
 			odEntityIndex_set(&entity_index, &entity);
 		}
 

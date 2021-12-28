@@ -73,7 +73,7 @@ OD_TEST_FILTERED(odTest_odRenderer_clear, OD_TEST_FILTER_SLOW) {
 
 	OD_ASSERT(odTexture_init_blank(&texture, &window));
 
-	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
+	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds2{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
 
 	OD_ASSERT(odRenderer_clear(&renderer, &state, odColor_get_white()));
 	OD_ASSERT(odRenderer_flush(&renderer));
@@ -90,7 +90,7 @@ OD_TEST_FILTERED(odTest_odRenderer_draw_vertices, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odTexture_init_blank(&texture, &window));
 	odRenderTexture render_texture;
 	OD_ASSERT(odRenderTexture_init(&render_texture, &window, 640, 480));
-	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
+	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds2{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
 
 	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTICES_COUNT));
 	OD_ASSERT(odRenderer_flush(&renderer));
@@ -108,7 +108,7 @@ OD_TEST_FILTERED(odTest_odRenderer_draw_texture, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odTexture_init_blank(&texture, &window));
 	odRenderTexture render_texture;
 	OD_ASSERT(odRenderTexture_init(&render_texture, &window, 640, 480));
-	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
+	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds2{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
 
 	OD_ASSERT(odRenderer_draw_texture(&renderer, &state, nullptr, nullptr));
 	OD_ASSERT(odRenderer_flush(&renderer));
@@ -131,7 +131,7 @@ OD_TEST_FILTERED(odTest_odRenderer_init_multiple_renderers, OD_TEST_FILTER_SLOW)
 	OD_ASSERT(odTexture_init_blank(&texture, &window));
 	odRenderTexture render_texture;
 	OD_ASSERT(odRenderTexture_init(&render_texture, &window, 640, 480));
-	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
+	odRenderState state{*odMatrix4_get_identity(), *odMatrix4_get_identity(), odBounds2{0.0f, 0.0f, 640.0f, 480.0f}, &texture, nullptr};
 
 	odRenderer renderer2;
 	OD_ASSERT(odRenderer_init(&renderer2, &window));

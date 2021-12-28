@@ -49,7 +49,7 @@ void odVertex_transform(odVertex* vertex, const odMatrix4* matrix) {
 		return;
 	}
 
-	odMatrix4_multiply_vector(matrix, &vertex->pos);
+	odMatrix4_multiply_vector_4d(matrix, &vertex->pos);
 }
 void odVertex_transform_batch(odVertex* vertices, int32_t vertices_count, const odMatrix4* matrix) {
 	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch(vertices, vertices_count))

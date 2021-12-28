@@ -13,13 +13,13 @@ bool odRectPrimitive_check_valid(const odRectPrimitive* rect) {
 		return false;
 	}
 
-	odBounds floored_texture_bounds = rect->texture_bounds;
-	odBounds_floor(&floored_texture_bounds);
+	odBounds2 floored_texture_bounds = rect->texture_bounds;
+	odBounds2_floor(&floored_texture_bounds);
 
 	if (!OD_CHECK(std::isfinite(rect->depth))
-		|| (!OD_CHECK(odBounds_check_valid(&rect->bounds)))
-		|| (!OD_CHECK(odBounds_check_valid(&rect->texture_bounds)))
-		|| (!OD_CHECK(odBounds_equals(&floored_texture_bounds, &rect->texture_bounds)))) {
+		|| (!OD_CHECK(odBounds2_check_valid(&rect->bounds)))
+		|| (!OD_CHECK(odBounds2_check_valid(&rect->texture_bounds)))
+		|| (!OD_CHECK(odBounds2_equals(&floored_texture_bounds, &rect->texture_bounds)))) {
 		return false;
 	}
 
