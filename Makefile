@@ -2,7 +2,6 @@
 # ---
 # Client code build target.  One of:
 # - RELEASE
-# - PROFILE
 # - DEBUG
 TARGET := DEBUG
 # key for output build
@@ -41,6 +40,8 @@ tidy:
 	clang-tidy $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))") -- -Iclient/include -Iclient/src
 format:
 	clang-format -i -Werror -- $(shell python -c "import pathlib; print('\n'.join([str(p) for p in pathlib.Path('client').rglob('*') if p.suffix in ('.cpp', '.hpp', '.h')]))")
+coverage:
+	gcov -mt $(shell python -c "import pathlib; print('\n'.join([p.as_posix() for p in pathlib.Path(r'$(BUILD)').rglob('*') if p.suffix == '.gcda']))") > coverage.txt
 clean:
 	rm -rf $(BUILD_ROOT) gmon.out profile.txt
 

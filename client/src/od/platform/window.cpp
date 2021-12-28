@@ -7,7 +7,6 @@
 #include <GL/glew.h>
 #endif  // !OD_BUILD_EMSCRIPTEN
 
-
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 

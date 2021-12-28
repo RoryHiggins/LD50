@@ -10,7 +10,9 @@
 OD_API_C OD_TEST_MODULE OD_NO_DISCARD bool
 odTest_run(int32_t filters, char const* opt_name_filter);
 #else  // !OD_BUILD_TESTS
-inline bool odTest_run(int32_t /*filters*/, char const* /*opt_name_filter*/) {
+inline bool odTest_run(int32_t filters, char const* opt_name_filter) {
+	OD_UNUSED(filters);
+	OD_UNUSED(opt_name_filter);
 	return false;
 }
 #endif  // !OD_BUILD_TESTS

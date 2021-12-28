@@ -3,6 +3,14 @@ build/
 .vscode/
 gmon.out
 profile.txt
+coverage.txt
+*.exe
+*.a
+*.o
+*.so
+*.dll
+*.gcov
+*.gcda
 *.sublime-workspace
 
 odFile_test_*

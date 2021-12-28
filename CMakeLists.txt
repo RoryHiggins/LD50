@@ -4,6 +4,8 @@ project(overworld LANGUAGES CXX)
 set(OD_BUILD_LOGS_DEFAULT 1)
 set(OD_BUILD_DEBUG_DEFAULT 0)
 set(OD_BUILD_TESTS_DEFAULT 1)
+set(OD_BUILD_COVERAGE_DEFAULT 0)
+set(OD_BUILD_PROFILE_DEFAULT 0)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	set(OD_BUILD_DEBUG_DEFAULT 1)
 endif()
@@ -18,8 +20,10 @@ set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
 	"Build with debugging runtime checks")
 set(OD_BUILD_TESTS ${OD_BUILD_TESTS_DEFAULT} CACHE BOOL
 	"Build with tests")
+set(OD_BUILD_PROFILE ${OD_BUILD_PROFILE_DEFAULT} CACHE BOOL
+	"Build with profiling")
 
-if(("${CMAKE_BUILD_TYPE}" STREQUAL "PROFILE") AND ("${BUILD_SHARED_LIBS}" EQUAL 1))
+if((${OD_BUILD_PROFILE}) AND ("${BUILD_SHARED_LIBS}" EQUAL 1))
 	message(FATAL_ERROR "profile build must be statically linked")
 endif()
 if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG") AND ("${OD_BUILD_DEBUG}" EQUAL 1))
@@ -40,7 +44,6 @@ add_library(od_core)
 # od_platform
 add_library(od_platform)
 target_link_libraries(od_platform PRIVATE m od_core)
-set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)  # each CU has its own lib dependencies
 
 # od_engine
 add_library(od_engine)
@@ -209,19 +212,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		target_compile_options(${od_target} PUBLIC ${od_warning_options} ${od_profile_generation_options})
 		target_link_options(${od_target} PUBLIC ${od_warning_options} ${od_profile_generation_options})
 
-		if(NOT ("${BUILD_SHARED_LIBS}" EQUAL 1))
-			set(od_static_link_options -static-libstdc++ -static-libgcc)
-			target_compile_options(${od_target} PUBLIC ${od_static_link_options})
-			target_link_options(${od_target} PUBLIC ${od_static_link_options})
-
-			if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE"))
-				target_compile_options(${od_target} PUBLIC -fprofile-generate)
-				target_link_options(${od_target} PUBLIC -fprofile-generate)
-			endif()
-
-			target_link_options(${od_target} PUBLIC -fprofile-use)
-		endif()
-
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 			set(od_debug_options -O0 -ggdb3 -fno-omit-frame-pointer -fno-inline)
 			target_compile_options(${od_target} PUBLIC ${od_debug_options})
@@ -233,7 +223,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
 			if("${WIN32}" EQUAL 1)
 				target_link_libraries(${od_target} PRIVATE imagehlp)
-				target_compile_definitions(${od_target} PRIVATE OD_CORE_HAS_DBGHELP=1)
+				target_compile_definitions(${od_target} PRIVATE OD_BUILD_DBGHELP=1)
 			else()
 				set(od_sanitizer_options -fsanitize=address,leak,undefined -fsanitize-recover=address
 					-fsanitize-address-use-after-scope -fstack-protector-all)
@@ -242,28 +232,35 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
 				if (Backtrace_FOUND)
 					target_link_libraries(${od_target} PRIVATE backtrace)
-					target_compile_definitions(${od_target} PRIVATE OD_CORE_HAS_LIBBACKTRACE=1)
+					target_compile_definitions(${od_target} PRIVATE OD_BUILD_LIBBACKTRACE=1)
 				endif()
 			endif()
 		endif()
 
-		if("${CMAKE_BUILD_TYPE}" STREQUAL "PROFILE")
-			target_compile_options(${od_target} PUBLIC -Os -g -pg)
-			target_link_options(${od_target} PUBLIC -Os -g -pg)
-		endif()
-
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE")
-			target_compile_options(${od_target} PUBLIC -s -Os)
-			target_link_options(${od_target} PUBLIC -s -Os)
-		endif()
+			target_compile_options(${od_target} PUBLIC -ffast-math -flto -Os)
+			target_link_options(${od_target} PUBLIC -flto -fwhole-program -Os)
 
-		if(("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE") OR ("${CMAKE_BUILD_TYPE}" STREQUAL "PROFILE"))
-			target_compile_options(${od_target} PUBLIC -ffast-math -flto)
-			target_link_options(${od_target} PUBLIC -flto -fwhole-program)
+			if(NOT(${OD_BUILD_PROFILE}))
+				target_compile_options(${od_target} PUBLIC -s)
+				target_link_options(${od_target} PUBLIC -s)
+			endif()
 
 			if("${MINGW}" EQUAL 1)
 				target_link_options(${od_target} PUBLIC -mwindows)
 			endif()
 		endif()
+
+		if (${OD_BUILD_COVERAGE})
+			set(od_coverage_options -fprofile-arcs -ftest-coverage)
+			target_compile_options(${od_target} PUBLIC ${od_coverage_options})
+			target_link_options(${od_target} PUBLIC ${od_coverage_options})
+		endif()
+
+		if(${OD_BUILD_PROFILE})
+			target_compile_options(${od_target} PUBLIC -g -pg)
+			target_link_options(${od_target} PUBLIC -g -pg)
+		endif()
+
 	endforeach()
 endif()

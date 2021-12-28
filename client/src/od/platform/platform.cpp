@@ -4,28 +4,29 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <od/core/api.h>
 #include <od/core/debug.h>
 
-#if OD_BUILD_DEBUG && defined(OD_CORE_HAS_LIBBACKTRACE) && OD_CORE_HAS_LIBBACKTRACE
+#if OD_BUILD_LIBBACKTRACE
 #include <backtrace.h>
 #endif
 
-#if OD_BUILD_DEBUG && defined(_WIN32) && defined(OD_CORE_HAS_DBGHELP) && OD_CORE_HAS_DBGHELP
-
+#if OD_BUILD_DBGHELP
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <dbghelp.h>
 #undef WIN32_LEAN_AND_MEAN
 #undef VC_EXTRALEAN
+#endif
+
 #if defined(__GNUC__)
 #include <cxxabi.h>
 #endif
-#endif
 
-bool odPlatform_backtrace_print();
+static bool odPlatform_backtrace_print();
 
-#if OD_BUILD_DEBUG && defined(_WIN32) && defined(OD_CORE_HAS_DBGHELP) && OD_CORE_HAS_DBGHELP
+#if OD_BUILD_DBGHELP
 // libbacktrace does not play well with gcc + mingw, so we use the winapi here instead
 
 bool odPlatform_backtrace_print() {
@@ -180,11 +181,10 @@ bool odPlatform_backtrace_print() {
 
 	return true;
 #else  // #if defined(_M_AMD64) && _M_AMD64
-#warning "Windows architecture not supported for callstacks"
 	return false;
 #endif
 }
-#elif OD_BUILD_DEBUG && defined(OD_CORE_HAS_LIBBACKTRACE) && OD_CORE_HAS_LIBBACKTRACE
+#elif OD_BUILD_LIBBACKTRACE  // #if OD_BUILD_DBGHELP
 static void odDebug_libbacktrace_error(void* /*data*/, const char* msg, int errnum)  {
 	printf("libbacktrace error: errnum=%d, msg=%s\n", errnum, msg);
 }
@@ -213,7 +213,7 @@ bool odPlatform_backtrace_print() {
 	backtrace_print(backtrace, /*skip*/ 0, stdout);
 	return true;
 }
-#else
+#else  // #elif OD_BUILD_LIBBACKTRACE  // #if OD_BUILD_DBGHELP
 bool odPlatform_backtrace_print() {
 	return false;
 }

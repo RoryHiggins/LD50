@@ -22,6 +22,14 @@
 #define OD_BUILD_EMSCRIPTEN 0
 #endif
 
+#if !defined(OD_BUILD_LIBBACKTRACE)
+#define OD_BUILD_LIBBACKTRACE 0
+#endif
+
+#if !defined(OD_BUILD_DBGHELP)
+#define OD_BUILD_DBGHELP 0
+#endif
+
 // Decorators
 // More may need to be done here for msvc, e.g. enforcing a calling convention
 #if defined(__cplusplus)
@@ -44,4 +52,5 @@
 #define OD_NO_DISCARD
 #endif
 
-#define OD_MAYBE_UNUSED(LVALUE) static_cast<void>(LVALUE)
+#define OD_UNUSED(LVALUE) static_cast<void>(LVALUE)
+#define OD_MAYBE_UNUSED(LVALUE) OD_UNUSED(LVALUE)

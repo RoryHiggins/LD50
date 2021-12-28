@@ -1,8 +1,4 @@
 
-Refactoring TODOs
-- Automated rule for gcov test coverage
-- Raise test coverage
-
 Major TODOs
 - odTextureAtlas - to be used with sprite loading in Lua sprite module
 - Audio loading

@@ -142,20 +142,17 @@ static int32_t odTrivialArray_get_new_capacity(int32_t capacity, int32_t min_cap
 		return capacity;
 	}
 
-	int32_t new_capacity = min_capacity;
-
-	const int32_t start_capacity = 16;
-	if (min_capacity == 0) {
-		new_capacity = 0;
-	} else if (min_capacity <= start_capacity) {
-		new_capacity = start_capacity;
-	} else if (((capacity / 8) + 1) >= min_capacity) {
-		new_capacity = (capacity / 8) + 1;  // 2x grow rate so interleaved push+pop can't always reallocate
-	} else if ((capacity * 4) >= min_capacity) {
-		new_capacity = capacity * 4;
+	int32_t start_capacity = 16;
+	if (start_capacity >= min_capacity) {
+		return start_capacity;
 	}
 
-	return new_capacity;
+	int32_t upscaled_capacity = capacity * 4;
+	if (upscaled_capacity >= min_capacity) {
+		return upscaled_capacity;
+	}
+
+	return min_capacity;
 }
 bool odTrivialArray_ensure_capacity(odTrivialArray* array, int32_t min_capacity, int32_t stride) {
 	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
