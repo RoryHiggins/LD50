@@ -10,9 +10,9 @@
 struct odVertex;
 
 struct odRectPrimitive {
-	struct odBounds2 bounds;
-	struct odBounds2 texture_bounds;
-	struct odColor color;
+	struct odBounds2f bounds;
+	struct odBounds2f texture_bounds;
+	struct odColorRGBA32 color;
 	float depth;
 };
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool

@@ -8,16 +8,16 @@
 
 #define OD_ENTITY_VERTEX_COUNT (OD_RECT_PRIMITIVE_VERTEX_COUNT)
 
-struct odEntityStorage;
+struct odEntityIndexEntity;
 
 struct odEntityChunk {
 	odTrivialArrayT<odEntityCollider> colliders;
 };
 
-OD_ENGINE_MODULE extern template struct odTrivialArrayT<odEntityStorage>;
+extern template struct odTrivialArrayT<odEntityIndexEntity>;
 
 struct odEntityIndex {
-	odTrivialArrayT<odEntityStorage> entities;
+	odTrivialArrayT<odEntityIndexEntity> entities;
 	odTrivialArrayT<odVertex> entity_vertices;
 	odEntityChunk chunks[OD_ENTITY_CHUNK_ID_COUNT];
 

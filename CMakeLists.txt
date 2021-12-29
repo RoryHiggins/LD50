@@ -44,6 +44,8 @@ add_library(od_core)
 # od_platform
 add_library(od_platform)
 target_link_libraries(od_platform PRIVATE m od_core)
+# most CUs have their own lib dependencies; separating those out in unity builds can greatly improve build time
+set_target_properties(od_platform PROPERTIES UNITY_BUILD 0)
 
 # od_engine
 add_library(od_engine)

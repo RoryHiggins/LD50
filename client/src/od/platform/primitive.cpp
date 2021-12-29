@@ -13,13 +13,13 @@ bool odRectPrimitive_check_valid(const odRectPrimitive* rect) {
 		return false;
 	}
 
-	odBounds2 floored_texture_bounds = rect->texture_bounds;
-	odBounds2_floor(&floored_texture_bounds);
+	odBounds2f floored_texture_bounds = rect->texture_bounds;
+	odBounds2f_floor(&floored_texture_bounds);
 
 	if (!OD_CHECK(std::isfinite(rect->depth))
-		|| (!OD_CHECK(odBounds2_check_valid(&rect->bounds)))
-		|| (!OD_CHECK(odBounds2_check_valid(&rect->texture_bounds)))
-		|| (!OD_CHECK(odBounds2_equals(&floored_texture_bounds, &rect->texture_bounds)))) {
+		|| (!OD_CHECK(odBounds2f_check_valid(&rect->bounds)))
+		|| (!OD_CHECK(odBounds2f_check_valid(&rect->texture_bounds)))
+		|| (!OD_CHECK(odBounds2f_equals(&floored_texture_bounds, &rect->texture_bounds)))) {
 		return false;
 	}
 
@@ -39,7 +39,7 @@ void odRectPrimitive_get_vertices(const odRectPrimitive* rect, odVertex *out_ver
 	float u2 = rect->texture_bounds.x2;
 	float v1 = rect->texture_bounds.y1;
 	float v2 = rect->texture_bounds.y2;
-	odColor color = rect->color;
+	odColorRGBA32 color = rect->color;
 	float depth = rect->depth;
 
 	odVertex top_left = odVertex{{x1, y1, depth, 1.0f}, color, u1, v1};

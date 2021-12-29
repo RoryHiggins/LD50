@@ -4,7 +4,7 @@
 
 #include <od/core/debug.h>
 
-const char* odColor_get_debug_string(const odColor* color) {
+const char* odColorRGBA32_get_debug_string(const odColorRGBA32* color) {
 	if (color == nullptr) {
 		return "null";
 	}
@@ -17,27 +17,27 @@ const char* odColor_get_debug_string(const odColor* color) {
 
 	return odDebugString_format("\"0x%08x\"", color_u32);
 }
-const struct odColor* odColor_get_white() {
-	static const odColor color{0xFF, 0xFF, 0xFF, 0xFF};
+const struct odColorRGBA32* odColorRGBA32_get_white() {
+	static const odColorRGBA32 color{0xFF, 0xFF, 0xFF, 0xFF};
 	return &color;
 }
-const struct odColor* odColor_get_black() {
-	static const odColor color{0x00, 0x00, 0x00, 0xFF};
+const struct odColorRGBA32* odColorRGBA32_get_black() {
+	static const odColorRGBA32 color{0x00, 0x00, 0x00, 0xFF};
 	return &color;
 }
-const struct odColor* odColor_get_red() {
-	static const odColor color{0xFF, 0x00, 0x00, 0xFF};
+const struct odColorRGBA32* odColorRGBA32_get_red() {
+	static const odColorRGBA32 color{0xFF, 0x00, 0x00, 0xFF};
 	return &color;
 }
-const struct odColor* odColor_get_green() {
-	static const odColor color{0x00, 0xFF, 0x00, 0xFF};
+const struct odColorRGBA32* odColorRGBA32_get_green() {
+	static const odColorRGBA32 color{0x00, 0xFF, 0x00, 0xFF};
 	return &color;
 }
-const struct odColor* odColor_get_blue() {
-	static const odColor color{0x00, 0x00, 0xFF, 0xFF};
+const struct odColorRGBA32* odColorRGBA32_get_blue() {
+	static const odColorRGBA32 color{0x00, 0x00, 0xFF, 0xFF};
 	return &color;
 }
-const struct odColor* odColor_get_transparent() {
-	static const odColor color{0x00, 0x00, 0x00, 0x00};
+const struct odColorRGBA32* odColorRGBA32_get_transparent() {
+	static const odColorRGBA32 color{0x00, 0x00, 0x00, 0x00};
 	return &color;
 }

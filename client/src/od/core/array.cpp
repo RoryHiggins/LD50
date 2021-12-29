@@ -312,7 +312,7 @@ odTrivialArray::~odTrivialArray() {
 
 bool odArray_check_valid(const odArray* array) {
 	if (!OD_CHECK(odTrivialArray_check_valid(&array->array))
-		|| !OD_CHECK(odType_check_valid(array->type))) {
+		|| !OD_CHECK((array->array.capacity == 0) || odType_check_valid(array->type))) {
 		return false;
 	}
 
@@ -359,7 +359,7 @@ void odArray_destroy(odArray* array) {
 		return;
 	}
 
-	odTrivialArray_destroy(&array->array);
+	OD_DISCARD(odArray_set_capacity(array, 0));
 }
 int32_t odArray_get_capacity(const odArray* array) {
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))) {

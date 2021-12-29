@@ -3,7 +3,7 @@
 #include <od/platform/module.h>
 
 struct odType;
-struct odColor;
+struct odColorRGBA32;
 struct odImage;
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odType*
@@ -26,8 +26,8 @@ OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odImage_read_png_file(struct odImage* image, const char* file_path);
 OD_API_C OD_PLATFORM_MODULE void
 odImage_get_size(const struct odImage* image, int32_t* out_opt_width, int32_t* out_opt_height);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColor*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColorRGBA32*
 odImage_get(struct odImage* image);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColor*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColorRGBA32*
 odImage_get_const(const struct odImage* image);
 

@@ -5,7 +5,7 @@
 #include <od/core/debug.h>
 #include <od/core/math.h>
 
-bool odVector4_check_valid(const odVector4* vector) {
+bool odVector4f_check_valid(const odVector4f* vector) {
 	if (!OD_CHECK(vector != nullptr)) {
 		return false;
 	}
@@ -18,8 +18,8 @@ bool odVector4_check_valid(const odVector4* vector) {
 
 	return true;
 }
-bool odVector4_check_valid_3d(const odVector4* vector3) {
-	if (!OD_CHECK(odVector4_check_valid(vector3))
+bool odVector4f_check_valid_3d(const odVector4f* vector3) {
+	if (!OD_CHECK(odVector4f_check_valid(vector3))
 		|| !OD_CHECK(vector3->vector[3] == 1)
 		|| !OD_CHECK(odFloat_is_precise_int(vector3->vector[2]))) {
 		return false;
@@ -27,7 +27,7 @@ bool odVector4_check_valid_3d(const odVector4* vector3) {
 
 	return true;
 }
-const char* odVector4_get_debug_string(const odVector4* vector) {
+const char* odVector4f_get_debug_string(const odVector4f* vector) {
 	if (vector == nullptr) {
 		return "null";
 	}
@@ -39,7 +39,7 @@ const char* odVector4_get_debug_string(const odVector4* vector) {
 		static_cast<double>(vector->vector[2]),
 		static_cast<double>(vector->vector[3]));
 }
-void odVector4_init_3d(odVector4* vector, float x, float y, float z) {
+void odVector4f_init_3d(odVector4f* vector, float x, float y, float z) {
 	if (!OD_DEBUG_CHECK(vector != nullptr)) {
 		return;
 	}
@@ -53,7 +53,7 @@ void odVector4_init_3d(odVector4* vector, float x, float y, float z) {
 	vector->vector[2] = z;
 	vector->vector[3] = 1;  // w coordinate should always be 1
 }
-bool odVector4_equals(const odVector4* vector1, const odVector4* vector2) {
+bool odVector4f_equals(const odVector4f* vector1, const odVector4f* vector2) {
 	if (!OD_DEBUG_CHECK(vector1 != nullptr)
 		|| !OD_DEBUG_CHECK(vector2 != nullptr)) {
 		return false;
@@ -67,7 +67,7 @@ bool odVector4_equals(const odVector4* vector1, const odVector4* vector2) {
 
 	return true;
 }
-bool odVector4_epsilon_equals(const odVector4* vector1, const odVector4* vector2) {
+bool odVector4f_epsilon_equals(const odVector4f* vector1, const odVector4f* vector2) {
 	if (!OD_DEBUG_CHECK(vector1 != nullptr)
 		|| !OD_DEBUG_CHECK(vector2 != nullptr)) {
 		return false;

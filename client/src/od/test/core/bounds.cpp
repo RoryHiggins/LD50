@@ -2,10 +2,10 @@
 
 #include <od/test/test.hpp>
 
-OD_TEST(odTest_odBounds2_collides) {
-	odBounds2 bounds{8, 8, 72, 72};
+OD_TEST(odTest_odBounds2f_collides) {
+	odBounds2f bounds{8, 8, 72, 72};
 
-	odBounds2 expected_collision_bounds[] = {
+	odBounds2f expected_collision_bounds[] = {
 		{8, 8, 9, 9},
 		{71, 71, 72, 72},
 		{7, 7, 9, 9},
@@ -15,7 +15,7 @@ OD_TEST(odTest_odBounds2_collides) {
 		{7, 7, 73, 73},
 	};
 
-	odBounds2 expected_no_collision_bounds[] = {
+	odBounds2f expected_no_collision_bounds[] = {
 		{7, 8, 8, 9},
 		{8, 7, 9, 8},
 		{7, 7, 8, 8},
@@ -24,98 +24,98 @@ OD_TEST(odTest_odBounds2_collides) {
 		{7, 7, 71, 8},
 	};
 
-	odBounds2 expected_not_collidable[] = {
+	odBounds2f expected_not_collidable[] = {
 		{0, 0, 0, 0},
 		{0, 0, 0, 1},
 		{0, 0, 1, 0},
 		{8, 8, 8, 8},
 	};
 
-	for (const odBounds2& compare: expected_collision_bounds) {
-		if (!odBounds2_collides(&bounds, &compare)) {
+	for (const odBounds2f& compare: expected_collision_bounds) {
+		if (!odBounds2f_collides(&bounds, &compare)) {
 			OD_ERROR("bounds expected to collide:\nbounds=%s,\ncompare=%s",
-				odBounds2_get_debug_string(&bounds), odBounds2_get_debug_string(&compare));
+				odBounds2f_get_debug_string(&bounds), odBounds2f_get_debug_string(&compare));
 		}
 	}
 
-	for (const odBounds2& compare: expected_no_collision_bounds) {
-		if (!!odBounds2_collides(&bounds, &compare)) {
+	for (const odBounds2f& compare: expected_no_collision_bounds) {
+		if (!!odBounds2f_collides(&bounds, &compare)) {
 			OD_ERROR("bounds expected not to collide:\nbounds=%s,\ncompare=%s",
-				odBounds2_get_debug_string(&bounds), odBounds2_get_debug_string(&compare));
+				odBounds2f_get_debug_string(&bounds), odBounds2f_get_debug_string(&compare));
 		}
 	}
 
-	for (const odBounds2& non_collidable_bounds: expected_not_collidable) {
-		if (odBounds2_is_collidable(&non_collidable_bounds)) {
-			OD_ERROR("bounds expected not to be collidable:\nbounds=%s", odBounds2_get_debug_string(&non_collidable_bounds));
+	for (const odBounds2f& non_collidable_bounds: expected_not_collidable) {
+		if (odBounds2f_is_collidable(&non_collidable_bounds)) {
+			OD_ERROR("bounds expected not to be collidable:\nbounds=%s", odBounds2f_get_debug_string(&non_collidable_bounds));
 		}
 	}
 }
-OD_TEST(odTest_odBounds2_equals) {
-	odBounds2 bounds_comparisons[] = {
+OD_TEST(odTest_odBounds2f_equals) {
+	odBounds2f bounds_comparisons[] = {
 		{0, 0, 0, 0},
 		{0, 0, 0, 1},
 		{0, 0, 1, 0},
 		{8, 8, 8, 8},
 	};
-	for (const odBounds2& bounds: bounds_comparisons) {
-		OD_ASSERT(odBounds2_equals(&bounds, &bounds));
+	for (const odBounds2f& bounds: bounds_comparisons) {
+		OD_ASSERT(odBounds2f_equals(&bounds, &bounds));
 
-		odBounds2 non_match{-1,-1,0,0};
-		OD_ASSERT(!odBounds2_equals(&bounds, &non_match));
+		odBounds2f non_match{-1,-1,0,0};
+		OD_ASSERT(!odBounds2f_equals(&bounds, &non_match));
 	}
 }
-OD_TEST(odTest_odBounds2_get_width) {
-	odBounds2 bounds_width_8[] = {
+OD_TEST(odTest_odBounds2f_get_width) {
+	odBounds2f bounds_width_8[] = {
 		{0, 0, 8, 0},
 		{8, 3, 16, 4},
 		{-8, 11, 0, 11},
 	};
-	for (const odBounds2& bounds: bounds_width_8) {
-		OD_ASSERT(odBounds2_get_width(&bounds) == 8);
+	for (const odBounds2f& bounds: bounds_width_8) {
+		OD_ASSERT(odBounds2f_get_width(&bounds) == 8);
 	}
 
-	odBounds2 bounds_width_0[] = {
+	odBounds2f bounds_width_0[] = {
 		{0, 0, 0, 0},
 		{8, 3, 8, 4},
 		{-8, 11, -8, 11},
 	};
-	for (const odBounds2& bounds: bounds_width_0) {
-		OD_ASSERT(odBounds2_get_width(&bounds) == 0);
+	for (const odBounds2f& bounds: bounds_width_0) {
+		OD_ASSERT(odBounds2f_get_width(&bounds) == 0);
 	}
 }
-OD_TEST(odTest_odBounds2_get_height) {
-	odBounds2 bounds_height_8[] = {
+OD_TEST(odTest_odBounds2f_get_height) {
+	odBounds2f bounds_height_8[] = {
 		{0, 0, 8, 8},
 		{3, 8, 4, 16},
 		{-8, -8, 3, 0},
 	};
-	for (const odBounds2& bounds: bounds_height_8) {
-		OD_ASSERT(odBounds2_get_height(&bounds) == 8);
+	for (const odBounds2f& bounds: bounds_height_8) {
+		OD_ASSERT(odBounds2f_get_height(&bounds) == 8);
 	}
 
-	odBounds2 bounds_height_0[] = {
+	odBounds2f bounds_height_0[] = {
 		{0, 0, 0, 0},
 		{8, 3, 8, 3},
 		{-8, 11, -8, 11},
 	};
-	for (const odBounds2& bounds: bounds_height_0) {
-		OD_ASSERT(odBounds2_get_height(&bounds) == 0);
+	for (const odBounds2f& bounds: bounds_height_0) {
+		OD_ASSERT(odBounds2f_get_height(&bounds) == 0);
 	}
 }
-OD_TEST(odTest_odBounds2_floor) {
-	odBounds2 bounds{-2.1f, -2.5f, 3.4f, 3.99f};
-	odBounds2_floor(&bounds);
+OD_TEST(odTest_odBounds2f_floor) {
+	odBounds2f bounds{-2.1f, -2.5f, 3.4f, 3.99f};
+	odBounds2f_floor(&bounds);
 
-	odBounds2 expected_bounds{-3, -3, 3, 3};
-	OD_ASSERT(odBounds2_equals(&bounds, &expected_bounds));
+	odBounds2f expected_bounds{-3, -3, 3, 3};
+	OD_ASSERT(odBounds2f_equals(&bounds, &expected_bounds));
 }
 
 OD_TEST_SUITE(
-	odTestSuite_odBounds2,
-	odTest_odBounds2_collides,
-	odTest_odBounds2_equals,
-	odTest_odBounds2_get_width,
-	odTest_odBounds2_get_height,
-	odTest_odBounds2_floor,
+	odTestSuite_odBounds2f,
+	odTest_odBounds2f_collides,
+	odTest_odBounds2f_equals,
+	odTest_odBounds2f_get_width,
+	odTest_odBounds2f_get_height,
+	odTest_odBounds2f_floor,
 )

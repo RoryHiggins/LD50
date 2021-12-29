@@ -155,9 +155,9 @@ bool odEngine_step(odEngine* engine) {
 		// float u = 80.0f + (8.0f * float((engine->frame.counter >> 3) % 4));
 		// float v = 40.0f;
 		odRectPrimitive rect{
-			odBounds2{0.0f, 0.0f, 288.0f, 128.0f},
-			odBounds2{0.0f, 0.0f, 144.0f, 64.0f},
-			*odColor_get_white(),
+			odBounds2f{0.0f, 0.0f, 288.0f, 128.0f},
+			odBounds2f{0.0f, 0.0f, 144.0f, 64.0f},
+			*odColorRGBA32_get_white(),
 			0.0f,
 		};
 		const int32_t vertices_count = OD_RECT_PRIMITIVE_VERTEX_COUNT;
@@ -187,17 +187,17 @@ bool odEngine_step(odEngine* engine) {
 		const int32_t translate_x = scale_x;
 		const int32_t translate_y = scale_y;
 
-		odMatrix4 matrix{};
-		odMatrix4_init_transform_3d(
+		odMatrix4f matrix{};
+		odMatrix4f_init_transform_3d(
 			&matrix,
 			float(scale_x), float(scale_y), 1.0f,
 			float(translate_x), float(translate_y), 0.0f);
-		odMatrix4_rotate_clockwise_z(&matrix, float(engine->frame.counter));
+		odMatrix4f_rotate_clockwise_z(&matrix, float(engine->frame.counter));
 		odVertex vertices[vertices_count]{};
 
 		for (int32_t i = 0; i < 12; i++) {
 			memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
-			odMatrix4_rotate_clockwise_z(&matrix, 30.0f);
+			odMatrix4f_rotate_clockwise_z(&matrix, 30.0f);
 
 			for (odVertex& vertex: vertices) {
 				odVertex_transform(&vertex, &matrix);
@@ -217,24 +217,24 @@ bool odEngine_step(odEngine* engine) {
 
 	
 	odWindowSettings* window_settings = &engine->window.settings;
-	odMatrix4 view_matrix{};
-	odMatrix4_init_view_2d(&view_matrix, engine->settings.game_width, engine->settings.game_height);
+	odMatrix4f view_matrix{};
+	odMatrix4f_init_view_2d(&view_matrix, engine->settings.game_width, engine->settings.game_height);
 
-	odMatrix4 window_view_matrix{};
-	odMatrix4_init_view_2d(&window_view_matrix, window_settings->window_width, window_settings->window_height);
+	odMatrix4f window_view_matrix{};
+	odMatrix4f_init_view_2d(&window_view_matrix, window_settings->window_width, window_settings->window_height);
 
 	odRenderState draw_to_view{
 		view_matrix,
-		*odMatrix4_get_identity(),
-		odBounds2{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
+		*odMatrix4f_get_identity(),
+		odBounds2f{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
 		&engine->src_texture,
 		&engine->game_render_texture
 	};
 
 	odRenderState draw_to_window{
 		window_view_matrix,
-		*odMatrix4_get_identity(),
-		odBounds2{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
+		*odMatrix4f_get_identity(),
+		odBounds2f{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
 		&engine->src_texture,
 		/* opt_render_texture*/ nullptr
 	};
@@ -242,7 +242,7 @@ bool odEngine_step(odEngine* engine) {
 	copy_view_to_window.src_texture = odRenderTexture_get_texture(&engine->game_render_texture);
 
 	// draw game
-	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_view, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_view, odColorRGBA32_get_white()))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
@@ -254,7 +254,7 @@ bool odEngine_step(odEngine* engine) {
 	}
 
 	// draw window
-	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColorRGBA32_get_white()))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_texture(&engine->renderer, &copy_view_to_window, nullptr, nullptr))) {

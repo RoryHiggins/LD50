@@ -37,7 +37,7 @@ struct odTestSuite {
 OD_TEST_SUITE_DECLARE(odTestSuite_odDebug)
 OD_TEST_SUITE_DECLARE(odTestSuite_odAllocation)
 OD_TEST_SUITE_DECLARE(odTestSuite_odArray)
-OD_TEST_SUITE_DECLARE(odTestSuite_odBounds2)
+OD_TEST_SUITE_DECLARE(odTestSuite_odBounds2f)
 OD_TEST_SUITE_DECLARE(odTestSuite_odMatrix)
 OD_TEST_SUITE_DECLARE(odTestSuite_odString)
 OD_TEST_SUITE_DECLARE(odTestSuite_odFile)

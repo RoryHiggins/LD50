@@ -40,12 +40,12 @@ OD_TEST_FILTERED(odTest_odTexture_init_large, OD_TEST_FILTER_SLOW) {
 
 	const int32_t width = 256;
 	const int32_t height = 256;
-	odArray texture_pixels{odType_get<odColor>()};
+	odArray texture_pixels{odType_get<odColorRGBA32>()};
 	OD_ASSERT(odArray_set_count(&texture_pixels, width * height));
 	memset(odArray_get(&texture_pixels, 0), 0, width * height);
 
 	odTexture texture;
-	OD_ASSERT(odTexture_init(&texture, &window, static_cast<odColor*>(odArray_get(&texture_pixels, 0)), width, height));
+	OD_ASSERT(odTexture_init(&texture, &window, static_cast<odColorRGBA32*>(odArray_get(&texture_pixels, 0)), width, height));
 	OD_ASSERT(odTexture_check_valid(&texture));
 }
 OD_TEST_FILTERED(odTest_odTexture_destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
@@ -72,7 +72,7 @@ OD_TEST_FILTERED(odTest_odTexture_get_size, OD_TEST_FILTER_SLOW) {
 
 	const int32_t width = 4;
 	const int32_t height = 4;
-	odColor texture_pixels[width * height]{};
+	odColorRGBA32 texture_pixels[width * height]{};
 	OD_ASSERT(odTexture_init(&texture, &window, texture_pixels, width, height));
 	OD_ASSERT(odTexture_check_valid(&texture));
 

@@ -45,7 +45,7 @@ const char* odTexture_get_debug_string(const odTexture* texture) {
 	);
 }
 bool odTexture_init(odTexture* texture, odWindow* window,
-					const odColor* opt_pixels, int32_t width, int32_t height) {
+					const odColorRGBA32* opt_pixels, int32_t width, int32_t height) {
 	if (!OD_CHECK(texture != nullptr)
 		|| !OD_CHECK(odWindow_check_valid(window))
 		|| !OD_CHECK(width >= 0)
@@ -93,7 +93,7 @@ bool odTexture_init(odTexture* texture, odWindow* window,
 	return true;
 }
 bool odTexture_init_blank(odTexture* texture, odWindow* window) {
-	const odColor default_texture = {0xFF, 0xFF, 0xFF,0xFF};
+	const odColorRGBA32 default_texture = {0xFF, 0xFF, 0xFF,0xFF};
 	return odTexture_init(texture, window, &default_texture, 1, 1);
 }
 void odTexture_destroy(odTexture* texture) {
@@ -193,7 +193,7 @@ bool odRenderTexture_init(odRenderTexture* render_texture, odWindow* window, int
 
 	// allocate
 	int32_t texture_pixels_count = width * height;
-	odArray texture_pixels_buffer{odType_get<odColor>()};
+	odArray texture_pixels_buffer{odType_get<odColorRGBA32>()};
 	if (!OD_CHECK(odArray_set_count(&texture_pixels_buffer, texture_pixels_count))) {
 		return false;
 	}

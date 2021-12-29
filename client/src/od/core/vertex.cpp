@@ -5,8 +5,6 @@
 #include <od/core/debug.h>
 #include <od/core/matrix.h>
 
-template struct odTrivialArrayT<odVertex>;
-
 const char* odVertex_get_debug_string(const odVertex* vertex) {
 	if (vertex == nullptr) {
 		return "null";
@@ -14,14 +12,14 @@ const char* odVertex_get_debug_string(const odVertex* vertex) {
 
 	return odDebugString_format(
 		"{\"pos\": %s, \"color\": %s, \"u\": %g, \"v\": %g}",
-		odVector4_get_debug_string(&vertex->pos),
-		odColor_get_debug_string(&vertex->color),
+		odVector4f_get_debug_string(&vertex->pos),
+		odColorRGBA32_get_debug_string(&vertex->color),
 		static_cast<double>(vertex->u),
 		static_cast<double>(vertex->v));
 }
 bool odVertex_check_valid(const odVertex* vertex) {
 	if (!OD_CHECK(vertex != nullptr)
-		|| !OD_CHECK(odVector4_check_valid(&vertex->pos))
+		|| !OD_CHECK(odVector4f_check_valid(&vertex->pos))
 		|| !OD_CHECK(std::isfinite(vertex->u) || (vertex->u < 0) || (vertex->u > 65535.0f))
 		|| !OD_CHECK(std::isfinite(vertex->v) || (vertex->v < 0) || (vertex->v > 65535.0f))) {
 		return false;
@@ -43,15 +41,15 @@ bool odVertex_check_valid_batch(const odVertex* vertices, int32_t vertices_count
 
 	return true;
 }
-void odVertex_transform(odVertex* vertex, const odMatrix4* matrix) {
+void odVertex_transform(odVertex* vertex, const odMatrix4f* matrix) {
 	if (!OD_DEBUG_CHECK(vertex != nullptr)
-		|| !OD_DEBUG_CHECK(odMatrix4_check_valid(matrix))) {
+		|| !OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix))) {
 		return;
 	}
 
-	odMatrix4_multiply_vector_4d(matrix, &vertex->pos);
+	odMatrix4f_multiply_vector_4d(matrix, &vertex->pos);
 }
-void odVertex_transform_batch(odVertex* vertices, int32_t vertices_count, const odMatrix4* matrix) {
+void odVertex_transform_batch(odVertex* vertices, int32_t vertices_count, const odMatrix4f* matrix) {
 	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch(vertices, vertices_count))
 		|| !OD_DEBUG_CHECK(vertices_count >= 0)) {
 		return;
@@ -61,3 +59,5 @@ void odVertex_transform_batch(odVertex* vertices, int32_t vertices_count, const 
 		odVertex_transform(vertices + i, matrix);
 	}
 }
+
+template struct odTrivialArrayT<odVertex>;
