@@ -333,19 +333,11 @@ bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColorR
 	);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_DEPTH_BUFFER_BIT);
-
 	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
 		return false;
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	if (!OD_CHECK(odRenderer_flush(renderer))) {
-		return false;
-	}
 
 	return true;
 }
@@ -406,10 +398,6 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 
 	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
 		OD_ERROR("OpenGL error when drawing, renderer=%s", odRenderer_get_debug_string(renderer));
-		return false;
-	}
-
-	if (!OD_CHECK(odRenderer_flush(renderer))) {
 		return false;
 	}
 
