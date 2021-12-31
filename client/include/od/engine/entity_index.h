@@ -32,7 +32,7 @@ struct odEntitySearch {
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*
 odEntityIndex_get_debug_string(const struct odEntityIndex* entity_index);
-OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+OD_API_C OD_ENGINE_MODULE void
 odEntityIndex_init(struct odEntityIndex* entity_index);
 OD_API_C OD_ENGINE_MODULE void
 odEntityIndex_destroy(struct odEntityIndex* entity_index);

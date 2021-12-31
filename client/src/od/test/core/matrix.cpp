@@ -21,12 +21,12 @@ OD_TEST(odTest_odMatrix4f_init_transform_3d) {
 	odMatrix4f_multiply_vector_3d(&matrix, &vector);
 	OD_ASSERT(odVector4f_equals(&vector, &expected_vector));
 }
-OD_TEST(odTest_odMatrix4f_init_view_2d) {
-	const int32_t view_width = 256;
-	const int32_t view_height = 256;
+OD_TEST(odTest_odMatrix4f_init_ortho_2d) {
+	const int32_t projection_width = 256;
+	const int32_t projection_height = 256;
 
 	odMatrix4f matrix{};
-	odMatrix4f_init_view_2d(&matrix, view_width, view_height);
+	odMatrix4f_init_ortho_2d(&matrix, projection_width, projection_height);
 
 	odVector4f vector{0.0f, 0.0f, 0.0f, 1.0f};
 	odVector4f expected_vector{-1.0f, 1.0f, 0.0f, 1.0f};
@@ -36,13 +36,13 @@ OD_TEST(odTest_odMatrix4f_init_view_2d) {
 	OD_ASSERT(odVector4f_equals(&vector, &expected_vector));
 	
 	// check that the matrix end translates to the bottom right corner 1,1
-	vector = {view_width, view_height, 0.0f, 1.0f};
+	vector = {projection_width, projection_height, 0.0f, 1.0f};
 	expected_vector = {1.0f, -1.0f, 0.0f, 1.0f};
 	odMatrix4f_multiply_vector_3d(&matrix, &vector);
 	OD_ASSERT(odVector4f_equals(&vector, &expected_vector));
 
 	// check that the matrix midpoint translates to the center 0,0
-	vector = {view_width / 2.0f, view_height / 2.0f, 0.0f, 1.0f};
+	vector = {projection_width / 2.0f, projection_height / 2.0f, 0.0f, 1.0f};
 	expected_vector = {0.0f, 0.0f, 0.0f, 1.0f};
 	odMatrix4f_multiply_vector_3d(&matrix, &vector);
 	OD_ASSERT(odVector4f_equals(&vector, &expected_vector));
@@ -66,7 +66,7 @@ OD_TEST(odTest_odMatrix4f_multiply_scale) {
 	}
 	OD_ASSERT(odVector4f_equals(&vector, &expected_vector));
 }
-OD_TEST(odTest_odMatrix4f_multiply_translate) {
+OD_TEST(odTest_odMatrix4f_multiply_translate_3d) {
 	odMatrix4f matrix = *odMatrix4f_get_identity();
 	odVector4f translate1{2.0f, 3.0f, -4.0f, 1.0f};
 	odMatrix4f_translate_3d(&matrix, translate1.vector[0], translate1.vector[1], translate1.vector[2]);
@@ -91,7 +91,7 @@ OD_TEST(odTest_odMatrix4f_multiply_translate) {
 	}
 	OD_ASSERT(odVector4f_equals(&vector, &expected_vector));
 }
-OD_TEST(odTest_odMatrix4f_multiply_scale_translate) {
+OD_TEST(odTest_odMatrix4f_multiply_scale_translate_3d) {
 	float scale1 = 4.0f;
 	float translate1 = 0.08f;
 	odMatrix4f matrix = *odMatrix4f_get_identity();
@@ -119,21 +119,21 @@ OD_TEST(odTest_odMatrix4f_multiply_scale_translate_rotate_clockwise_2d) {
 	odMatrix4f_init_transform_3d(&matrix, scale1, scale1, 1.0f, translate1, translate1, 0.0);
 
 	odVector4f vector{1.0f, 0.0f, 0.0f, 1.0f};
-	odMatrix4f_multiply_vector_3d(&matrix, &vector);
+	odMatrix4f_multiply_vector_2d(&matrix, &vector);
 	odVector4f expected_vector{scale1 + translate1, translate1, 0.0f, 1.0f};
 	OD_ASSERT(odVector4f_equals(&vector, &expected_vector));
 
-	odMatrix4f_rotate_clockwise_z(&matrix, 180.0f);
+	odMatrix4f_rotate_2d(&matrix, 180.0f);
 
 	vector = {1.0f, 1.0f, 0.0f, 1.0f};
-	odMatrix4f_multiply_vector_3d(&matrix, &vector);
+	odMatrix4f_multiply_vector_2d(&matrix, &vector);
 	expected_vector = {-scale1 + translate1, -scale1 + translate1, 0.0f, 1.0f};
 	OD_ASSERT(odVector4f_epsilon_equals(&vector, &expected_vector));
 
 	odMatrix4f_init_transform_3d(&matrix, scale1, scale1, 1.0f, translate1, translate1, 0.0);
-	odMatrix4f_rotate_clockwise_z(&matrix, 90.0f);
+	odMatrix4f_rotate_2d(&matrix, 90.0f);
 	vector = {1.0f, 1.0f, 0.0f, 1.0f};
-	odMatrix4f_multiply_vector_3d(&matrix, &vector);
+	odMatrix4f_multiply_vector_2d(&matrix, &vector);
 	expected_vector = {scale1 + translate1, -scale1 + translate1, 0.0f, 1.0f};
 	// OD_INFO("%s", odMatrix4f_get_debug_string(&matrix));
 	// OD_INFO("%s", odVector4f_get_debug_string(&vector));
@@ -173,10 +173,10 @@ OD_TEST(odTest_odMatrix4f_multiply_vector_3d_with_indentity) {
 OD_TEST_SUITE(
 	odTestSuite_odMatrix,
 	odTest_odMatrix4f_init_transform_3d,
-	odTest_odMatrix4f_init_view_2d,
+	odTest_odMatrix4f_init_ortho_2d,
 	odTest_odMatrix4f_multiply_scale,
-	odTest_odMatrix4f_multiply_translate,
-	odTest_odMatrix4f_multiply_scale_translate,
+	odTest_odMatrix4f_multiply_translate_3d,
+	odTest_odMatrix4f_multiply_scale_translate_3d,
 	odTest_odMatrix4f_multiply_scale_translate_rotate_clockwise_2d,
 	odTest_odMatrix4f_multiply_vector_3d,
 	odTest_odMatrix4f_multiply_vector_3d_with_indentity,

@@ -6,20 +6,17 @@
 #include <od/core/debug.h>
 #include <od/core/vertex.h>
 
-static int odTriangleVertices_compare(const void* triangle1, const void* triangle2);
+static int odTrianglePrimitive_compare(const void* triangle1, const void* triangle2);
 
 bool odRectPrimitive_check_valid(const odRectPrimitive* rect) {
 	if (!OD_DEBUG_CHECK(rect != nullptr)) {
 		return false;
 	}
 
-	odBounds2f floored_texture_bounds = rect->texture_bounds;
-	odBounds2f_floor(&floored_texture_bounds);
-
 	if (!OD_CHECK(std::isfinite(rect->depth))
 		|| (!OD_CHECK(odBounds2f_check_valid(&rect->bounds)))
 		|| (!OD_CHECK(odBounds2f_check_valid(&rect->texture_bounds)))
-		|| (!OD_CHECK(odBounds2f_equals(&floored_texture_bounds, &rect->texture_bounds)))) {
+		|| (!OD_CHECK(odBounds2f_is_integral(&rect->texture_bounds)))) {
 		return false;
 	}
 
@@ -58,7 +55,7 @@ void odRectPrimitive_get_vertices(const odRectPrimitive* rect, odVertex *out_ver
 	out_vertices[i++] = bottom_right;
 }
 
-static int odTriangleVertices_compare(const void* triangle1, const void* triangle2) {
+static int odTrianglePrimitive_compare(const void* triangle1, const void* triangle2) {
 	if (!OD_DEBUG_CHECK(triangle1 != nullptr)
 		|| !OD_DEBUG_CHECK(triangle2 != nullptr)) {
 		return false;
@@ -75,11 +72,11 @@ static int odTriangleVertices_compare(const void* triangle1, const void* triangl
 
 	return 0;
 }
-void odTriangleVertices_sort_triangles(odVertex* triangles, int32_t triangles_count) {
+void odTrianglePrimitive_sort_vertices(odVertex* triangles, int32_t triangles_count) {
 	if (!OD_DEBUG_CHECK((triangles_count == 0) || (triangles != nullptr))
 		|| !OD_DEBUG_CHECK(triangles_count >= 0)) {
 		return;
 	}
 
-	qsort(triangles, static_cast<size_t>(triangles_count), 3 * sizeof(odVertex), odTriangleVertices_compare);
+	qsort(triangles, static_cast<size_t>(triangles_count), 3 * sizeof(odVertex), odTrianglePrimitive_compare);
 }

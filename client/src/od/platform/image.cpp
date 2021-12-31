@@ -6,61 +6,9 @@
 
 #include <od/core/debug.h>
 #include <od/core/color.h>
-#include <od/core/type.hpp>
 #include <od/core/allocation.hpp>
 #include <od/platform/file.hpp>
 
-const odType* odImage_get_type_constructor() {
-	return odType_get<odImage>();
-}
-bool odImage_copy(odImage* image, const odImage* src_image) {
-	if (!OD_CHECK(image != nullptr)
-		|| !OD_CHECK(src_image != nullptr)) {
-		return false;
-	}
-
-	odImage_destroy(image);
-
-	int32_t size = static_cast<int32_t>(sizeof(odColorRGBA32)) * src_image->width * src_image->height;
-	if (size == 0) {
-		return true;
-	}
-
-	if (!OD_CHECK(odAllocation_init(&image->allocation, size))) {
-		return false;
-	}
-
-	void* image_data = odAllocation_get(&image->allocation);
-	if (!OD_CHECK(image_data != nullptr)) {
-		return false;
-	}
-
-	const void* src_image_data = odAllocation_get_const(&src_image->allocation);
-	if (OD_CHECK(src_image_data != nullptr)) {
-		return false;
-	}
-
-	memcpy(image_data, src_image_data, static_cast<size_t>(size));
-	image->width = src_image->width;
-	image->height = src_image->height;
-
-	return true;
-}
-void odImage_swap(odImage* image1, odImage* image2) {
-	if (!OD_CHECK(image1 != nullptr)
-		|| !OD_CHECK(image2 != nullptr)) {
-		return;
-	}
-
-	int32_t swap_width = image1->width;
-	int32_t swap_height = image1->height;
-
-	image1->width = image2->width;
-	image1->height = image2->height;
-
-	image2->width = swap_width;
-	image2->height = swap_height;
-}
 bool odImage_check_valid(const odImage* image) {
 	if (!OD_CHECK(image != nullptr)
 		|| !OD_CHECK(odAllocation_check_valid(&image->allocation))
@@ -118,6 +66,93 @@ void odImage_destroy(odImage* image) {
 	image->height = 0;
 	image->width = 0;
 	odAllocation_destroy(&image->allocation);
+}
+bool odImage_copy(odImage* image, const odImage* src_image) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(src_image != nullptr)) {
+		return false;
+	}
+
+	odImage_destroy(image);
+
+	int32_t size = static_cast<int32_t>(sizeof(odColorRGBA32)) * src_image->width * src_image->height;
+	if (size == 0) {
+		return true;
+	}
+
+	if (!OD_CHECK(odAllocation_init(&image->allocation, size))) {
+		return false;
+	}
+
+	void* image_data = odAllocation_get(&image->allocation);
+	if (!OD_CHECK(image_data != nullptr)) {
+		return false;
+	}
+
+	const void* src_image_data = odAllocation_get_const(&src_image->allocation);
+	if (OD_CHECK(src_image_data != nullptr)) {
+		return false;
+	}
+
+	memcpy(image_data, src_image_data, static_cast<size_t>(size));
+	image->width = src_image->width;
+	image->height = src_image->height;
+
+	return true;
+}
+void odImage_swap(odImage* image1, odImage* image2) {
+	if (!OD_CHECK(image1 != nullptr)
+		|| !OD_CHECK(image2 != nullptr)) {
+		return;
+	}
+
+	int32_t swap_width = image1->width;
+	int32_t swap_height = image1->height;
+
+	image1->width = image2->width;
+	image1->height = image2->height;
+
+	image2->width = swap_width;
+	image2->height = swap_height;
+
+	odAllocation_swap(&image1->allocation, &image2->allocation);
+}
+bool odImage_resize(odImage* image, int32_t new_width, int32_t new_height) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(new_width >= 0)
+		|| !OD_CHECK(new_height >= 0)) {
+		return false;
+	}
+
+	odImage new_image;
+
+	if (!OD_CHECK(odImage_init(&new_image, new_width, new_height))) {
+		return false;
+	}
+
+	int32_t copy_width = image->width < new_width ? image->width : new_width;
+	int32_t copy_height = image->height < new_height ? image->height : new_height;
+	odColorRGBA32* dest_pos = odImage_get(&new_image);
+	const odColorRGBA32* src_pos = odImage_get(image);
+	const odColorRGBA32* src_end_pos = src_pos + (copy_height * image->width);
+	if (!OD_DEBUG_CHECK(copy_width >= 0)
+		|| !OD_DEBUG_CHECK(copy_height >= 0)
+		|| !OD_CHECK((dest_pos != nullptr) || (copy_width == 0) || (copy_height == 0))
+		|| !OD_CHECK((src_pos != nullptr) || (copy_width == 0) || (copy_height == 0))
+		|| !OD_DEBUG_CHECK(src_end_pos >= src_pos)) {
+		return false;
+	}
+
+	size_t row_size = sizeof(odColorRGBA32) * static_cast<size_t>(copy_width);
+	while (src_pos < src_end_pos) {
+		memcpy(dest_pos, src_pos, row_size);
+		src_pos += image->width;
+		dest_pos += new_width;
+	}
+
+	odImage_swap(image, &new_image);
+
+	return true;
 }
 void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
 	int32_t unused;

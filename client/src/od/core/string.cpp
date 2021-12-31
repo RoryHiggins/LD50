@@ -53,14 +53,12 @@ const char* odString_get_debug_string(const odString* string) {
 
 	return odDebugString_format("{\"count\": %d, \"data\": \"%*s\"}", string->array.count, string_preview_count, string_preview);
 }
-bool odString_init(odString* string) {
+void odString_init(odString* string) {
 	if (!OD_DEBUG_CHECK(string != nullptr)) {
-		return false;
+		return;
 	}
 
 	odString_destroy(string);
-
-	return true;
 }
 void odString_destroy(odString* string) {
 	if (!OD_DEBUG_CHECK(string != nullptr)) {

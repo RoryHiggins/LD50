@@ -44,12 +44,24 @@ bool odMatrix4f_check_valid(const odMatrix4f* matrix) {
 
 	return true;
 }
-bool odMatrix4f_check_valid_transform_3d(const odMatrix4f* matrix) {
+bool odMatrix4f_check_valid_3d(const odMatrix4f* matrix) {
 	if (!OD_CHECK(odMatrix4f_check_valid(matrix))
 		|| !OD_CHECK(matrix->matrix[3] == 0.0f)
 		|| !OD_CHECK(matrix->matrix[7] == 0.0f)
 		|| !OD_CHECK(matrix->matrix[11] == 0.0f)
 		|| !OD_CHECK(matrix->matrix[15] == 1.0f)) {
+		return false;
+	}
+
+	return true;
+}
+bool odMatrix4f_check_valid_2d(const odMatrix4f* matrix) {
+	if (!OD_CHECK(odMatrix4f_check_valid_3d(matrix))
+		|| !OD_CHECK(matrix->matrix[2] == 0.0f)
+		|| !OD_CHECK(matrix->matrix[6] == 0.0f)
+		|| !OD_CHECK(matrix->matrix[10] == 1.0f)
+		|| !OD_CHECK(matrix->matrix[14] == 0.0f)
+		|| !OD_CHECK(matrix->matrix[14] == 0.0f)) {
 		return false;
 	}
 
@@ -75,16 +87,32 @@ void odMatrix4f_init_transform_3d(odMatrix4f* matrix,
 		0.0f, 0.0f, scale_z, 0.0f,
 		translate_x, translate_y, translate_z, 1.0f
 	}};
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix)));
 }
-void odMatrix4f_init_view_2d(odMatrix4f* matrix, int32_t width, int32_t height) {
+void odMatrix4f_init_transform_2d(struct odMatrix4f* matrix, float scale_x, float scale_y,
+								  float translate_x, float translate_y, float rotate_clock_deg) {
+	if (!OD_DEBUG_CHECK(matrix != nullptr)
+		|| !OD_DEBUG_CHECK(std::isfinite(scale_x))
+		|| !OD_DEBUG_CHECK(std::isfinite(scale_y))
+		|| !OD_DEBUG_CHECK(std::isfinite(translate_x))
+		|| !OD_DEBUG_CHECK(std::isfinite(translate_y))
+		|| !OD_DEBUG_CHECK(std::isfinite(rotate_clock_deg))) {
+		return;
+	}
+
+	odMatrix4f_init_transform_3d(matrix, scale_x, scale_y, 1.0f, translate_x, translate_y, 0.0f);
+	odMatrix4f_rotate_2d(matrix, rotate_clock_deg);
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix)));
+}
+void odMatrix4f_init_ortho_2d(odMatrix4f* matrix, int32_t width, int32_t height) {
 	if (!OD_DEBUG_CHECK(matrix != nullptr)
 		|| !OD_DEBUG_CHECK((width > 0) && (width <= OD_FLOAT_PRECISE_INT_MAX))
 		|| !OD_DEBUG_CHECK((height > 0) && (height <= OD_FLOAT_PRECISE_INT_MAX))) {
 		return;
 	}
 
-	// transform from 2d world space to 2d view space:
-	// from x=0..width, y=0..height
+	// transform from 2d view space to clip space:
+	// from x=0..view_width, y=0..view_height
 	// to x=-1..1, y=-1..1
 	// it also flips y, so (0,0)=top left, (0,height)=bottom left
 	return odMatrix4f_init_transform_3d(
@@ -129,7 +157,7 @@ void odMatrix4f_multiply(odMatrix4f* matrix, const odMatrix4f* other) {
 		(a[3] * b[12]) + (a[7] * b[13]) + (a[11] * b[14]) + (a[15] * b[15])
 	}};
 }
-void odMatrix4f_multiply_vector_4d(const odMatrix4f* matrix, odVector4f* vector) {
+void odMatrix4f_multiply_vector(const odMatrix4f* matrix, odVector4f* vector) {
 	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix))
 		|| !OD_DEBUG_CHECK(odVector4f_check_valid(vector))
 		) {
@@ -147,16 +175,28 @@ void odMatrix4f_multiply_vector_4d(const odMatrix4f* matrix, odVector4f* vector)
 	}};
 }
 void odMatrix4f_multiply_vector_3d(const odMatrix4f* matrix, odVector4f* vector) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_transform_3d(matrix))
+	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
 		|| !OD_DEBUG_CHECK(odVector4f_check_valid_3d(vector))) {
 		return;
 	}
 
-	odMatrix4f_multiply_vector_4d(matrix, vector);
+	odMatrix4f_multiply_vector(matrix, vector);
 	OD_DISCARD(OD_DEBUG_CHECK(odVector4f_check_valid_3d(vector)));
 }
+void odMatrix4f_multiply_vector_2d(const odMatrix4f* matrix, odVector4f* vector) {
+	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix))
+		|| !OD_DEBUG_CHECK(odVector4f_check_valid_2d(vector))) {
+		return;
+	}
+
+	float depth_before = vector->vector[2];
+	odMatrix4f_multiply_vector(matrix, vector);
+	OD_DISCARD(OD_DEBUG_CHECK(odVector4f_check_valid_2d(vector))
+			   && OD_DEBUG_CHECK(depth_before == vector->vector[2]));
+	OD_MAYBE_UNUSED(depth_before);
+}
 void odMatrix4f_scale_3d(odMatrix4f* matrix, float scale_x, float scale_y, float scale_z) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_transform_3d(matrix))
+	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_x))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_y))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_z))) {
@@ -171,8 +211,12 @@ void odMatrix4f_scale_3d(odMatrix4f* matrix, float scale_x, float scale_y, float
 	};
 	odMatrix4f_multiply(matrix, &scale_matrix);
 }
+void odMatrix4f_scale_2d(odMatrix4f* matrix, float scale_x, float scale_y) {
+	odMatrix4f_scale_3d(matrix, scale_x, scale_y, 1.0f);
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix)));
+}
 void odMatrix4f_translate_3d(odMatrix4f* matrix, float translate_x, float translate_y, float translate_z) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_transform_3d(matrix))
+	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_x))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_y))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_z))) {
@@ -187,20 +231,23 @@ void odMatrix4f_translate_3d(odMatrix4f* matrix, float translate_x, float transl
 	};
 	odMatrix4f_multiply(matrix, &translate_matrix);
 }
-void odMatrix4f_rotate_clockwise_z(odMatrix4f* matrix, float angle_deg) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_transform_3d(matrix))
-		|| !OD_DEBUG_CHECK(std::isfinite(angle_deg))) {
+void odMatrix4f_translate_2d(odMatrix4f* matrix, float translate_x, float translate_y) {
+	odMatrix4f_translate_3d(matrix, translate_x, translate_y, 0.0f);
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix)));
+}
+void odMatrix4f_rotate_2d(odMatrix4f* matrix, float rotate_clock_deg) {
+	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
+		|| !OD_DEBUG_CHECK(std::isfinite(rotate_clock_deg))) {
 		return;
 	}
 
-	float angle_rad = angle_deg * (OD_FLOAT_PI / 180.0f);
-
-	float angle_sin = sinf(angle_rad);
-	float angle_cos = cosf(angle_rad);
+	float rotate_rad = rotate_clock_deg * (OD_FLOAT_PI / 180.0f);
+	float rotate_sin = sinf(rotate_rad);
+	float rotate_cos = cosf(rotate_rad);
 
 	odMatrix4f rotate_matrix{{
-		angle_cos, -angle_sin, 0.0f, 0.0f,
-		angle_sin, angle_cos, 0.0f, 0.0f,
+		rotate_cos, -rotate_sin, 0.0f, 0.0f,
+		rotate_sin, rotate_cos, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f,
 	}};

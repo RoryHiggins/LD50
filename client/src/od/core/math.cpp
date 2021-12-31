@@ -3,12 +3,9 @@
 #include <cmath>
 #include <cfloat>
 
-#define OD_FLOAT_PRECISE_INT_BITS 24
-#define OD_FLOAT_PRECISE_INT_MAX (1 << OD_FLOAT_PRECISE_INT_BITS)
-#define OD_FLOAT_PRECISE_INT_MIN (-OD_FLOAT_PRECISE_INT_MAX)
-
 bool odFloat_is_precise_int(float x) {
 	if (!std::isfinite(x)
+		|| (floorf(x) != x)
 		|| (x < OD_FLOAT_PRECISE_INT_MIN)
 		|| (x > OD_FLOAT_PRECISE_INT_MAX)) {
 		return false;

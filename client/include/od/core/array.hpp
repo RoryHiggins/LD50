@@ -7,7 +7,7 @@
 #include <od/core/allocation.hpp>
 
 struct odTrivialArray {
-	struct odAllocation allocation;
+	odAllocation allocation;
 	int32_t capacity;
 	int32_t count;
 
@@ -21,7 +21,7 @@ struct odTrivialArray {
 };
 struct odArray {
 	odTrivialArray array;
-	const struct odType* type;
+	const odType* type;
 
 	OD_CORE_MODULE odArray();
 	OD_CORE_MODULE explicit odArray(const odType* in_type);
@@ -48,6 +48,9 @@ struct odArrayT : public odArray {
 	}
 	OD_NO_DISCARD bool set_count(int32_t new_count) {
 		return odArray_set_count(this, new_count);
+	}
+	OD_NO_DISCARD bool ensure_count(int32_t min_count) {
+		return odArray_ensure_count(this, min_count);
 	}
 	OD_NO_DISCARD bool push(T elem) {
 		return odArray_extend(this, &elem, 1);
@@ -131,6 +134,9 @@ struct odTrivialArrayT : public odTrivialArray {
 	}
 	OD_NO_DISCARD bool set_count(int32_t new_count) {
 		return odTrivialArray_set_count(this, new_count, get_stride());
+	}
+	OD_NO_DISCARD bool ensure_count(int32_t min_count) {
+		return odTrivialArray_ensure_count(this, min_count, get_stride());
 	}
 	OD_NO_DISCARD bool extend(const T* extend_src, int32_t extend_count) {
 		return odTrivialArray_extend(this, static_cast<const void*>(extend_src), extend_count, get_stride());

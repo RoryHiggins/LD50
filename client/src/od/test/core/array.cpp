@@ -46,7 +46,7 @@ OD_TEST(odTest_odTrivialArray_init_destroy) {
 	OD_ASSERT(odTrivialArray_check_valid(&array));
 
 	// double init
-	OD_ASSERT(odTrivialArray_init(&array));
+	odTrivialArray_init(&array);
 	OD_ASSERT(odTrivialArray_check_valid(&array));
 
 	OD_ASSERT(array.set_count(1));
@@ -63,7 +63,7 @@ OD_TEST(odTest_odTrivialArray_init_destroy) {
 	odTrivialArray_destroy(&array);
 
 	// reinit
-	OD_ASSERT(odTrivialArray_init(&array));
+	odTrivialArray_init(&array);
 	OD_ASSERT(odTrivialArray_check_valid(&array));
 
 	OD_ASSERT(array.set_count(1));
@@ -259,7 +259,7 @@ OD_TEST(odTest_odArray_init_destroy) {
 	OD_ASSERT(odArray_check_valid(&array));
 
 	// double init
-	OD_ASSERT(odArray_init(&array, odType_get<odArrayTestingContainer>()));
+	odArray_init(&array, odType_get<odArrayTestingContainer>());
 	OD_ASSERT(odArray_check_valid(&array));
 
 	OD_ASSERT(array.set_count(1));
@@ -276,7 +276,7 @@ OD_TEST(odTest_odArray_init_destroy) {
 	odArray_destroy(&array);
 
 	// reinit
-	OD_ASSERT(odArray_init(&array, odType_get<odArrayTestingContainer>()));
+	odArray_init(&array, odType_get<odArrayTestingContainer>());
 	OD_ASSERT(odArray_check_valid(&array));
 
 	OD_ASSERT(array.set_count(1));

@@ -63,12 +63,10 @@ bool odEntitySprite_check_valid(const odEntitySprite* sprite) {
 		return false;
 	}
 
-	odBounds2f floored_texture_bounds = sprite->texture_bounds;
-	odBounds2f_floor(&floored_texture_bounds);
-
 	if (!OD_CHECK(std::isfinite(sprite->depth))
 		|| (!OD_CHECK(odBounds2f_check_valid(&sprite->texture_bounds)))
-		|| (!OD_CHECK(odBounds2f_equals(&floored_texture_bounds, &sprite->texture_bounds)))
+		|| (!OD_CHECK(odBounds2f_is_integral(&sprite->texture_bounds)))
+
 		|| (!OD_CHECK(odMatrix4f_check_valid(&sprite->transform)))) {
 		return false;
 	}

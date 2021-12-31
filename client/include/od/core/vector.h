@@ -14,6 +14,8 @@ odVector4f_check_valid(const struct odVector4f* vector);
 // ensures the form x,y,z,1
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odVector4f_check_valid_3d(const struct odVector4f* vector3);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odVector4f_check_valid_2d(const struct odVector4f* vector3);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odVector4f_get_debug_string(const struct odVector4f* vector);
 OD_API_C OD_CORE_MODULE void

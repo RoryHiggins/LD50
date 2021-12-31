@@ -2,6 +2,8 @@
 
 #include <od/core/module.h>
 
+struct odBounds2f;
+
 struct odColorRGBA32 {
 	uint8_t r;
 	uint8_t g;
@@ -11,6 +13,8 @@ struct odColorRGBA32 {
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odColorRGBA32_get_debug_string(const struct odColorRGBA32* color);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odColorRGBA32_equals(const struct odColorRGBA32* color1, const struct odColorRGBA32* color2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odColorRGBA32*
 odColorRGBA32_get_white(void);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odColorRGBA32*

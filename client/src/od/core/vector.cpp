@@ -20,7 +20,14 @@ bool odVector4f_check_valid(const odVector4f* vector) {
 }
 bool odVector4f_check_valid_3d(const odVector4f* vector3) {
 	if (!OD_CHECK(odVector4f_check_valid(vector3))
-		|| !OD_CHECK(vector3->vector[3] == 1)
+		|| !OD_CHECK(vector3->vector[3] == 1)) {
+		return false;
+	}
+
+	return true;
+}
+bool odVector4f_check_valid_2d(const odVector4f* vector3) {
+	if (!OD_CHECK(odVector4f_check_valid_3d(vector3))
 		|| !OD_CHECK(odFloat_is_precise_int(vector3->vector[2]))) {
 		return false;
 	}

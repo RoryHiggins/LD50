@@ -14,7 +14,7 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_check_valid(const struct odString* string);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odString_get_debug_string(const struct odString* string);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+OD_API_C OD_CORE_MODULE void
 odString_init(struct odString* string);
 OD_API_C OD_CORE_MODULE void
 odString_destroy(struct odString* string);

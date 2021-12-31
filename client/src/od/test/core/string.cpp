@@ -24,14 +24,16 @@ OD_TEST(odTest_odString_swap) {
 OD_TEST(odTest_odString_init_destroy) {
 	odString string;
 
-	OD_ASSERT(odString_set_count(&string, 1));
-	OD_ASSERT(odString_get(&string, 0) != nullptr);
-	OD_ASSERT(odString_get_count(&string) == 1);
-	OD_ASSERT(odString_get_capacity(&string) >= 1);
-
+	odString_init(&string);
 	odString_destroy(&string);
-	OD_ASSERT(odString_get_count(&string) == 0);
-	OD_ASSERT(odString_get_capacity(&string) == 0);
+
+	// re-init, double init
+	odString_init(&string);
+	odString_init(&string);
+
+	// double destroy
+	odString_destroy(&string);
+	odString_destroy(&string);
 }
 OD_TEST(odTest_odString_set_capacity) {
 	odString string;
@@ -64,9 +66,15 @@ OD_TEST(odTest_odString_ensure_capacity) {
 }
 OD_TEST(odTest_odString_set_count) {
 	odString string;
+
 	OD_ASSERT(odString_set_count(&string, 1));
-	OD_ASSERT(odString_get_capacity(&string) >= 1);
+	OD_ASSERT(odString_get(&string, 0) != nullptr);
 	OD_ASSERT(odString_get_count(&string) == 1);
+	OD_ASSERT(odString_get_capacity(&string) >= 1);
+
+	odString_destroy(&string);
+	OD_ASSERT(odString_get_count(&string) == 0);
+	OD_ASSERT(odString_get_capacity(&string) == 0);
 }
 OD_TEST(odTest_odString_set_count_expand) {
 	odString string;

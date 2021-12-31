@@ -320,17 +320,13 @@ bool odEntityIndex_ensure_count(odEntityIndex* entity_index, int32_t min_count) 
 		return false;
 	}
 
-	if (entity_index->entities.count < min_count) {
-		if (!OD_CHECK(entity_index->entities.set_count(min_count))) {
-			return false;
-		}
+	if (!OD_CHECK(entity_index->entities.ensure_count(min_count))) {
+		return false;
 	}
 
 	int32_t min_vertices_count = min_count * 6;
-	if (entity_index->entity_vertices.count < min_vertices_count) {
-		if (!OD_CHECK(entity_index->entity_vertices.set_count(min_vertices_count))) {
-			return false;
-		}
+	if (!OD_CHECK(entity_index->entity_vertices.ensure_count(min_vertices_count))) {
+		return false;
 	}
 
 	return true;
@@ -450,28 +446,14 @@ const char* odEntityIndex_get_debug_string(const odEntityIndex* entity_index) {
 		entities_str,
 		chunks_str);
 }
-bool odEntityIndex_init(odEntityIndex* entity_index) {
+void odEntityIndex_init(odEntityIndex* entity_index) {
 	OD_DEBUG("entity_index=%p", static_cast<const void*>(entity_index));
 
 	if (!OD_CHECK(entity_index != nullptr)) {
-		return false;
+		return;
 	}
 
 	odEntityIndex_destroy(entity_index);
-
-	if (!OD_CHECK(odTrivialArray_init(&entity_index->entities))) {
-		return false;
-	}
-	if (!OD_CHECK(odTrivialArray_init(&entity_index->entity_vertices))) {
-		return false;
-	}
-	for (odEntityChunkId i = 0; i < OD_ENTITY_CHUNK_ID_COUNT; i++) {
-		if (!OD_CHECK(odTrivialArray_init(&entity_index->chunks[i].colliders))) {
-			return false;
-		}
-	}
-
-	return true;
 }
 void odEntityIndex_destroy(odEntityIndex* entity_index) {
 	OD_DEBUG("entity_index=%p", static_cast<const void*>(entity_index));

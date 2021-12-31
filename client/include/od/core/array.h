@@ -11,7 +11,7 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odTrivialArray_check_valid(const struct odTrivialArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odTrivialArray_get_debug_string(const struct odTrivialArray* array);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+OD_API_C OD_CORE_MODULE void
 odTrivialArray_init(struct odTrivialArray* array);
 OD_API_C OD_CORE_MODULE void
 odTrivialArray_destroy(struct odTrivialArray* array);
@@ -29,6 +29,8 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
 odTrivialArray_get_count(const struct odTrivialArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odTrivialArray_set_count(struct odTrivialArray* array, int32_t new_count, int32_t stride);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odTrivialArray_ensure_count(struct odTrivialArray* array, int32_t min_count, int32_t stride);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odTrivialArray_extend(struct odTrivialArray* array, const void* extend_src, int32_t extend_count, int32_t stride);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
@@ -56,7 +58,7 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odArray_get_debug_string(const struct odArray* array);
 OD_API_C OD_CORE_MODULE void
 odArray_swap(struct odArray* array1, struct odArray* array2);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+OD_API_C OD_CORE_MODULE void
 odArray_init(struct odArray* array, const struct odType* type);
 OD_API_C OD_CORE_MODULE void
 odArray_destroy(struct odArray* array);
@@ -70,6 +72,8 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
 odArray_get_count(const struct odArray* array);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odArray_set_count(struct odArray* array, int32_t new_count);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odArray_ensure_count(struct odArray* array, int32_t min_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odArray_extend(struct odArray* array, void* moved_src, int32_t moved_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool

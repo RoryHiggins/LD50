@@ -181,23 +181,19 @@ bool odEngine_step(odEngine* engine) {
 			 0.0f,0.0f},
 		};
 
-		const int32_t scale_x = engine->settings.game_width / 2;
-		const int32_t scale_y = engine->settings.game_height / 2;
+		const float scale_x = static_cast<float>(engine->settings.game_width / 2);
+		const float scale_y = static_cast<float>(engine->settings.game_height / 2);
 
-		const int32_t translate_x = scale_x;
-		const int32_t translate_y = scale_y;
+		const float translate_x = scale_x;
+		const float translate_y = scale_y;
 
 		odMatrix4f matrix{};
-		odMatrix4f_init_transform_3d(
-			&matrix,
-			float(scale_x), float(scale_y), 1.0f,
-			float(translate_x), float(translate_y), 0.0f);
-		odMatrix4f_rotate_clockwise_z(&matrix, float(engine->frame.counter));
+		odMatrix4f_init_transform_2d(&matrix, scale_x, scale_y, translate_x, translate_y, float(engine->frame.counter));
 		odVertex vertices[vertices_count]{};
 
 		for (int32_t i = 0; i < 12; i++) {
 			memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
-			odMatrix4f_rotate_clockwise_z(&matrix, 30.0f);
+			odMatrix4f_rotate_2d(&matrix, 30.0f);
 
 			for (odVertex& vertex: vertices) {
 				odVertex_transform(&vertex, &matrix);
@@ -210,54 +206,51 @@ bool odEngine_step(odEngine* engine) {
 	}
 	// END throwaway rendering test code - TODO remove
 
-	odTriangleVertices_sort_triangles(
-		engine->frame.game_vertices.begin(), engine->frame.game_vertices.count / 3);
-	odTriangleVertices_sort_triangles(
-		engine->frame.window_vertices.begin(), engine->frame.window_vertices.count / 3);
-
-	
-	odWindowSettings* window_settings = &engine->window.settings;
-	odMatrix4f view_matrix{};
-	odMatrix4f_init_view_2d(&view_matrix, engine->settings.game_width, engine->settings.game_height);
-
-	odMatrix4f window_view_matrix{};
-	odMatrix4f_init_view_2d(&window_view_matrix, window_settings->window_width, window_settings->window_height);
-
-	odRenderState draw_to_view{
-		view_matrix,
+	odMatrix4f projection{};
+	odMatrix4f_init_ortho_2d(&projection, engine->settings.game_width, engine->settings.game_height);
+	odRenderState draw_to_game{
 		*odMatrix4f_get_identity(),
+		projection,
 		odBounds2f{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
 		&engine->src_texture,
 		&engine->game_render_texture
 	};
 
+	odWindowSettings* window_settings = &engine->window.settings;
+	odMatrix4f window_projection{};
+	odMatrix4f_init_ortho_2d(&window_projection, window_settings->window_width, window_settings->window_height);
 	odRenderState draw_to_window{
-		window_view_matrix,
 		*odMatrix4f_get_identity(),
+		window_projection,
 		odBounds2f{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
 		&engine->src_texture,
 		/* opt_render_texture*/ nullptr
 	};
-	odRenderState copy_view_to_window{draw_to_window};
-	copy_view_to_window.src_texture = odRenderTexture_get_texture(&engine->game_render_texture);
+
+	odRenderState copy_game_to_window{draw_to_window};
+	copy_game_to_window.src_texture = odRenderTexture_get_texture(&engine->game_render_texture);
 
 	// draw game
-	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_view, odColorRGBA32_get_white()))) {
+	odTrianglePrimitive_sort_vertices(
+		engine->frame.game_vertices.begin(), engine->frame.game_vertices.count / 3);
+	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_game, odColorRGBA32_get_white()))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
 		&engine->renderer,
-		&draw_to_view,
+		&draw_to_game,
 		engine->frame.game_vertices.begin(),
 		engine->frame.game_vertices.count))) {
 		return false;
 	}
 
 	// draw window
+	odTrianglePrimitive_sort_vertices(
+		engine->frame.window_vertices.begin(), engine->frame.window_vertices.count / 3);
 	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColorRGBA32_get_white()))) {
 		return false;
 	}
-	if (!OD_CHECK(odRenderer_draw_texture(&engine->renderer, &copy_view_to_window, nullptr, nullptr))) {
+	if (!OD_CHECK(odRenderer_draw_texture(&engine->renderer, &copy_game_to_window, nullptr, nullptr))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
@@ -268,6 +261,7 @@ bool odEngine_step(odEngine* engine) {
 		return false;
 	}
 
+	// wait for draw calls
 	if (!OD_CHECK(odRenderer_flush(&engine->renderer))) {
 		return false;
 	}

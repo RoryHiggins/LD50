@@ -1,8 +1,9 @@
 #include <od/platform/image.hpp>
 
+#include <od/core/color.h>
 #include <od/test/test.hpp>
 
-OD_TEST(odTest_odImage_init_release) {
+OD_TEST(odTest_odImage_init_destroy) {
 	int32_t allocated_width = -1;
 	int32_t allocated_height = -1;
 
@@ -23,6 +24,95 @@ OD_TEST(odTest_odImage_init_release) {
 
 	odImage_destroy(&image);
 	OD_ASSERT(odImage_get(&image) == nullptr);
+	odImage_get_size(&image, &allocated_width, &allocated_height);
+	OD_ASSERT(allocated_width == 0);
+	OD_ASSERT(allocated_height == 0);
+
+	// double init
+	OD_ASSERT(odImage_init(&image, width, height));
+	OD_ASSERT(odImage_get(&image) != nullptr);
+
+	// double destroy
+	odImage_destroy(&image);
+	odImage_destroy(&image);
+}
+OD_TEST(odTest_odImage_resize) {
+	int32_t start_width = 4;
+	int32_t start_height = 4;
+
+	int32_t allocated_width = -1;
+	int32_t allocated_height = -1;
+
+	odImage image;
+	OD_ASSERT(odImage_init(&image, start_width, start_height));
+	odImage_get_size(&image, &allocated_width, &allocated_height);
+	OD_ASSERT(allocated_width == start_width);
+	OD_ASSERT(allocated_height == start_height);
+
+	odColorRGBA32* pixels = odImage_get(&image);
+	OD_ASSERT(pixels != nullptr);
+
+	for (int32_t y = 0; y < start_height; y++) {
+		for (int32_t x = 0; x < start_width; x++) {
+			int32_t i = x + (y * start_width);
+			pixels[i] = {0, 0, 0, static_cast<uint8_t>(i % 255)};
+		}
+	}
+
+	{
+		int32_t new_width = start_width * 2;
+		int32_t new_height = start_height * 2;
+		OD_ASSERT(odImage_resize(&image, new_width, new_height));
+		odImage_get_size(&image, &allocated_width, &allocated_height);
+		pixels = odImage_get(&image);
+		OD_ASSERT(allocated_width == new_width);
+		OD_ASSERT(allocated_height == new_height);
+		OD_ASSERT(pixels != nullptr);
+
+		for (int32_t y = 0; y < start_height; y++) {
+			for (int32_t x = 0; x < start_width; x++) {
+				int32_t src_i = x + (y * start_width);
+				int32_t dest_i = x + (y * new_width);
+				odColorRGBA32 expected_color{0, 0, 0, static_cast<uint8_t>(src_i % 255)};
+				OD_ASSERT(odColorRGBA32_equals(&pixels[dest_i], &expected_color));
+			}
+		}
+	}
+
+	{
+		int32_t new_width = start_width / 2;
+		int32_t new_height = start_height / 2;
+		OD_ASSERT(odImage_resize(&image, new_width, new_height));
+		odImage_get_size(&image, &allocated_width, &allocated_height);
+		pixels = odImage_get(&image);
+		OD_ASSERT(allocated_width == new_width);
+		OD_ASSERT(allocated_height == new_height);
+		OD_ASSERT(pixels != nullptr);
+
+		for (int32_t y = 0; y < new_height; y++) {
+			for (int32_t x = 0; x < new_width; x++) {
+				int32_t src_i = x + (y * start_width);
+				int32_t dest_i = x + (y * new_width);
+				odColorRGBA32 expected_color{0, 0, 0, static_cast<uint8_t>(src_i % 255)};
+				OD_ASSERT(odColorRGBA32_equals(&pixels[dest_i], &expected_color));
+			}
+		}
+	}
+
+	{
+		int32_t new_width = 0;
+		int32_t new_height = 0;
+		OD_ASSERT(odImage_resize(&image, new_width, new_height));
+		odImage_get_size(&image, &allocated_width, &allocated_height);
+		OD_ASSERT(allocated_width == new_width);
+		OD_ASSERT(allocated_height == new_height);
+	}
+}
+OD_TEST(odTest_odImage_resize_empty) {
+	int32_t allocated_width = -1;
+	int32_t allocated_height = -1;
+	odImage image;
+	OD_ASSERT(odImage_resize(&image, 0, 0));
 	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == 0);
 	OD_ASSERT(allocated_height == 0);
@@ -59,7 +149,8 @@ OD_TEST(odTest_odImage_read_invalid_png_fails) {
 
 OD_TEST_SUITE(
 	odTestSuite_odImage,
-	odTest_odImage_init_release,
+	odTest_odImage_init_destroy,
+	odTest_odImage_resize,
 	odTest_odImage_read_png,
 	odTest_odImage_read_invalid_png_fails,
 )

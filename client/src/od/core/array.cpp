@@ -23,14 +23,12 @@ const char* odTrivialArray_get_debug_string(const odTrivialArray* array) {
 
 	return odDebugString_format("{\"count\": %d}", array->count);
 }
-bool odTrivialArray_init(odTrivialArray* array) {
+void odTrivialArray_init(odTrivialArray* array) {
 	if (!OD_DEBUG_CHECK(array != nullptr)) {
-		return false;
+		return;
 	}
 
 	odTrivialArray_destroy(array);
-
-	return true;
 }
 void odTrivialArray_destroy(odTrivialArray* array) {
 	if (!OD_DEBUG_CHECK(array != nullptr)) {
@@ -195,6 +193,19 @@ bool odTrivialArray_set_count(odTrivialArray* array, int32_t new_count, int32_t 
 
 	return true;
 }
+bool odTrivialArray_ensure_count(odTrivialArray* array, int32_t min_count, int32_t stride) {
+	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
+		|| !OD_DEBUG_CHECK(min_count >= 0)
+		|| !OD_DEBUG_CHECK(stride > 0)) {
+		return false;
+	}
+
+	if (min_count <= array->count) {
+		return true;
+	}
+
+	return OD_CHECK(odTrivialArray_set_count(array, min_count, stride));
+}
 bool odTrivialArray_extend(odTrivialArray* array, const void* extend_src, int32_t extend_count, int32_t stride) {
 	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
 		|| !OD_DEBUG_CHECK((extend_count == 0) || (extend_src != nullptr))
@@ -339,20 +350,15 @@ void odArray_swap(odArray* array1, odArray* array2) {
 
 	odTrivialArray_swap(&array1->array, &array2->array);
 }
-bool odArray_init(odArray* array, const odType* type) {
+void odArray_init(odArray* array, const odType* type) {
 	if (!OD_DEBUG_CHECK(array != nullptr)
-		|| !OD_DEBUG_CHECK(type != nullptr)) {
-		return false;
+		|| !OD_DEBUG_CHECK((type == nullptr) || odType_check_valid(type))) {
+		return;
 	}
 
 	odArray_destroy(array);
 
-	if (!OD_CHECK(odTrivialArray_init(&array->array))) {
-		return false;
-	}
-
 	array->type = type;
-	return true;
 }
 void odArray_destroy(odArray* array) {
 	if (!OD_DEBUG_CHECK(array != nullptr)) {
@@ -452,6 +458,18 @@ bool odArray_set_count(odArray* array, int32_t new_count) {
 
 	return true;
 }
+bool odArray_ensure_count(odArray* array, int32_t min_count) {
+	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
+		|| !OD_DEBUG_CHECK(min_count >= 0)) {
+		return false;
+	}
+
+	if (min_count <= array->array.count) {
+		return true;
+	}
+
+	return OD_CHECK(odArray_set_count(array, min_count));
+}
 bool odArray_extend(odArray* array, void* moved_src, int32_t moved_count) {
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
 		|| !OD_DEBUG_CHECK(moved_src != nullptr)
@@ -536,7 +554,7 @@ odArray::odArray()
 }
 odArray::odArray(const odType* in_type)
 : odArray{} {
-	OD_ASSERT(odArray_init(this, in_type));
+	odArray_init(this, in_type);
 }
 odArray::odArray(odArray&& other)
 : odArray{} {

@@ -21,4 +21,4 @@ OD_API_C OD_PLATFORM_MODULE void
 odRectPrimitive_get_vertices(const struct odRectPrimitive* rect, struct odVertex *out_vertices);
 
 OD_API_C OD_PLATFORM_MODULE void
-odTriangleVertices_sort_triangles(struct odVertex* triangles, int32_t triangles_count);
+odTrianglePrimitive_sort_vertices(struct odVertex* triangles, int32_t triangles_count);

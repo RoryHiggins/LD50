@@ -1,4 +1,10 @@
 
+Refactoring TODOs
+- In its own commit, remove qualifiers from odMatrix, odVector, odColor
+- In its own commit, rename odRectPrimitive to odSprite
+	+ any relevant variables
+	+ rename odTrianglePrimitive_ helper prefix to odTriangle_
+
 Major TODOs
 - odTextureAtlas - to be used with sprite loading in Lua sprite module
 - Audio loading

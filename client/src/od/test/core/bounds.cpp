@@ -103,13 +103,6 @@ OD_TEST(odTest_odBounds2f_get_height) {
 		OD_ASSERT(odBounds2f_get_height(&bounds) == 0);
 	}
 }
-OD_TEST(odTest_odBounds2f_floor) {
-	odBounds2f bounds{-2.1f, -2.5f, 3.4f, 3.99f};
-	odBounds2f_floor(&bounds);
-
-	odBounds2f expected_bounds{-3, -3, 3, 3};
-	OD_ASSERT(odBounds2f_equals(&bounds, &expected_bounds));
-}
 
 OD_TEST_SUITE(
 	odTestSuite_odBounds2f,
@@ -117,5 +110,4 @@ OD_TEST_SUITE(
 	odTest_odBounds2f_equals,
 	odTest_odBounds2f_get_width,
 	odTest_odBounds2f_get_height,
-	odTest_odBounds2f_floor,
 )

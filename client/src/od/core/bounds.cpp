@@ -28,6 +28,20 @@ const char* odBounds2f_get_debug_string(const odBounds2f* bounds) {
 		static_cast<double>(bounds->y1),
 		static_cast<double>(bounds->y2));
 }
+bool odBounds2f_is_integral(const odBounds2f* bounds) {
+	if (!OD_DEBUG_CHECK(odBounds2f_check_valid(bounds))) {
+		return false;
+	}
+
+	if (!odFloat_is_precise_int(bounds->x1)
+		|| !odFloat_is_precise_int(bounds->y1)
+		|| !odFloat_is_precise_int(bounds->x2)
+		|| !odFloat_is_precise_int(bounds->y2)) {
+		return false;
+	}
+
+	return true;
+}
 bool odBounds2f_is_collidable(const odBounds2f* bounds) {
 	if (!OD_DEBUG_CHECK(odBounds2f_check_valid(bounds))) {
 		return false;
@@ -85,14 +99,4 @@ float odBounds2f_get_height(const odBounds2f* bounds) {
 	}
 
 	return (bounds->y2 - bounds->y1);
-}
-void odBounds2f_floor(odBounds2f* bounds) {
-	if (!OD_DEBUG_CHECK(odBounds2f_check_valid(bounds))) {
-		return;
-	}
-
-	bounds->x1 = floorf(bounds->x1);
-	bounds->y1 = floorf(bounds->y1);
-	bounds->x2 = floorf(bounds->x2);
-	bounds->y2 = floorf(bounds->y2);
 }
