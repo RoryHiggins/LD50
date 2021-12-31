@@ -65,8 +65,6 @@ bool odEntitySprite_check_valid(const odEntitySprite* sprite) {
 
 	if (!OD_CHECK(std::isfinite(sprite->depth))
 		|| (!OD_CHECK(odBounds2f_check_valid(&sprite->texture_bounds)))
-		|| (!OD_CHECK(odBounds2f_is_integral(&sprite->texture_bounds)))
-
 		|| (!OD_CHECK(odMatrix4f_check_valid(&sprite->transform)))) {
 		return false;
 	}

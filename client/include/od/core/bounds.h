@@ -14,8 +14,6 @@ odBounds2f_check_valid(const struct odBounds2f* bounds);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odBounds2f_get_debug_string(const struct odBounds2f* bounds);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odBounds2f_is_integral(const struct odBounds2f* bounds);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odBounds2f_is_collidable(const struct odBounds2f* bounds);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odBounds2f_collides(const struct odBounds2f* a, const struct odBounds2f* b);

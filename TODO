@@ -1,9 +1,11 @@
 
 Refactoring TODOs
+- odBounds from float to int
 - In its own commit, remove qualifiers from odMatrix, odVector, odColor
 - In its own commit, rename odRectPrimitive to odSprite
 	+ any relevant variables
 	+ rename odTrianglePrimitive_ helper prefix to odTriangle_
+- Update error checking to allow continuation on error cases where possible
 
 Major TODOs
 - odTextureAtlas - to be used with sprite loading in Lua sprite module

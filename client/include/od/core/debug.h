@@ -17,12 +17,13 @@
 
 #if OD_BUILD_LOGS
 #define OD_LOG(LEVEL, ...) odLog_log(OD_LOG_SET_CONTEXT(), LEVEL, __VA_ARGS__)
+#define OD_CHECK(EXPR) ((EXPR) ? true : odLog_check(OD_LOG_SET_CONTEXT(), false, #EXPR))
 #else
 #define OD_LOG(...)
+#define OD_CHECK(EXPR) (EXPR)
 #endif
 
 #define OD_DISCARD(EXPR) odDebug_discard_result_inline(EXPR)
-#define OD_CHECK(EXPR) ((EXPR) ? true : odLog_check(OD_LOG_SET_CONTEXT(), false, #EXPR))
 #define OD_ASSERT(EXPR) ((EXPR) ? true : odLog_assert(OD_LOG_SET_CONTEXT(), false, #EXPR))
 #define OD_ERROR(...) OD_LOG(OD_LOG_LEVEL_ERROR, __VA_ARGS__)
 #define OD_WARN(...) OD_LOG(OD_LOG_LEVEL_WARN, __VA_ARGS__)

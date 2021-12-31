@@ -5,6 +5,7 @@
 #include <png.h>
 
 #include <od/core/debug.h>
+#include <od/core/bounds.h>
 #include <od/core/color.h>
 #include <od/core/allocation.hpp>
 #include <od/platform/file.hpp>
@@ -19,7 +20,7 @@ bool odImage_check_valid(const odImage* image) {
 	
 	return true;
 }
-const char* odImage_get_debug_string(const odImage* image) {
+const char* odImage_begin_debug_string(const odImage* image) {
 	if (image == nullptr) {
 		return "null";
 	}
@@ -130,31 +131,24 @@ bool odImage_resize(odImage* image, int32_t new_width, int32_t new_height) {
 		return false;
 	}
 
-	int32_t copy_width = image->width < new_width ? image->width : new_width;
-	int32_t copy_height = image->height < new_height ? image->height : new_height;
-	odColorRGBA32* dest_pos = odImage_get(&new_image);
-	const odColorRGBA32* src_pos = odImage_get(image);
-	const odColorRGBA32* src_end_pos = src_pos + (copy_height * image->width);
+	int32_t copy_width = image->width < new_image.width ? image->width : new_image.width;
+	int32_t copy_height = image->height < new_image.height ? image->height : new_image.height;
+	const odColorRGBA32* src = odImage_begin(image);
+	odColorRGBA32* dest = odImage_begin(&new_image);
 	if (!OD_DEBUG_CHECK(copy_width >= 0)
 		|| !OD_DEBUG_CHECK(copy_height >= 0)
-		|| !OD_CHECK((dest_pos != nullptr) || (copy_width == 0) || (copy_height == 0))
-		|| !OD_CHECK((src_pos != nullptr) || (copy_width == 0) || (copy_height == 0))
-		|| !OD_DEBUG_CHECK(src_end_pos >= src_pos)) {
+		|| !OD_CHECK((dest != nullptr) || (copy_width == 0) || (copy_height == 0))
+		|| !OD_CHECK((src != nullptr) || (copy_width == 0) || (copy_height == 0))) {
 		return false;
 	}
 
-	size_t row_size = sizeof(odColorRGBA32) * static_cast<size_t>(copy_width);
-	while (src_pos < src_end_pos) {
-		memcpy(dest_pos, src_pos, row_size);
-		src_pos += image->width;
-		dest_pos += new_width;
-	}
+	odColorRGBA32_blit(copy_width, copy_height, src, image->width, dest, new_image.width);
 
 	odImage_swap(image, &new_image);
 
 	return true;
 }
-void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
+void odImage_begin_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
 	int32_t unused;
 	out_opt_width = (out_opt_width != nullptr) ? out_opt_width : &unused;
 	out_opt_height = (out_opt_height != nullptr) ? out_opt_height : &unused;
@@ -234,15 +228,42 @@ bool odImage_read_png_file(odImage* image, const char* file_path) {
 
 	return true;
 }
-odColorRGBA32* odImage_get(odImage* image) {
-	if (!OD_CHECK(odImage_check_valid(image))) {
+odColorRGBA32* odImage_get(odImage* image, int32_t x, int32_t y) {
+	if (!OD_DEBUG_CHECK(odImage_check_valid(image))
+		|| !OD_DEBUG_CHECK((x >= 0) && (x < image->width))
+		|| !OD_DEBUG_CHECK((y >= 0) && (x < image->height))) {
+		return nullptr;
+	}
+
+	return static_cast<odColorRGBA32*>(odAllocation_get(&image->allocation)) + x + (y * image->width);
+}
+const odColorRGBA32* odImage_get_const(const odImage* image, int32_t x, int32_t y) {
+	return odImage_get(const_cast<odImage*>(image), x, y);
+}
+odColorRGBA32* odImage_begin(odImage* image) {
+	if (!OD_DEBUG_CHECK(odImage_check_valid(image))) {
 		return nullptr;
 	}
 
 	return static_cast<odColorRGBA32*>(odAllocation_get(&image->allocation));
 }
-const odColorRGBA32* odImage_get_const(const odImage* image) {
-	return odImage_get(const_cast<odImage*>(image));
+const odColorRGBA32* odImage_begin_const(const odImage* image) {
+	return odImage_begin(const_cast<odImage*>(image));
+}
+odColorRGBA32* odImage_end(odImage* image) {
+	if (!OD_DEBUG_CHECK(odImage_check_valid(image))) {
+		return nullptr;
+	}
+
+	odColorRGBA32* begin = odImage_begin(image);
+	if (!OD_DEBUG_CHECK(begin != nullptr)) {
+		return nullptr;
+	}
+
+	return begin + (image->width * image->height);
+}
+const odColorRGBA32* odImage_end_const(const odImage* image) {
+	return odImage_end(const_cast<odImage*>(image));
 }
 odImage::odImage() : allocation{}, width{0}, height{0} {
 }

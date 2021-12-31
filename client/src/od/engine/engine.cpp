@@ -79,7 +79,7 @@ bool odEngine_init(odEngine* engine, const odEngineSettings* opt_settings) {
 	if (!OD_CHECK(odTexture_init(
 		&engine->src_texture,
 		&engine->window,
-		odImage_get_const(&image),
+		odImage_begin_const(&image),
 		image.width,
 		image.height))) {
 		return false;

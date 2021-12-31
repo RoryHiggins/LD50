@@ -15,8 +15,7 @@ bool odRectPrimitive_check_valid(const odRectPrimitive* rect) {
 
 	if (!OD_CHECK(std::isfinite(rect->depth))
 		|| (!OD_CHECK(odBounds2f_check_valid(&rect->bounds)))
-		|| (!OD_CHECK(odBounds2f_check_valid(&rect->texture_bounds)))
-		|| (!OD_CHECK(odBounds2f_is_integral(&rect->texture_bounds)))) {
+		|| (!OD_CHECK(odBounds2f_check_valid(&rect->texture_bounds)))) {
 		return false;
 	}
 

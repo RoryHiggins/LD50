@@ -1,6 +1,7 @@
 #include <od/core/color.h>
 
 #include <cinttypes>
+#include <cstring>
 
 #include <od/core/debug.h>
 #include <od/core/bounds.h>
@@ -32,6 +33,29 @@ bool odColorRGBA32_equals(const odColorRGBA32* color1, const odColorRGBA32* colo
 	}
 
 	return true;
+}
+void odColorRGBA32_blit(int32_t width, int32_t height, const odColorRGBA32* src, int32_t src_row_stride,
+						odColorRGBA32* dest, int32_t dest_row_stride) {
+	if (!OD_DEBUG_CHECK(width >= 0)
+		|| !OD_DEBUG_CHECK(height >= 0)
+		|| !OD_DEBUG_CHECK(width <= src_row_stride)
+		|| !OD_DEBUG_CHECK(height <= dest_row_stride)
+		|| !OD_DEBUG_CHECK((src != nullptr) || (width == 0) || (height == 0))
+		|| !OD_DEBUG_CHECK(src_row_stride >= 0)
+		|| !OD_DEBUG_CHECK((dest != nullptr) || (width == 0) || (height == 0))
+		|| !OD_DEBUG_CHECK(dest_row_stride >= 0)
+		|| !OD_DEBUG_CHECK((dest_row_stride > 0) || (width == 0) || (height == 0))) {
+		return;
+	}
+
+	const odColorRGBA32* src_end = src + (height * src_row_stride);
+
+	size_t row_size = sizeof(odColorRGBA32) * static_cast<size_t>(width);
+	while (src < src_end) {
+		memcpy(dest, src, row_size);
+		src += src_row_stride;
+		dest += dest_row_stride;
+	}
 }
 const odColorRGBA32* odColorRGBA32_get_white() {
 	static const odColorRGBA32 color{0xFF, 0xFF, 0xFF, 0xFF};

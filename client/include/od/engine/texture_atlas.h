@@ -19,7 +19,9 @@ odAtlas_swap(struct odAtlas* atlas1, struct odAtlas* atlas2);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD int32_t
 odAtlas_get_count(const struct odAtlas* atlas);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const struct odBounds2f*
-odAtlas_get(const struct odAtlas* atlas, odAtlasRegionId region_id);
+odAtlas_get_region_bounds(const struct odAtlas* atlas, odAtlasRegionId region_id);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odAtlas_set(struct odAtlas* atlas, odAtlasRegionId region_id,
-			const struct odColorRGBA32* pixels, int32_t width, int32_t height);
+odAtlas_set_region(struct odAtlas* atlas, odAtlasRegionId region_id,
+				   int32_t width, int32_t height, const odColorRGBA32* src, int32_t src_row_stride);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+odAtlas_unset_region(odAtlas* atlas, odAtlasRegionId region_id);
