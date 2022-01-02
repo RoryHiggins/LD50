@@ -31,18 +31,18 @@ static OD_NO_DISCARD bool
 odAtlas_set_region_size(odAtlas* atlas, odAtlasRegionId region_id, int32_t width, int32_t height);
 
 bool odAtlasRegion_check_valid(const odAtlasRegion* region) {
-	if (!OD_CHECK(odBounds2f_check_valid(&region->bounds))) {
+	if (!OD_CHECK(odBounds_check_valid(&region->bounds))) {
 		return false;
 	}
 
 	return true;
 }
 bool odAtlasRegion_has_space(const odAtlasRegion* region) {
-	if (!OD_CHECK(odBounds2f_check_valid(&region->bounds))) {
+	if (!OD_CHECK(odBounds_check_valid(&region->bounds))) {
 		return false;
 	}
 
-	if (!odBounds2f_is_collidable(&region->bounds)) {
+	if (!odBounds_is_collidable(&region->bounds)) {
 		return false;
 	}
 
@@ -55,8 +55,8 @@ bool odAtlasRegion_can_allocate(const odAtlasRegion* region, int32_t width, int3
 		return false;
 	}
 
-	if ((static_cast<int32_t>(odBounds2f_get_width(&region->bounds)) > width)
-		|| (static_cast<int32_t>(odBounds2f_get_height(&region->bounds)) > height)) {
+	if ((static_cast<int32_t>(odBounds_get_width(&region->bounds)) > width)
+		|| (static_cast<int32_t>(odBounds_get_height(&region->bounds)) > height)) {
 		return false;
 	}
 
@@ -86,21 +86,21 @@ bool odAtlasRegion_allocate(const odAtlasRegion* region, odAtlasRegion* out_regi
 		CCCC
 	*/
 
-	*out_region = odAtlasRegion{odBounds2f{
+	*out_region = odAtlasRegion{odBounds{
 		region->bounds.x1,
 		region->bounds.y1,
 		region->bounds.x1 + static_cast<float>(width),
 		region->bounds.y1 + static_cast<float>(height),
 	}};
 
-	odAtlasRegion top_remaining{odBounds2f{
+	odAtlasRegion top_remaining{odBounds{
 		region->bounds.x1 + static_cast<float>(width),
 		region->bounds.y1,
 		region->bounds.x2,
 		region->bounds.y1 + static_cast<float>(height),
 	}};
 
-	odAtlasRegion continuiation_remaining{odBounds2f{
+	odAtlasRegion continuiation_remaining{odBounds{
 		region->bounds.x1 + static_cast<float>(width),
 		region->bounds.y1,
 		region->bounds.x2,
@@ -140,7 +140,7 @@ odAtlasFreeRegionId odAtlas_grow(odAtlas* atlas, int32_t width, int32_t height) 
 	int32_t max_width = width > atlas->image.width ? width : atlas->image.width;
 	int32_t new_height = atlas->image.height + height;
 
-	odAtlasRegion region{odBounds2f{
+	odAtlasRegion region{odBounds{
 		0.0f,
 		static_cast<float>(atlas->image.height),
 		static_cast<float>(max_width),
@@ -272,7 +272,7 @@ int32_t odAtlas_get_count(const odAtlas* atlas) {
 
 	return atlas->regions.get_count();
 }
-const odBounds2f* odAtlas_get_region_bounds(const odAtlas* atlas, odAtlasRegionId region_id) {
+const odBounds* odAtlas_get_region_bounds(const odAtlas* atlas, odAtlasRegionId region_id) {
 	if (!OD_CHECK(atlas != nullptr)
 		|| !OD_CHECK(region_id >= 0)
 		|| !OD_CHECK(region_id < atlas->regions.get_count())) {
@@ -287,7 +287,7 @@ const odBounds2f* odAtlas_get_region_bounds(const odAtlas* atlas, odAtlasRegionI
 	return &region->bounds;
 }
 bool odAtlas_set_region(odAtlas* atlas, odAtlasRegionId region_id,
-				 int32_t width, int32_t height, const odColorRGBA32* src, int32_t src_row_stride) {
+				 int32_t width, int32_t height, const odColor* src, int32_t src_row_stride) {
 	if (!OD_CHECK(atlas != nullptr)
 		|| !OD_CHECK(region_id >= 0)
 		|| !OD_CHECK((src != nullptr) || (width == 0) || (height == 0))
@@ -307,7 +307,7 @@ bool odAtlas_set_region(odAtlas* atlas, odAtlasRegionId region_id,
 		return false;
 	}
 
-	odColorRGBA32* dest = odImage_get(
+	odColor* dest = odImage_get(
 		&atlas->image,
 		static_cast<int32_t>(dest_region->bounds.x1),
 		static_cast<int32_t>(dest_region->bounds.y1));
@@ -316,7 +316,7 @@ bool odAtlas_set_region(odAtlas* atlas, odAtlasRegionId region_id,
 		return false;
 	}
 
-	odColorRGBA32_blit(width, height, src, src_row_stride, dest, atlas->image.width);
+	odColor_blit(width, height, src, src_row_stride, dest, atlas->image.width);
 
 	return true;
 }

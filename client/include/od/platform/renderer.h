@@ -13,9 +13,9 @@ struct odRenderTexture;
 struct odRenderer;
 
 struct odRenderState {
-	struct odMatrix4f view;
-	struct odMatrix4f projection;
-	struct odBounds2f viewport;
+	struct odMatrix view;
+	struct odMatrix projection;
+	struct odBounds viewport;
 	const struct odTexture* src_texture;
 	struct odRenderTexture* opt_render_texture;
 };
@@ -38,10 +38,10 @@ odRenderer_destroy(struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odRenderer_flush(struct odRenderer* renderer);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odRenderer_clear(struct odRenderer* renderer, struct odRenderState* state, const struct odColorRGBA32* color);
+odRenderer_clear(struct odRenderer* renderer, struct odRenderState* state, const struct odColor* color);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odRenderer_draw_vertices(struct odRenderer* renderer, struct odRenderState* state,
 						 const struct odVertex* vertices, int32_t vertices_count);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odRenderer_draw_texture(struct odRenderer* renderer, struct odRenderState* state,
-						const struct odBounds2f* opt_src_bounds, const struct odMatrix4f* opt_transform);
+						const struct odBounds* opt_src_bounds, const struct odMatrix* opt_transform);

@@ -7,7 +7,7 @@
 #include <od/platform/image.hpp>
 
 struct odAtlasRegion {
-	odBounds2f bounds;
+	odBounds bounds;
 };
 extern template struct odTrivialArrayT<odAtlasRegion>;
 

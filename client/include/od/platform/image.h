@@ -2,7 +2,7 @@
 
 #include <od/platform/module.h>
 
-struct odColorRGBA32;
+struct odColor;
 struct odImage;
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
@@ -25,15 +25,15 @@ OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odImage_read_png(struct odImage* image, const void* src_png, int32_t src_png_size);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odImage_read_png_file(struct odImage* image, const char* file_path);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColorRGBA32*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColor*
 odImage_get(struct odImage* image, int32_t x, int32_t y);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColorRGBA32*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColor*
 odImage_get_const(const struct odImage* image, int32_t x, int32_t y);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColorRGBA32*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColor*
 odImage_begin(struct odImage* image);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColorRGBA32*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColor*
 odImage_begin_const(const struct odImage* image);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColorRGBA32*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD struct odColor*
 odImage_end(struct odImage* image);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColorRGBA32*
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odColor*
 odImage_end_const(const struct odImage* image);

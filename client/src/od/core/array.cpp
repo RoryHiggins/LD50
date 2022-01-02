@@ -10,6 +10,7 @@ bool odTrivialArray_check_valid(const odTrivialArray* array) {
 	if (!OD_CHECK(array != nullptr)
 		|| !OD_CHECK(array->count >= 0)
 		|| !OD_CHECK(array->capacity >= 0)
+		|| !OD_CHECK(array->capacity >= array->count)
 		|| !OD_CHECK(odAllocation_check_valid(&array->allocation))) {
 		return false;
 	}

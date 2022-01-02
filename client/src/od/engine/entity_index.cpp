@@ -25,7 +25,7 @@ struct odEntityChunkIterator {
 	odEntityChunkCoord x2;
 	odEntityChunkCoord y2;
 
-	explicit odEntityChunkIterator(const odBounds2f& bounds);
+	explicit odEntityChunkIterator(const odBounds& bounds);
 
 	odEntityChunkIterator begin() const;
 	odEntityChunkIterator end() const;
@@ -171,7 +171,7 @@ bool odEntityChunkIterator_contains_chunk_id(const odEntityChunkIterator* iter, 
 		odEntityChunkId_get_coord_x(chunk_id),
 		odEntityChunkId_get_coord_y(chunk_id));
 }
-odEntityChunkIterator::odEntityChunkIterator(const odBounds2f& bounds)
+odEntityChunkIterator::odEntityChunkIterator(const odBounds& bounds)
 : x_start{odChunkCoord_init(bounds.x1)},
 	y_start{odChunkCoord_init(bounds.y1)},
 	x1{x_start},
@@ -291,7 +291,7 @@ bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunk
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_ENTITY_CHUNK_ID_COUNT))
 		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(collider))
-		|| !OD_DEBUG_CHECK(odBounds2f_is_collidable(&collider->bounds))
+		|| !OD_DEBUG_CHECK(odBounds_is_collidable(&collider->bounds))
 		|| !OD_DEBUG_CHECK(collider->id < entity_index->entities.count)) {
 		return false;
 	}
@@ -640,7 +640,7 @@ const char* odEntitySearch_get_debug_string(const odEntitySearch* search) {
 		static_cast<const void*>(search->out_results),
 		search->max_results,
 		odTagset_get_debug_string(&search->tagset),
-		odBounds2f_get_debug_string(&search->bounds));
+		odBounds_get_debug_string(&search->bounds));
 }
 bool odEntitySearch_check_valid(const odEntitySearch* search) {
 	if (!OD_CHECK(search != nullptr)) {
@@ -649,7 +649,7 @@ bool odEntitySearch_check_valid(const odEntitySearch* search) {
 
 	if (!OD_CHECK(search->out_results != nullptr)
 		|| !OD_CHECK(search->max_results >= 0)
-		|| !OD_CHECK(odBounds2f_check_valid(&search->bounds))) {
+		|| !OD_CHECK(odBounds_check_valid(&search->bounds))) {
 		return false;
 	}
 
@@ -661,7 +661,7 @@ bool odEntitySearch_matches_collider(const odEntitySearch* search, const odEntit
 		return false;
 	}
 
-	if (!odBounds2f_collides(&collider->bounds, &search->bounds)
+	if (!odBounds_collides(&collider->bounds, &search->bounds)
 		|| !odTagset_intersects(&collider->tagset, &search->tagset)) {
 		return false;
 	}

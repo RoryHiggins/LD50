@@ -5,11 +5,11 @@
 #include <od/core/vector.h>
 #include <od/core/color.h>
 
-struct odMatrix4f;
+struct odMatrix;
 
 struct odVertex {
-	odVector4f pos;
-	odColorRGBA32 color;
+	odVector pos;
+	odColor color;
 	float u;
 	float v;
 };
@@ -21,8 +21,8 @@ odVertex_check_valid(const struct odVertex* vertex);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odVertex_check_valid_batch(const struct odVertex* vertices, int32_t vertices_count);
 OD_API_C OD_CORE_MODULE void
-odVertex_transform(struct odVertex* vertex, const struct odMatrix4f* matrix);
+odVertex_transform(struct odVertex* vertex, const struct odMatrix* matrix);
 OD_API_C OD_CORE_MODULE void
-odVertex_transform_batch(struct odVertex* vertices, int32_t vertices_count, const struct odMatrix4f* matrix);
+odVertex_transform_batch(struct odVertex* vertices, int32_t vertices_count, const struct odMatrix* matrix);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odVertex_less(const struct odVertex* vertex, const struct odVertex* vertex2);

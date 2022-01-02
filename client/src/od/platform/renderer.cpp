@@ -40,7 +40,7 @@ static const char odRenderer_vertex_shader[] =
 	varying vec2 uv;
 
 	void main() {
-		gl_Position = projection * view * src_pos;
+		gl_Position = projection * view * vec4(src_pos.xyz, 1.0);
 		col = src_col;
 		uv = uv_scale * src_uv;
 	}
@@ -60,9 +60,9 @@ static const char odRenderer_fragment_shader[] =
 
 bool odRenderState_check_valid(const odRenderState* state) {
 	if (!OD_CHECK(state != nullptr)
-		|| !OD_CHECK(odMatrix4f_check_valid(&state->view))
-		|| !OD_CHECK(odMatrix4f_check_valid(&state->projection))
-		|| !OD_CHECK(odBounds2f_check_valid(&state->viewport))
+		|| !OD_CHECK(odMatrix_check_valid(&state->view))
+		|| !OD_CHECK(odMatrix_check_valid(&state->projection))
+		|| !OD_CHECK(odBounds_check_valid(&state->viewport))
 		|| !OD_CHECK(odTexture_check_valid(state->src_texture))
 		|| !OD_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_check_valid(state->opt_render_texture))) {
 		return false;
@@ -234,10 +234,10 @@ bool odRenderer_init(odRenderer* renderer, odWindow* window) {
 
 		const GLvoid* offset = static_cast<const GLvoid*>(nullptr);
 		glVertexAttribPointer(src_pos_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(odVertex), offset);
-		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (sizeof(odVector4f)));
+		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (sizeof(odVector)));
 
 		glVertexAttribPointer(src_col_attrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(odVertex), offset);
-		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (sizeof(odColorRGBA32)));
+		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (sizeof(odColor)));
 
 		glVertexAttribPointer(src_uv_attrib, 2, GL_FLOAT, GL_FALSE, sizeof(odVertex), offset);
 		offset = static_cast<const GLvoid*>(static_cast<const GLchar*>(offset) + (2 * sizeof(GLfloat)));
@@ -310,7 +310,7 @@ bool odRenderer_flush(odRenderer* renderer) {
 
 	return true;
 }
-bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColorRGBA32* color) {
+bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor* color) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(odRenderState_check_valid(state))
 		|| !OD_CHECK(color != nullptr)) {
@@ -382,8 +382,8 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 	glViewport(
 		static_cast<GLint>(state->viewport.x1),
 		static_cast<GLint>(state->viewport.y1),
-		static_cast<GLint>(odBounds2f_get_width(&state->viewport)),
-		static_cast<GLint>(odBounds2f_get_height(&state->viewport)));
+		static_cast<GLint>(odBounds_get_width(&state->viewport)),
+		static_cast<GLint>(odBounds_get_height(&state->viewport)));
 
 	glBufferData(
 		GL_ARRAY_BUFFER,
@@ -404,12 +404,12 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 	return true;
 }
 bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
-							 const odBounds2f* opt_src_bounds, const struct odMatrix4f* opt_transform) {
+							 const odBounds* opt_src_bounds, const struct odMatrix* opt_transform) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK((opt_src_bounds == nullptr) || odBounds2f_check_valid(opt_src_bounds))
-		|| !OD_CHECK((opt_transform == nullptr) || odMatrix4f_check_valid(opt_transform))) {
+		|| !OD_CHECK((opt_src_bounds == nullptr) || odBounds_check_valid(opt_src_bounds))
+		|| !OD_CHECK((opt_transform == nullptr) || odMatrix_check_valid(opt_transform))) {
 		return false;
 	}
 
@@ -419,16 +419,16 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 		return false;
 	}
 
-	odBounds2f src_bounds = {0.0f, 0.0f, static_cast<float>(src_width), static_cast<float>(src_height)};
+	odBounds src_bounds = {0.0f, 0.0f, static_cast<float>(src_width), static_cast<float>(src_height)};
 	if (opt_src_bounds != nullptr) {
 		src_bounds = *opt_src_bounds;
 	}
 
-	odMatrix4f transform{};
-	odMatrix4f_init_transform_3d(
+	odMatrix transform{};
+	odMatrix_init(
 		&transform,
-		odBounds2f_get_width(&state->viewport),
-		odBounds2f_get_height(&state->viewport),
+		odBounds_get_width(&state->viewport),
+		odBounds_get_height(&state->viewport),
 		1.0f,
 		0.0f,
 		0.0f,
@@ -442,7 +442,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	odRectPrimitive rect{
 		{0.0f, 0.0f, 1.0f, 1.0f},
 		{src_bounds.x1, src_bounds.y1, src_bounds.x2, src_bounds.y2},
-		*odColorRGBA32_get_white(),
+		*odColor_get_white(),
 		0.0f,
 	};
 	odVertex vertices[OD_RECT_PRIMITIVE_VERTEX_COUNT]{};

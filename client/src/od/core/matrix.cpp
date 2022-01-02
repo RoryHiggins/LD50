@@ -7,7 +7,7 @@
 #include <od/core/math.h>
 #include <od/core/vector.h>
 
-const char* odMatrix4f_get_debug_string(const odMatrix4f* matrix) {
+const char* odMatrix_get_debug_string(const odMatrix* matrix) {
 	if (matrix == nullptr) {
 		return "null";
 	}
@@ -31,7 +31,7 @@ const char* odMatrix4f_get_debug_string(const odMatrix4f* matrix) {
 		static_cast<double>(matrix->matrix[14]),
 		static_cast<double>(matrix->matrix[15]));
 }
-bool odMatrix4f_check_valid(const odMatrix4f* matrix) {
+bool odMatrix_check_valid(const odMatrix* matrix) {
 	if (!OD_CHECK(matrix != nullptr)) {
 		return false;
 	}
@@ -44,30 +44,7 @@ bool odMatrix4f_check_valid(const odMatrix4f* matrix) {
 
 	return true;
 }
-bool odMatrix4f_check_valid_3d(const odMatrix4f* matrix) {
-	if (!OD_CHECK(odMatrix4f_check_valid(matrix))
-		|| !OD_CHECK(matrix->matrix[3] == 0.0f)
-		|| !OD_CHECK(matrix->matrix[7] == 0.0f)
-		|| !OD_CHECK(matrix->matrix[11] == 0.0f)
-		|| !OD_CHECK(matrix->matrix[15] == 1.0f)) {
-		return false;
-	}
-
-	return true;
-}
-bool odMatrix4f_check_valid_2d(const odMatrix4f* matrix) {
-	if (!OD_CHECK(odMatrix4f_check_valid_3d(matrix))
-		|| !OD_CHECK(matrix->matrix[2] == 0.0f)
-		|| !OD_CHECK(matrix->matrix[6] == 0.0f)
-		|| !OD_CHECK(matrix->matrix[10] == 1.0f)
-		|| !OD_CHECK(matrix->matrix[14] == 0.0f)
-		|| !OD_CHECK(matrix->matrix[14] == 0.0f)) {
-		return false;
-	}
-
-	return true;
-}
-void odMatrix4f_init_transform_3d(odMatrix4f* matrix,
+void odMatrix_init(odMatrix* matrix,
 				   float scale_x, float scale_y, float scale_z,
 				   float translate_x, float translate_y, float translate_z) {
 	if (!OD_DEBUG_CHECK(matrix != nullptr)
@@ -81,30 +58,15 @@ void odMatrix4f_init_transform_3d(odMatrix4f* matrix,
 	}
 
 	// column-major
-	*matrix = odMatrix4f{{
+	*matrix = odMatrix{{
 		scale_x, 0.0f, 0.0f, 0.0f,
 		0.0f, scale_y, 0.0f, 0.0f,
 		0.0f, 0.0f, scale_z, 0.0f,
 		translate_x, translate_y, translate_z, 1.0f
 	}};
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix)));
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
 }
-void odMatrix4f_init_transform_2d(struct odMatrix4f* matrix, float scale_x, float scale_y,
-								  float translate_x, float translate_y, float rotate_clock_deg) {
-	if (!OD_DEBUG_CHECK(matrix != nullptr)
-		|| !OD_DEBUG_CHECK(std::isfinite(scale_x))
-		|| !OD_DEBUG_CHECK(std::isfinite(scale_y))
-		|| !OD_DEBUG_CHECK(std::isfinite(translate_x))
-		|| !OD_DEBUG_CHECK(std::isfinite(translate_y))
-		|| !OD_DEBUG_CHECK(std::isfinite(rotate_clock_deg))) {
-		return;
-	}
-
-	odMatrix4f_init_transform_3d(matrix, scale_x, scale_y, 1.0f, translate_x, translate_y, 0.0f);
-	odMatrix4f_rotate_2d(matrix, rotate_clock_deg);
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix)));
-}
-void odMatrix4f_init_ortho_2d(odMatrix4f* matrix, int32_t width, int32_t height) {
+void odMatrix_init_ortho_2d(odMatrix* matrix, int32_t width, int32_t height) {
 	if (!OD_DEBUG_CHECK(matrix != nullptr)
 		|| !OD_DEBUG_CHECK((width > 0) && (width <= OD_FLOAT_PRECISE_INT_MAX))
 		|| !OD_DEBUG_CHECK((height > 0) && (height <= OD_FLOAT_PRECISE_INT_MAX))) {
@@ -115,7 +77,7 @@ void odMatrix4f_init_ortho_2d(odMatrix4f* matrix, int32_t width, int32_t height)
 	// from x=0..view_width, y=0..view_height
 	// to x=-1..1, y=-1..1
 	// it also flips y, so (0,0)=top left, (0,height)=bottom left
-	return odMatrix4f_init_transform_3d(
+	return odMatrix_init(
 		matrix,
 
 		// scales xy from 0..width,0..height to 0..2,0..2
@@ -129,16 +91,16 @@ void odMatrix4f_init_ortho_2d(odMatrix4f* matrix, int32_t width, int32_t height)
 		0.0f
 	);
 }
-void odMatrix4f_multiply(odMatrix4f* matrix, const odMatrix4f* other) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix))
-		|| !OD_DEBUG_CHECK(odMatrix4f_check_valid(other))) {
+void odMatrix_multiply(odMatrix* matrix, const odMatrix* other) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid(other))) {
 		return;
 	}
 
 	const float* a = matrix->matrix;
 	const float* b = other->matrix;
 
-	*matrix = odMatrix4f{{
+	*matrix = odMatrix{{
 		(a[0] * b[0])  + (a[4] * b[1])  + (a[8]  * b[2])  + (a[12] * b[3]),
 		(a[1] * b[0])  + (a[5] * b[1])  + (a[9]  * b[2])  + (a[13] * b[3]),
 		(a[2] * b[0])  + (a[6] * b[1])  + (a[10] * b[2])  + (a[14] * b[3]),
@@ -156,87 +118,62 @@ void odMatrix4f_multiply(odMatrix4f* matrix, const odMatrix4f* other) {
 		(a[2] * b[12]) + (a[6] * b[13]) + (a[10] * b[14]) + (a[14] * b[15]),
 		(a[3] * b[12]) + (a[7] * b[13]) + (a[11] * b[14]) + (a[15] * b[15])
 	}};
+
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
 }
-void odMatrix4f_multiply_vector(const odMatrix4f* matrix, odVector4f* vector) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix))
-		|| !OD_DEBUG_CHECK(odVector4f_check_valid(vector))
-		) {
+void odMatrix_multiply_vector(const odMatrix* matrix, odVector* vector) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
+		|| !OD_DEBUG_CHECK(odVector_check_valid(vector))) {
 		return;
 	}
 
 	const float* m = matrix->matrix;
 	const float* v = vector->vector;
 
-	*vector = odVector4f{{
-		(m[0] * v[0]) + (m[4] * v[1]) + (m[8]  * v[2]) + (m[12] * v[3]),
-		(m[1] * v[0]) + (m[5] * v[1]) + (m[9]  * v[2]) + (m[13] * v[3]),
-		(m[2] * v[0]) + (m[6] * v[1]) + (m[10] * v[2]) + (m[14] * v[3]),
-		(m[3] * v[0]) + (m[7] * v[1]) + (m[11] * v[2]) + (m[15] * v[3])
+	*vector = odVector{{
+		(m[0] * v[0]) + (m[4] * v[1]) + (m[8]  * v[2]) + m[12],
+		(m[1] * v[0]) + (m[5] * v[1]) + (m[9]  * v[2]) + m[13],
+		(m[2] * v[0]) + (m[6] * v[1]) + (m[10] * v[2]) + m[14],
+		0.0f,
 	}};
+	OD_DISCARD(OD_DEBUG_CHECK(odVector_check_valid(vector)));
 }
-void odMatrix4f_multiply_vector_3d(const odMatrix4f* matrix, odVector4f* vector) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
-		|| !OD_DEBUG_CHECK(odVector4f_check_valid_3d(vector))) {
-		return;
-	}
-
-	odMatrix4f_multiply_vector(matrix, vector);
-	OD_DISCARD(OD_DEBUG_CHECK(odVector4f_check_valid_3d(vector)));
-}
-void odMatrix4f_multiply_vector_2d(const odMatrix4f* matrix, odVector4f* vector) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix))
-		|| !OD_DEBUG_CHECK(odVector4f_check_valid_2d(vector))) {
-		return;
-	}
-
-	float depth_before = vector->vector[2];
-	odMatrix4f_multiply_vector(matrix, vector);
-	OD_DISCARD(OD_DEBUG_CHECK(odVector4f_check_valid_2d(vector))
-			   && OD_DEBUG_CHECK(depth_before == vector->vector[2]));
-	OD_MAYBE_UNUSED(depth_before);
-}
-void odMatrix4f_scale_3d(odMatrix4f* matrix, float scale_x, float scale_y, float scale_z) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
+void odMatrix_scale(odMatrix* matrix, float scale_x, float scale_y, float scale_z) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_x))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_y))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_z))) {
 		return;
 	}
 
-	odMatrix4f scale_matrix{
+	odMatrix scale_matrix{
 		scale_x, 0.0f, 0.0f, 0.0f,
 		0.0f, scale_y, 0.0f, 0.0f,
 		0.0f, 0.0f, scale_z, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	};
-	odMatrix4f_multiply(matrix, &scale_matrix);
+	odMatrix_multiply(matrix, &scale_matrix);
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
 }
-void odMatrix4f_scale_2d(odMatrix4f* matrix, float scale_x, float scale_y) {
-	odMatrix4f_scale_3d(matrix, scale_x, scale_y, 1.0f);
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix)));
-}
-void odMatrix4f_translate_3d(odMatrix4f* matrix, float translate_x, float translate_y, float translate_z) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
+void odMatrix_translate(odMatrix* matrix, float translate_x, float translate_y, float translate_z) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_x))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_y))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_z))) {
 		return;
 	}
 
-	odMatrix4f translate_matrix{
+	odMatrix translate_matrix{
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		translate_x, translate_y, translate_z, 1.0f
 	};
-	odMatrix4f_multiply(matrix, &translate_matrix);
+	odMatrix_multiply(matrix, &translate_matrix);
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
 }
-void odMatrix4f_translate_2d(odMatrix4f* matrix, float translate_x, float translate_y) {
-	odMatrix4f_translate_3d(matrix, translate_x, translate_y, 0.0f);
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix4f_check_valid_2d(matrix)));
-}
-void odMatrix4f_rotate_2d(odMatrix4f* matrix, float rotate_clock_deg) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid_3d(matrix))
+void odMatrix_rotate_z(odMatrix* matrix, float rotate_clock_deg) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(rotate_clock_deg))) {
 		return;
 	}
@@ -245,17 +182,18 @@ void odMatrix4f_rotate_2d(odMatrix4f* matrix, float rotate_clock_deg) {
 	float rotate_sin = sinf(rotate_rad);
 	float rotate_cos = cosf(rotate_rad);
 
-	odMatrix4f rotate_matrix{{
+	odMatrix rotate_matrix{{
 		rotate_cos, -rotate_sin, 0.0f, 0.0f,
 		rotate_sin, rotate_cos, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f,
 	}};
-	odMatrix4f_multiply(matrix, &rotate_matrix);
+	odMatrix_multiply(matrix, &rotate_matrix);
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
 }
-bool odMatrix4f_equals(const odMatrix4f* matrix1, const odMatrix4f* matrix2) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix1))
-		|| !OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix2))) {
+bool odMatrix_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix1))
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid(matrix2))) {
 		return false;
 	}
 
@@ -267,9 +205,9 @@ bool odMatrix4f_equals(const odMatrix4f* matrix1, const odMatrix4f* matrix2) {
 
 	return true;
 }
-bool odMatrix4f_epsilon_equals(const odMatrix4f* matrix1, const odMatrix4f* matrix2) {
-	if (!OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix1))
-		|| !OD_DEBUG_CHECK(odMatrix4f_check_valid(matrix2))) {
+bool odMatrix_epsilon_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix1))
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid(matrix2))) {
 		return false;
 	}
 
@@ -281,8 +219,8 @@ bool odMatrix4f_epsilon_equals(const odMatrix4f* matrix1, const odMatrix4f* matr
 
 	return true;
 }
-const odMatrix4f* odMatrix4f_get_identity() {
-	static const odMatrix4f matrix{
+const odMatrix* odMatrix_get_identity() {
+	static const odMatrix matrix{
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,

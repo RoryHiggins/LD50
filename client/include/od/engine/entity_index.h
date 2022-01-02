@@ -26,7 +26,7 @@ struct odEntityIndex;
 struct odEntitySearch {
 	odEntityId* out_results;
 	int32_t max_results;
-	struct odBounds2f bounds;
+	struct odBounds bounds;
 	struct odTagset tagset;
 };
 

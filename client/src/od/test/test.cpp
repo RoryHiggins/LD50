@@ -9,7 +9,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odDebug(),
 		odTestSuite_odAllocation(),
 		odTestSuite_odArray(),
-		odTestSuite_odBounds2f(),
+		odTestSuite_odBounds(),
 		odTestSuite_odMatrix(),
 		odTestSuite_odString(),
 		odTestSuite_odFile(),

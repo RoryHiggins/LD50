@@ -4,50 +4,35 @@
 
 #define OD_MATRIX4_ELEM_COUNT 16
 
-struct odVector4f;
+struct odVector;
 
-struct odMatrix4f {
+struct odMatrix {
 	float matrix[OD_MATRIX4_ELEM_COUNT];  // column-major
 };
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
-odMatrix4f_get_debug_string(const struct odMatrix4f* matrix);
+odMatrix_get_debug_string(const struct odMatrix* matrix);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odMatrix4f_check_valid(const struct odMatrix4f* matrix);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odMatrix4f_check_valid_3d(const struct odMatrix4f* matrix);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odMatrix4f_check_valid_2d(const struct odMatrix4f* matrix);
+odMatrix_check_valid(const struct odMatrix* matrix);
 OD_API_C OD_CORE_MODULE void
-odMatrix4f_init_transform_3d(struct odMatrix4f* matrix,
+odMatrix_init(struct odMatrix* matrix,
 							 float scale_x, float scale_y, float scale_z,
 							 float translate_x, float translate_y, float translate_z);
 OD_API_C OD_CORE_MODULE void
-odMatrix4f_init_transform_2d(struct odMatrix4f* matrix, float scale_x, float scale_y,
-							 float translate_x, float translate_y, float rotate_clock_deg);
+odMatrix_init_ortho_2d(struct odMatrix* matrix, int32_t width, int32_t height);
 OD_API_C OD_CORE_MODULE void
-odMatrix4f_init_ortho_2d(struct odMatrix4f* matrix, int32_t width, int32_t height);
+odMatrix_multiply(struct odMatrix* matrix, const struct odMatrix* other);
 OD_API_C OD_CORE_MODULE void
-odMatrix4f_multiply(struct odMatrix4f* matrix, const struct odMatrix4f* other);
+odMatrix_multiply_vector(const struct odMatrix* matrix, struct odVector* vector);
 OD_API_C OD_CORE_MODULE void
-odMatrix4f_multiply_vector(const struct odMatrix4f* matrix, struct odVector4f* vector);
+odMatrix_scale(struct odMatrix* matrix, float scale_x, float scale_y, float scale_z);
 OD_API_C OD_CORE_MODULE void
-odMatrix4f_multiply_vector_3d(const struct odMatrix4f* matrix, struct odVector4f* vector);
+odMatrix_translate(struct odMatrix* matrix, float translate_x, float translate_y, float translate_z);
 OD_API_C OD_CORE_MODULE void
-odMatrix4f_multiply_vector_2d(const struct odMatrix4f* matrix, struct odVector4f* vector);
-OD_API_C OD_CORE_MODULE void
-odMatrix4f_scale_3d(struct odMatrix4f* matrix, float scale_x, float scale_y, float scale_z);
-OD_API_C OD_CORE_MODULE void
-odMatrix4f_scale_2d(struct odMatrix4f* matrix, float scale_x, float scale_y);
-OD_API_C OD_CORE_MODULE void
-odMatrix4f_translate_3d(struct odMatrix4f* matrix, float translate_x, float translate_y, float translate_z);
-OD_API_C OD_CORE_MODULE void
-odMatrix4f_translate_2d(struct odMatrix4f* matrix, float translate_x, float translate_y);
-OD_API_C OD_CORE_MODULE void
-odMatrix4f_rotate_2d(struct odMatrix4f* matrix, float rotate_clock_deg);
+odMatrix_rotate_z(struct odMatrix* matrix, float rotate_clock_deg);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odMatrix4f_equals(const struct odMatrix4f* matrix1, const struct odMatrix4f* matrix2);
+odMatrix_equals(const struct odMatrix* matrix1, const struct odMatrix* matrix2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odMatrix4f_epsilon_equals(const struct odMatrix4f* matrix1, const struct odMatrix4f* matrix2);
-OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odMatrix4f*
-odMatrix4f_get_identity(void);
+odMatrix_epsilon_equals(const struct odMatrix* matrix1, const struct odMatrix* matrix2);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odMatrix*
+odMatrix_get_identity(void);

@@ -14,8 +14,8 @@ bool odRectPrimitive_check_valid(const odRectPrimitive* rect) {
 	}
 
 	if (!OD_CHECK(std::isfinite(rect->depth))
-		|| (!OD_CHECK(odBounds2f_check_valid(&rect->bounds)))
-		|| (!OD_CHECK(odBounds2f_check_valid(&rect->texture_bounds)))) {
+		|| (!OD_CHECK(odBounds_check_valid(&rect->bounds)))
+		|| (!OD_CHECK(odBounds_check_valid(&rect->texture_bounds)))) {
 		return false;
 	}
 
@@ -35,13 +35,13 @@ void odRectPrimitive_get_vertices(const odRectPrimitive* rect, odVertex *out_ver
 	float u2 = rect->texture_bounds.x2;
 	float v1 = rect->texture_bounds.y1;
 	float v2 = rect->texture_bounds.y2;
-	odColorRGBA32 color = rect->color;
+	odColor color = rect->color;
 	float depth = rect->depth;
 
-	odVertex top_left = odVertex{{x1, y1, depth, 1.0f}, color, u1, v1};
-	odVertex top_right = odVertex{{x2, y1, depth, 1.0f}, color, u2, v1};
-	odVertex bottom_left = odVertex{{x1, y2, depth, 1.0f}, color, u1, v2};
-	odVertex bottom_right = odVertex{{x2, y2, depth, 1.0f}, color, u2, v2};
+	odVertex top_left = odVertex{{x1, y1, depth, 0.0f}, color, u1, v1};
+	odVertex top_right = odVertex{{x2, y1, depth, 0.0f}, color, u2, v1};
+	odVertex bottom_left = odVertex{{x1, y2, depth, 0.0f}, color, u1, v2};
+	odVertex bottom_right = odVertex{{x2, y2, depth, 0.0f}, color, u2, v2};
 
 	// display rect as two triangles, with vertices in counter-clockwise (y up) order:
 	int32_t i = 0;

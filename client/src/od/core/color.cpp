@@ -6,7 +6,7 @@
 #include <od/core/debug.h>
 #include <od/core/bounds.h>
 
-const char* odColorRGBA32_get_debug_string(const odColorRGBA32* color) {
+const char* odColor_get_debug_string(const odColor* color) {
 	if (color == nullptr) {
 		return "null";
 	}
@@ -19,7 +19,7 @@ const char* odColorRGBA32_get_debug_string(const odColorRGBA32* color) {
 
 	return odDebugString_format("\"0x%08x\"", color_u32);
 }
-bool odColorRGBA32_equals(const odColorRGBA32* color1, const odColorRGBA32* color2) {
+bool odColor_equals(const odColor* color1, const odColor* color2) {
 	if (!OD_DEBUG_CHECK(color1 != nullptr)
 		|| !OD_DEBUG_CHECK(color2 != nullptr)) {
 		return false;
@@ -34,8 +34,8 @@ bool odColorRGBA32_equals(const odColorRGBA32* color1, const odColorRGBA32* colo
 
 	return true;
 }
-void odColorRGBA32_blit(int32_t width, int32_t height, const odColorRGBA32* src, int32_t src_row_stride,
-						odColorRGBA32* dest, int32_t dest_row_stride) {
+void odColor_blit(int32_t width, int32_t height, const odColor* src, int32_t src_row_stride,
+						odColor* dest, int32_t dest_row_stride) {
 	if (!OD_DEBUG_CHECK(width >= 0)
 		|| !OD_DEBUG_CHECK(height >= 0)
 		|| !OD_DEBUG_CHECK(width <= src_row_stride)
@@ -48,36 +48,36 @@ void odColorRGBA32_blit(int32_t width, int32_t height, const odColorRGBA32* src,
 		return;
 	}
 
-	const odColorRGBA32* src_end = src + (height * src_row_stride);
+	const odColor* src_end = src + (height * src_row_stride);
 
-	size_t row_size = sizeof(odColorRGBA32) * static_cast<size_t>(width);
+	size_t row_size = sizeof(odColor) * static_cast<size_t>(width);
 	while (src < src_end) {
 		memcpy(dest, src, row_size);
 		src += src_row_stride;
 		dest += dest_row_stride;
 	}
 }
-const odColorRGBA32* odColorRGBA32_get_white() {
-	static const odColorRGBA32 color{0xFF, 0xFF, 0xFF, 0xFF};
+const odColor* odColor_get_white() {
+	static const odColor color{0xFF, 0xFF, 0xFF, 0xFF};
 	return &color;
 }
-const odColorRGBA32* odColorRGBA32_get_black() {
-	static const odColorRGBA32 color{0x00, 0x00, 0x00, 0xFF};
+const odColor* odColor_get_black() {
+	static const odColor color{0x00, 0x00, 0x00, 0xFF};
 	return &color;
 }
-const odColorRGBA32* odColorRGBA32_get_red() {
-	static const odColorRGBA32 color{0xFF, 0x00, 0x00, 0xFF};
+const odColor* odColor_get_red() {
+	static const odColor color{0xFF, 0x00, 0x00, 0xFF};
 	return &color;
 }
-const odColorRGBA32* odColorRGBA32_get_green() {
-	static const odColorRGBA32 color{0x00, 0xFF, 0x00, 0xFF};
+const odColor* odColor_get_green() {
+	static const odColor color{0x00, 0xFF, 0x00, 0xFF};
 	return &color;
 }
-const odColorRGBA32* odColorRGBA32_get_blue() {
-	static const odColorRGBA32 color{0x00, 0x00, 0xFF, 0xFF};
+const odColor* odColor_get_blue() {
+	static const odColor color{0x00, 0x00, 0xFF, 0xFF};
 	return &color;
 }
-const odColorRGBA32* odColorRGBA32_get_transparent() {
-	static const odColorRGBA32 color{0x00, 0x00, 0x00, 0x00};
+const odColor* odColor_get_transparent() {
+	static const odColor color{0x00, 0x00, 0x00, 0x00};
 	return &color;
 }

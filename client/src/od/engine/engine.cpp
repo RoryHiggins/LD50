@@ -155,9 +155,9 @@ bool odEngine_step(odEngine* engine) {
 		// float u = 80.0f + (8.0f * float((engine->frame.counter >> 3) % 4));
 		// float v = 40.0f;
 		odRectPrimitive rect{
-			odBounds2f{0.0f, 0.0f, 288.0f, 128.0f},
-			odBounds2f{0.0f, 0.0f, 144.0f, 64.0f},
-			*odColorRGBA32_get_white(),
+			odBounds{0.0f, 0.0f, 288.0f, 128.0f},
+			odBounds{0.0f, 0.0f, 144.0f, 64.0f},
+			*odColor_get_white(),
 			0.0f,
 		};
 		const int32_t vertices_count = OD_RECT_PRIMITIVE_VERTEX_COUNT;
@@ -170,13 +170,13 @@ bool odEngine_step(odEngine* engine) {
 	{
 		const int32_t vertices_count = 3;
 		odVertex vertices_base[vertices_count] = {
-			{{0.0f,0.0f,0.0f,1.0f},
+			{{0.0f,0.0f,0.0f,0.0f},
 			 {0xff,0x00,0x00,0xff},
 			 0.0f,0.0f},
-			{{0.0f,1.0f,0.0f,1.0f},
+			{{0.0f,1.0f,0.0f,0.0f},
 			 {0xff,0xff,0x00,0xff},
 			 0.0f,0.0f},
-			{{1.0f,0.0f,0.0f,1.0f},
+			{{1.0f,0.0f,0.0f,0.0f},
 			 {0xff,0xff,0x00,0xff},
 			 0.0f,0.0f},
 		};
@@ -187,13 +187,14 @@ bool odEngine_step(odEngine* engine) {
 		const float translate_x = scale_x;
 		const float translate_y = scale_y;
 
-		odMatrix4f matrix{};
-		odMatrix4f_init_transform_2d(&matrix, scale_x, scale_y, translate_x, translate_y, float(engine->frame.counter));
+		odMatrix matrix{};
+		odMatrix_init(&matrix, scale_x, scale_y, 1.0f, translate_x, translate_y, 0.0f);
+		odMatrix_rotate_z(&matrix, float(engine->frame.counter));
 		odVertex vertices[vertices_count]{};
 
 		for (int32_t i = 0; i < 12; i++) {
 			memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
-			odMatrix4f_rotate_2d(&matrix, 30.0f);
+			odMatrix_rotate_z(&matrix, 30.0f);
 
 			for (odVertex& vertex: vertices) {
 				odVertex_transform(&vertex, &matrix);
@@ -206,23 +207,23 @@ bool odEngine_step(odEngine* engine) {
 	}
 	// END throwaway rendering test code - TODO remove
 
-	odMatrix4f projection{};
-	odMatrix4f_init_ortho_2d(&projection, engine->settings.game_width, engine->settings.game_height);
+	odMatrix projection{};
+	odMatrix_init_ortho_2d(&projection, engine->settings.game_width, engine->settings.game_height);
 	odRenderState draw_to_game{
-		*odMatrix4f_get_identity(),
+		*odMatrix_get_identity(),
 		projection,
-		odBounds2f{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
+		odBounds{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
 		&engine->src_texture,
 		&engine->game_render_texture
 	};
 
 	odWindowSettings* window_settings = &engine->window.settings;
-	odMatrix4f window_projection{};
-	odMatrix4f_init_ortho_2d(&window_projection, window_settings->window_width, window_settings->window_height);
+	odMatrix window_projection{};
+	odMatrix_init_ortho_2d(&window_projection, window_settings->window_width, window_settings->window_height);
 	odRenderState draw_to_window{
-		*odMatrix4f_get_identity(),
+		*odMatrix_get_identity(),
 		window_projection,
-		odBounds2f{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
+		odBounds{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
 		&engine->src_texture,
 		/* opt_render_texture*/ nullptr
 	};
@@ -233,7 +234,7 @@ bool odEngine_step(odEngine* engine) {
 	// draw game
 	odTrianglePrimitive_sort_vertices(
 		engine->frame.game_vertices.begin(), engine->frame.game_vertices.count / 3);
-	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_game, odColorRGBA32_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_game, odColor_get_white()))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
@@ -247,7 +248,7 @@ bool odEngine_step(odEngine* engine) {
 	// draw window
 	odTrianglePrimitive_sort_vertices(
 		engine->frame.window_vertices.begin(), engine->frame.window_vertices.count / 3);
-	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColorRGBA32_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColor_get_white()))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_texture(&engine->renderer, &copy_game_to_window, nullptr, nullptr))) {

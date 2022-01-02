@@ -19,7 +19,7 @@ OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odTexture_get_debug_string(const struct odTexture* texture);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odTexture_init(struct odTexture* texture, struct odWindow* window,
-			   const struct odColorRGBA32* opt_pixels, int32_t width, int32_t height);
+			   const struct odColor* opt_pixels, int32_t width, int32_t height);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odTexture_init_blank(struct odTexture* texture, struct odWindow* window);
 OD_API_C OD_PLATFORM_MODULE void
