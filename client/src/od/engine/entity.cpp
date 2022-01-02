@@ -25,7 +25,8 @@ bool odEntityCollider_check_valid(const odEntityCollider* collider) {
 	}
 
 	if (!OD_CHECK(collider->id >= 0)
-		|| !OD_CHECK(odBounds_check_valid(&collider->bounds))) {
+		|| !OD_CHECK(odBounds_check_valid(&collider->bounds))
+		|| !OD_CHECK(odBounds_fits_float(&collider->bounds))) {
 		return false;
 	}
 
@@ -64,8 +65,9 @@ bool odEntitySprite_check_valid(const odEntitySprite* sprite) {
 	}
 
 	if (!OD_CHECK(std::isfinite(sprite->depth))
-		|| (!OD_CHECK(odBounds_check_valid(&sprite->texture_bounds)))
-		|| (!OD_CHECK(odMatrix_check_valid(&sprite->transform)))) {
+		|| !OD_CHECK(odBounds_check_valid(&sprite->texture_bounds))
+		|| !OD_CHECK(odBounds_fits_float(&sprite->texture_bounds))
+		|| !OD_CHECK(odMatrix_check_valid(&sprite->transform))) {
 		return false;
 	}
 

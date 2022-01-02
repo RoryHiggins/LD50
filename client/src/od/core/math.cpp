@@ -20,3 +20,12 @@ bool odFloat_epsilon_equals(float x, float y) {
 	}
 	return fabsf(y - x) <= FLT_EPSILON;
 }
+
+bool odInt32_fits_float(int32_t x) {
+	if ((x < OD_FLOAT_PRECISE_INT_MIN)
+		|| (x > OD_FLOAT_PRECISE_INT_MAX)) {
+		return false;
+	}
+
+	return true;
+}

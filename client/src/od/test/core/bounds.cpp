@@ -61,7 +61,7 @@ OD_TEST(odTest_odBounds_equals) {
 	for (const odBounds& bounds: bounds_comparisons) {
 		OD_ASSERT(odBounds_equals(&bounds, &bounds));
 
-		odBounds non_match{-1,-1,0,0};
+		odBounds non_match{-1, -1, 0, 0};
 		OD_ASSERT(!odBounds_equals(&bounds, &non_match));
 	}
 }

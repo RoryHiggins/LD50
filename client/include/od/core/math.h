@@ -13,3 +13,6 @@ OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odFloat_is_precise_int(float x);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odFloat_epsilon_equals(float x, float y);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odInt32_fits_float(int32_t x);

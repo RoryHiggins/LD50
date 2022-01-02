@@ -31,7 +31,8 @@ static OD_NO_DISCARD bool
 odAtlas_set_region_size(odAtlas* atlas, odAtlasRegionId region_id, int32_t width, int32_t height);
 
 bool odAtlasRegion_check_valid(const odAtlasRegion* region) {
-	if (!OD_CHECK(odBounds_check_valid(&region->bounds))) {
+	if (!OD_CHECK(odBounds_check_valid(&region->bounds))
+		|| !OD_CHECK(odBounds_fits_float(&region->bounds))) {
 		return false;
 	}
 
@@ -55,8 +56,8 @@ bool odAtlasRegion_can_allocate(const odAtlasRegion* region, int32_t width, int3
 		return false;
 	}
 
-	if ((static_cast<int32_t>(odBounds_get_width(&region->bounds)) > width)
-		|| (static_cast<int32_t>(odBounds_get_height(&region->bounds)) > height)) {
+	if ((odBounds_get_width(&region->bounds) > width)
+		|| (odBounds_get_height(&region->bounds) > height)) {
 		return false;
 	}
 
@@ -89,22 +90,22 @@ bool odAtlasRegion_allocate(const odAtlasRegion* region, odAtlasRegion* out_regi
 	*out_region = odAtlasRegion{odBounds{
 		region->bounds.x1,
 		region->bounds.y1,
-		region->bounds.x1 + static_cast<float>(width),
-		region->bounds.y1 + static_cast<float>(height),
+		region->bounds.x1 + width,
+		region->bounds.y1 + height,
 	}};
 
 	odAtlasRegion top_remaining{odBounds{
-		region->bounds.x1 + static_cast<float>(width),
+		region->bounds.x1 + width,
 		region->bounds.y1,
 		region->bounds.x2,
-		region->bounds.y1 + static_cast<float>(height),
+		region->bounds.y1 + height,
 	}};
 
 	odAtlasRegion continuiation_remaining{odBounds{
-		region->bounds.x1 + static_cast<float>(width),
+		region->bounds.x1 + width,
 		region->bounds.y1,
 		region->bounds.x2,
-		region->bounds.y1 + static_cast<float>(height),
+		region->bounds.y1 + height,
 	}};
 
 	*out_free_regions_count = 0;
@@ -141,10 +142,10 @@ odAtlasFreeRegionId odAtlas_grow(odAtlas* atlas, int32_t width, int32_t height) 
 	int32_t new_height = atlas->image.height + height;
 
 	odAtlasRegion region{odBounds{
-		0.0f,
-		static_cast<float>(atlas->image.height),
-		static_cast<float>(max_width),
-		static_cast<float>(new_height),
+		0,
+		atlas->image.height,
+		max_width,
+		new_height,
 	}};
 	if (!OD_CHECK(odImage_resize(&atlas->image, max_width, new_height))) {
 		return OD_ATLAS_REGION_ID_INVALID;
@@ -309,8 +310,8 @@ bool odAtlas_set_region(odAtlas* atlas, odAtlasRegionId region_id,
 
 	odColor* dest = odImage_get(
 		&atlas->image,
-		static_cast<int32_t>(dest_region->bounds.x1),
-		static_cast<int32_t>(dest_region->bounds.y1));
+		dest_region->bounds.x1,
+		dest_region->bounds.y1);
 
 	if (!OD_CHECK(dest != nullptr)) {
 		return false;

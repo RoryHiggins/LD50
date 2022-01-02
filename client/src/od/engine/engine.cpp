@@ -155,8 +155,8 @@ bool odEngine_step(odEngine* engine) {
 		// float u = 80.0f + (8.0f * float((engine->frame.counter >> 3) % 4));
 		// float v = 40.0f;
 		odRectPrimitive rect{
-			odBounds{0.0f, 0.0f, 288.0f, 128.0f},
-			odBounds{0.0f, 0.0f, 144.0f, 64.0f},
+			odBounds{0, 0, 288, 128},
+			odBounds{0, 0, 144, 64},
 			*odColor_get_white(),
 			0.0f,
 		};
@@ -212,7 +212,7 @@ bool odEngine_step(odEngine* engine) {
 	odRenderState draw_to_game{
 		*odMatrix_get_identity(),
 		projection,
-		odBounds{0.0f, 0.0f, static_cast<float>(engine->settings.game_width), static_cast<float>(engine->settings.game_height)},
+		odBounds{0, 0, engine->settings.game_width, engine->settings.game_height},
 		&engine->src_texture,
 		&engine->game_render_texture
 	};
@@ -223,7 +223,7 @@ bool odEngine_step(odEngine* engine) {
 	odRenderState draw_to_window{
 		*odMatrix_get_identity(),
 		window_projection,
-		odBounds{0.0f, 0.0f, static_cast<float>(window_settings->window_width), static_cast<float>(window_settings->window_height)},
+		odBounds{0, 0, window_settings->window_width, window_settings->window_height},
 		&engine->src_texture,
 		/* opt_render_texture*/ nullptr
 	};

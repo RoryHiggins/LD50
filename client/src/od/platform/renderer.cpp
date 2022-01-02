@@ -63,6 +63,7 @@ bool odRenderState_check_valid(const odRenderState* state) {
 		|| !OD_CHECK(odMatrix_check_valid(&state->view))
 		|| !OD_CHECK(odMatrix_check_valid(&state->projection))
 		|| !OD_CHECK(odBounds_check_valid(&state->viewport))
+		|| !OD_CHECK(odBounds_fits_float(&state->viewport))
 		|| !OD_CHECK(odTexture_check_valid(state->src_texture))
 		|| !OD_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_check_valid(state->opt_render_texture))) {
 		return false;
@@ -408,7 +409,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK((opt_src_bounds == nullptr) || odBounds_check_valid(opt_src_bounds))
+		|| !OD_CHECK((opt_src_bounds == nullptr) || (odBounds_check_valid(opt_src_bounds) && odBounds_fits_float(opt_src_bounds)))
 		|| !OD_CHECK((opt_transform == nullptr) || odMatrix_check_valid(opt_transform))) {
 		return false;
 	}
@@ -419,7 +420,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 		return false;
 	}
 
-	odBounds src_bounds = {0.0f, 0.0f, static_cast<float>(src_width), static_cast<float>(src_height)};
+	odBounds src_bounds = {0, 0, src_width, src_height};
 	if (opt_src_bounds != nullptr) {
 		src_bounds = *opt_src_bounds;
 	}
@@ -427,8 +428,8 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	odMatrix transform{};
 	odMatrix_init(
 		&transform,
-		odBounds_get_width(&state->viewport),
-		odBounds_get_height(&state->viewport),
+		static_cast<float>(odBounds_get_width(&state->viewport)),
+		static_cast<float>(odBounds_get_height(&state->viewport)),
 		1.0f,
 		0.0f,
 		0.0f,
@@ -440,7 +441,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	}
 
 	odRectPrimitive rect{
-		{0.0f, 0.0f, 1.0f, 1.0f},
+		{0, 0, 1, 1},
 		{src_bounds.x1, src_bounds.y1, src_bounds.x2, src_bounds.y2},
 		*odColor_get_white(),
 		0.0f,
