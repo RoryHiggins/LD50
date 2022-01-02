@@ -96,13 +96,13 @@ bool odEntity_check_valid(const odEntity* entity) {
 
 	return true;
 }
-void odEntity_get_primitive(const odEntity* entity, odSpritePrimitive *out_rect) {
+void odEntity_get_sprite(const odEntity* entity, odSpritePrimitive *out_sprite) {
 	if (!OD_DEBUG_CHECK(odEntity_check_valid(entity))
-		|| !OD_DEBUG_CHECK(out_rect != nullptr)) {
+		|| !OD_DEBUG_CHECK(out_sprite != nullptr)) {
 		return;
 	}
 
-	*out_rect = odSpritePrimitive{
+	*out_sprite = odSpritePrimitive{
 		entity->collider.bounds,
 		entity->sprite.texture_bounds,
 		entity->sprite.color,

@@ -355,8 +355,8 @@ bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEnt
 		return false;
 	}
 
-	odSpritePrimitive rect{};
-	odEntity_get_primitive(&entity->entity, &rect);
+	odSpritePrimitive sprite{};
+	odEntity_get_sprite(&entity->entity, &sprite);
 
 	int32_t vertex_index = static_cast<int32_t>(entity->entity.collider.id) * OD_SPRITE_VERTEX_COUNT;
 
@@ -369,7 +369,7 @@ bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEnt
 		return false;
 	}
 
-	odSpritePrimitive_get_vertices(&rect, vertices);
+	odSpritePrimitive_get_vertices(&sprite, vertices);
 
 	for (int32_t i = 0; i < OD_ENTITY_VERTEX_COUNT; i++) {
 		odVertex_transform_3d(vertices + i, &entity->entity.sprite.transform);

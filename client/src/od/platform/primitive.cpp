@@ -8,40 +8,40 @@
 
 static int odTrianglePrimitive_compare(const void* triangle1, const void* triangle2);
 
-bool odSpritePrimitive_check_valid(const odSpritePrimitive* primitive) {
-	if (!OD_DEBUG_CHECK(primitive != nullptr)) {
+bool odSpritePrimitive_check_valid(const odSpritePrimitive* sprite) {
+	if (!OD_DEBUG_CHECK(sprite != nullptr)) {
 		return false;
 	}
 
-	if (!OD_CHECK(std::isfinite(primitive->depth))
-		|| (!OD_CHECK(odBounds_check_valid(&primitive->bounds)))
-		|| (!OD_CHECK(odBounds_check_valid(&primitive->texture_bounds)))) {
+	if (!OD_CHECK(std::isfinite(sprite->depth))
+		|| (!OD_CHECK(odBounds_check_valid(&sprite->bounds)))
+		|| (!OD_CHECK(odBounds_check_valid(&sprite->texture_bounds)))) {
 		return false;
 	}
 
 	return true;
 }
-void odSpritePrimitive_get_vertices(const odSpritePrimitive* primitive, odVertex *out_vertices) {
-	if (!OD_DEBUG_CHECK(odSpritePrimitive_check_valid(primitive))
+void odSpritePrimitive_get_vertices(const odSpritePrimitive* sprite, odVertex *out_vertices) {
+	if (!OD_DEBUG_CHECK(odSpritePrimitive_check_valid(sprite))
 		|| !OD_DEBUG_CHECK(out_vertices != nullptr)
-		|| !OD_DEBUG_CHECK(odBounds_fits_float(&primitive->bounds))
-		|| !OD_DEBUG_CHECK(odBounds_fits_float(&primitive->texture_bounds))) {
+		|| !OD_DEBUG_CHECK(odBounds_fits_float(&sprite->bounds))
+		|| !OD_DEBUG_CHECK(odBounds_fits_float(&sprite->texture_bounds))) {
 		return;
 	}
 
-	float x1 = static_cast<float>(primitive->bounds.x1);
-	float x2 = static_cast<float>(primitive->bounds.x2);
-	float y1 = static_cast<float>(primitive->bounds.y1);
-	float y2 = static_cast<float>(primitive->bounds.y2);
-	float u1 = static_cast<float>(primitive->texture_bounds.x1);
-	float u2 = static_cast<float>(primitive->texture_bounds.x2);
-	float v1 = static_cast<float>(primitive->texture_bounds.y1);
-	float v2 = static_cast<float>(primitive->texture_bounds.y2);
+	float x1 = static_cast<float>(sprite->bounds.x1);
+	float x2 = static_cast<float>(sprite->bounds.x2);
+	float y1 = static_cast<float>(sprite->bounds.y1);
+	float y2 = static_cast<float>(sprite->bounds.y2);
+	float u1 = static_cast<float>(sprite->texture_bounds.x1);
+	float u2 = static_cast<float>(sprite->texture_bounds.x2);
+	float v1 = static_cast<float>(sprite->texture_bounds.y1);
+	float v2 = static_cast<float>(sprite->texture_bounds.y2);
 
-	odVertex top_left = odVertex{odVector{x1, y1, primitive->depth, 1.0f}, primitive->color, u1, v1};
-	odVertex top_right = odVertex{odVector{x2, y1, primitive->depth, 1.0f}, primitive->color, u2, v1};
-	odVertex bottom_left = odVertex{odVector{x1, y2, primitive->depth, 1.0f}, primitive->color, u1, v2};
-	odVertex bottom_right = odVertex{odVector{x2, y2, primitive->depth, 1.0f}, primitive->color, u2, v2};
+	odVertex top_left = odVertex{odVector{x1, y1, sprite->depth, 1.0f}, sprite->color, u1, v1};
+	odVertex top_right = odVertex{odVector{x2, y1, sprite->depth, 1.0f}, sprite->color, u2, v1};
+	odVertex bottom_left = odVertex{odVector{x1, y2, sprite->depth, 1.0f}, sprite->color, u1, v2};
+	odVertex bottom_right = odVertex{odVector{x2, y2, sprite->depth, 1.0f}, sprite->color, u2, v2};
 
 	// display as two triangles, vertices in counter-clockwise order, positive y as up:
 	out_vertices[0] = top_left;
@@ -78,6 +78,6 @@ void odTrianglePrimitive_sort_vertices(odTrianglePrimitive* triangles, int32_t t
 	qsort(
 		triangles,
 		static_cast<size_t>(triangles_count),
-		OD_TRIANGLE_VERTEX_COUNT * sizeof(odTrianglePrimitive),
+		sizeof(odTrianglePrimitive),
 		odTrianglePrimitive_compare);
 }

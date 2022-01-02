@@ -440,14 +440,14 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 		transform = *opt_transform;
 	}
 
-	odSpritePrimitive rect{
+	odSpritePrimitive sprite{
 		{0, 0, 1, 1},
 		{src_bounds.x1, src_bounds.y1, src_bounds.x2, src_bounds.y2},
 		*odColor_get_white(),
 		0.0f,
 	};
 	odVertex vertices[OD_SPRITE_VERTEX_COUNT]{};
-	odSpritePrimitive_get_vertices(&rect, vertices);
+	odSpritePrimitive_get_vertices(&sprite, vertices);
 
 	odVertex_transform_batch_3d(vertices, OD_SPRITE_VERTEX_COUNT, &transform);
 

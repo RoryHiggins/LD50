@@ -152,7 +152,7 @@ bool odEngine_step(odEngine* engine) {
 
 	// BEGIN throwaway rendering test code - TODO remove
 	{
-		odSpritePrimitive rect{
+		odSpritePrimitive sprite{
 			odBounds{0, 0, 288, 128},
 			odBounds{0, 0, 144, 64},
 			*odColor_get_white(),
@@ -160,7 +160,7 @@ bool odEngine_step(odEngine* engine) {
 		};
 		const int32_t vertices_count = OD_SPRITE_VERTEX_COUNT;
 		odVertex vertices[vertices_count];
-		odSpritePrimitive_get_vertices(&rect, vertices);
+		odSpritePrimitive_get_vertices(&sprite, vertices);
 
 		// OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 		OD_DISCARD(engine->frame.window_vertices.extend(vertices, vertices_count));
