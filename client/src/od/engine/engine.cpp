@@ -226,7 +226,7 @@ bool odEngine_step(odEngine* engine) {
 	// draw game
 	odTrianglePrimitive_sort_vertices(
 		reinterpret_cast<odTrianglePrimitive*>(engine->frame.game_vertices.begin()),
-		engine->frame.game_vertices.count / OD_TRIANGLE_VERTEX_COUNT);
+		engine->frame.game_vertices.get_count() / OD_TRIANGLE_VERTEX_COUNT);
 	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_game, odColor_get_white()))) {
 		return false;
 	}
@@ -234,14 +234,14 @@ bool odEngine_step(odEngine* engine) {
 		&engine->renderer,
 		&draw_to_game,
 		engine->frame.game_vertices.begin(),
-		engine->frame.game_vertices.count))) {
+		engine->frame.game_vertices.get_count()))) {
 		return false;
 	}
 
 	// draw window
 	odTrianglePrimitive_sort_vertices(
 		reinterpret_cast<odTrianglePrimitive*>(engine->frame.window_vertices.begin()),
-		engine->frame.window_vertices.count / OD_TRIANGLE_VERTEX_COUNT);
+		engine->frame.window_vertices.get_count() / OD_TRIANGLE_VERTEX_COUNT);
 	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColor_get_white()))) {
 		return false;
 	}
@@ -252,7 +252,7 @@ bool odEngine_step(odEngine* engine) {
 		&engine->renderer,
 		&draw_to_window,
 		engine->frame.window_vertices.begin(),
-		engine->frame.window_vertices.count))) {
+		engine->frame.window_vertices.get_count()))) {
 		return false;
 	}
 

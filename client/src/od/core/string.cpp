@@ -4,20 +4,8 @@
 #include <cstdio>
 
 #include <od/core/debug.h>
-#include <od/core/type.hpp>
 #include <od/core/allocation.hpp>
 
-const odType* odString_get_type_constructor() {
-	return odType_get<odString>();
-}
-void odString_swap(odString* string1, odString* string2) {
-	if (!OD_DEBUG_CHECK(string1 != nullptr)
-		|| !OD_DEBUG_CHECK(string2 != nullptr)) {
-		return;
-	}
-
-	odTrivialArray_swap(&string1->array, &string2->array);
-}
 bool odString_check_valid(const odString* string) {
 	if (!OD_CHECK(string != nullptr)
 		|| !OD_CHECK(odTrivialArray_check_valid(&string->array))
@@ -67,6 +55,25 @@ void odString_destroy(odString* string) {
 
 	odTrivialArray_destroy(&string->array);
 }
+void odString_swap(odString* string1, odString* string2) {
+	if (!OD_DEBUG_CHECK(string1 != nullptr)
+		|| !OD_DEBUG_CHECK(string2 != nullptr)) {
+		return;
+	}
+
+	odTrivialArray_swap(&string1->array, &string2->array);
+}
+bool odString_assign(odString* string, const char* assign_src, int32_t assign_count) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odString_set_count(string, 0))) {
+		return false;
+	}
+
+	return odTrivialArray_assign(&string->array, assign_src, assign_count, /*stride*/ 1);
+}
 int32_t odString_compare(const odString* string1, const odString* string2) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string1))
 		|| !OD_DEBUG_CHECK(odString_check_valid(string2))) {
@@ -80,7 +87,7 @@ int32_t odString_get_capacity(const odString* string) {
 		return 0;
 	}
 
-	return string->array.capacity;
+	return odTrivialArray_get_capacity(&string->array);
 }
 bool odString_set_capacity(odString* string, int32_t new_capacity) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
@@ -101,7 +108,7 @@ int32_t odString_get_count(const odString* string) {
 		return 0;
 	}
 
-	return string->array.count;
+	return odTrivialArray_get_count(&string->array);
 }
 bool odString_set_count(odString* string, int32_t new_count) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
@@ -109,6 +116,18 @@ bool odString_set_count(odString* string, int32_t new_count) {
 	}
 
 	return odTrivialArray_set_count(&string->array, new_count, /*stride*/ 1);
+}
+bool odString_ensure_count(odString* string, int32_t min_count) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))
+		|| !OD_DEBUG_CHECK(min_count >= 0)) {
+		return false;
+	}
+
+	if (min_count <= string->array.count) {
+		return true;
+	}
+
+	return odString_set_count(string, min_count);
 }
 bool odString_extend(odString* string, const char* extend_src, int32_t extend_count) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
@@ -169,16 +188,19 @@ bool odString_extend_formatted(odString* string, const char* format_c_str, ...) 
 
 	return result;
 }
-bool odString_assign(odString* string, const char* assign_src, int32_t assign_count) {
+bool odString_pop(odString* string, int32_t pop_count) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odString_set_count(string, 0))) {
+	return odTrivialArray_pop(&string->array, pop_count, /*stride*/ 1);
+}
+bool odString_swap_pop(odString* string, int32_t i) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
 		return false;
 	}
 
-	return odTrivialArray_assign(&string->array, assign_src, assign_count, /*stride*/ 1);
+	return odTrivialArray_swap_pop(&string->array, i, /*stride*/ 1);
 }
 const char* odString_get_c_str(const odString* string) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
@@ -221,23 +243,52 @@ char* odString_end(odString* string) {
 const char* odString_end_const(const odString* string) {
 	return odString_end(const_cast<odString*>(string));
 }
-odString::odString() = default;
-odString::odString(odString&& other) = default;
-odString::odString(const odString& other) : odString{} {
-	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.count)));
+int32_t odString::compare(const odString& other) {
+	return odString_compare(this, &other);
 }
-odString& odString::operator=(odString&& other)  = default;
-odString& odString::operator=(const odString& other) {
-	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.count)));
+int32_t odString::get_capacity() const {
+	return odString_get_capacity(this);
+}
+bool odString::set_capacity(int32_t new_capacity) {
+	return odString_set_capacity(this, new_capacity);
+}
+bool odString::ensure_capacity(int32_t min_capacity) {
+	return odString_ensure_capacity(this, min_capacity);
+}
+int32_t odString::get_count() const {
+	return odString_get_count(this);
+}
+bool odString::set_count(int32_t new_count) {
+	return odString_set_count(this, new_count);
+}
+bool odString::ensure_count(int32_t min_count) {
+	return odString_ensure_count(this, min_count);
+}
+bool odString::extend(const char* extend_src, int32_t extend_count) {
+	return odString_extend(this, extend_src, extend_count);
+}
+bool odString::extend_formatted_variadic(const char* format_c_str, va_list args) {
+	return odString_extend_formatted(this, format_c_str, args);
+}
+bool odString::extend_formatted(const char* format_c_str, ...) {
+	va_list args = {};
+	va_start(args, format_c_str);
+	bool result = odString_extend_formatted_variadic(this, format_c_str, args);
+	va_end(args);
 
-	return *this;
+	return result;
 }
-odString::~odString() = default;
-char* odString::operator[](int32_t i) & {
-	return odString_get(this, i);
+bool odString::push(char elem) {
+	return odString_extend(this, &elem, 1);
 }
-const char* odString::operator[](int32_t i) const& {
-	return odString_get_const(this, i);
+bool odString::pop(int32_t pop_count) {
+	return odString_pop(this, pop_count);
+}
+bool odString::swap_pop(int32_t i) {
+	return odString_swap_pop(this, i);
+}
+bool odString::assign(const char* assign_src, int32_t assign_count) {
+	return odString_assign(this, assign_src, assign_count);
 }
 char* odString::begin() & {
 	return odString_begin(this);
@@ -251,3 +302,35 @@ char* odString::end() & {
 const char* odString::end() const& {
 	return odString_end_const(this);
 }
+char* odString::get(int32_t i) & {
+	return odString_get(this, i);
+}
+const char* odString::get(int32_t i) const& {
+	return odString_get_const(this, i);
+}
+const char* odString::get_c_str() const {
+	return odString_get_c_str(this);
+}
+char& odString::operator[](int32_t i) & {
+	char* ptr = odString_get(this, i);
+	if (!OD_DEBUG_CHECK(ptr != nullptr)) {
+		static char default_elem;
+		return default_elem;
+	}
+	return *ptr;
+}
+const char& odString::operator[](int32_t i) const& {
+	return const_cast<odString*>(this)->operator[](i);
+}
+odString::odString() = default;
+odString::odString(odString&& other) = default;
+odString::odString(const odString& other) : odString{} {
+	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.count)));
+}
+odString& odString::operator=(odString&& other)  = default;
+odString& odString::operator=(const odString& other) {
+	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.count)));
+
+	return *this;
+}
+odString::~odString() = default;

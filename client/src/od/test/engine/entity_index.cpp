@@ -72,7 +72,7 @@ OD_TEST(odTest_odEntityIndex_search) {
 	entity.collider.id++;
 	entity.collider.bounds = odBounds{127, 127, 143, 143};
 	odEntityIndex_set(&entity_index, &entity);
-	OD_ASSERT(entity_index.entities.count >= 2);
+	OD_ASSERT(entity_index.entities.get_count() >= 2);
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 2);
 
 	entity.collider.id++;

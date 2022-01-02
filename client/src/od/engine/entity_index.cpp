@@ -224,11 +224,11 @@ const char* odEntityIndex_chunk_get_debug_string(const odEntityChunk* chunk) {
 	}
 
 	const char* entities_str = nullptr;
-	if (chunk->colliders.count <= 64) {
+	if (chunk->colliders.get_count() <= 64) {
 		entities_str = odDebugString_format_array(
 			reinterpret_cast<const char*(*)(const void*)>(&odEntity_get_debug_string),
 			chunk->colliders.begin(),
-			chunk->colliders.count,
+			chunk->colliders.get_count(),
 			sizeof(odEntityIndexEntity));
 	}
 	if (entities_str == nullptr) {
@@ -237,20 +237,20 @@ const char* odEntityIndex_chunk_get_debug_string(const odEntityChunk* chunk) {
 
 	return odDebugString_format(
 		"{\"count\": %d, \"entities\": [%s]}",
-		chunk->colliders.count,
+		chunk->colliders.get_count(),
 		entities_str);
 }
 bool odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id, int32_t* opt_out_chunk_index) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_ENTITY_CHUNK_ID_COUNT))
-		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))) {
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.get_count()))) {
 		return false;
 	}
 
 	odEntityChunk& chunk = entity_index->chunks[chunk_id];
 	int32_t chunk_index = 0;
 	bool found = false;
-	for (int32_t i = 0; i < chunk.colliders.count; i++) {
+	for (int32_t i = 0; i < chunk.colliders.get_count(); i++) {
 		if (chunk.colliders[i].id == entity_id) {
 			chunk_index = i;
 			found = true;
@@ -267,7 +267,7 @@ bool odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChun
 bool odEntityIndex_chunk_unset_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_ENTITY_CHUNK_ID_COUNT))
-		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))) {
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.get_count()))) {
 		return false;
 	}
 
@@ -277,7 +277,7 @@ bool odEntityIndex_chunk_unset_collider(odEntityIndex* entity_index, odEntityChu
 		return false;
 	}
 
-	if (!OD_DEBUG_CHECK((chunk_index >= 0) && (chunk_index < chunk.colliders.count))) {
+	if (!OD_DEBUG_CHECK((chunk_index >= 0) && (chunk_index < chunk.colliders.get_count()))) {
 		return false;
 	}
 
@@ -293,7 +293,7 @@ bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunk
 		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(collider))
 		|| !OD_DEBUG_CHECK(odBounds_is_collidable(&collider->bounds))
 		|| !OD_DEBUG_CHECK(odBounds_fits_float(&collider->bounds))
-		|| !OD_DEBUG_CHECK(collider->id < entity_index->entities.count)) {
+		|| !OD_DEBUG_CHECK(collider->id < entity_index->entities.get_count())) {
 		return false;
 	}
 
@@ -307,7 +307,7 @@ bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunk
 		return true;
 	}
 
-	if (!OD_DEBUG_CHECK((chunk_index >= 0) && (chunk_index < chunk.colliders.count))) {
+	if (!OD_DEBUG_CHECK((chunk_index >= 0) && (chunk_index < chunk.colliders.get_count()))) {
 		return false;
 	}
 
@@ -424,11 +424,11 @@ const char* odEntityIndex_get_debug_string(const odEntityIndex* entity_index) {
 
 	const char* entities_str = nullptr;
 
-	if ((entity_index->entities.begin() != nullptr) && (entity_index->entities.count <= 64)) {
+	if ((entity_index->entities.begin() != nullptr) && (entity_index->entities.get_count() <= 64)) {
 		entities_str = odDebugString_format_array(
 			reinterpret_cast<const char*(*)(const void*)>(&odEntity_get_debug_string),
 			entity_index->entities.begin(),
-			entity_index->entities.count,
+			entity_index->entities.get_count(),
 			sizeof(odEntityIndexEntity));
 	}
 
@@ -443,7 +443,7 @@ const char* odEntityIndex_get_debug_string(const odEntityIndex* entity_index) {
 
 	return odDebugString_format(
 		"{\"count\": %d, \"entities\": [%s], \"chunks\": [%s]}",
-		entity_index->entities.count,
+		entity_index->entities.get_count(),
 		entities_str,
 		chunks_str);
 }
@@ -474,16 +474,16 @@ odEntityId odEntityIndex_get_count(const odEntityIndex* entity_index) {
 		return false;
 	}
 
-	return entity_index->entities.count;
+	return entity_index->entities.get_count();
 }
 const struct odVertex* odEntityIndex_get_vertices(const odEntityIndex* entity_index, odEntityId entity_id) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
-		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))) {
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.get_count()))) {
 		return nullptr;
 	}
 
 	int32_t vertex_index = static_cast<int32_t>(entity_id) * 6;
-	if (!OD_DEBUG_CHECK(vertex_index < entity_index->entity_vertices.count)) {
+	if (!OD_DEBUG_CHECK(vertex_index < entity_index->entity_vertices.get_count())) {
 		return nullptr;
 	}
 
@@ -502,7 +502,7 @@ const struct odVertex* odEntityIndex_get_all_vertices(const odEntityIndex* entit
 
 	*out_vertex_count = 0;
 
-	if (entity_index->entity_vertices.count == 0) {
+	if (entity_index->entity_vertices.get_count() == 0) {
 		return nullptr;
 	}
 
@@ -511,12 +511,12 @@ const struct odVertex* odEntityIndex_get_all_vertices(const odEntityIndex* entit
 		return nullptr;
 	}
 
-	*out_vertex_count = entity_index->entity_vertices.count;
+	*out_vertex_count = entity_index->entity_vertices.get_count();
 	return vertices;
 }
 const odEntity* odEntityIndex_get(const odEntityIndex* entity_index, odEntityId entity_id) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
-		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))) {
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.get_count()))) {
 		return nullptr;
 	}
 
@@ -543,7 +543,7 @@ void odEntityIndex_set_collider(odEntityIndex* entity_index, const odEntityColli
 }
 void odEntityIndex_set_sprite(odEntityIndex* entity_index, odEntityId entity_id, const odEntitySprite* sprite) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
-		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.count))
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.get_count()))
 		|| !OD_DEBUG_CHECK(odEntitySprite_check_valid(sprite))) {
 		return;
 	}
