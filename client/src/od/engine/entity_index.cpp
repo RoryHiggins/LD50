@@ -355,21 +355,21 @@ bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEnt
 		return false;
 	}
 
-	odRectPrimitive rect{};
-	odEntity_get_rect(&entity->entity, &rect);
+	odSpritePrimitive rect{};
+	odEntity_get_primitive(&entity->entity, &rect);
 
-	int32_t vertex_index = static_cast<int32_t>(entity->entity.collider.id) * OD_RECT_PRIMITIVE_VERTEX_COUNT;
+	int32_t vertex_index = static_cast<int32_t>(entity->entity.collider.id) * OD_SPRITE_VERTEX_COUNT;
 
-	if (!OD_DEBUG_CHECK((vertex_index + OD_RECT_PRIMITIVE_VERTEX_COUNT) <= entity_index->entity_vertices.get_count())) {
+	if (!OD_DEBUG_CHECK((vertex_index + OD_SPRITE_VERTEX_COUNT) <= entity_index->entity_vertices.get_count())) {
 		return false;
 	}
 
 	odVertex* vertices = entity_index->entity_vertices.get(vertex_index);
-	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch_3d(vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT))) {
+	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch_3d(vertices, OD_SPRITE_VERTEX_COUNT))) {
 		return false;
 	}
 
-	odRectPrimitive_get_vertices(&rect, vertices);
+	odSpritePrimitive_get_vertices(&rect, vertices);
 
 	for (int32_t i = 0; i < OD_ENTITY_VERTEX_COUNT; i++) {
 		odVertex_transform_3d(vertices + i, &entity->entity.sprite.transform);
@@ -488,7 +488,7 @@ const struct odVertex* odEntityIndex_get_vertices(const odEntityIndex* entity_in
 	}
 
 	const odVertex* vertices = entity_index->entity_vertices.get(vertex_index);
-	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch_3d(vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT))) {
+	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch_3d(vertices, OD_SPRITE_VERTEX_COUNT))) {
 		return nullptr;
 	}
 

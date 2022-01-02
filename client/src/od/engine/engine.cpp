@@ -152,23 +152,21 @@ bool odEngine_step(odEngine* engine) {
 
 	// BEGIN throwaway rendering test code - TODO remove
 	{
-		// float u = 80.0f + (8.0f * float((engine->frame.counter >> 3) % 4));
-		// float v = 40.0f;
-		odRectPrimitive rect{
+		odSpritePrimitive rect{
 			odBounds{0, 0, 288, 128},
 			odBounds{0, 0, 144, 64},
 			*odColor_get_white(),
 			0.0f,
 		};
-		const int32_t vertices_count = OD_RECT_PRIMITIVE_VERTEX_COUNT;
+		const int32_t vertices_count = OD_SPRITE_VERTEX_COUNT;
 		odVertex vertices[vertices_count];
-		odRectPrimitive_get_vertices(&rect, vertices);
+		odSpritePrimitive_get_vertices(&rect, vertices);
 
 		// OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 		OD_DISCARD(engine->frame.window_vertices.extend(vertices, vertices_count));
 	}
 	{
-		const int32_t vertices_count = 3;
+		const int32_t vertices_count = OD_TRIANGLE_VERTEX_COUNT;
 		odVertex vertices_base[vertices_count] = {
 			odVertex{odVector{0.0f,0.0f,0.0f,0.0f}, odColor{0xff,0x00,0x00,0xff}, 0.0f,0.0f},
 			odVertex{odVector{0.0f,1.0f,0.0f,0.0f}, odColor{0xff,0xff,0x00,0xff}, 0.0f,0.0f},
@@ -227,7 +225,8 @@ bool odEngine_step(odEngine* engine) {
 
 	// draw game
 	odTrianglePrimitive_sort_vertices(
-		engine->frame.game_vertices.begin(), engine->frame.game_vertices.count / 3);
+		reinterpret_cast<odTrianglePrimitive*>(engine->frame.game_vertices.begin()),
+		engine->frame.game_vertices.count / OD_TRIANGLE_VERTEX_COUNT);
 	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_game, odColor_get_white()))) {
 		return false;
 	}
@@ -241,7 +240,8 @@ bool odEngine_step(odEngine* engine) {
 
 	// draw window
 	odTrianglePrimitive_sort_vertices(
-		engine->frame.window_vertices.begin(), engine->frame.window_vertices.count / 3);
+		reinterpret_cast<odTrianglePrimitive*>(engine->frame.window_vertices.begin()),
+		engine->frame.window_vertices.count / OD_TRIANGLE_VERTEX_COUNT);
 	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColor_get_white()))) {
 		return false;
 	}

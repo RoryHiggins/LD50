@@ -6,12 +6,13 @@
 
 #include <od/core/type.hpp>
 #include <od/core/array.hpp>
-#include <od/platform/window.hpp>
 #include <od/core/vertex.h>
+#include <od/platform/primitive.h>
+#include <od/platform/window.hpp>
 #include <od/test/test.hpp>
 
-#define OD_RENDER_TEST_VERTICES_COUNT 3
-const odVertex odRender_test_vertices[OD_RENDER_TEST_VERTICES_COUNT] = {
+#define OD_RENDER_TEST_VERTEX_COUNT OD_TRIANGLE_VERTEX_COUNT
+const odVertex odRender_test_vertices[OD_RENDER_TEST_VERTEX_COUNT] = {
 	odVertex{odVector{0.0f,0.0f,0.0f,1.0f}, odColor{0x00,0xff,0x00,0xff}, 0.0f,0.0f},
 	odVertex{odVector{0.0f,1.0f,0.0f,1.0f}, odColor{0x00,0xff,0x00,0xff}, 0.0f,0.0f},
 	odVertex{odVector{1.0f,0.0f,0.0f,1.0f}, odColor{0x00,0xff,0x00,0xff}, 0.0f,0.0f},
@@ -92,11 +93,11 @@ OD_TEST_FILTERED(odTest_odRenderer_draw_vertices, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderTexture_init(&render_texture, &window, 640, 480));
 	odRenderState state{*odMatrix_get_identity(), *odMatrix_get_identity(), odBounds{0, 0, 640, 480}, &texture, nullptr};
 
-	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTICES_COUNT));
+	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTEX_COUNT));
 	OD_ASSERT(odRenderer_flush(&renderer));
 
 	state.opt_render_texture = &render_texture;
-	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTICES_COUNT));
+	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTEX_COUNT));
 	OD_ASSERT(odRenderer_flush(&renderer));
 }
 OD_TEST_FILTERED(odTest_odRenderer_draw_texture, OD_TEST_FILTER_SLOW) {
@@ -138,15 +139,15 @@ OD_TEST_FILTERED(odTest_odRenderer_init_multiple_renderers, OD_TEST_FILTER_SLOW)
 	OD_ASSERT(odRenderer_check_valid(&renderer2));
 	OD_ASSERT(odRenderer_check_valid(&renderer2));
 
-	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTICES_COUNT));
+	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTEX_COUNT));
 	OD_ASSERT(odRenderer_flush(&renderer));
 
-	OD_ASSERT(odRenderer_draw_vertices(&renderer2, &state, odRender_test_vertices, OD_RENDER_TEST_VERTICES_COUNT));
+	OD_ASSERT(odRenderer_draw_vertices(&renderer2, &state, odRender_test_vertices, OD_RENDER_TEST_VERTEX_COUNT));
 	OD_ASSERT(odRenderer_flush(&renderer2));
 
 	odRenderer_destroy(&renderer2);
 	OD_ASSERT(odRenderer_check_valid(&renderer));
-	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTICES_COUNT));
+	OD_ASSERT(odRenderer_draw_vertices(&renderer, &state, odRender_test_vertices, OD_RENDER_TEST_VERTEX_COUNT));
 	OD_ASSERT(odRenderer_flush(&renderer));
 }
 OD_TEST(odTest_odRenderer_init_without_context_fails) {

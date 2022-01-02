@@ -1,5 +1,6 @@
 
 Refactoring TODOs
+- Change odSpritePrimitive to odRectPrimitive, store vertices, provide an init method from flat color etc instead
 - In its own commit, rename odRectPrimitive to odSprite
 	+ any relevant variables
 	+ rename odTrianglePrimitive_ helper prefix to odTriangle_
