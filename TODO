@@ -1,7 +1,5 @@
 
 Refactoring TODOs
-- odBounds from float to int
-- odVector from array element to x,y,z,w elements
 - In its own commit, rename odRectPrimitive to odSprite
 	+ any relevant variables
 	+ rename odTrianglePrimitive_ helper prefix to odTriangle_

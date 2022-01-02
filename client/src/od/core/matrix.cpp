@@ -36,10 +36,21 @@ bool odMatrix_check_valid(const odMatrix* matrix) {
 		return false;
 	}
 
-	for (uint32_t i = 0; i < OD_MATRIX4_ELEM_COUNT; i++) {
+	for (uint32_t i = 0; i < OD_MATRIX_ELEM_COUNT; i++) {
 		if (!OD_CHECK(std::isfinite(matrix->matrix[i]))) {
 			return false;
 		}
+	}
+
+	return true;
+}
+bool odMatrix_check_valid_3d(const odMatrix* matrix) {
+	if (!OD_CHECK(odMatrix_check_valid(matrix))
+		|| !OD_CHECK(matrix->matrix[3] == 0.0f)
+		|| !OD_CHECK(matrix->matrix[7] == 0.0f)
+		|| !OD_CHECK(matrix->matrix[11] == 0.0f)
+		|| !OD_CHECK((matrix->matrix[15] == 0.0f) || (matrix->matrix[15] == 1.0f))) {
+		return false;
 	}
 
 	return true;
@@ -64,7 +75,7 @@ void odMatrix_init(odMatrix* matrix,
 		0.0f, 0.0f, scale_z, 0.0f,
 		translate_x, translate_y, translate_z, 1.0f
 	}};
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix)));
 }
 void odMatrix_init_ortho_2d(odMatrix* matrix, int32_t width, int32_t height) {
 	if (!OD_DEBUG_CHECK(matrix != nullptr)
@@ -92,8 +103,8 @@ void odMatrix_init_ortho_2d(odMatrix* matrix, int32_t width, int32_t height) {
 	);
 }
 void odMatrix_multiply(odMatrix* matrix, const odMatrix* other) {
-	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
-		|| !OD_DEBUG_CHECK(odMatrix_check_valid(other))) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix))
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid_3d(other))) {
 		return;
 	}
 
@@ -119,7 +130,7 @@ void odMatrix_multiply(odMatrix* matrix, const odMatrix* other) {
 		(a[3] * b[12]) + (a[7] * b[13]) + (a[11] * b[14]) + (a[15] * b[15])
 	}};
 
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix)));
 }
 void odMatrix_multiply_vector(const odMatrix* matrix, odVector* vector) {
 	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
@@ -128,35 +139,45 @@ void odMatrix_multiply_vector(const odMatrix* matrix, odVector* vector) {
 	}
 
 	const float* m = matrix->matrix;
-	const float* v = vector->vector;
 
-	*vector = odVector{{
-		(m[0] * v[0]) + (m[4] * v[1]) + (m[8]  * v[2]) + m[12],
-		(m[1] * v[0]) + (m[5] * v[1]) + (m[9]  * v[2]) + m[13],
-		(m[2] * v[0]) + (m[6] * v[1]) + (m[10] * v[2]) + m[14],
-		0.0f,
-	}};
+	// we intentionally leave w untouched and treat it as 1 everywhere for calculations
+	*vector = odVector{
+		(m[0] * vector->x) + (m[4] * vector->y) + (m[8]  * vector->z) + (m[12] * vector->w),
+		(m[1] * vector->x) + (m[5] * vector->y) + (m[9]  * vector->z) + (m[13] * vector->w),
+		(m[2] * vector->x) + (m[6] * vector->y) + (m[10] * vector->z) + (m[14] * vector->w),
+		(m[3] * vector->x) + (m[7] * vector->y) + (m[11] * vector->z) + (m[15] * vector->w),
+	};
 	OD_DISCARD(OD_DEBUG_CHECK(odVector_check_valid(vector)));
 }
-void odMatrix_scale(odMatrix* matrix, float scale_x, float scale_y, float scale_z) {
-	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
+void odMatrix_multiply_vector_3d(const odMatrix* matrix, odVector* vector) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix))
+		|| !OD_DEBUG_CHECK(odVector_check_valid_3d(vector))) {
+		return;
+	}
+
+	vector->w = 1.0f;
+	odMatrix_multiply_vector(matrix, vector);	
+	OD_DISCARD(OD_DEBUG_CHECK(odVector_check_valid_3d(vector)));
+}
+void odMatrix_scale_3d(odMatrix* matrix, float scale_x, float scale_y, float scale_z) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_x))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_y))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_z))) {
 		return;
 	}
 
-	odMatrix scale_matrix{
+	odMatrix scale_matrix{{
 		scale_x, 0.0f, 0.0f, 0.0f,
 		0.0f, scale_y, 0.0f, 0.0f,
 		0.0f, 0.0f, scale_z, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
-	};
+	}};
 	odMatrix_multiply(matrix, &scale_matrix);
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix)));
 }
-void odMatrix_translate(odMatrix* matrix, float translate_x, float translate_y, float translate_z) {
-	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
+void odMatrix_translate_3d(odMatrix* matrix, float translate_x, float translate_y, float translate_z) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_x))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_y))
 		|| !OD_DEBUG_CHECK(std::isfinite(translate_z))) {
@@ -170,10 +191,10 @@ void odMatrix_translate(odMatrix* matrix, float translate_x, float translate_y, 
 		translate_x, translate_y, translate_z, 1.0f
 	};
 	odMatrix_multiply(matrix, &translate_matrix);
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix)));
 }
-void odMatrix_rotate_z(odMatrix* matrix, float rotate_clock_deg) {
-	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix))
+void odMatrix_rotate_z_3d(odMatrix* matrix, float rotate_clock_deg) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix))
 		|| !OD_DEBUG_CHECK(std::isfinite(rotate_clock_deg))) {
 		return;
 	}
@@ -189,15 +210,15 @@ void odMatrix_rotate_z(odMatrix* matrix, float rotate_clock_deg) {
 		0.0f, 0.0f, 0.0f, 1.0f,
 	}};
 	odMatrix_multiply(matrix, &rotate_matrix);
-	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid(matrix)));
+	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix)));
 }
 bool odMatrix_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
-	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix1))
-		|| !OD_DEBUG_CHECK(odMatrix_check_valid(matrix2))) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix1))
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix2))) {
 		return false;
 	}
 
-	for (int32_t i = 0; i < OD_MATRIX4_ELEM_COUNT; i++) {
+	for (int32_t i = 0; i < OD_MATRIX_ELEM_COUNT; i++) {
 		if (matrix1->matrix[i] != matrix2->matrix[i]) {
 			return false;
 		}
@@ -206,12 +227,12 @@ bool odMatrix_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
 	return true;
 }
 bool odMatrix_epsilon_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
-	if (!OD_DEBUG_CHECK(odMatrix_check_valid(matrix1))
-		|| !OD_DEBUG_CHECK(odMatrix_check_valid(matrix2))) {
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix1))
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix2))) {
 		return false;
 	}
 
-	for (int32_t i = 0; i < OD_MATRIX4_ELEM_COUNT; i++) {
+	for (int32_t i = 0; i < OD_MATRIX_ELEM_COUNT; i++) {
 		if (!odFloat_epsilon_equals(matrix1->matrix[i], matrix2->matrix[i])) {
 			return false;
 		}

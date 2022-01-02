@@ -60,7 +60,7 @@ static const char odRenderer_fragment_shader[] =
 
 bool odRenderState_check_valid(const odRenderState* state) {
 	if (!OD_CHECK(state != nullptr)
-		|| !OD_CHECK(odMatrix_check_valid(&state->view))
+		|| !OD_CHECK(odMatrix_check_valid_3d(&state->view))
 		|| !OD_CHECK(odMatrix_check_valid(&state->projection))
 		|| !OD_CHECK(odBounds_check_valid(&state->viewport))
 		|| !OD_CHECK(odBounds_fits_float(&state->viewport))
@@ -346,7 +346,7 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 							  const odVertex* vertices, int32_t vertices_count) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK(odVertex_check_valid_batch(vertices, vertices_count))) {
+		|| !OD_CHECK(odVertex_check_valid_batch_3d(vertices, vertices_count))) {
 		return false;
 	}
 
@@ -410,7 +410,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 		|| !OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(odRenderState_check_valid(state))
 		|| !OD_CHECK((opt_src_bounds == nullptr) || (odBounds_check_valid(opt_src_bounds) && odBounds_fits_float(opt_src_bounds)))
-		|| !OD_CHECK((opt_transform == nullptr) || odMatrix_check_valid(opt_transform))) {
+		|| !OD_CHECK((opt_transform == nullptr) || odMatrix_check_valid_3d(opt_transform))) {
 		return false;
 	}
 
@@ -449,7 +449,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	odVertex vertices[OD_RECT_PRIMITIVE_VERTEX_COUNT]{};
 	odRectPrimitive_get_vertices(&rect, vertices);
 
-	odVertex_transform_batch(vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT, &transform);
+	odVertex_transform_batch_3d(vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT, &transform);
 
 	return odRenderer_draw_vertices(renderer, state, vertices, OD_RECT_PRIMITIVE_VERTEX_COUNT);
 }

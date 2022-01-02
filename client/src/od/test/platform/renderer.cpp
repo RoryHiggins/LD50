@@ -12,9 +12,9 @@
 
 #define OD_RENDER_TEST_VERTICES_COUNT 3
 const odVertex odRender_test_vertices[OD_RENDER_TEST_VERTICES_COUNT] = {
-	{{0.0f,0.0f,0.0f,0.0f}, {0x00,0xff,0x00,0xff}, 0.0f,0.0f},
-	{{0.0f,1.0f,0.0f,0.0f}, {0x00,0xff,0x00,0xff}, 0.0f,0.0f},
-	{{1.0f,0.0f,0.0f,0.0f}, {0x00,0xff,0x00,0xff}, 0.0f,0.0f},
+	odVertex{odVector{0.0f,0.0f,0.0f,1.0f}, odColor{0x00,0xff,0x00,0xff}, 0.0f,0.0f},
+	odVertex{odVector{0.0f,1.0f,0.0f,1.0f}, odColor{0x00,0xff,0x00,0xff}, 0.0f,0.0f},
+	odVertex{odVector{1.0f,0.0f,0.0f,1.0f}, odColor{0x00,0xff,0x00,0xff}, 0.0f,0.0f},
 };
 
 

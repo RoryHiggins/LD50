@@ -38,10 +38,10 @@ void odRectPrimitive_get_vertices(const odRectPrimitive* rect, odVertex *out_ver
 	float v1 = static_cast<float>(rect->texture_bounds.y1);
 	float v2 = static_cast<float>(rect->texture_bounds.y2);
 
-	odVertex top_left = odVertex{{x1, y1, rect->depth, 0.0f}, rect->color, u1, v1};
-	odVertex top_right = odVertex{{x2, y1, rect->depth, 0.0f}, rect->color, u2, v1};
-	odVertex bottom_left = odVertex{{x1, y2, rect->depth, 0.0f}, rect->color, u1, v2};
-	odVertex bottom_right = odVertex{{x2, y2, rect->depth, 0.0f}, rect->color, u2, v2};
+	odVertex top_left = odVertex{odVector{x1, y1, rect->depth, 1.0f}, rect->color, u1, v1};
+	odVertex top_right = odVertex{odVector{x2, y1, rect->depth, 1.0f}, rect->color, u2, v1};
+	odVertex bottom_left = odVertex{odVector{x1, y2, rect->depth, 1.0f}, rect->color, u1, v2};
+	odVertex bottom_right = odVertex{odVector{x2, y2, rect->depth, 1.0f}, rect->color, u2, v2};
 
 	// display as two triangles, vertices in counter-clockwise order, positive y as up:
 	out_vertices[0] = top_left;
@@ -58,8 +58,8 @@ static int odTrianglePrimitive_compare(const void* triangle1, const void* triang
 		return false;
 	}
 
-	float z1 = static_cast<const odVertex*>(triangle1)->pos.vector[2];
-	float z2 = static_cast<const odVertex*>(triangle2)->pos.vector[2];
+	float z1 = static_cast<const odVertex*>(triangle1)->pos.z;
+	float z2 = static_cast<const odVertex*>(triangle2)->pos.z;
 
 	if (z1 < z2) {
 		return -1;

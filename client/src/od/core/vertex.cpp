@@ -18,7 +18,7 @@ const char* odVertex_get_debug_string(const odVertex* vertex) {
 		static_cast<double>(vertex->u),
 		static_cast<double>(vertex->v));
 }
-bool odVertex_check_valid(const odVertex* vertex) {
+bool odVertex_check_valid_3d(const odVertex* vertex) {
 	if (!OD_CHECK(vertex != nullptr)
 		|| !OD_CHECK(odVector_check_valid(&vertex->pos))
 		|| !OD_CHECK(odFloat_is_precise_int(vertex->u))
@@ -30,39 +30,39 @@ bool odVertex_check_valid(const odVertex* vertex) {
 
 	return true;
 }
-bool odVertex_check_valid_batch(const odVertex* vertices, int32_t vertices_count) {
+bool odVertex_check_valid_batch_3d(const odVertex* vertices, int32_t vertices_count) {
 	if (!OD_CHECK((vertices_count == 0) || (vertices != nullptr))
 		|| !OD_CHECK(vertices_count >= 0)) {
 		return false;
 	}
 
 	for (int32_t i = 0; i < vertices_count; i++) {
-		if (!OD_CHECK(odVertex_check_valid(vertices + i))) {
+		if (!OD_CHECK(odVertex_check_valid_3d(vertices + i))) {
 			return false;
 		}
 	}
 
 	return true;
 }
-void odVertex_transform(odVertex* vertex, const odMatrix* matrix) {
-	if (!OD_DEBUG_CHECK(odVertex_check_valid(vertex))
-		|| !OD_DEBUG_CHECK(odMatrix_check_valid(matrix))) {
+void odVertex_transform_3d(odVertex* vertex, const odMatrix* matrix) {
+	if (!OD_DEBUG_CHECK(odVertex_check_valid_3d(vertex))
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix))) {
 		return;
 	}
 
-	odMatrix_multiply_vector(matrix, &vertex->pos);
+	odMatrix_multiply_vector_3d(matrix, &vertex->pos);
 
-	OD_DISCARD(OD_DEBUG_CHECK(odVertex_check_valid(vertex)));
+	OD_DISCARD(OD_DEBUG_CHECK(odVertex_check_valid_3d(vertex)));
 }
-void odVertex_transform_batch(odVertex* vertices, int32_t vertices_count, const odMatrix* matrix) {
-	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch(vertices, vertices_count))
+void odVertex_transform_batch_3d(odVertex* vertices, int32_t vertices_count, const odMatrix* matrix) {
+	if (!OD_DEBUG_CHECK(odVertex_check_valid_batch_3d(vertices, vertices_count))
 		|| !OD_DEBUG_CHECK(vertices_count >= 0)
-		|| !OD_DEBUG_CHECK(odMatrix_check_valid(matrix))) {
+		|| !OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix))) {
 		return;
 	}
 
 	for (int32_t i = 0; i < vertices_count; i++) {
-		odVertex_transform(vertices + i, matrix);
+		odVertex_transform_3d(vertices + i, matrix);
 	}
 }
 

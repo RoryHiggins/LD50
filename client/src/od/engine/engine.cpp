@@ -170,15 +170,9 @@ bool odEngine_step(odEngine* engine) {
 	{
 		const int32_t vertices_count = 3;
 		odVertex vertices_base[vertices_count] = {
-			{{0.0f,0.0f,0.0f,0.0f},
-			 {0xff,0x00,0x00,0xff},
-			 0.0f,0.0f},
-			{{0.0f,1.0f,0.0f,0.0f},
-			 {0xff,0xff,0x00,0xff},
-			 0.0f,0.0f},
-			{{1.0f,0.0f,0.0f,0.0f},
-			 {0xff,0xff,0x00,0xff},
-			 0.0f,0.0f},
+			odVertex{odVector{0.0f,0.0f,0.0f,0.0f}, odColor{0xff,0x00,0x00,0xff}, 0.0f,0.0f},
+			odVertex{odVector{0.0f,1.0f,0.0f,0.0f}, odColor{0xff,0xff,0x00,0xff}, 0.0f,0.0f},
+			odVertex{odVector{1.0f,0.0f,0.0f,0.0f}, odColor{0xff,0xff,0x00,0xff}, 0.0f,0.0f},
 		};
 
 		const float scale_x = static_cast<float>(engine->settings.game_width / 2);
@@ -189,18 +183,18 @@ bool odEngine_step(odEngine* engine) {
 
 		odMatrix matrix{};
 		odMatrix_init(&matrix, scale_x, scale_y, 1.0f, translate_x, translate_y, 0.0f);
-		odMatrix_rotate_z(&matrix, float(engine->frame.counter));
+		odMatrix_rotate_z_3d(&matrix, static_cast<float>(engine->frame.counter));
 		odVertex vertices[vertices_count]{};
 
 		for (int32_t i = 0; i < 12; i++) {
 			memcpy(vertices, vertices_base, vertices_count * sizeof(odVertex));
-			odMatrix_rotate_z(&matrix, 30.0f);
+			odMatrix_rotate_z_3d(&matrix, 30.0f);
 
 			for (odVertex& vertex: vertices) {
-				odVertex_transform(&vertex, &matrix);
-				vertex.color.b = uint8_t(3 * i);
-				vertex.color.g = 192 - uint8_t(4 * i);
-				vertex.pos.vector[2] = float(i);
+				odVertex_transform_3d(&vertex, &matrix);
+				vertex.color.b = static_cast<uint8_t>(3 * i);
+				vertex.color.g = 192 - static_cast<uint8_t>(4 * i);
+				vertex.pos.z = static_cast<float>(i);
 			}
 			OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
 		}

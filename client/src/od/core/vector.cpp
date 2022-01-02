@@ -7,9 +7,18 @@
 
 bool odVector_check_valid(const odVector* vector) {
 	if (!OD_CHECK(vector != nullptr)
-		|| !OD_CHECK(std::isfinite(vector->vector[0]))
-		|| !OD_CHECK(std::isfinite(vector->vector[1]))
-		|| !OD_CHECK(std::isfinite(vector->vector[2]))) {
+		|| !OD_CHECK(std::isfinite(vector->x))
+		|| !OD_CHECK(std::isfinite(vector->y))
+		|| !OD_CHECK(std::isfinite(vector->z))
+		|| !OD_CHECK(std::isfinite(vector->w))) {
+		return false;
+	}
+
+	return true;
+}
+bool odVector_check_valid_3d(const odVector* vector) {
+	if (!OD_CHECK(odVector_check_valid(vector))
+		|| !OD_CHECK((vector->w == 0.0f) || (vector->w == 1.0f))) {
 		return false;
 	}
 
@@ -22,10 +31,10 @@ const char* odVector_get_debug_string(const odVector* vector) {
 
 	return odDebugString_format(
 		"\"[%g,%g,%g,%g]\"",
-		static_cast<double>(vector->vector[0]),
-		static_cast<double>(vector->vector[1]),
-		static_cast<double>(vector->vector[2]),
-		static_cast<double>(vector->vector[3]));
+		static_cast<double>(vector->x),
+		static_cast<double>(vector->y),
+		static_cast<double>(vector->z),
+		static_cast<double>(vector->w));
 }
 bool odVector_equals(const odVector* vector1, const odVector* vector2) {
 	if (!OD_DEBUG_CHECK(odVector_check_valid(vector1))
@@ -33,10 +42,11 @@ bool odVector_equals(const odVector* vector1, const odVector* vector2) {
 		return false;
 	}
 
-	for (int32_t i = 0; i < OD_VECTOR4_ELEM_COUNT; i++) {
-		if (vector1->vector[i] != vector2->vector[i]) {
-			return false;
-		}
+	if ((vector1->x != vector2->x)
+		|| (vector1->y != vector2->y)
+		|| (vector1->z != vector2->z)
+		|| (vector1->w != vector2->w)) {
+		return false;
 	}
 
 	return true;
@@ -47,10 +57,11 @@ bool odVector_epsilon_equals(const odVector* vector1, const odVector* vector2) {
 		return false;
 	}
 
-	for (int32_t i = 0; i < OD_VECTOR4_ELEM_COUNT; i++) {
-		if (!odFloat_epsilon_equals(vector1->vector[i], vector2->vector[i])) {
-			return false;
-		}
+	if (!odFloat_epsilon_equals(vector1->x, vector2->x)
+		|| !odFloat_epsilon_equals(vector1->y, vector2->y)
+		|| !odFloat_epsilon_equals(vector1->z, vector2->z)
+		|| !odFloat_epsilon_equals(vector1->w, vector2->w)) {
+		return false;
 	}
 
 	return true;
