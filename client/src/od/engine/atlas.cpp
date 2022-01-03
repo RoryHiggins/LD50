@@ -1,9 +1,10 @@
-#include <od/engine/texture_atlas.hpp>
+#include <od/engine/atlas.hpp>
 
 #include <cstring>
 
 #include <od/core/debug.h>
 #include <od/core/color.h>
+#include <od/platform/image.hpp>
 
 #define OD_ATLAS_REGION_ALLOCATE_MAX_FREE_REGIONS 2
 #define OD_ATLAS_REGION_ID_INVALID -1
@@ -24,9 +25,9 @@ odAtlasRegion_allocate(
 static OD_NO_DISCARD bool
 odAtlas_ensure_count(odAtlas* atlas, int32_t min_count);
 static OD_NO_DISCARD odAtlasFreeRegionId
-odAtlas_grow(odAtlas* atlas, int32_t width, int32_t height);
+odAtlas_allocate_free_region(odAtlas* atlas, int32_t width, int32_t height);
 static OD_NO_DISCARD odAtlasFreeRegionId
-odAtlas_prepare_free_region_id(odAtlas* atlas, int32_t width, int32_t height);
+odAtlas_get_free_region(odAtlas* atlas, int32_t width, int32_t height);
 static OD_NO_DISCARD bool
 odAtlas_set_region_size(odAtlas* atlas, odAtlasRegionId region_id, int32_t width, int32_t height);
 
@@ -56,8 +57,8 @@ bool odAtlasRegion_can_allocate(const odAtlasRegion* region, int32_t width, int3
 		return false;
 	}
 
-	if ((odBounds_get_width(&region->bounds) > width)
-		|| (odBounds_get_height(&region->bounds) > height)) {
+	if ((odBounds_get_width(&region->bounds) < width)
+		|| (odBounds_get_height(&region->bounds) < height)) {
 		return false;
 	}
 
@@ -78,9 +79,9 @@ bool odAtlasRegion_allocate(const odAtlasRegion* region, odAtlasRegion* out_regi
 
 	/*
 	we allocate the top-left corner, and split the remaining region into the
-	remaining region on the same row + the entire region below.
+	remaining region to the right + the remaining region below.
 	
-	example alloc: 2x2 region from 4x4 region, A=allocated, B=top row free, C=bottom free:
+	example alloc: 2x2 region from 4x4 region, A=allocated, B=right free, C=below free:
 		AABB
 		AABB
 		CCCC
@@ -93,27 +94,38 @@ bool odAtlasRegion_allocate(const odAtlasRegion* region, odAtlasRegion* out_regi
 		region->bounds.x1 + width,
 		region->bounds.y1 + height,
 	}};
+	if (!OD_DEBUG_CHECK(odBounds_contains(&region->bounds, &out_region->bounds))) {
+		return false;
+	}
 
-	odAtlasRegion top_remaining{odBounds{
+	odAtlasRegion right_free{odBounds{
 		region->bounds.x1 + width,
 		region->bounds.y1,
 		region->bounds.x2,
 		region->bounds.y1 + height,
 	}};
 
-	odAtlasRegion continuiation_remaining{odBounds{
-		region->bounds.x1 + width,
-		region->bounds.y1,
-		region->bounds.x2,
+	odAtlasRegion below_free{odBounds{
+		region->bounds.x1,
 		region->bounds.y1 + height,
+		region->bounds.x2,
+		region->bounds.y2,
 	}};
 
 	*out_free_regions_count = 0;
-	if (odAtlasRegion_has_space(&top_remaining)) {
-		out_free_regions[*out_free_regions_count++] = top_remaining;
+	if (odAtlasRegion_has_space(&right_free)) {
+		if (!OD_DEBUG_CHECK(odBounds_contains(&region->bounds, &right_free.bounds))) {
+			return false;
+		}
+		out_free_regions[*out_free_regions_count] = right_free;
+		(*out_free_regions_count)++;
 	}
-	if (odAtlasRegion_has_space(&continuiation_remaining)) {
-		out_free_regions[*out_free_regions_count++] = continuiation_remaining;
+	if (odAtlasRegion_has_space(&below_free)) {
+		if (!OD_DEBUG_CHECK(odBounds_contains(&region->bounds, &below_free.bounds))) {
+			return false;
+		}
+		out_free_regions[*out_free_regions_count] = below_free;
+		(*out_free_regions_count)++;
 	}
 
 	return true;
@@ -131,7 +143,7 @@ bool odAtlas_ensure_count(odAtlas* atlas, int32_t min_count) {
 
 	return true;
 }
-odAtlasFreeRegionId odAtlas_grow(odAtlas* atlas, int32_t width, int32_t height) {
+odAtlasFreeRegionId odAtlas_allocate_free_region(odAtlas* atlas, int32_t width, int32_t height) {
 	if (!OD_CHECK(atlas != nullptr)
 		|| !OD_CHECK(width > 0)
 		|| !OD_CHECK(height > 0)) {
@@ -150,18 +162,18 @@ odAtlasFreeRegionId odAtlas_grow(odAtlas* atlas, int32_t width, int32_t height) 
 	if (!OD_CHECK(odImage_resize(&atlas->image, max_width, new_height))) {
 		return OD_ATLAS_REGION_ID_INVALID;
 	}
-	odAtlasFreeRegionId region_id = atlas->regions.get_count();
-	if (!OD_CHECK(atlas->regions.push(region))) {
+	odAtlasFreeRegionId region_id = atlas->free_regions.get_count();
+	if (!OD_CHECK(atlas->free_regions.push(region))) {
 		return OD_ATLAS_REGION_ID_INVALID;
 	}
 
 	return region_id;
 }
-odAtlasFreeRegionId odAtlas_prepare_free_region_id(odAtlas* atlas, int32_t width, int32_t height) {
+odAtlasFreeRegionId odAtlas_get_free_region(odAtlas* atlas, int32_t width, int32_t height) {
 	if (!OD_CHECK(atlas != nullptr)
 		|| !OD_CHECK(width > 0)
 		|| !OD_CHECK(height > 0)) {
-		return false;
+		return OD_ATLAS_REGION_ID_INVALID;
 	}
 
 	int32_t src_free_region_id = OD_ATLAS_REGION_ID_INVALID;
@@ -170,7 +182,7 @@ odAtlasFreeRegionId odAtlas_prepare_free_region_id(odAtlas* atlas, int32_t width
 	for (int32_t i = 0; i < free_regions_count; i++) {
 		const odAtlasRegion* free_region = atlas->free_regions.get(i);
 		if (!OD_DEBUG_CHECK(free_region != nullptr)) {
-			return false;
+			return OD_ATLAS_REGION_ID_INVALID;
 		}
 
 		if (odAtlasRegion_can_allocate(free_region, width, height)) {
@@ -180,7 +192,7 @@ odAtlasFreeRegionId odAtlas_prepare_free_region_id(odAtlas* atlas, int32_t width
 	}
 
 	if (src_free_region_id == OD_ATLAS_REGION_ID_INVALID) {
-		src_free_region_id = odAtlas_grow(atlas, width, height);
+		src_free_region_id = odAtlas_allocate_free_region(atlas, width, height);
 	}
 
 	return src_free_region_id;
@@ -193,7 +205,7 @@ bool odAtlas_set_region_size(odAtlas* atlas, odAtlasRegionId region_id, int32_t 
 		return false;
 	}
 
-	if (!OD_CHECK(odAtlas_unset_region(atlas, region_id))) {
+	if (!OD_CHECK(odAtlas_reset_region(atlas, region_id))) {
 		return false;
 	}
 
@@ -201,15 +213,18 @@ bool odAtlas_set_region_size(odAtlas* atlas, odAtlasRegionId region_id, int32_t 
 		return true;
 	}
 
-	odAtlasRegion* dest_region = atlas->regions.get(region_id);
-	if (!OD_CHECK(dest_region != nullptr)) {
+	odAtlasFreeRegionId src_free_region_id = odAtlas_get_free_region(atlas, width, height);
+	if (!OD_CHECK(src_free_region_id != OD_ATLAS_REGION_ID_INVALID)) {
 		return false;
 	}
 
-	odAtlasFreeRegionId src_free_region_id = odAtlas_prepare_free_region_id(atlas, width, height);
-
 	const odAtlasRegion* src_free_region = atlas->free_regions.get(src_free_region_id);
 	if (!OD_CHECK(src_free_region != nullptr)) {
+		return false;
+	}
+
+	odAtlasRegion* dest_region = atlas->regions.get(region_id);
+	if (!OD_CHECK(dest_region != nullptr)) {
 		return false;
 	}
 
@@ -266,6 +281,27 @@ void odAtlas_swap(odAtlas* atlas1, odAtlas* atlas2) {
 	odTrivialArray_swap(&atlas1->regions, &atlas2->regions);
 	odTrivialArray_swap(&atlas1->free_regions, &atlas2->free_regions);
 }
+const odColor* odAtlas_begin_const(const odAtlas* atlas) {
+	if (!OD_CHECK(atlas != nullptr)) {
+		return nullptr;
+	}
+
+	return odImage_begin_const(&atlas->image);
+}
+int32_t odAtlas_get_width(const odAtlas* atlas) {
+	if (!OD_CHECK(atlas != nullptr)) {
+		return 0;
+	}
+
+	return atlas->image.width;
+}
+int32_t odAtlas_get_height(const odAtlas* atlas) {
+	if (!OD_CHECK(atlas != nullptr)) {
+		return 0;
+	}
+
+	return atlas->image.height;
+}
 int32_t odAtlas_get_count(const odAtlas* atlas) {
 	if (!OD_CHECK(atlas != nullptr)) {
 		return 0;
@@ -288,14 +324,13 @@ const odBounds* odAtlas_get_region_bounds(const odAtlas* atlas, odAtlasRegionId 
 	return &region->bounds;
 }
 bool odAtlas_set_region(odAtlas* atlas, odAtlasRegionId region_id,
-				 int32_t width, int32_t height, const odColor* src, int32_t src_row_stride) {
+						int32_t width, int32_t height, const odColor* src, int32_t src_image_width) {
 	if (!OD_CHECK(atlas != nullptr)
 		|| !OD_CHECK(region_id >= 0)
 		|| !OD_CHECK((src != nullptr) || (width == 0) || (height == 0))
 		|| !OD_CHECK(width >= 0)
 		|| !OD_CHECK(height >= 0)
-		|| !OD_CHECK(src_row_stride >= 0)
-		|| !OD_CHECK((src_row_stride > 0) || (width == 0) || (height == 0))) {
+		|| !OD_CHECK((src_image_width >= width) || (height == 0))) {
 		return false;
 	}
 
@@ -317,11 +352,11 @@ bool odAtlas_set_region(odAtlas* atlas, odAtlasRegionId region_id,
 		return false;
 	}
 
-	odColor_blit(width, height, src, src_row_stride, dest, atlas->image.width);
+	odColor_blit(width, height, src, src_image_width, dest, atlas->image.width);
 
 	return true;
 }
-bool odAtlas_unset_region(odAtlas* atlas, odAtlasRegionId region_id) {
+bool odAtlas_reset_region(odAtlas* atlas, odAtlasRegionId region_id) {
 	if (!OD_CHECK(atlas != nullptr)
 		|| !OD_CHECK(region_id >= 0)) {
 		return false;

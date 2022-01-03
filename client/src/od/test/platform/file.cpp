@@ -14,9 +14,9 @@ static odString odFile_test_create_random_name() {
 	const int32_t random_size = 16;
 	const int32_t size = prefix_size + random_size;
 	odString name;
-	OD_ASSERT(odString_set_count(&name, size));
+	OD_ASSERT(name.set_count(size));
 
-	char* name_ptr = odString_get(&name, 0);
+	char* name_ptr = name.begin();
 	OD_ASSERT(name_ptr != nullptr);
 
 	memcpy(name_ptr, prefix, prefix_size);
@@ -34,13 +34,11 @@ static odString odFile_test_create_random_name() {
 		name_ptr[i] = static_cast<char>(static_cast<int>('a') + (rand() % 20));
 	}
 
-	// OD_ASSERT(odString_ensure_null_terminated(&name));
-
 	return name;
 }
 OD_TEST(odTest_odFile_open) {
 	odString file_name = odFile_test_create_random_name();
-	const char* file_name_str = odString_get_const(&file_name, 0);
+	const char* file_name_str = file_name.begin();
 	OD_ASSERT(file_name_str != nullptr);
 
 	const int32_t write_modes_count = 6;
@@ -61,7 +59,7 @@ OD_TEST(odTest_odFile_open) {
 }
 OD_TEST(odTest_odFile_write_read_delete) {
 	odString file_name = odFile_test_create_random_name();
-	const char* file_name_str = odString_get_const(&file_name, 0);
+	const char* file_name_str = file_name.begin();
 
 	const char test_str[] = "hello";
 	const int32_t test_string_size = sizeof(test_str);
@@ -85,7 +83,7 @@ OD_TEST(odTest_odFile_write_read_delete) {
 }
 OD_TEST(odTest_odFilePath_write_read_delete) {
 	odString file_name = odFile_test_create_random_name();
-	const char* file_name_str = odString_get_const(&file_name, 0);
+	const char* file_name_str = file_name.begin();
 
 	const char test_str[] = "hello";
 	const int32_t test_string_size = sizeof(test_str);

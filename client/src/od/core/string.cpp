@@ -8,9 +8,7 @@
 
 bool odString_check_valid(const odString* string) {
 	if (!OD_CHECK(string != nullptr)
-		|| !OD_CHECK(odTrivialArray_check_valid(&string->array))
-		|| !OD_DEBUG_CHECK((string->array.count == 0)
-					 || (static_cast<const char*>(string->array.allocation.ptr)[string->array.count] == '\0'))) {
+		|| !OD_CHECK(odTrivialArray_check_valid(&string->array))) {
 		return false;
 	}
 
@@ -23,16 +21,16 @@ const char* odString_get_debug_string(const odString* string) {
 
 	const char* string_preview = "";
 	int32_t string_preview_max_count = 0;
-	if (string->array.count > 0) {
-		string_preview = odString_begin_const(string);
-		string_preview_max_count = string->array.count;
+	if (string->get_count() > 0) {
+		string_preview = string->begin();
+		string_preview_max_count = string->get_count();
 
 		if (string_preview != nullptr) {
-			string_preview_max_count = string->array.count;
+			string_preview_max_count = string->get_count();
 		}
 	}
 
-	if (string->array.count > 512) {
+	if (string->get_count() > 512) {
 		string_preview = "...";
 		string_preview_max_count = 3;
 	}
@@ -207,11 +205,12 @@ const char* odString_get_c_str(const odString* string) {
 		return "";
 	}
 
-	if (string->array.allocation.ptr == nullptr) {
+	const char* ptr = string->begin();
+	if (ptr == nullptr) {
 		return "";
 	}
 
-	return static_cast<char*>(string->array.allocation.ptr);
+	return ptr;
 }
 char* odString_get(odString* string, int32_t i) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))) {
@@ -325,11 +324,11 @@ const char& odString::operator[](int32_t i) const& {
 odString::odString() = default;
 odString::odString(odString&& other) = default;
 odString::odString(const odString& other) : odString{} {
-	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.count)));
+	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.get_count())));
 }
 odString& odString::operator=(odString&& other)  = default;
 odString& odString::operator=(const odString& other) {
-	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.count)));
+	OD_DISCARD(OD_CHECK(odString_assign(this, other.begin(), other.array.get_count())));
 
 	return *this;
 }

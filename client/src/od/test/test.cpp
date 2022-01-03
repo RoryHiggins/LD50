@@ -17,6 +17,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odWindow(),
 		odTestSuite_odTexture(),
 		odTestSuite_odRenderer(),
+		odTestSuite_odAtlas(),
 		odTestSuite_odEntityIndex(),
 	};
 

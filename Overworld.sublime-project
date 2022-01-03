@@ -18,12 +18,12 @@
 		},
 		{
 			"name": "DEBUG build iteratively and run tests by name",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name odTest_odRenderTexture_init_destroy",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name odTest_odMatrix_multiply_vector_3d_with_indentity",
 			"working_dir": "$project_path",
 		},
 		{
 			"name": "DEBUG run tests + client with gdb",
-			"shell_cmd": "start make gdb TARGET=DEBUG",
+			"shell_cmd": "start make gdb TARGET=DEBUG CLIENT_ARGS=''",
 			"working_dir": "$project_path",
 		},
 		{
@@ -131,15 +131,15 @@
 				"<none>"  // prevents any non-explicitly stated folders from being included
 			]
 		},
-		// {
-		// 	"path": "C:\\msys64\\mingw64\\include\\c++",
-		// 	"folder_exclude_patterns":
-		// 	[
-		// 		"tr1",
-		// 		"tr2",
-		// 		"experimental",
-		// 		"backward",
-		// 	],
-		// },
+		{
+			"path": "C:\\msys64\\mingw64\\include\\c++",
+			"folder_exclude_patterns":
+			[
+				"tr1",
+				"tr2",
+				"experimental",
+				"backward",
+			],
+		},
 	],
 }

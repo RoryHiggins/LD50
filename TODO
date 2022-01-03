@@ -1,8 +1,7 @@
 
 Refactoring TODOs
-- In its own commit, rename odRectPrimitive to odSprite
-	+ any relevant variables
-	+ rename odTrianglePrimitive_ helper prefix to odTriangle_
+- Encapsulate c++ type members, replace use with accessors
+	array.count, capacity etc in particular
 - Update error checking to allow continuation on error cases where possible
 
 Major TODOs

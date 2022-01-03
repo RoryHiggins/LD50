@@ -34,27 +34,26 @@ bool odColor_equals(const odColor* color1, const odColor* color2) {
 
 	return true;
 }
-void odColor_blit(int32_t width, int32_t height, const odColor* src, int32_t src_row_stride,
-						odColor* dest, int32_t dest_row_stride) {
+void odColor_blit(int32_t width, int32_t height, const odColor* src, int32_t src_image_width,
+				  odColor* dest, int32_t dest_image_width) {
 	if (!OD_DEBUG_CHECK(width >= 0)
 		|| !OD_DEBUG_CHECK(height >= 0)
-		|| !OD_DEBUG_CHECK(width <= src_row_stride)
-		|| !OD_DEBUG_CHECK(height <= dest_row_stride)
+		|| !OD_DEBUG_CHECK(width <= src_image_width)
 		|| !OD_DEBUG_CHECK((src != nullptr) || (width == 0) || (height == 0))
-		|| !OD_DEBUG_CHECK(src_row_stride >= 0)
+		|| !OD_DEBUG_CHECK((src_image_width >= width) || (height == 0))
 		|| !OD_DEBUG_CHECK((dest != nullptr) || (width == 0) || (height == 0))
-		|| !OD_DEBUG_CHECK(dest_row_stride >= 0)
-		|| !OD_DEBUG_CHECK((dest_row_stride > 0) || (width == 0) || (height == 0))) {
+		|| !OD_DEBUG_CHECK(dest_image_width >= 0)
+		|| !OD_DEBUG_CHECK((dest_image_width >= width) || (height == 0))) {
 		return;
 	}
 
-	const odColor* src_end = src + (height * src_row_stride);
+	const odColor* src_end = src + (height * src_image_width);
 
 	size_t row_size = sizeof(odColor) * static_cast<size_t>(width);
 	while (src < src_end) {
 		memcpy(dest, src, row_size);
-		src += src_row_stride;
-		dest += dest_row_stride;
+		src += src_image_width;
+		dest += dest_image_width;
 	}
 }
 const odColor* odColor_get_white() {

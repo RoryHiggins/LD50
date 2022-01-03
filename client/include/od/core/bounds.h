@@ -20,6 +20,8 @@ odBounds_is_collidable(const struct odBounds* bounds);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odBounds_collides(const struct odBounds* a, const struct odBounds* b);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odBounds_contains(const struct odBounds* outer, const struct odBounds* inner);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odBounds_equals(const struct odBounds* a, const struct odBounds* b);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
 odBounds_get_width(const struct odBounds* bounds);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <od/engine/texture_atlas.h>
+#include <od/engine/atlas.h>
 
 #include <od/core/bounds.h>
 #include <od/core/array.hpp>

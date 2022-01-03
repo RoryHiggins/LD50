@@ -46,7 +46,7 @@ struct odString {
 	OD_CORE_MODULE OD_NO_DISCARD char*
 	get(int32_t i) &;
 	OD_CORE_MODULE OD_NO_DISCARD const char*
-	get(int32_t i) const &;
+	get(int32_t i) const&;
 	OD_CORE_MODULE OD_NO_DISCARD const char*
 	get_c_str() const;
 	OD_CORE_MODULE OD_NO_DISCARD char&

@@ -276,11 +276,11 @@ void* odTrivialArray_get(odTrivialArray* array, int32_t i, int32_t stride) {
 	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
 		|| !OD_DEBUG_CHECK((i >= 0) && (i < array->count))
 		|| !OD_DEBUG_CHECK(stride > 0)
-		|| !OD_DEBUG_CHECK(array->allocation.ptr != nullptr)) {
+		|| !OD_DEBUG_CHECK(odTrivialArray_begin(array) != nullptr)) {
 		return nullptr;
 	}
 
-	return static_cast<void*>(static_cast<char*>(array->allocation.ptr) + (i * stride));
+	return static_cast<void*>(static_cast<char*>(odTrivialArray_begin(array)) + (i * stride));
 }
 const void* odTrivialArray_get_const(const odTrivialArray* array, int32_t i, int32_t stride) {
 	return odTrivialArray_get(const_cast<odTrivialArray*>(array), i, stride);
@@ -290,22 +290,28 @@ void* odTrivialArray_begin(odTrivialArray* array) {
 		return nullptr;
 	}
 
-	return array->allocation.ptr;
+	return odAllocation_get(&array->allocation);
 }
 const void* odTrivialArray_begin_const(const odTrivialArray* array) {
 	return odTrivialArray_begin(const_cast<odTrivialArray*>(array));
 }
 void* odTrivialArray_end(odTrivialArray* array, int32_t stride) {
 	if (!OD_DEBUG_CHECK(odTrivialArray_check_valid(array))
-		|| !OD_DEBUG_CHECK((array->count == 0) || (array->allocation.ptr != nullptr))
+		|| !OD_DEBUG_CHECK((array->count == 0) || (odTrivialArray_begin(array) != nullptr))
 		|| !OD_DEBUG_CHECK(stride > 0)) {
 		return nullptr;
 	}
 
-	return static_cast<void*>(static_cast<char*>(array->allocation.ptr) + (array->count * stride));
+	return static_cast<void*>(static_cast<char*>(odTrivialArray_begin(array)) + (array->count * stride));
 }
 const void* odTrivialArray_end_const(const odTrivialArray* array, int32_t stride) {
 	return odTrivialArray_end(const_cast<odTrivialArray*>(array), stride);
+}
+int32_t odTrivialArray::get_capacity() const {
+	return odTrivialArray_get_capacity(this);
+}
+int32_t odTrivialArray::get_count() const {
+	return odTrivialArray_get_count(this);
 }
 odTrivialArray::odTrivialArray()
 : allocation{}, capacity{0}, count{0} {
@@ -549,6 +555,30 @@ void* odArray_end(odArray* array) {
 }
 const void* odArray_end_const(const odArray* array) {
 	return odArray_end(const_cast<odArray*>(array));
+}
+int32_t odArray::get_capacity() const {
+	return odArray_get_capacity(this);
+}
+bool odArray::set_capacity(int32_t new_capacity) {
+	return odArray_set_capacity(this, new_capacity);
+}
+bool odArray::ensure_capacity(int32_t min_capacity) {
+	return odArray_ensure_capacity(this, min_capacity);
+}
+int32_t odArray::get_count() const {
+	return odArray_get_count(this);
+}
+bool odArray::set_count(int32_t new_count) {
+	return odArray_set_count(this, new_count);
+}
+bool odArray::ensure_count(int32_t min_count) {
+	return odArray_ensure_count(this, min_count);
+}
+bool odArray::pop(int32_t pop_count) {
+	return odArray_pop(this, pop_count);
+}
+bool odArray::swap_pop(int32_t i) {
+	return odArray_swap_pop(this, i);
 }
 odArray::odArray()
 : array{}, type{nullptr} {

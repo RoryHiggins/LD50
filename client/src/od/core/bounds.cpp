@@ -69,6 +69,23 @@ bool odBounds_collides(const odBounds* a, const odBounds* b) {
 
 	return true;
 }
+bool odBounds_contains(const struct odBounds* outer, const struct odBounds* inner) {
+	if (!OD_DEBUG_CHECK(odBounds_check_valid(outer))
+		|| !OD_DEBUG_CHECK(odBounds_check_valid(inner))
+		|| !OD_DEBUG_CHECK(odBounds_is_collidable(outer))
+		|| !OD_DEBUG_CHECK(odBounds_is_collidable(inner))) {
+		return false;
+	}
+
+	if ((inner->x1 < outer->x1)
+		|| (inner->x2 > outer->x2)
+		|| (inner->y1 < outer->y1)
+		|| (inner->y2 > outer->y2)) {
+		return false;
+	}
+
+	return true;
+}
 bool odBounds_equals(const odBounds* a, const odBounds* b) {
 	if (!OD_DEBUG_CHECK(odBounds_check_valid(a))
 		|| !OD_DEBUG_CHECK(odBounds_check_valid(b))) {

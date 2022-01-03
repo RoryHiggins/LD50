@@ -39,7 +39,7 @@ OD_TEST(odTest_odBounds_collides) {
 	}
 
 	for (const odBounds& compare: expected_no_collision_bounds) {
-		if (!!odBounds_collides(&bounds, &compare)) {
+		if (odBounds_collides(&bounds, &compare)) {
 			OD_ERROR("bounds expected not to collide:\nbounds=%s,\ncompare=%s",
 				odBounds_get_debug_string(&bounds), odBounds_get_debug_string(&compare));
 		}
@@ -48,6 +48,40 @@ OD_TEST(odTest_odBounds_collides) {
 	for (const odBounds& non_collidable_bounds: expected_not_collidable) {
 		if (odBounds_is_collidable(&non_collidable_bounds)) {
 			OD_ERROR("bounds expected not to be collidable:\nbounds=%s", odBounds_get_debug_string(&non_collidable_bounds));
+		}
+	}
+}
+OD_TEST(odTest_odBounds_contains) {
+	odBounds outer{-20, 3, -1, 50};
+
+	odBounds expected_contained_bounds[] = {
+		outer,
+		{outer.x1 + 1, outer.y1, outer.x2, outer.y2},
+		{outer.x1, outer.y1 + 1, outer.x2, outer.y2},
+		{outer.x1, outer.y1, outer.x2 - 1, outer.y2},
+		{outer.x1, outer.y1, outer.x2, outer.y2 - 1},
+		{outer.x1 + 1, outer.y1 + 1, outer.x2 - 1, outer.y2 - 1},
+	};
+
+	odBounds expected_not_contained_bounds[] = {
+		{outer.x1 - 1, outer.y1, outer.x2, outer.y2},
+		{outer.x1, outer.y1 - 1, outer.x2, outer.y2},
+		{outer.x1, outer.y1, outer.x2 + 1, outer.y2},
+		{outer.x1, outer.y1, outer.x2, outer.y2 + 1},
+		{outer.x1 - 1, outer.y1 - 1, outer.x2 + 1, outer.y2 + 1},
+	};
+
+	for (const odBounds& inner: expected_contained_bounds) {
+		if (!odBounds_contains(&outer, &inner)) {
+			OD_ERROR("outer bounds expected to contain inner:\nouter=%s,\ninner=%s",
+				odBounds_get_debug_string(&outer), odBounds_get_debug_string(&inner));
+		}
+	}
+
+	for (const odBounds& inner: expected_not_contained_bounds) {
+		if (odBounds_contains(&outer, &inner)) {
+			OD_ERROR("outer bounds expected to not contain inner:\nouter=%s,\ninner=%s",
+				odBounds_get_debug_string(&outer), odBounds_get_debug_string(&inner));
 		}
 	}
 }
@@ -107,6 +141,7 @@ OD_TEST(odTest_odBounds_get_height) {
 OD_TEST_SUITE(
 	odTestSuite_odBounds,
 	odTest_odBounds_collides,
+	odTest_odBounds_contains,
 	odTest_odBounds_equals,
 	odTest_odBounds_get_width,
 	odTest_odBounds_get_height,

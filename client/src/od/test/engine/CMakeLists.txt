@@ -1,1 +1,1 @@
-target_sources(od_test PRIVATE entity_index.cpp)
+target_sources(od_test PRIVATE atlas.cpp entity_index.cpp)

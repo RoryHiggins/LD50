@@ -13,8 +13,8 @@ struct odSpritePrimitive;
 
 struct odEntityCollider {
 	odEntityId id;
-	struct odTagset tagset;
 	struct odBounds bounds;
+	struct odTagset tagset;
 };
 struct odEntitySprite {
 	struct odBounds texture_bounds;

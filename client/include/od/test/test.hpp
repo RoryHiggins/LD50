@@ -45,6 +45,7 @@ OD_TEST_SUITE_DECLARE(odTestSuite_odImage)
 OD_TEST_SUITE_DECLARE(odTestSuite_odWindow)
 OD_TEST_SUITE_DECLARE(odTestSuite_odTexture)
 OD_TEST_SUITE_DECLARE(odTestSuite_odRenderer)
+OD_TEST_SUITE_DECLARE(odTestSuite_odAtlas)
 OD_TEST_SUITE_DECLARE(odTestSuite_odEntityIndex)
 
 #endif

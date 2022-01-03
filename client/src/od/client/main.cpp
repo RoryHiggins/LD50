@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cstdlib>
 
 #include <od/core/debug.h>
 #include <od/engine/engine.hpp>

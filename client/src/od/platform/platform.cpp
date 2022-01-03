@@ -1,5 +1,6 @@
 #include <od/platform/module.h>
 
+#include <cfenv>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -25,6 +26,10 @@
 #endif
 
 static bool odPlatform_backtrace_print();
+extern "C" void odPlatform_float_reset_exceptions();
+static int32_t odPlatform_float_get_enabled_exceptions();
+static OD_NO_DISCARD bool odPlatform_float_check_exceptions(void);
+static OD_NO_DISCARD bool odPlatform_float_init_exceptions();
 
 #if OD_BUILD_DBGHELP
 // libbacktrace does not play well with gcc + mingw, so we use the winapi here instead
@@ -218,6 +223,70 @@ bool odPlatform_backtrace_print() {
 	return false;
 }
 #endif
+void odPlatform_float_reset_exceptions() {
+	if (OD_BUILD_DEBUG) {
+		OD_DISCARD(
+			OD_CHECK(fesetenv(FE_DFL_ENV) == 0)
+			&& OD_CHECK(odPlatform_float_check_exceptions()));
+	}
+}
+static int32_t odPlatform_float_get_enabled_exceptions() {
+	return (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+}
+static OD_NO_DISCARD bool odPlatform_float_check_exceptions(void) {
+	int float_exceptions = fetestexcept(odPlatform_float_get_enabled_exceptions());
+	if (float_exceptions != 0) {
+		const char* float_exception_str = "Unknown floating point exception or multiple exceptions";
+		if (float_exceptions & FE_DIVBYZERO) {
+			float_exception_str = "Division by 0";
+		}
+		if (float_exceptions & FE_INEXACT) {
+			float_exception_str = "Inexact result";
+		}
+		if (float_exceptions & FE_INVALID) {
+			float_exception_str = "Invalid operation";
+		}
+		if (float_exceptions & FE_OVERFLOW) {
+			float_exception_str = "Overflowed";
+		}
+		if (float_exceptions & FE_UNDERFLOW) {
+			float_exception_str = "Underflowed";
+		}
+		OD_ERROR(
+			"Uncaught floating point exception(s) occurred: 0x%x: %s",
+			static_cast<unsigned>(float_exceptions),
+			float_exception_str);
+		return false;
+	}
+
+	if (!OD_CHECK(feclearexcept(odPlatform_float_get_enabled_exceptions()) == 0)) {
+		return false;
+	}
+
+	return true;
+}
+static OD_NO_DISCARD bool odPlatform_float_init_exceptions() {
+	if (!OD_CHECK(feclearexcept(odPlatform_float_get_enabled_exceptions()) == 0)) {
+		return false;
+	}
+
+	if (OD_BUILD_DEBUG) {
+		fexcept_t float_env;
+		if (!OD_CHECK(fegetexceptflag(&float_env, odPlatform_float_get_enabled_exceptions()) == 0)) {
+			return false;
+		}
+
+		if (!OD_CHECK(fesetexceptflag(&float_env, odPlatform_float_get_enabled_exceptions()) == 0)) {
+			return false;
+		}
+
+		if (!OD_CHECK(atexit(odPlatform_float_reset_exceptions) == 0)) {
+			return false;
+		}
+	}
+
+	return true;
+}
 
 
 struct odPlatform {
@@ -228,4 +297,8 @@ static odPlatform odPlatform_instance{};
 
 odPlatform::odPlatform() {
 	odDebug_set_backtrace_handler(&odPlatform_backtrace_print);
+
+	if (!OD_CHECK(odPlatform_float_init_exceptions())) {
+		exit(1);
+	}
 }
