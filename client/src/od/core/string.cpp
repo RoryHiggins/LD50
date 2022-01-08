@@ -155,7 +155,7 @@ bool odString_extend_formatted_variadic(odString* string, const char* format_c_s
 	if (!OD_CHECK(odString_set_count(string, old_count + added_required_count))) {
 		return false;
 	}
-	
+
 	char* dest_str = odString_get(string, old_count);
 	if (!OD_DEBUG_CHECK(dest_str != nullptr)) {
 		return false;

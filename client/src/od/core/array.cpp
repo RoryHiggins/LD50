@@ -330,7 +330,7 @@ odTrivialArray::~odTrivialArray() {
 
 bool odArray_check_valid(const odArray* array) {
 	if (!OD_CHECK(odTrivialArray_check_valid(&array->array))
-		|| !OD_CHECK((array->array.capacity == 0) || odType_check_valid(array->type))) {
+		|| !OD_CHECK((array->array.get_capacity() == 0) || odType_check_valid(array->type))) {
 		return false;
 	}
 
@@ -350,7 +350,7 @@ void odArray_swap(odArray* array1, odArray* array2) {
 	}
 
 	const odType* swap_type = array1->type;
-	
+
 	array1->type = array2->type;
 
 	array2->type = swap_type;
@@ -379,7 +379,7 @@ int32_t odArray_get_capacity(const odArray* array) {
 		return 0;
 	}
 
-	return array->array.capacity;
+	return array->array.get_capacity();
 }
 bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 	if (!OD_DEBUG_CHECK(odArray_check_valid(array))
@@ -387,7 +387,7 @@ bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 		return false;
 	}
 
-	if (array->array.capacity == new_capacity) {
+	if (array->get_capacity() == new_capacity) {
 		return true;
 	}
 
@@ -402,7 +402,7 @@ bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 	}
 
 	void* old_allocation_ptr = odAllocation_get(&array->array.allocation);
-	if (!OD_DEBUG_CHECK((old_allocation_ptr != nullptr) || (array->array.capacity == 0))) {
+	if (!OD_DEBUG_CHECK((old_allocation_ptr != nullptr) || (array->get_capacity() == 0))) {
 		return false;
 	}
 
@@ -415,8 +415,8 @@ bool odArray_set_capacity(odArray* array, int32_t new_capacity) {
 		array->type->move_assign_fn(new_allocation_ptr, old_allocation_ptr, new_count);
 	}
 
-	if ((old_allocation_ptr != nullptr) && (array->array.capacity > 0)) {
-		array->type->destruct_fn(old_allocation_ptr, array->array.capacity);
+	if ((old_allocation_ptr != nullptr) && (array->get_capacity() > 0)) {
+		array->type->destruct_fn(old_allocation_ptr, array->get_capacity());
 	}
 
 	odAllocation_swap(&array->array.allocation, &new_allocation);
@@ -430,8 +430,8 @@ bool odArray_ensure_capacity(odArray* array, int32_t min_capacity) {
 		return false;
 	}
 
-	int32_t new_capacity = odTrivialArray_get_new_capacity(array->array.capacity, min_capacity);
-	if (array->array.capacity == new_capacity) {
+	int32_t new_capacity = odTrivialArray_get_new_capacity(array->get_capacity(), min_capacity);
+	if (array->get_capacity() == new_capacity) {
 		return true;
 	}
 

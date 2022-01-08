@@ -9,7 +9,7 @@ OD_TEST(odTest_odEntityIndex_init_destroy) {
 
 	odEntityIndex_init(&entity_index);
 	odEntityIndex_destroy(&entity_index);
-	
+
 	// double init
 	odEntityIndex_init(&entity_index);
 	odEntityIndex_init(&entity_index);

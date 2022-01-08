@@ -15,10 +15,6 @@ template<typename T>
 T& odArrayT_debug_out_of_bounds_value();
 
 struct odTrivialArray {
-	odAllocation allocation;
-	int32_t capacity;
-	int32_t count;
-
 	OD_CORE_MODULE OD_NO_DISCARD int32_t
 	get_capacity() const;
 	OD_CORE_MODULE OD_NO_DISCARD int32_t
@@ -29,13 +25,14 @@ struct odTrivialArray {
 	OD_CORE_MODULE odTrivialArray& operator=(odTrivialArray&& other);
 	OD_CORE_MODULE ~odTrivialArray();
 
+	odAllocation allocation;
+	int32_t capacity;
+	int32_t count;
+
 	odTrivialArray(const odTrivialArray& other) = delete;
 	odTrivialArray& operator=(const odTrivialArray& other) = delete;
 };
 struct odArray {
-	odTrivialArray array;
-	const odType* type;
-
 	OD_CORE_MODULE OD_NO_DISCARD int32_t
 	get_capacity() const;
 	OD_CORE_MODULE OD_NO_DISCARD bool
@@ -58,6 +55,9 @@ struct odArray {
 	OD_CORE_MODULE odArray(odArray&& other);
 	OD_CORE_MODULE odArray& operator=(odArray&& other);
 	OD_CORE_MODULE ~odArray();
+
+	odTrivialArray array;
+	const odType* type;
 
 	odArray(const odArray& other) = delete;
 	odArray& operator=(const odArray& other) = delete;

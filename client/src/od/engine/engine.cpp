@@ -73,7 +73,7 @@ bool odEngine_init(odEngine* engine, const odEngineSettings* opt_settings) {
 
 	// BEGIN throwaway texture loading test code - TODO remove
 	odImage image{};
-	if (!OD_CHECK(odImage_read_png_file(&image, "./modules/example_minimal/data/sprites.png"))) {
+	if (!OD_CHECK(odImage_read_png_file(&image, "./app/example_minimal/data/sprites.png"))) {
 		return false;
 	}
 	if (!OD_CHECK(odTexture_init(

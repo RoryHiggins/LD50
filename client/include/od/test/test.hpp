@@ -40,11 +40,13 @@ OD_TEST_SUITE_DECLARE(odTestSuite_odArray)
 OD_TEST_SUITE_DECLARE(odTestSuite_odBounds)
 OD_TEST_SUITE_DECLARE(odTestSuite_odMatrix)
 OD_TEST_SUITE_DECLARE(odTestSuite_odString)
+
 OD_TEST_SUITE_DECLARE(odTestSuite_odFile)
 OD_TEST_SUITE_DECLARE(odTestSuite_odImage)
 OD_TEST_SUITE_DECLARE(odTestSuite_odWindow)
 OD_TEST_SUITE_DECLARE(odTestSuite_odTexture)
 OD_TEST_SUITE_DECLARE(odTestSuite_odRenderer)
+
 OD_TEST_SUITE_DECLARE(odTestSuite_odAtlas)
 OD_TEST_SUITE_DECLARE(odTestSuite_odEntityIndex)
 

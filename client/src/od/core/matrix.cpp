@@ -216,7 +216,7 @@ void odMatrix_multiply_vector_3d(const odMatrix* matrix, odVector* vector) {
 	}
 
 	vector->w = 1.0f;
-	odMatrix_multiply_vector(matrix, vector);	
+	odMatrix_multiply_vector(matrix, vector);
 	OD_DISCARD(OD_DEBUG_CHECK(odVector_check_valid_3d(vector)));
 }
 void odMatrix_scale_3d(odMatrix* matrix, float scale_x, float scale_y, float scale_z) {

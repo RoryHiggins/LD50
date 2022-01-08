@@ -12,11 +12,13 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odBounds(),
 		odTestSuite_odMatrix(),
 		odTestSuite_odString(),
+
 		odTestSuite_odFile(),
 		odTestSuite_odImage(),
 		odTestSuite_odWindow(),
 		odTestSuite_odTexture(),
 		odTestSuite_odRenderer(),
+
 		odTestSuite_odAtlas(),
 		odTestSuite_odEntityIndex(),
 	};
@@ -29,7 +31,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 	if (opt_name_filter != nullptr) {
 		OD_INFO("Skipping tests not matching name=\"%s\"", opt_name_filter);
 	}
-	
+
 	odTimer timer;
 	odTimer_start(&timer);
 

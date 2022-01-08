@@ -75,7 +75,7 @@ OD_TEST(odTest_odMatrix_multiply_translate_3d) {
 
 	odMatrix matrix3 = *odMatrix_get_identity();
 	odVector translate3{-0.0f, 500.0f, -0.015625f, 1.0f};
-	odMatrix_translate_3d(&matrix3, translate3.x, translate3.y, translate3.z);	
+	odMatrix_translate_3d(&matrix3, translate3.x, translate3.y, translate3.z);
 	odMatrix_multiply(&matrix, &matrix3);
 
 	odVector translate0{-6.0f, 4.0f, 0.625f, 1.0f};

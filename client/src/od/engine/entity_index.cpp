@@ -114,7 +114,7 @@ odEntityChunkIterator& odEntityChunkIterator::operator++() {
 
 	odEntityChunkCoord x_next = static_cast<odEntityChunkCoord>((x1 + 1) & coord_bitmask);
 	odEntityChunkCoord y_next = static_cast<odEntityChunkCoord>((y1 + 1) & coord_bitmask);
-	
+
 	OD_TRACE(
 		"this=%p, x1=%d, x2=%d, x_next=%d, y1=%d, y2=%d, y_next=%d",
 		static_cast<const void*>(this),

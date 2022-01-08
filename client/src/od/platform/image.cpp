@@ -18,7 +18,7 @@ bool odImage_check_valid(const odImage* image) {
 		|| !OD_CHECK(!((image->width > 0) ^ (image->height > 0)))) {
 		return false;
 	}
-	
+
 	return true;
 }
 const char* odImage_begin_debug_string(const odImage* image) {

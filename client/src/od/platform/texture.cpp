@@ -212,7 +212,7 @@ bool odRenderTexture_init(odRenderTexture* render_texture, odWindow* window, int
 	glBindTexture(GL_TEXTURE_2D, render_texture->texture.texture);
 	glBindFramebuffer(GL_FRAMEBUFFER, render_texture->fbo);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_texture->texture.texture, 0);  
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_texture->texture.texture, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);

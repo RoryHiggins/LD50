@@ -80,7 +80,7 @@ bool odAtlasRegion_allocate(const odAtlasRegion* region, odAtlasRegion* out_regi
 	/*
 	we allocate the top-left corner, and split the remaining region into the
 	remaining region to the right + the remaining region below.
-	
+
 	example alloc: 2x2 region from 4x4 region, A=allocated, B=right free, C=below free:
 		AABB
 		AABB
@@ -243,7 +243,7 @@ bool odAtlas_set_region_size(odAtlas* atlas, odAtlasRegionId region_id, int32_t 
 	if (!OD_CHECK((new_free_regions_count >= 0)
 		|| !OD_CHECK(new_free_regions_count <= OD_ATLAS_REGION_ALLOCATE_MAX_FREE_REGIONS))) {
 		return false;
-	}	
+	}
 
 	if (!OD_CHECK(atlas->free_regions.extend(new_free_regions, new_free_regions_count))) {
 		return false;

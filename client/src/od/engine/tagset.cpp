@@ -37,7 +37,7 @@ void odTagset_set(odTagset *tagset, int32_t tag_id, bool enabled) {
 	odTagsetElement bit = static_cast<odTagsetElement>(tag_id & (OD_TAGSET_ELEMENT_BIT_SIZE - 1));
 	odTagsetElement bit_mask = static_cast<odTagsetElement>(1 << bit);
 	uint8_t enabled_bit_mask = static_cast<uint8_t>(enabled << bit);
-	
+
 	tagset->tagset[element] = (tagset->tagset[element] ^ bit_mask) | enabled_bit_mask;
 }
 

@@ -173,7 +173,7 @@ bool odRenderer_init(odRenderer* renderer, odWindow* window) {
 	}
 
 	OD_TRACE("creating shader program, renderer=%s", odRenderer_get_debug_string(renderer));
-	
+
 	static const GLchar* vertex_shader_ptr = static_cast<const GLchar*>(odRenderer_vertex_shader);
 	static const GLint vertex_shader_size = sizeof(odRenderer_vertex_shader);
 	renderer->vertex_shader = glCreateShader(GL_VERTEX_SHADER);

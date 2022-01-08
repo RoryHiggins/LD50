@@ -98,7 +98,7 @@ bool odPlatform_backtrace_print() {
 
 		IMAGEHLP_MODULE64 module_info{};
 		module_info.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
-	
+
 		BOOL get_module_info_success = SymGetModuleInfo64(process, addr_dword, &module_info);
 		if (!get_module_info_success) {
 			// commented out as it makes stack traces unreadable
