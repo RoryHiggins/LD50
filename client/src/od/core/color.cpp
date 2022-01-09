@@ -1,10 +1,9 @@
-#include <od/core/color.h>
+#include <od/core/color.hpp>
 
 #include <cinttypes>
 #include <cstring>
 
 #include <od/core/debug.h>
-#include <od/core/bounds.h>
 
 const char* odColor_get_debug_string(const odColor* color) {
 	if (color == nullptr) {
@@ -80,3 +79,5 @@ const odColor* odColor_get_transparent() {
 	static const odColor color{0x00, 0x00, 0x00, 0x00};
 	return &color;
 }
+
+template struct odTrivialArrayT<odColor>;

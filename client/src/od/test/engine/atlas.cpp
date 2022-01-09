@@ -30,8 +30,8 @@ OD_TEST(odTest_odAtlas_set_reset_get_region_bounds) {
 
 	const odBounds* region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 	OD_ASSERT(region_bounds != nullptr);
-	OD_ASSERT(odBounds_get_width(region_bounds) == width);
-	OD_ASSERT(odBounds_get_height(region_bounds) == height);
+	OD_ASSERT(odBounds_get_width(region_bounds) == static_cast<float>(width));
+	OD_ASSERT(odBounds_get_height(region_bounds) == static_cast<float>(height));
 	OD_ASSERT(odAtlas_get_count(&atlas) == (region_id + 1));
 
 	const odBounds empty_bounds{};
@@ -52,8 +52,8 @@ OD_TEST(odTest_odAtlas_set_reset_set_reused) {
 	OD_ASSERT(odAtlas_set_region(&atlas, region_id, width, height, pixels, width));
 	const odBounds* region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 	OD_ASSERT(region_bounds != nullptr);
-	OD_ASSERT(odBounds_get_width(region_bounds) == width);
-	OD_ASSERT(odBounds_get_height(region_bounds) == height);
+	OD_ASSERT(odBounds_get_width(region_bounds) == static_cast<float>(width));
+	OD_ASSERT(odBounds_get_height(region_bounds) == static_cast<float>(height));
 	OD_ASSERT(odAtlas_get_count(&atlas) == (region_id + 1));
 
 	const odBounds old_region_bounds = *region_bounds;
@@ -82,8 +82,8 @@ OD_TEST(odTest_odAtlas_set_reset_scaling_sizes) {
 			OD_ASSERT(odAtlas_set_region(&atlas, region_id, width, height, pixels, max_width));
 			const odBounds* region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 			OD_ASSERT(region_bounds != nullptr);
-			OD_ASSERT(odBounds_get_width(region_bounds) == width);
-			OD_ASSERT(odBounds_get_height(region_bounds) == height);
+			OD_ASSERT(odBounds_get_width(region_bounds) == static_cast<float>(width));
+			OD_ASSERT(odBounds_get_height(region_bounds) == static_cast<float>(height));
 			OD_ASSERT(odAtlas_get_count(&atlas) == (region_id + 1));
 
 			region_id++;
@@ -102,45 +102,47 @@ OD_TEST(odTest_odAtlas_set_reset_scaling_sizes) {
 }
 OD_TEST(odTest_odAtlas_set_reset_realistic) {
 	const int32_t max_width = 1024;
+	const float max_width_f = static_cast<float>(max_width);
 	const int32_t max_height = 1024;
+	const float max_height_f = static_cast<float>(max_height);
 	const odBounds region_sizes[]{
-		odBounds{0, 0, 16, 16},
-		odBounds{0, 0, 1, 1},
-		odBounds{0, 0, 1, 2},
-		odBounds{0, 0, max_width, max_height},
-		odBounds{0, 0, 2, 1},
-		odBounds{0, 0, 16, 16},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 64, max_height / 2},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, max_height},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 16},
-		odBounds{0, 0, 8, 16},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, max_width / 2, max_height / 2},
-		odBounds{0, 0, max_width / 2, max_height / 2},
-		odBounds{0, 0, max_width / 2, 1},
-		odBounds{0, 0, 1, max_height / 2},
-		odBounds{0, 0, max_width - 123, 45},
-		odBounds{0, 0, 16, 16},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 16, 8},
-		odBounds{0, 0, 23, max_height - 123},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 3, max_height - 1},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, max_width, 64},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, 8, 8},
-		odBounds{0, 0, max_width, max_height},
+		odBounds{0.0f, 0.0f, 16.0f, 16.0f},
+		odBounds{0.0f, 0.0f, 1.0f, 1.0f},
+		odBounds{0.0f, 0.0f, 1.0f, 2.0f},
+		odBounds{0.0f, 0.0f, max_width_f, max_height_f},
+		odBounds{0.0f, 0.0f, 2.0f, 1.0f},
+		odBounds{0.0f, 0.0f, 16.0f, 16.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 64.0f, max_height_f / 2.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, max_height_f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 16.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 16.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, max_width_f / 2.0f, max_height_f / 2.0f},
+		odBounds{0.0f, 0.0f, max_width_f / 2.0f, max_height_f / 2.0f},
+		odBounds{0.0f, 0.0f, max_width_f / 2.0f, 1.0f},
+		odBounds{0.0f, 0.0f, 1.0f, max_height_f / 2.0f},
+		odBounds{0.0f, 0.0f, max_width_f - 123, 45.0f},
+		odBounds{0.0f, 0.0f, 16.0f, 16.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 16.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 23.0f, max_height_f - 123.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 3.0f, max_height_f - 1.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, max_width_f, 64.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{0.0f, 0.0f, max_width_f, max_height_f},
 	};
 	const int32_t region_sizes_count = sizeof(region_sizes) / sizeof(region_sizes[0]);
 
@@ -148,8 +150,8 @@ OD_TEST(odTest_odAtlas_set_reset_realistic) {
 
 	odAtlas atlas;
 	for (odAtlasRegionId region_id = 0; region_id < region_sizes_count; region_id++) {
-		int32_t width = region_sizes[region_id].x2;
-		int32_t height = region_sizes[region_id].y2;
+		int32_t width = static_cast<int32_t>(region_sizes[region_id].x2);
+		int32_t height = static_cast<int32_t>(region_sizes[region_id].y2);
 
 		odImage image;
 		OD_ASSERT(odImage_init(&image, width, height));
@@ -159,8 +161,8 @@ OD_TEST(odTest_odAtlas_set_reset_realistic) {
 		OD_ASSERT(odAtlas_set_region(&atlas, region_id, width, height, pixels, width));
 		const odBounds* region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 		OD_ASSERT(region_bounds != nullptr);
-		OD_ASSERT(odBounds_get_width(region_bounds) == width);
-		OD_ASSERT(odBounds_get_height(region_bounds) == height);
+		OD_ASSERT(odBounds_get_width(region_bounds) == static_cast<float>(width));
+		OD_ASSERT(odBounds_get_height(region_bounds) == static_cast<float>(height));
 		OD_ASSERT(odAtlas_get_count(&atlas) == (region_id + 1));
 
 		sum_set_area += width * height;

@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include <od/core/debug.h>
+#include <od/core/bounds.h>
 #include <od/core/color.h>
 #include <od/core/type.hpp>
 #include <od/core/vector.h>
@@ -63,7 +64,6 @@ bool odRenderState_check_valid(const odRenderState* state) {
 		|| !OD_CHECK(odMatrix_check_valid_3d(&state->view))
 		|| !OD_CHECK(odMatrix_check_valid(&state->projection))
 		|| !OD_CHECK(odBounds_check_valid(&state->viewport))
-		|| !OD_CHECK(odBounds_fits_float(&state->viewport))
 		|| !OD_CHECK(odTexture_check_valid(state->src_texture))
 		|| !OD_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_check_valid(state->opt_render_texture))) {
 		return false;
@@ -409,7 +409,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK((opt_src_bounds == nullptr) || (odBounds_check_valid(opt_src_bounds) && odBounds_fits_float(opt_src_bounds)))
+		|| !OD_CHECK((opt_src_bounds == nullptr) || (odBounds_check_valid(opt_src_bounds)))
 		|| !OD_CHECK((opt_transform == nullptr) || odMatrix_check_valid_3d(opt_transform))) {
 		return false;
 	}
@@ -419,8 +419,14 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	if (!OD_CHECK(odTexture_get_size(state->src_texture, &src_width, &src_height))) {
 		return false;
 	}
+	if (!OD_CHECK(odInt32_fits_float(src_width))
+		|| !OD_CHECK(src_width > 0)
+		|| !OD_CHECK(odInt32_fits_float(src_height))
+		|| !OD_CHECK(src_height > 0)) {
+		return false;
+	}
 
-	odBounds src_bounds = {0, 0, src_width, src_height};
+	odBounds src_bounds = {0.0f, 0.0f, static_cast<float>(src_width), static_cast<float>(src_height)};
 	if (opt_src_bounds != nullptr) {
 		src_bounds = *opt_src_bounds;
 	}
@@ -441,8 +447,8 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	}
 
 	odSpritePrimitive sprite{
-		{0, 0, 1, 1},
-		{src_bounds.x1, src_bounds.y1, src_bounds.x2, src_bounds.y2},
+		odBounds{0.0f, 0.0f, 1.0f, 1.0f},
+		odBounds{src_bounds.x1, src_bounds.y1, src_bounds.x2, src_bounds.y2},
 		*odColor_get_white(),
 		0.0f,
 	};

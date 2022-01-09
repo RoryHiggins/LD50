@@ -5,7 +5,6 @@
 #include <png.h>
 
 #include <od/core/debug.h>
-#include <od/core/bounds.h>
 #include <od/core/color.h>
 #include <od/core/allocation.hpp>
 #include <od/platform/file.hpp>

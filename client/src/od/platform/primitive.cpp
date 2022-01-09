@@ -4,6 +4,7 @@
 #include <cstdlib>
 
 #include <od/core/debug.h>
+#include <od/core/bounds.h>
 #include <od/core/vertex.h>
 
 static int odTrianglePrimitive_compare(const void* triangle1, const void* triangle2);
@@ -24,19 +25,20 @@ bool odSpritePrimitive_check_valid(const odSpritePrimitive* sprite) {
 void odSpritePrimitive_get_vertices(const odSpritePrimitive* sprite, odVertex *out_vertices) {
 	if (!OD_DEBUG_CHECK(odSpritePrimitive_check_valid(sprite))
 		|| !OD_DEBUG_CHECK(out_vertices != nullptr)
-		|| !OD_DEBUG_CHECK(odBounds_fits_float(&sprite->bounds))
-		|| !OD_DEBUG_CHECK(odBounds_fits_float(&sprite->texture_bounds))) {
+		|| !OD_DEBUG_CHECK(odBounds_check_valid(&sprite->bounds))
+		|| !OD_DEBUG_CHECK(odBounds_check_valid(&sprite->texture_bounds))) {
 		return;
 	}
 
-	float x1 = static_cast<float>(sprite->bounds.x1);
-	float x2 = static_cast<float>(sprite->bounds.x2);
-	float y1 = static_cast<float>(sprite->bounds.y1);
-	float y2 = static_cast<float>(sprite->bounds.y2);
-	float u1 = static_cast<float>(sprite->texture_bounds.x1);
-	float u2 = static_cast<float>(sprite->texture_bounds.x2);
-	float v1 = static_cast<float>(sprite->texture_bounds.y1);
-	float v2 = static_cast<float>(sprite->texture_bounds.y2);
+	float x1 = sprite->bounds.x1;
+	float x2 = sprite->bounds.x2;
+	float y1 = sprite->bounds.y1;
+	float y2 = sprite->bounds.y2;
+
+	float u1 = sprite->texture_bounds.x1;
+	float u2 = sprite->texture_bounds.x2;
+	float v1 = sprite->texture_bounds.y1;
+	float v2 = sprite->texture_bounds.y2;
 
 	odVertex top_left = odVertex{odVector{x1, y1, sprite->depth, 1.0f}, sprite->color, u1, v1};
 	odVertex top_right = odVertex{odVector{x2, y1, sprite->depth, 1.0f}, sprite->color, u2, v1};

@@ -1,10 +1,15 @@
 
 Lua - Approach
 simulation - topmost lua table - set of systems
+	systems - systems
+	rules - simulation rules - immutable after init, (de)serializable, deterministic to code
+	event - simuluation event history - list, append-only, (de)serializable
+	state - simulation state - (de)serializable, deterministic to code + inputs
+		world
 	per system:
 		game - game state - optional, encodable
-		world - world state - optional, encodable
-		rules - system rules - optional, immutable, encodable
+		lv - world state - optional, encodable
+		rule - system rules - optional, immutable, encodable
 
 
 Refactoring TODOs

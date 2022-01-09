@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdio>
 
+#include <od/core/math.h>
 #include <od/core/bounds.h>
 #include <od/core/array.hpp>
 #include <od/core/vertex.h>
@@ -47,7 +48,7 @@ static OD_NO_DISCARD bool
 odEntityChunkIterator_contains_chunk_id(const odEntityChunkIterator* iter, odEntityChunkId chunk_id);
 
 static OD_NO_DISCARD odEntityChunkCoord
-odChunkCoord_init(int32_t coord);
+odChunkCoord_init(float coord);
 
 static OD_NO_DISCARD odEntityChunkId
 odEntityChunkId_init_chunk_coords(odEntityChunkCoord x, odEntityChunkCoord y);
@@ -189,11 +190,12 @@ odEntityChunkIterator::odEntityChunkIterator(const odBounds& bounds)
 		}
 }
 
-odEntityChunkCoord odChunkCoord_init(int32_t coord) {
+odEntityChunkCoord odChunkCoord_init(float coord) {
+	OD_DISCARD(OD_DEBUG_CHECK(odFloat_is_precise_int(coord)));
 	const int32_t coord_bitmask =
 		static_cast<int32_t>((1 << OD_ENTITY_CHUNK_COORD_MASK_BITS) - 1);
 	return static_cast<odEntityChunkCoord>(
-		(coord >> OD_ENTITY_CHUNK_COORD_DISCARD_BITS) & coord_bitmask
+		(static_cast<int32_t>(coord) >> OD_ENTITY_CHUNK_COORD_DISCARD_BITS) & coord_bitmask
 	);
 }
 odEntityChunkId odEntityChunkId_init_chunk_coords(odEntityChunkCoord x, odEntityChunkCoord y) {
@@ -292,7 +294,6 @@ bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunk
 		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_ENTITY_CHUNK_ID_COUNT))
 		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(collider))
 		|| !OD_DEBUG_CHECK(odBounds_is_collidable(&collider->bounds))
-		|| !OD_DEBUG_CHECK(odBounds_fits_float(&collider->bounds))
 		|| !OD_DEBUG_CHECK(collider->id < entity_index->entities.get_count())) {
 		return false;
 	}
@@ -650,8 +651,7 @@ bool odEntitySearch_check_valid(const odEntitySearch* search) {
 
 	if (!OD_CHECK(search->out_results != nullptr)
 		|| !OD_CHECK(search->max_results >= 0)
-		|| !OD_CHECK(odBounds_check_valid(&search->bounds))
-		|| !OD_CHECK(odBounds_fits_float(&search->bounds))) {
+		|| !OD_CHECK(odBounds_check_valid(&search->bounds))) {
 		return false;
 	}
 

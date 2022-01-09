@@ -3,32 +3,32 @@
 #include <od/test/test.hpp>
 
 OD_TEST(odTest_odBounds_collides) {
-	odBounds bounds{8, 8, 72, 72};
+	odBounds bounds{8.0f, 8.0f, 72.0f, 72.0f};
 
-	odBounds expected_collision_bounds[] = {
-		{8, 8, 9, 9},
-		{71, 71, 72, 72},
-		{7, 7, 9, 9},
-		{7, 8, 9, 9},
-		{8, 7, 9, 9},
-		{7, 7, 71, 71},
-		{7, 7, 73, 73},
+	odBounds expected_collision_bounds[]{
+		odBounds{8.0f, 8.0f, 9.0f, 9.0f},
+		odBounds{71.0f, 71.0f, 72.0f, 72.0f},
+		odBounds{7.0f, 7.0f, 9.0f, 9.0f},
+		odBounds{7.0f, 8.0f, 9.0f, 9.0f},
+		odBounds{8.0f, 7.0f, 9.0f, 9.0f},
+		odBounds{7.0f, 7.0f, 71.0f, 71.0f},
+		odBounds{7.0f, 7.0f, 73.0f, 73.0f},
 	};
 
-	odBounds expected_no_collision_bounds[] = {
-		{7, 8, 8, 9},
-		{8, 7, 9, 8},
-		{7, 7, 8, 8},
-		{72, 72, 73, 73},
-		{7, 7, 8, 71},
-		{7, 7, 71, 8},
+	odBounds expected_no_collision_bounds[]{
+		odBounds{7.0f, 8.0f, 8.0f, 9.0f},
+		odBounds{8.0f, 7.0f, 9.0f, 8.0f},
+		odBounds{7.0f, 7.0f, 8.0f, 8.0f},
+		odBounds{72.0f, 72.0f, 73.0f, 73.0f},
+		odBounds{7.0f, 7.0f, 8.0f, 71.0f},
+		odBounds{7.0f, 7.0f, 71.0f, 8.0f},
 	};
 
-	odBounds expected_not_collidable[] = {
-		{0, 0, 0, 0},
-		{0, 0, 0, 1},
-		{0, 0, 1, 0},
-		{8, 8, 8, 8},
+	odBounds expected_not_collidable[]{
+		odBounds{0.0f, 0.0f, 0.0f, 0.0f},
+		odBounds{0.0f, 0.0f, 0.0f, 1.0f},
+		odBounds{0.0f, 0.0f, 1.0f, 0.0f},
+		odBounds{8.0f, 8.0f, 8.0f, 8.0f},
 	};
 
 	for (const odBounds& compare: expected_collision_bounds) {
@@ -52,23 +52,23 @@ OD_TEST(odTest_odBounds_collides) {
 	}
 }
 OD_TEST(odTest_odBounds_contains) {
-	odBounds outer{-20, 3, -1, 50};
+	odBounds outer{-20.0f, 3.0f, -1.0f, 50.0f};
 
-	odBounds expected_contained_bounds[] = {
+	odBounds expected_contained_bounds[]{
 		outer,
-		{outer.x1 + 1, outer.y1, outer.x2, outer.y2},
-		{outer.x1, outer.y1 + 1, outer.x2, outer.y2},
-		{outer.x1, outer.y1, outer.x2 - 1, outer.y2},
-		{outer.x1, outer.y1, outer.x2, outer.y2 - 1},
-		{outer.x1 + 1, outer.y1 + 1, outer.x2 - 1, outer.y2 - 1},
+		odBounds{outer.x1 + 1.0f, outer.y1, outer.x2, outer.y2},
+		odBounds{outer.x1, outer.y1 + 1.0f, outer.x2, outer.y2},
+		odBounds{outer.x1, outer.y1, outer.x2 - 1.0f, outer.y2},
+		odBounds{outer.x1, outer.y1, outer.x2, outer.y2 - 1.0f},
+		odBounds{outer.x1 + 1.0f, outer.y1 + 1.0f, outer.x2 - 1.0f, outer.y2 - 1.0f},
 	};
 
-	odBounds expected_not_contained_bounds[] = {
-		{outer.x1 - 1, outer.y1, outer.x2, outer.y2},
-		{outer.x1, outer.y1 - 1, outer.x2, outer.y2},
-		{outer.x1, outer.y1, outer.x2 + 1, outer.y2},
-		{outer.x1, outer.y1, outer.x2, outer.y2 + 1},
-		{outer.x1 - 1, outer.y1 - 1, outer.x2 + 1, outer.y2 + 1},
+	odBounds expected_not_contained_bounds[]{
+		odBounds{outer.x1 - 1.0f, outer.y1, outer.x2, outer.y2},
+		odBounds{outer.x1, outer.y1 - 1.0f, outer.x2, outer.y2},
+		odBounds{outer.x1, outer.y1, outer.x2 + 1.0f, outer.y2},
+		odBounds{outer.x1, outer.y1, outer.x2, outer.y2 + 1.0f},
+		odBounds{outer.x1 - 1.0f, outer.y1 - 1.0f, outer.x2 + 1.0f, outer.y2 + 1.0f},
 	};
 
 	for (const odBounds& inner: expected_contained_bounds) {
@@ -86,11 +86,11 @@ OD_TEST(odTest_odBounds_contains) {
 	}
 }
 OD_TEST(odTest_odBounds_equals) {
-	odBounds bounds_comparisons[] = {
-		{0, 0, 0, 0},
-		{0, 0, 0, 1},
-		{0, 0, 1, 0},
-		{8, 8, 8, 8},
+	odBounds bounds_comparisons[]{
+		odBounds{0.0f, 0.0f, 0.0f, 0.0f},
+		odBounds{0.0f, 0.0f, 0.0f, 1.0f},
+		odBounds{0.0f, 0.0f, 1.0f, 0.0f},
+		odBounds{8.0f, 8.0f, 8.0f, 8.0f},
 	};
 	for (const odBounds& bounds: bounds_comparisons) {
 		OD_ASSERT(odBounds_equals(&bounds, &bounds));
@@ -100,41 +100,41 @@ OD_TEST(odTest_odBounds_equals) {
 	}
 }
 OD_TEST(odTest_odBounds_get_width) {
-	odBounds bounds_width_8[] = {
-		{0, 0, 8, 0},
-		{8, 3, 16, 4},
-		{-8, 11, 0, 11},
+	odBounds bounds_width_8[]{
+		odBounds{0.0f, 0.0f, 8.0f, 0.0f},
+		odBounds{8.0f, 3.0f, 16.0f, 4.0f},
+		odBounds{-8.0f, 11.0f, 0.0f, 11.0f},
 	};
 	for (const odBounds& bounds: bounds_width_8) {
-		OD_ASSERT(odBounds_get_width(&bounds) == 8);
+		OD_ASSERT(odBounds_get_width(&bounds) == 8.0f);
 	}
 
-	odBounds bounds_width_0[] = {
-		{0, 0, 0, 0},
-		{8, 3, 8, 4},
-		{-8, 11, -8, 11},
+	odBounds bounds_width_0[]{
+		odBounds{0.0f, 0.0f, 0.0f, 0.0f},
+		odBounds{8.0f, 3.0f, 8.0f, 4.0f},
+		odBounds{-8.0f, 11.0f, -8.0f, 11.0f},
 	};
 	for (const odBounds& bounds: bounds_width_0) {
-		OD_ASSERT(odBounds_get_width(&bounds) == 0);
+		OD_ASSERT(odBounds_get_width(&bounds) == 0.0f);
 	}
 }
 OD_TEST(odTest_odBounds_get_height) {
-	odBounds bounds_height_8[] = {
-		{0, 0, 8, 8},
-		{3, 8, 4, 16},
-		{-8, -8, 3, 0},
+	odBounds bounds_height_8[]{
+		odBounds{0.0f, 0.0f, 8.0f, 8.0f},
+		odBounds{3.0f, 8.0f, 4.0f, 16.0f},
+		odBounds{-8.0f, -8.0f, 3.0f, 0.0f},
 	};
 	for (const odBounds& bounds: bounds_height_8) {
-		OD_ASSERT(odBounds_get_height(&bounds) == 8);
+		OD_ASSERT(odBounds_get_height(&bounds) == 8.0f);
 	}
 
-	odBounds bounds_height_0[] = {
-		{0, 0, 0, 0},
-		{8, 3, 8, 3},
-		{-8, 11, -8, 11},
+	odBounds bounds_height_0[]{
+		odBounds{0.0f, 0.0f, 0.0f, 0.0f},
+		odBounds{8.0f, 3.0f, 8.0f, 3.0f},
+		odBounds{-8.0f, 11.0f, -8.0f, 11.0f},
 	};
 	for (const odBounds& bounds: bounds_height_0) {
-		OD_ASSERT(odBounds_get_height(&bounds) == 0);
+		OD_ASSERT(odBounds_get_height(&bounds) == 0.0f);
 	}
 }
 

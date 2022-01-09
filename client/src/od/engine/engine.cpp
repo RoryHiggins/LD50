@@ -8,6 +8,7 @@
 
 #include <od/core/math.h>
 #include <od/core/debug.h>
+#include <od/core/bounds.h>
 #include <od/platform/primitive.h>
 #include <od/platform/image.hpp>
 #include <od/platform/texture.hpp>
@@ -43,6 +44,18 @@ const odEngineSettings* odEngineSettings_get_defaults() {
 	};
 	return &settings;
 }
+bool odEngineSettings_check_valid(const odEngineSettings* settings) {
+	if (!OD_CHECK(settings != nullptr)
+		|| !OD_CHECK(odWindowSettings_check_valid(&settings->window))
+		|| !OD_CHECK(odInt32_fits_float(settings->game_height))
+		|| !OD_CHECK(settings->game_width > 0)
+		|| !OD_CHECK(odInt32_fits_float(settings->game_height))
+		|| !OD_CHECK(settings->game_height > 0)) {
+		return false;
+	}
+
+	return true;
+}
 
 bool odEngine_init(odEngine* engine, const odEngineSettings* opt_settings) {
 	if (!OD_CHECK(engine != nullptr)) {
@@ -50,6 +63,9 @@ bool odEngine_init(odEngine* engine, const odEngineSettings* opt_settings) {
 	}
 
 	if (opt_settings != nullptr) {
+		if (!OD_CHECK(odEngineSettings_check_valid(opt_settings))) {
+			return false;
+		}
 		engine->settings = *opt_settings;
 	}
 
@@ -105,11 +121,9 @@ void odEngine_destroy(odEngine* engine) {
 }
 bool odEngine_set_settings(odEngine* engine, const odEngineSettings* settings) {
 	if (!OD_CHECK(engine != nullptr)
-		|| !OD_CHECK(settings != nullptr)) {
+		|| !OD_CHECK(odEngineSettings_check_valid(settings))) {
 		return false;
 	}
-
-	struct odEngineSettings final_settings = *settings;
 
 	if (!engine->is_initialized) {
 		engine->settings = *settings;
@@ -119,9 +133,8 @@ bool odEngine_set_settings(odEngine* engine, const odEngineSettings* settings) {
 	if (!OD_CHECK(odWindow_set_settings(&engine->window, &settings->window))) {
 		return false;
 	}
-	final_settings.window = *odWindow_get_settings(&engine->window);
 
-	if (!OD_CHECK(odRenderTexture_init(&engine->game_render_texture, &engine->window, final_settings.game_width, final_settings.game_height))) {
+	if (!OD_CHECK(odRenderTexture_init(&engine->game_render_texture, &engine->window, settings->game_width, settings->game_height))) {
 		return false;
 	}
 
@@ -153,8 +166,8 @@ bool odEngine_step(odEngine* engine) {
 	// BEGIN throwaway rendering test code - TODO remove
 	{
 		odSpritePrimitive sprite{
-			odBounds{0, 0, 288, 128},
-			odBounds{0, 0, 144, 64},
+			odBounds{0.0f, 0.0f, 288.0f, 128.0f},
+			odBounds{0.0f, 0.0f, 144.0f, 64.0f},
 			*odColor_get_white(),
 			0.0f,
 		};
@@ -199,12 +212,18 @@ bool odEngine_step(odEngine* engine) {
 	}
 	// END throwaway rendering test code - TODO remove
 
+	odEngineSettings* engine_settings = &engine->settings;
 	odMatrix projection{};
-	odMatrix_init_ortho_2d(&projection, engine->settings.game_width, engine->settings.game_height);
+	odMatrix_init_ortho_2d(&projection, engine_settings->game_width, engine_settings->game_height);
 	odRenderState draw_to_game{
 		*odMatrix_get_identity(),
 		projection,
-		odBounds{0, 0, engine->settings.game_width, engine->settings.game_height},
+		odBounds{
+			0.0f,
+			0.0f,
+			static_cast<float>(engine_settings->game_width),
+			static_cast<float>(engine_settings->game_height)
+		},
 		&engine->src_texture,
 		&engine->game_render_texture
 	};
@@ -215,7 +234,12 @@ bool odEngine_step(odEngine* engine) {
 	odRenderState draw_to_window{
 		*odMatrix_get_identity(),
 		window_projection,
-		odBounds{0, 0, window_settings->window_width, window_settings->window_height},
+		odBounds{
+			0.0f,
+			0.0f,
+			static_cast<float>(window_settings->window_width),
+			static_cast<float>(window_settings->window_height)
+		},
 		&engine->src_texture,
 		/* opt_render_texture*/ nullptr
 	};
@@ -297,6 +321,9 @@ OD_NO_DISCARD bool odEngine_run(odEngine* engine, const odEngineSettings* opt_se
 	}
 
 	if (opt_settings != nullptr) {
+		if (!OD_CHECK(odEngineSettings_check_valid(opt_settings))) {
+			return false;
+		}
 		engine->settings = *opt_settings;
 	}
 
@@ -306,30 +333,31 @@ OD_NO_DISCARD bool odEngine_run(odEngine* engine, const odEngineSettings* opt_se
 }
 #else
 OD_NO_DISCARD bool odEngine_run(odEngine* engine, const odEngineSettings* opt_settings) {
-	if (!OD_CHECK(engine != nullptr)) {
+	if (!OD_CHECK(engine != nullptr)
+		|| !OD_CHECK((opt_settings == nullptr) || odEngineSettings_check_valid(opt_settings))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odEngine_init(engine, opt_settings))) {
-		return false;
-	}
+	OD_INFO("Starting game loop");
 
-	OD_INFO("Running engine");
+	bool ok = true;
 	int32_t logged_errors_before = odLog_get_logged_error_count();
 
-	while (engine->window.is_open) {
-		if (!OD_CHECK(odEngine_step(engine))) {
-			return false;
-		}
+	ok = ok && OD_CHECK(odEngine_init(engine, opt_settings));
+
+	while (ok && engine->window.is_open) {
+		ok = ok && OD_CHECK(odEngine_step(engine));
 	}
 
-	if (odLog_get_logged_error_count() > logged_errors_before) {
-		OD_INFO("Engine ended with error logs");
-		return false;
+	ok = ok && (odLog_get_logged_error_count() == logged_errors_before);
+
+	if (ok) {
+		OD_INFO("Game loop ended gracefully");
+	} else {
+		OD_INFO("Game loop ended with error logs");
 	}
 
-	OD_INFO("Engine ended gracefully");
-	return true;
+	return ok;
 }
 #endif
 odEngine::odEngine()

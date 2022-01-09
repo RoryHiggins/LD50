@@ -8,6 +8,7 @@
 #endif  // !OD_BUILD_EMSCRIPTEN
 
 #include <od/core/debug.h>
+#include <od/core/math.h>
 #include <od/core/type.hpp>
 
 OD_NO_DISCARD static bool
@@ -91,6 +92,19 @@ const odWindowSettings* odWindowSettings_get_headless_defaults() {
 		/*is_visible*/ false,
 	};
 	return &settings;
+}
+bool odWindowSettings_check_valid(const odWindowSettings* settings) {
+	if (!OD_CHECK(settings != nullptr)
+		|| !OD_CHECK(odInt32_fits_float(settings->window_width))
+		|| !OD_CHECK(settings->window_width > 0)
+		|| !OD_CHECK(odInt32_fits_float(settings->window_height))
+		|| !OD_CHECK(settings->window_height > 0)
+		|| !OD_CHECK(settings->fps_limit > 0)
+		|| !OD_CHECK(settings->fps_limit <= 120)) {
+		return false;
+	}
+
+	return true;
 }
 
 const odType* odWindow_get_type_constructor() {
@@ -221,6 +235,9 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 
 	window->settings = *odWindowSettings_get_defaults();
 	if (opt_settings != nullptr) {
+		if (!OD_CHECK(odWindowSettings_check_valid(opt_settings))) {
+			return false;
+		}
 		window->settings = *opt_settings;
 	}
 
@@ -554,9 +571,9 @@ static bool odWindow_set_caption(odWindow* window, const char* caption) {
 
 	return true;
 }
-bool odWindow_set_settings(struct odWindow* window, const struct odWindowSettings* settings) {
+bool odWindow_set_settings(struct odWindow* window, const odWindowSettings* settings) {
 	if (!OD_CHECK(window != nullptr)
-		|| !OD_CHECK(settings != nullptr)) {
+		|| !OD_CHECK(odWindowSettings_check_valid(settings))) {
 		return false;
 	}
 

@@ -2,10 +2,8 @@
 #include <od/platform/texture.hpp>
 #include <od/platform/renderer.hpp>
 
-#include <cstring>
-
-#include <od/core/type.hpp>
 #include <od/core/array.hpp>
+#include <od/core/color.hpp>
 #include <od/platform/window.hpp>
 #include <od/core/vertex.h>
 #include <od/test/test.hpp>
@@ -40,12 +38,11 @@ OD_TEST_FILTERED(odTest_odTexture_init_large, OD_TEST_FILTER_SLOW) {
 
 	const int32_t width = 256;
 	const int32_t height = 256;
-	odArray texture_pixels{odType_get<odColor>()};
-	OD_ASSERT(odArray_set_count(&texture_pixels, width * height));
-	memset(odArray_get(&texture_pixels, 0), 0, width * height);
+	odTrivialArrayT<odColor> texture_pixels;
+	OD_ASSERT(texture_pixels.set_count(width * height));
 
 	odTexture texture;
-	OD_ASSERT(odTexture_init(&texture, &window, static_cast<odColor*>(odArray_get(&texture_pixels, 0)), width, height));
+	OD_ASSERT(odTexture_init(&texture, &window, texture_pixels.begin(), width, height));
 	OD_ASSERT(odTexture_check_valid(&texture));
 }
 OD_TEST_FILTERED(odTest_odTexture_destroy_after_window_destroy_fails, OD_TEST_FILTER_SLOW) {
@@ -102,19 +99,19 @@ OD_TEST_FILTERED(odTest_odRenderTexture_init_destroy, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderTexture_init(&render_texture, &window, 1, 1));
 	OD_ASSERT(odRenderTexture_check_valid(&render_texture));
 
-	// // test double init
-	// OD_ASSERT(odRenderTexture_init(&render_texture, &window, 1, 1));
-	// OD_ASSERT(odRenderTexture_check_valid(&render_texture));
+	// test double init
+	OD_ASSERT(odRenderTexture_init(&render_texture, &window, 1, 1));
+	OD_ASSERT(odRenderTexture_check_valid(&render_texture));
 
-	// odRenderTexture_destroy(&render_texture);
+	odRenderTexture_destroy(&render_texture);
 
-	// // test double destroy
-	// odRenderTexture_destroy(&render_texture);
+	// test double destroy
+	odRenderTexture_destroy(&render_texture);
 
-	// // test reuse
-	// OD_ASSERT(odRenderTexture_init(&render_texture, &window, 1, 1));
-	// OD_ASSERT(odRenderTexture_check_valid(&render_texture));
-	// odRenderTexture_destroy(&render_texture);
+	// test reuse
+	OD_ASSERT(odRenderTexture_init(&render_texture, &window, 1, 1));
+	OD_ASSERT(odRenderTexture_check_valid(&render_texture));
+	odRenderTexture_destroy(&render_texture);
 }
 OD_TEST_FILTERED(odTest_odRenderTexture_init_large, OD_TEST_FILTER_SLOW) {
 	odWindow window;

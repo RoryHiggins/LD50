@@ -22,6 +22,8 @@ OD_API_C OD_PLATFORM_MODULE const struct odWindowSettings*
 odWindowSettings_get_defaults(void);
 OD_API_C OD_PLATFORM_MODULE const struct odWindowSettings*
 odWindowSettings_get_headless_defaults(void);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odWindowSettings_check_valid(const struct odWindowSettings* settings);
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odType*
 odWindow_get_type_constructor(void);

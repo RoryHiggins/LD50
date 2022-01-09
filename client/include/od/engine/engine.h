@@ -13,8 +13,10 @@ struct odEngineSettings {
 	int32_t game_height;
 };
 
-OD_API_C OD_PLATFORM_MODULE const struct odEngineSettings*
+OD_API_C OD_ENGINE_MODULE const struct odEngineSettings*
 odEngineSettings_get_defaults(void);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+odEngineSettings_check_valid(const struct odEngineSettings* settings);
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odEngine_init(struct odEngine* engine, const struct odEngineSettings* opt_settings);
