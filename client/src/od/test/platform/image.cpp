@@ -74,7 +74,7 @@ OD_TEST(odTest_odImage_resize) {
 				int32_t src_i = x + (y * start_width);
 				int32_t dest_i = x + (y * new_width);
 				odColor expected_color{0, 0, 0, static_cast<uint8_t>(src_i % 255)};
-				OD_ASSERT(odColor_equals(&pixels[dest_i], &expected_color));
+				OD_ASSERT(odColor_get_equals(&pixels[dest_i], &expected_color));
 			}
 		}
 	}
@@ -94,7 +94,7 @@ OD_TEST(odTest_odImage_resize) {
 				int32_t src_i = x + (y * start_width);
 				int32_t dest_i = x + (y * new_width);
 				odColor expected_color{0, 0, 0, static_cast<uint8_t>(src_i % 255)};
-				OD_ASSERT(odColor_equals(&pixels[dest_i], &expected_color));
+				OD_ASSERT(odColor_get_equals(&pixels[dest_i], &expected_color));
 			}
 		}
 	}

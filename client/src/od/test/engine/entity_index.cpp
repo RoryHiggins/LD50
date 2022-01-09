@@ -26,26 +26,26 @@ OD_TEST(odTest_odEntityIndex_set_get) {
 
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_get(&entity_index, entity.collider.id) != nullptr);
-	OD_ASSERT(odEntityCollider_equals(&entity.collider,
+	OD_ASSERT(odEntityCollider_get_equals(&entity.collider,
 									  &odEntityIndex_get(&entity_index, entity.collider.id)->collider));
 
 	entity.collider.bounds = odBounds{0.0f, 0.0f, 16.0f, 16.0f};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_get(&entity_index, entity.collider.id) != nullptr);
-	OD_ASSERT(odEntityCollider_equals(&entity.collider,
+	OD_ASSERT(odEntityCollider_get_equals(&entity.collider,
 									  &odEntityIndex_get(&entity_index, entity.collider.id)->collider));
 
 	entity.collider.bounds = odBounds{};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_get(&entity_index, entity.collider.id) != nullptr);
-	OD_ASSERT(odEntityCollider_equals(&entity.collider,
+	OD_ASSERT(odEntityCollider_get_equals(&entity.collider,
 									  &odEntityIndex_get(&entity_index, entity.collider.id)->collider));
 
 	entity.collider.id = 124;
 	entity.collider.tagset = odTagset{0x27};
 	odEntityIndex_set(&entity_index, &entity);
 	OD_ASSERT(odEntityIndex_get(&entity_index, entity.collider.id) != nullptr);
-	OD_ASSERT(odEntityCollider_equals(&entity.collider,
+	OD_ASSERT(odEntityCollider_get_equals(&entity.collider,
 									  &odEntityIndex_get(&entity_index, entity.collider.id)->collider));
 }
 OD_TEST(odTest_odEntityIndex_search) {

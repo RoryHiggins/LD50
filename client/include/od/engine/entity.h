@@ -32,7 +32,7 @@ odEntityCollider_get_debug_string(const struct odEntityCollider* collider);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odEntityCollider_check_valid(const struct odEntityCollider* collider);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odEntityCollider_equals(const struct odEntityCollider* a, const struct odEntityCollider* b);
+odEntityCollider_get_equals(const struct odEntityCollider* a, const struct odEntityCollider* b);
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*
 odEntitySprite_get_debug_string(const struct odEntitySprite* sprite);

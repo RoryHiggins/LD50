@@ -85,7 +85,7 @@ OD_TEST(odTest_odBounds_contains) {
 		}
 	}
 }
-OD_TEST(odTest_odBounds_equals) {
+OD_TEST(odTest_odBounds_get_equals) {
 	odBounds bounds_comparisons[]{
 		odBounds{0.0f, 0.0f, 0.0f, 0.0f},
 		odBounds{0.0f, 0.0f, 0.0f, 1.0f},
@@ -93,10 +93,10 @@ OD_TEST(odTest_odBounds_equals) {
 		odBounds{8.0f, 8.0f, 8.0f, 8.0f},
 	};
 	for (const odBounds& bounds: bounds_comparisons) {
-		OD_ASSERT(odBounds_equals(&bounds, &bounds));
+		OD_ASSERT(odBounds_get_equals(&bounds, &bounds));
 
 		odBounds non_match{-1, -1, 0, 0};
-		OD_ASSERT(!odBounds_equals(&bounds, &non_match));
+		OD_ASSERT(!odBounds_get_equals(&bounds, &non_match));
 	}
 }
 OD_TEST(odTest_odBounds_get_width) {
@@ -142,7 +142,7 @@ OD_TEST_SUITE(
 	odTestSuite_odBounds,
 	odTest_odBounds_collides,
 	odTest_odBounds_contains,
-	odTest_odBounds_equals,
+	odTest_odBounds_get_equals,
 	odTest_odBounds_get_width,
 	odTest_odBounds_get_height,
 )

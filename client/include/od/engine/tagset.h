@@ -27,4 +27,4 @@ odTagset_get_max(void);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odTagset_intersects(const struct odTagset* tagset, const struct odTagset* required_tags);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odTagset_equals(const struct odTagset* a, const struct odTagset* b);
+odTagset_get_equals(const struct odTagset* a, const struct odTagset* b);

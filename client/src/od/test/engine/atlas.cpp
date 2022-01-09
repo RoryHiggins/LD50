@@ -39,7 +39,7 @@ OD_TEST(odTest_odAtlas_set_reset_get_region_bounds) {
 
 	region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 	OD_ASSERT(region_bounds != nullptr);
-	OD_ASSERT(odBounds_equals(region_bounds, &empty_bounds));
+	OD_ASSERT(odBounds_get_equals(region_bounds, &empty_bounds));
 	OD_ASSERT(odAtlas_get_count(&atlas) == (region_id + 1));
 }
 OD_TEST(odTest_odAtlas_set_reset_set_reused) {
@@ -61,7 +61,7 @@ OD_TEST(odTest_odAtlas_set_reset_set_reused) {
 	OD_ASSERT(odAtlas_set_region(&atlas, region_id, width, height, pixels, width));
 	region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 	OD_ASSERT(region_bounds != nullptr);
-	OD_ASSERT(odBounds_equals(region_bounds, &old_region_bounds));
+	OD_ASSERT(odBounds_get_equals(region_bounds, &old_region_bounds));
 	OD_ASSERT(odAtlas_get_count(&atlas) == (region_id + 1));
 }
 OD_TEST(odTest_odAtlas_set_reset_scaling_sizes) {
@@ -97,7 +97,7 @@ OD_TEST(odTest_odAtlas_set_reset_scaling_sizes) {
 		OD_ASSERT(odAtlas_reset_region(&atlas, region_id));
 		const odBounds* region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 		OD_ASSERT(region_bounds != nullptr);
-		OD_ASSERT(odBounds_equals(region_bounds, &empty_bounds));
+		OD_ASSERT(odBounds_get_equals(region_bounds, &empty_bounds));
 	}
 }
 OD_TEST(odTest_odAtlas_set_reset_realistic) {
@@ -176,7 +176,7 @@ OD_TEST(odTest_odAtlas_set_reset_realistic) {
 
 		const odBounds* region_bounds = odAtlas_get_region_bounds(&atlas, region_id);
 		OD_ASSERT(region_bounds != nullptr);
-		OD_ASSERT(odBounds_equals(region_bounds, &empty_bounds));
+		OD_ASSERT(odBounds_get_equals(region_bounds, &empty_bounds));
 		OD_ASSERT(odAtlas_get_count(&atlas) == region_sizes_count);
 	}
 }

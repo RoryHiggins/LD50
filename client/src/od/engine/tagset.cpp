@@ -66,16 +66,16 @@ bool odTagset_intersects(const odTagset* tagset, const odTagset* required_tags) 
 
 	return intersects;
 }
-bool odTagset_equals(const odTagset* a, const odTagset* b) {
+bool odTagset_get_equals(const odTagset* a, const odTagset* b) {
 	if (!OD_DEBUG_CHECK(a != nullptr)
 		|| !OD_DEBUG_CHECK(b != nullptr)) {
 		return false;
 	}
 
-	bool equals = true;
+	bool get_equals = true;
 	for (int32_t i = 0; i < OD_TAGSET_ELEMENT_COUNT; i++) {
-		equals = equals && (a->tagset[i] == b->tagset[i]);
+		get_equals = get_equals && (a->tagset[i] == b->tagset[i]);
 	}
 
-	return equals;
+	return get_equals;
 }

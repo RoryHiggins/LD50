@@ -13,7 +13,7 @@ bool odFloat_is_precise_int(float x) {
 
 	return true;
 }
-bool odFloat_epsilon_equals(float x, float y) {
+bool odFloat_epsilon_get_equals(float x, float y) {
 	if (!std::isfinite(x)
 		|| !std::isfinite(y)) {
 		return false;

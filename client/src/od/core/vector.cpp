@@ -36,7 +36,7 @@ const char* odVector_get_debug_string(const odVector* vector) {
 		static_cast<double>(vector->z),
 		static_cast<double>(vector->w));
 }
-bool odVector_equals(const odVector* vector1, const odVector* vector2) {
+bool odVector_get_equals(const odVector* vector1, const odVector* vector2) {
 	if (!OD_DEBUG_CHECK(odVector_check_valid(vector1))
 		|| !OD_DEBUG_CHECK(odVector_check_valid(vector2))) {
 		return false;
@@ -51,16 +51,16 @@ bool odVector_equals(const odVector* vector1, const odVector* vector2) {
 
 	return true;
 }
-bool odVector_epsilon_equals(const odVector* vector1, const odVector* vector2) {
+bool odVector_epsilon_get_equals(const odVector* vector1, const odVector* vector2) {
 	if (!OD_DEBUG_CHECK(odVector_check_valid(vector1))
 		|| !OD_DEBUG_CHECK(odVector_check_valid(vector2))) {
 		return false;
 	}
 
-	if (!odFloat_epsilon_equals(vector1->x, vector2->x)
-		|| !odFloat_epsilon_equals(vector1->y, vector2->y)
-		|| !odFloat_epsilon_equals(vector1->z, vector2->z)
-		|| !odFloat_epsilon_equals(vector1->w, vector2->w)) {
+	if (!odFloat_epsilon_get_equals(vector1->x, vector2->x)
+		|| !odFloat_epsilon_get_equals(vector1->y, vector2->y)
+		|| !odFloat_epsilon_get_equals(vector1->z, vector2->z)
+		|| !odFloat_epsilon_get_equals(vector1->w, vector2->w)) {
 		return false;
 	}
 

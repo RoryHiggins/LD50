@@ -18,7 +18,7 @@ const char* odColor_get_debug_string(const odColor* color) {
 
 	return odDebugString_format("\"0x%08x\"", color_u32);
 }
-bool odColor_equals(const odColor* color1, const odColor* color2) {
+bool odColor_get_equals(const odColor* color1, const odColor* color2) {
 	if (!OD_DEBUG_CHECK(color1 != nullptr)
 		|| !OD_DEBUG_CHECK(color2 != nullptr)) {
 		return false;

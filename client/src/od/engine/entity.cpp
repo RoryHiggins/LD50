@@ -32,15 +32,15 @@ bool odEntityCollider_check_valid(const odEntityCollider* collider) {
 
 	return true;
 }
-bool odEntityCollider_equals(const odEntityCollider* a, const odEntityCollider* b) {
+bool odEntityCollider_get_equals(const odEntityCollider* a, const odEntityCollider* b) {
 	if (!OD_DEBUG_CHECK(odEntityCollider_check_valid(a))
 		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(b))) {
 		return false;
 	}
 
 	if ((a->id != b->id)
-		|| (!odTagset_equals(&a->tagset, &b->tagset))
-		|| (!odBounds_equals(&a->bounds, &b->bounds))) {
+		|| (!odTagset_get_equals(&a->tagset, &b->tagset))
+		|| (!odBounds_get_equals(&a->bounds, &b->bounds))) {
 		return false;
 	}
 

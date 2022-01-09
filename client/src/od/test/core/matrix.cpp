@@ -10,7 +10,7 @@ OD_TEST(odTest_odMatrix_init) {
 	odMatrix matrix{};
 	odMatrix_init(&matrix, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);
 
-	OD_ASSERT(odMatrix_equals(&matrix, odMatrix_get_identity()));
+	OD_ASSERT(odMatrix_get_equals(&matrix, odMatrix_get_identity()));
 
 	float translation = 4.0f;
 	float scale = 3.0f;
@@ -19,7 +19,7 @@ OD_TEST(odTest_odMatrix_init) {
 	odVector vector{1.0f, 1.0f, 1.0f, 1.0f};
 	odVector expected_vector{scale + translation, scale + translation, scale + translation, 1.0f};
 	odMatrix_multiply_vector_3d(&matrix, &vector);
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 }
 OD_TEST(odTest_odMatrix_init_ortho_2d) {
 	const int32_t projection_width = 256;
@@ -33,19 +33,19 @@ OD_TEST(odTest_odMatrix_init_ortho_2d) {
 
 	// check that the 2d origin 0,0 translates to the topleft corner -1,-1
 	odMatrix_multiply_vector_3d(&matrix, &vector);
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 
 	// check that the matrix end translates to the bottom right corner 1,1
 	vector = odVector{projection_width, projection_height, 0.0f, 1.0f};
 	expected_vector = odVector{1.0f, -1.0f, 0.0f, 1.0f};
 	odMatrix_multiply_vector_3d(&matrix, &vector);
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 
 	// check that the matrix midpoint translates to the center 0,0
 	vector = odVector{projection_width / 2.0f, projection_height / 2.0f, 0.0f, 1.0f};
 	expected_vector = odVector{0.0f, 0.0f, 0.0f, 1.0f};
 	odMatrix_multiply_vector_3d(&matrix, &vector);
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 }
 OD_TEST(odTest_odMatrix_multiply_scale) {
 	odMatrix matrix = *odMatrix_get_identity();
@@ -61,7 +61,7 @@ OD_TEST(odTest_odMatrix_multiply_scale) {
 	odVector vector{1.0f, 1.0f, 1.0f, 1.0f};
 	odMatrix_multiply_vector_3d(&matrix, &vector);
 	odVector expected_vector{scale1.x * scale2.x, scale1.y * scale2.y, scale1.z * scale2.z, 1.0f};
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 }
 OD_TEST(odTest_odMatrix_multiply_translate_3d) {
 	odMatrix matrix = *odMatrix_get_identity();
@@ -86,7 +86,7 @@ OD_TEST(odTest_odMatrix_multiply_translate_3d) {
 		translate0.y + translate1.y + translate2.y + translate3.y,
 		translate0.z + translate1.z + translate2.z + translate3.z,
 		1.0f};
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 }
 OD_TEST(odTest_odMatrix_multiply_scale_translate_3d) {
 	float scale1 = 4.0f;
@@ -105,7 +105,7 @@ OD_TEST(odTest_odMatrix_multiply_scale_translate_3d) {
 	odMatrix_multiply_vector_3d(&matrix, &vector);
 	float expected_value = (scale0 * scale1 * scale2) + translate1 + (scale1 * translate2);
 	odVector expected_vector{expected_value, expected_value, expected_value, 1.0f};
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 }
 OD_TEST(odTest_odMatrix_multiply_scale_translate_rotate_clockwise_2d) {
 	float scale1 = 0.75f;
@@ -116,21 +116,21 @@ OD_TEST(odTest_odMatrix_multiply_scale_translate_rotate_clockwise_2d) {
 	odVector vector{1.0f, 0.0f, 0.0f, 1.0f};
 	odMatrix_multiply_vector_3d(&matrix, &vector);
 	odVector expected_vector{scale1 + translate1, translate1, 0.0f, 1.0f};
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 
 	odMatrix_rotate_z_3d(&matrix, 180.0f);
 
 	vector = odVector{1.0f, 1.0f, 0.0f, 1.0f};
 	odMatrix_multiply_vector_3d(&matrix, &vector);
 	expected_vector = odVector{-scale1 + translate1, -scale1 + translate1, 0.0f, 1.0f};
-	OD_ASSERT(odVector_epsilon_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_epsilon_get_equals(&vector, &expected_vector));
 
 	odMatrix_init(&matrix, scale1, scale1, 1.0f, translate1, translate1, 0.0f);
 	odMatrix_rotate_z_3d(&matrix, 90.0f);
 	vector = odVector{1.0f, 1.0f, 0.0f, 1.0f};
 	odMatrix_multiply_vector_3d(&matrix, &vector);
 	expected_vector = odVector{scale1 + translate1, -scale1 + translate1, 0.0f, 1.0f};
-	OD_ASSERT(odVector_epsilon_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_epsilon_get_equals(&vector, &expected_vector));
 }
 OD_TEST(odTest_odMatrix_multiply_vector_3d) {
 	odMatrix matrix{};
@@ -144,12 +144,12 @@ OD_TEST(odTest_odMatrix_multiply_vector_3d) {
 			vector = odVector{1.0f, 1.0f, 1.0f, 1.0f};
 			expected_vector = odVector{translate_scale, translate_scale, translate_scale, 1.0f};
 			odMatrix_multiply_vector_3d(&matrix, &vector);
-			OD_ASSERT(odVector_equals(&vector, &expected_vector));
+			OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 
 			vector = odVector{0.0f, 0.0f, 0.0f, 1.0f};
 			expected_vector = odVector{translate, translate, translate, 1.0f};
 			odMatrix_multiply_vector_3d(&matrix, &vector);
-			OD_ASSERT(odVector_equals(&vector, &expected_vector));
+			OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 		}
 	}
 }
@@ -158,7 +158,7 @@ OD_TEST(odTest_odMatrix_multiply_vector_3d_with_indentity) {
 	odVector vector{-3.0f, 6.0f, 2000.0f, 1.0f};
 	odVector expected_vector = vector;
 	odMatrix_multiply_vector_3d(&matrix, &vector);
-	OD_ASSERT(odVector_equals(&vector, &expected_vector));
+	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 }
 
 

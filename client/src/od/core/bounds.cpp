@@ -76,7 +76,7 @@ bool odBounds_contains(const odBounds* outer, const odBounds* inner) {
 
 	return true;
 }
-bool odBounds_equals(const odBounds* a, const odBounds* b) {
+bool odBounds_get_equals(const odBounds* a, const odBounds* b) {
 	if (!OD_DEBUG_CHECK(odBounds_check_valid(a))
 		|| !OD_DEBUG_CHECK(odBounds_check_valid(b))) {
 		return false;

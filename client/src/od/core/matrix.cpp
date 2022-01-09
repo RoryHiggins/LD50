@@ -272,7 +272,7 @@ void odMatrix_rotate_z_3d(odMatrix* matrix, float rotate_clock_deg) {
 	odMatrix_multiply(matrix, &rotate_matrix);
 	OD_DISCARD(OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix)));
 }
-bool odMatrix_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
+bool odMatrix_get_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
 	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix1))
 		|| !OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix2))) {
 		return false;
@@ -286,14 +286,14 @@ bool odMatrix_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
 
 	return true;
 }
-bool odMatrix_epsilon_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
+bool odMatrix_epsilon_get_equals(const odMatrix* matrix1, const odMatrix* matrix2) {
 	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix1))
 		|| !OD_DEBUG_CHECK(odMatrix_check_valid_3d(matrix2))) {
 		return false;
 	}
 
 	for (int32_t i = 0; i < OD_MATRIX_ELEM_COUNT; i++) {
-		if (!odFloat_epsilon_equals(matrix1->matrix[i], matrix2->matrix[i])) {
+		if (!odFloat_epsilon_get_equals(matrix1->matrix[i], matrix2->matrix[i])) {
 			return false;
 		}
 	}

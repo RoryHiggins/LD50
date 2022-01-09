@@ -35,8 +35,8 @@ odMatrix_translate_3d(struct odMatrix* matrix, float translate_x, float translat
 OD_API_C OD_CORE_MODULE void
 odMatrix_rotate_z_3d(struct odMatrix* matrix, float rotate_clock_deg);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odMatrix_equals(const struct odMatrix* matrix1, const struct odMatrix* matrix2);
+odMatrix_get_equals(const struct odMatrix* matrix1, const struct odMatrix* matrix2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odMatrix_epsilon_equals(const struct odMatrix* matrix1, const struct odMatrix* matrix2);
+odMatrix_epsilon_get_equals(const struct odMatrix* matrix1, const struct odMatrix* matrix2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const struct odMatrix*
 odMatrix_get_identity(void);
