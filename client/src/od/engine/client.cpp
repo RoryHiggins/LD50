@@ -1,4 +1,4 @@
-#include <od/engine/engine.hpp>
+#include <od/engine/client.hpp>
 
 #include <cstring>
 
@@ -15,9 +15,9 @@
 #include <od/platform/renderer.hpp>
 #include <od/platform/window.hpp>
 
-static void odEngineFrame_start_next(odEngineFrame* frame);
+static void odClientFrame_start_next(odClientFrame* frame);
 
-void odEngineFrame_start_next(odEngineFrame* frame) {
+void odClientFrame_start_next(odClientFrame* frame) {
 	if (!OD_DEBUG_CHECK(frame != nullptr)) {
 		return;
 	}
@@ -32,19 +32,19 @@ void odEngineFrame_start_next(odEngineFrame* frame) {
 
 	frame->counter++;
 }
-odEngineFrame::odEngineFrame()
+odClientFrame::odClientFrame()
 : counter{0}, game_vertices{}, window_vertices{} {
 }
 
-const odEngineSettings* odEngineSettings_get_defaults() {
-	static const odEngineSettings settings{
+const odClientSettings* odClientSettings_get_defaults() {
+	static const odClientSettings settings{
 		*odWindowSettings_get_defaults(),
 		160,
 		120
 	};
 	return &settings;
 }
-bool odEngineSettings_check_valid(const odEngineSettings* settings) {
+bool odClientSettings_check_valid(const odClientSettings* settings) {
 	if (!OD_CHECK(settings != nullptr)
 		|| !OD_CHECK(odWindowSettings_check_valid(&settings->window))
 		|| !OD_CHECK(odInt32_fits_float(settings->game_height))
@@ -57,13 +57,13 @@ bool odEngineSettings_check_valid(const odEngineSettings* settings) {
 	return true;
 }
 
-bool odEngine_init(odEngine* engine, const odEngineSettings* opt_settings) {
+bool odClient_init(odClient* engine, const odClientSettings* opt_settings) {
 	if (!OD_CHECK(engine != nullptr)) {
 		return false;
 	}
 
 	if (opt_settings != nullptr) {
-		if (!OD_CHECK(odEngineSettings_check_valid(opt_settings))) {
+		if (!OD_CHECK(odClientSettings_check_valid(opt_settings))) {
 			return false;
 		}
 		engine->settings = *opt_settings;
@@ -89,7 +89,7 @@ bool odEngine_init(odEngine* engine, const odEngineSettings* opt_settings) {
 
 	// BEGIN throwaway texture loading test code - TODO remove
 	odImage image{};
-	if (!OD_CHECK(odImage_read_png_file(&image, "./app/example_minimal/data/sprites.png"))) {
+	if (!OD_CHECK(odImage_read_png_file(&image, "./examples/minimal/data/sprites.png"))) {
 		return false;
 	}
 	if (!OD_CHECK(odTexture_init(
@@ -106,7 +106,7 @@ bool odEngine_init(odEngine* engine, const odEngineSettings* opt_settings) {
 
 	return true;
 }
-void odEngine_destroy(odEngine* engine) {
+void odClient_destroy(odClient* engine) {
 	if (!OD_CHECK(engine != nullptr)) {
 		return;
 	}
@@ -119,9 +119,9 @@ void odEngine_destroy(odEngine* engine) {
 	odRenderer_destroy(&engine->renderer);
 	odWindow_destroy(&engine->window);
 }
-bool odEngine_set_settings(odEngine* engine, const odEngineSettings* settings) {
+bool odClient_set_settings(odClient* engine, const odClientSettings* settings) {
 	if (!OD_CHECK(engine != nullptr)
-		|| !OD_CHECK(odEngineSettings_check_valid(settings))) {
+		|| !OD_CHECK(odClientSettings_check_valid(settings))) {
 		return false;
 	}
 
@@ -142,7 +142,7 @@ bool odEngine_set_settings(odEngine* engine, const odEngineSettings* settings) {
 
 	return true;
 }
-bool odEngine_step(odEngine* engine) {
+bool odClient_step(odClient* engine) {
 	if (!OD_CHECK(engine != nullptr)) {
 		return false;
 	}
@@ -212,7 +212,7 @@ bool odEngine_step(odEngine* engine) {
 	}
 	// END throwaway rendering test code - TODO remove
 
-	odEngineSettings* engine_settings = &engine->settings;
+	odClientSettings* engine_settings = &engine->settings;
 	odMatrix projection{};
 	odMatrix_init_ortho_2d(&projection, engine_settings->game_width, engine_settings->game_height);
 	odRenderState draw_to_game{
@@ -285,7 +285,7 @@ bool odEngine_step(odEngine* engine) {
 		return false;
 	}
 
-	odEngineFrame_start_next(&engine->frame);
+	odClientFrame_start_next(&engine->frame);
 
 	if (!odWindow_step(&engine->window)) {
 		return false;
@@ -294,16 +294,16 @@ bool odEngine_step(odEngine* engine) {
 	return true;
 }
 #if OD_BUILD_EMSCRIPTEN
-void odEngine_step_emscripten(void* engine_raw);
-void odEngine_step_emscripten(void* engine_raw) {
+void odClient_step_emscripten(void* engine_raw);
+void odClient_step_emscripten(void* engine_raw) {
 	if (!OD_CHECK(engine_raw != nullptr)) {
 		return;
 	}
 
-	odEngine* engine = reinterpret_cast<odEngine*>(engine_raw);
+	odClient* engine = reinterpret_cast<odClient*>(engine_raw);
 
 	if (!engine->is_initialized) {
-		if (!OD_CHECK(odEngine_init(engine, nullptr))) {
+		if (!OD_CHECK(odClient_init(engine, nullptr))) {
 			emscripten_cancel_main_loop();
 			return;
 		}
@@ -311,30 +311,30 @@ void odEngine_step_emscripten(void* engine_raw) {
 		engine->is_initialized = true;
 	}
 
-	if (!odEngine_step(engine)) {
+	if (!odClient_step(engine)) {
 		emscripten_cancel_main_loop();
 	}
 }
-OD_NO_DISCARD bool odEngine_run(odEngine* engine, const odEngineSettings* opt_settings) {
+OD_NO_DISCARD bool odClient_run(odClient* engine, const odClientSettings* opt_settings) {
 	if (!OD_CHECK(engine != nullptr)) {
 		return false;
 	}
 
 	if (opt_settings != nullptr) {
-		if (!OD_CHECK(odEngineSettings_check_valid(opt_settings))) {
+		if (!OD_CHECK(odClientSettings_check_valid(opt_settings))) {
 			return false;
 		}
 		engine->settings = *opt_settings;
 	}
 
-	emscripten_set_main_loop_arg(&odEngine_step_emscripten, reinterpret_cast<void*>(engine), 0, true);
+	emscripten_set_main_loop_arg(&odClient_step_emscripten, reinterpret_cast<void*>(engine), 0, true);
 
 	return true;
 }
 #else
-OD_NO_DISCARD bool odEngine_run(odEngine* engine, const odEngineSettings* opt_settings) {
+OD_NO_DISCARD bool odClient_run(odClient* engine, const odClientSettings* opt_settings) {
 	if (!OD_CHECK(engine != nullptr)
-		|| !OD_CHECK((opt_settings == nullptr) || odEngineSettings_check_valid(opt_settings))) {
+		|| !OD_CHECK((opt_settings == nullptr) || odClientSettings_check_valid(opt_settings))) {
 		return false;
 	}
 
@@ -343,10 +343,10 @@ OD_NO_DISCARD bool odEngine_run(odEngine* engine, const odEngineSettings* opt_se
 	bool ok = true;
 	int32_t logged_errors_before = odLog_get_logged_error_count();
 
-	ok = ok && OD_CHECK(odEngine_init(engine, opt_settings));
+	ok = ok && OD_CHECK(odClient_init(engine, opt_settings));
 
 	while (ok && engine->window.is_open) {
-		ok = ok && OD_CHECK(odEngine_step(engine));
+		ok = ok && OD_CHECK(odClient_step(engine));
 	}
 
 	ok = ok && (odLog_get_logged_error_count() == logged_errors_before);
@@ -360,12 +360,12 @@ OD_NO_DISCARD bool odEngine_run(odEngine* engine, const odEngineSettings* opt_se
 	return ok;
 }
 #endif
-odEngine::odEngine()
-	: settings{*odEngineSettings_get_defaults()}, window{}, renderer{}, src_texture{},
+odClient::odClient()
+	: settings{*odClientSettings_get_defaults()}, window{}, renderer{}, src_texture{},
 	game_render_texture{}, is_initialized{false}, entity_index{}, frame{} {
 }
-odEngine::odEngine(odEngine&& other) = default;
-odEngine& odEngine::operator=(odEngine&& other) = default;
-odEngine::~odEngine() {
-	odEngine_destroy(this);
+odClient::odClient(odClient&& other) = default;
+odClient& odClient::operator=(odClient&& other) = default;
+odClient::~odClient() {
+	odClient_destroy(this);
 }

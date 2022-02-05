@@ -2,7 +2,7 @@
 #include <cstdlib>
 
 #include <od/core/debug.h>
-#include <od/engine/engine.hpp>
+#include <od/engine/client.hpp>
 #include <od/test/test.hpp>
 
 const char* __asan_default_options();
@@ -104,9 +104,9 @@ int main(int argc, char** argv) {
 	}
 
 	if (run_client) {
-		odEngine engine;
-		odEngineSettings engine_settings{*odEngineSettings_get_defaults()};
-		if (!odEngine_run(&engine, &engine_settings)) {
+		odClient engine;
+		odClientSettings engine_settings{*odClientSettings_get_defaults()};
+		if (!odClient_run(&engine, &engine_settings)) {
 			return 1;
 		}
 	}

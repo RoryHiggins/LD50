@@ -194,6 +194,13 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 		OD_ASSERT(cumulative > 0);
 	}
 
+	OD_INFO(
+		"frames_to_test=%d,\nupdates_total=%d,\nsmall_searches_total=%d,\nlarge_searches_total=%d",
+		frames_to_test,
+		updates_count * frames_to_test,
+		small_searches_count * frames_to_test,
+		large_searches_count * frames_to_test);
+
 	OD_TIMER_WARN_IF_EXCEEDED(&timer, seconds_to_test);
 }
 
