@@ -80,6 +80,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 
 	double time_elapsed = static_cast<double>(odTimer_get_elapsed_seconds(&timer));
 	OD_INFO("Tests run successfully, %d run of %d in ~%g second(s)", run_test_count, total_test_count, time_elapsed);
+	OD_MAYBE_UNUSED(time_elapsed);
 	return true;
 }
 

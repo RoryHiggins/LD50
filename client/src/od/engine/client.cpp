@@ -204,7 +204,7 @@ bool odClient_step(odClient* engine) {
 			for (odVertex& vertex: vertices) {
 				odVertex_transform_3d(&vertex, &matrix);
 				vertex.color.b = static_cast<uint8_t>(3 * i);
-				vertex.color.g = 192 - static_cast<uint8_t>(4 * i);
+				vertex.color.g = static_cast<uint8_t>(192 - (4 * i));
 				vertex.pos.z = static_cast<float>(i);
 			}
 			OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
@@ -249,8 +249,9 @@ bool odClient_step(odClient* engine) {
 
 	// draw game
 	odTrianglePrimitive_sort_vertices(
-		reinterpret_cast<odTrianglePrimitive*>(engine->frame.game_vertices.begin()),
-		engine->frame.game_vertices.get_count() / OD_TRIANGLE_VERTEX_COUNT);
+		engine->frame.game_vertices.begin(),
+		engine->frame.game_vertices.get_count()
+	);
 	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_game, odColor_get_white()))) {
 		return false;
 	}
@@ -264,8 +265,9 @@ bool odClient_step(odClient* engine) {
 
 	// draw window
 	odTrianglePrimitive_sort_vertices(
-		reinterpret_cast<odTrianglePrimitive*>(engine->frame.window_vertices.begin()),
-		engine->frame.window_vertices.get_count() / OD_TRIANGLE_VERTEX_COUNT);
+		engine->frame.window_vertices.begin(),
+		engine->frame.window_vertices.get_count()
+	);
 	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColor_get_white()))) {
 		return false;
 	}

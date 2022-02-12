@@ -12,6 +12,7 @@ struct odEntityIndexEntity;
 
 struct odEntityChunk {
 	odTrivialArrayT<odEntityCollider> colliders;
+	odTrivialArrayT<odEntityId> entity_ids;
 };
 
 extern template struct odTrivialArrayT<odEntityIndexEntity>;

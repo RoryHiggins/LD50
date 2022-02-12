@@ -127,24 +127,28 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 	const float tile_width_f = static_cast<float>(tile_width);
 	const int32_t grid_width_bits = (
 		OD_ENTITY_CHUNK_OPTIMUM_WORLD_WIDTH_BITS - OD_ENTITY_CHUNK_OPTIMUM_CHUNK_WIDTH_BITS);
-	const int32_t grid_width = (1 << grid_width_bits);
+	const int32_t grid_tile_width = (1 << grid_width_bits);
+	const int32_t grid_width = grid_tile_width * tile_width;
 	const float grid_width_f = static_cast<float>(grid_width);
-	const int32_t grid_area = grid_width * grid_width;
+	const int32_t grid_tile_area = grid_tile_width * grid_tile_width;
 
-	const int32_t entities_count = grid_area;
+	const int32_t entity_density = 1;
+	const int32_t entities_count = grid_tile_area * entity_density;
+	const int32_t dynamic_entities_count = 32;
 	const int32_t large_searches_count = 4;
-	const int32_t search_results_count = 1;
-	const int32_t updates_count = entities_count / 16;
-	const int32_t small_searches_count = (entities_count / 4);
+	const int32_t small_search_results_count = 4;
+	const int32_t large_search_results_count = entities_count;
+	const int32_t updates_count = dynamic_entities_count;
+	const int32_t small_searches_count = dynamic_entities_count * 8;
 
 	const int32_t frame_rate = 60;
-	const int32_t seconds_to_test = 15;
+	const int32_t seconds_to_test = 5;
 	const int32_t frames_to_test = frame_rate * seconds_to_test;
 
 	odEntityIndex entity_index{};
 	for (int32_t i = 0; i < entities_count; i++) {
-		float x = static_cast<float>(tile_width * (i % 64));
-		float y = static_cast<float>(tile_width * (i / 64));
+		float x = static_cast<float>(tile_width % grid_tile_width);
+		float y = static_cast<float>((tile_width * (i / grid_tile_width)) % grid_tile_width);
 
 		odEntity entity{};
 		entity.collider.id = i;
@@ -157,25 +161,35 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 
 	for (int32_t i = 0; i < frames_to_test; i++) {
 		for (int32_t j = 0; j < updates_count; j++) {
-			float x = static_cast<float>(tile_width * ((i + j) % 64));
-			float y = static_cast<float>(tile_width * ((i + j) / 64));
+			int32_t entity_id = ((updates_count * i) + j) % entities_count;
 
-			odEntity entity{};
-			entity.collider.id = j;
-			entity.collider.bounds = odBounds{x, y, x + tile_width_f, y + tile_width_f};
+			const odEntity* src_entity = odEntityIndex_get(&entity_index, entity_id);
+			OD_ASSERT(src_entity != nullptr);
+			odEntity entity = *src_entity;
+
+			float offset = 1.0f;
+			if (static_cast<int32_t>(entity.collider.bounds.x1) % tile_width != 0) {
+				offset = -1.0f;
+			}
+
+			entity.collider.bounds.x1 += offset;
+			entity.collider.bounds.x2 += offset;
+			entity.collider.bounds.y1 += offset;
+			entity.collider.bounds.y2 += offset;
+
 			odEntityIndex_set(&entity_index, &entity);
 		}
 
 		int32_t cumulative = 0;
 		for (int32_t j = 0; j < small_searches_count; j++) {
-			float x = static_cast<float>(tile_width * (i % 64));
-			float y = static_cast<float>(tile_width * (i / 64));
+			float x = static_cast<float>(tile_width % grid_tile_width);
+			float y = static_cast<float>((tile_width * (i / grid_tile_width)) % grid_tile_width);
 
-			int32_t search_results[search_results_count];
+			static int32_t search_results[small_search_results_count];
 			odEntitySearch search{
 				search_results,
-				search_results_count,
-				odBounds{x, y, x + tile_width_f, y + tile_width_f},
+				small_search_results_count,
+				odBounds{x, y, x + tile_width_f + 1.0f, y + tile_width_f + 1.0f},
 				odTagset{}};
 			cumulative += odEntityIndex_search(&entity_index, &search);
 		}
@@ -183,11 +197,11 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 
 		cumulative = 0;
 		for (int32_t j = 0; j < large_searches_count; j++) {
-			int32_t search_results[search_results_count];
+			static int32_t search_results[large_search_results_count];
 			odEntitySearch search{
 				search_results,
-				search_results_count,
-				odBounds{-grid_width_f, -grid_width_f, (2.0f * grid_width_f), (2.0f * grid_width_f)},
+				large_search_results_count,
+				odBounds{0.0f, 0.0f, grid_width_f / 4.0f, grid_width_f / 4.0f},
 				odTagset{}};
 			cumulative += odEntityIndex_search(&entity_index, &search);
 		}
@@ -195,11 +209,15 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 	}
 
 	OD_INFO(
-		"frames_to_test=%d,\nupdates_total=%d,\nsmall_searches_total=%d,\nlarge_searches_total=%d",
+		"frames_to_test=%d,\nupdates_total=%d,\nsmall_searches_total=%d,\nlarge_searches_total=%d,\n"
+		"entities_count=%d,elapsed_sec=%g",
 		frames_to_test,
 		updates_count * frames_to_test,
 		small_searches_count * frames_to_test,
-		large_searches_count * frames_to_test);
+		large_searches_count * frames_to_test,
+		entities_count,
+		static_cast<double>(odTimer_get_elapsed_seconds(&timer))
+	);
 
 	OD_TIMER_WARN_IF_EXCEEDED(&timer, seconds_to_test);
 }

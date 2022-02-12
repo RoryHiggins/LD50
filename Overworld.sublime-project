@@ -2,8 +2,20 @@
 	"build_systems":
 	[
 		{
+			"name": "Run headless",
+			"cmd": "luajit $file",
+			// "cmd": "echo $project_path",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Run headless in separate window",
+			"shell_cmd": "start luajit $file",
+			// "cmd": "echo $project_path",
+			"working_dir": "$project_path",
+		},
+		{
 			"name": "DEBUG generate and rebuild shared",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_ARGS='-D BUILD_SHARED_LIBS=1'",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CLIENT_CMAKE_ARGS='-D BUILD_SHARED_LIBS=1'",
 			"working_dir": "$project_path",
 		},
 		// {
@@ -18,7 +30,7 @@
 		},
 		{
 			"name": "DEBUG build iteratively and run tests by name",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name odTest_odMatrix_multiply_vector_3d_with_indentity",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name odTest_odEntityIndex_search_performance",
 			"working_dir": "$project_path",
 		},
 		{
@@ -42,21 +54,23 @@
 		// 	"working_dir": "$project_path",
 		// },
 
-		// {
-		// 	"name": "PROFILE generate and rebuild",
-		// 	"shell_cmd": "rm -rf .\\build\\PROFILE_ANY && make TARGET=PROFILE",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "PROFILE build iteratively and run tests by name",
-		// 	"shell_cmd": "ninja -C .\\build\\PROFILE_ANY od_client.exe && .\\build\\PROFILE_ANY\\od_client.exe --no-client --test --test-name search_performance_realistic_case",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "PROFILE create report",
-		// 	"shell_cmd": "make profile TARGET=PROFILE",
-		// 	"working_dir": "$project_path",
-		// },
+
+		{
+			"name": "PROFILE generate and rebuild",
+			"shell_cmd": "rm -rf .\\build\\RELEASE_PROFILE_WIN && make TARGET=RELEASE KEY=PROFILE_WIN CLIENT_CMAKE_ARGS='-D OD_BUILD_PROFILE=1 -D OD_BUILD_TESTS=1'",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "PROFILE build iteratively and run tests by name",
+			"shell_cmd": "ninja -C .\\build\\RELEASE_PROFILE_WIN od_client.exe && .\\build\\RELEASE_PROFILE_WIN\\od_client.exe --no-client --test --test-name odTest_odEntityIndex_search_performance",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "PROFILE create report",
+			"shell_cmd": "make profile TARGET=RELEASE KEY=PROFILE_WIN CLIENT_CMAKE_ARGS='-D OD_BUILD_PROFILE=1 -D OD_BUILD_TESTS=1'",
+			"working_dir": "$project_path",
+		},
+
 
 		// {
 		// 	"name": "RELEASE generate and rebuild",
@@ -69,11 +83,11 @@
 		// 	"working_dir": "$project_path",
 		// },
 
-		// {
-		// 	"name": "Emscripten debug generate and rebuild",
-		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S . -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "Emscripten debug generate and rebuild",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S .\\client -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+		},
 		// {
 		// 	"name": "Emscripten debug iterative build",
 		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
@@ -140,6 +154,9 @@
 				"experimental",
 				"backward",
 			],
+		},
+		{
+			"path": "C:\\msys64\\mingw64\\include\\luajit-2.1"
 		},
 	],
 }

@@ -2,13 +2,15 @@
 # ---
 # Client code build target.  One of:
 # - RELEASE
+# - PROFILE
 # - DEBUG
 TARGET := DEBUG
 # key for output build
 KEY := ANY
-# client input arguments 
+# client input arguments
+CLIENT_SRC := ./client
 CLIENT_ARGS :=
-CMAKE_ARGS :=
+CLIENT_CMAKE_ARGS :=
 
 # Dependencies
 # ---
@@ -26,7 +28,7 @@ CLIENT := $(BUILD)/od_client
 .DEFAULT_GOAL := $(CLIENT)
 
 $(CLIENT):
-	$(CMAKE) \-S . -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" $(CMAKE_ARGS)
+	$(CMAKE) \-S $(CLIENT_SRC) -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" $(CLIENT_CMAKE_ARGS)
 	$(CMAKE) --build $(BUILD)
 run: $(CLIENT)
 	$(CLIENT) $(CLIENT_ARGS)

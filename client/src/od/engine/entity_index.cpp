@@ -48,7 +48,9 @@ static OD_NO_DISCARD bool
 odEntityChunkIterator_contains_chunk_id(const odEntityChunkIterator* iter, odEntityChunkId chunk_id);
 
 static OD_NO_DISCARD odEntityChunkCoord
-odChunkCoord_init(float coord);
+odChunkCoord_init(float value);
+static OD_NO_DISCARD float
+odChunkCoord_get_value(odEntityChunkCoord coord);
 
 static OD_NO_DISCARD odEntityChunkId
 odEntityChunkId_init_chunk_coords(odEntityChunkCoord x, odEntityChunkCoord y);
@@ -60,7 +62,7 @@ odEntityChunkId_get_coord_y(odEntityChunkId chunk_id);
 static OD_NO_DISCARD const char*
 odEntityIndex_chunk_get_debug_string(const odEntityChunk* chunk);
 static OD_NO_DISCARD bool
-odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id, int32_t* opt_out_chunk_index);
+odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id, int32_t* out_chunk_index);
 static OD_NO_DISCARD bool
 odEntityIndex_chunk_unset_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id);
 static OD_NO_DISCARD bool
@@ -190,13 +192,16 @@ odEntityChunkIterator::odEntityChunkIterator(const odBounds& bounds)
 		}
 }
 
-odEntityChunkCoord odChunkCoord_init(float coord) {
-	OD_DISCARD(OD_DEBUG_CHECK(odFloat_is_precise_int(coord)));
+odEntityChunkCoord odChunkCoord_init(float value) {
+	OD_DISCARD(OD_DEBUG_CHECK(odFloat_is_precise_int(value)));
 	const int32_t coord_bitmask =
 		static_cast<int32_t>((1 << OD_ENTITY_CHUNK_COORD_MASK_BITS) - 1);
 	return static_cast<odEntityChunkCoord>(
-		(static_cast<int32_t>(coord) >> OD_ENTITY_CHUNK_COORD_DISCARD_BITS) & coord_bitmask
+		(static_cast<int32_t>(value) >> OD_ENTITY_CHUNK_COORD_DISCARD_BITS) & coord_bitmask
 	);
+}
+float odChunkCoord_get_value(odEntityChunkCoord coord) {
+	return static_cast<float>(static_cast<int32_t>(coord) << OD_ENTITY_CHUNK_COORD_DISCARD_BITS);
 }
 odEntityChunkId odEntityChunkId_init_chunk_coords(odEntityChunkCoord x, odEntityChunkCoord y) {
 	return (
@@ -237,32 +242,50 @@ const char* odEntityIndex_chunk_get_debug_string(const odEntityChunk* chunk) {
 		entities_str = "\"...\"";
 	}
 
+	const char* entity_ids_str = nullptr;
+	if (chunk->entity_ids.get_count() <= 64) {
+		entity_ids_str = odDebugString_format_array(
+			[](const void* entity_id) -> const char* {
+				return odDebugString_format("%d", *reinterpret_cast<const odEntityId*>(entity_id));
+			},
+			chunk->entity_ids.begin(),
+			chunk->entity_ids.get_count(),
+			sizeof(odEntityIndexEntity));
+	}
+	if (entity_ids_str == nullptr) {
+		entity_ids_str = "\"...\"";
+	}
+
 	return odDebugString_format(
-		"{\"count\": %d, \"entities\": [%s]}",
+		"{\"count\": %d, \"entities\": [%s], \"entity_ids\": [%s]}",
 		chunk->colliders.get_count(),
-		entities_str);
+		entities_str,
+		entity_ids_str
+	);
 }
-bool odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id, int32_t* opt_out_chunk_index) {
+bool odEntityIndex_chunk_find_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, odEntityId entity_id, int32_t* out_chunk_index) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_ENTITY_CHUNK_ID_COUNT))
-		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.get_count()))) {
+		|| !OD_DEBUG_CHECK((entity_id >= 0) && (entity_id < entity_index->entities.get_count()))
+		|| !OD_DEBUG_CHECK(out_chunk_index != nullptr)) {
 		return false;
 	}
 
 	odEntityChunk& chunk = entity_index->chunks[chunk_id];
 	int32_t chunk_index = 0;
 	bool found = false;
-	for (int32_t i = 0; i < chunk.colliders.get_count(); i++) {
-		if (chunk.colliders[i].id == entity_id) {
+	const odEntityId *chunk_entity_ids = chunk.entity_ids.begin();
+	int32_t chunk_entity_count = chunk.entity_ids.get_count();
+
+	for (int32_t i = 0; i < chunk_entity_count; i++) {
+		if (chunk_entity_ids[i] == entity_id) {
 			chunk_index = i;
 			found = true;
 			break;
 		}
 	}
 
-	if (opt_out_chunk_index != nullptr) {
-		*opt_out_chunk_index = chunk_index;
-	}
+	*out_chunk_index = chunk_index;
 
 	return found;
 }
@@ -287,6 +310,14 @@ bool odEntityIndex_chunk_unset_collider(odEntityIndex* entity_index, odEntityChu
 		return false;
 	}
 
+	if (!OD_CHECK(chunk.entity_ids.swap_pop(chunk_index))) {
+		return false;
+	}
+
+	if (!OD_DEBUG_CHECK((chunk.entity_ids.get_count() == chunk.colliders.get_count()))) {
+		return false;
+	}
+
 	return true;
 }
 bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunkId chunk_id, const odEntityCollider* collider) {
@@ -305,10 +336,18 @@ bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunk
 			return false;
 		}
 
+		if (!OD_CHECK(chunk.entity_ids.extend(&collider->id, 1))) {
+			return false;
+		}
+
 		return true;
 	}
 
 	if (!OD_DEBUG_CHECK((chunk_index >= 0) && (chunk_index < chunk.colliders.get_count()))) {
+		return false;
+	}
+
+	if (!OD_DEBUG_CHECK((chunk.entity_ids.get_count() == chunk.colliders.get_count()))) {
 		return false;
 	}
 
@@ -607,19 +646,29 @@ void odEntityIndex_set(odEntityIndex* entity_index, const odEntity* entity) {
 				continue;
 			}
 
-			bool seen_before = false;
-			for (int32_t i = 0; i < count; i++) {
-				if (search->out_results[i] == collider.id) {
-					seen_before = true;
-					break;
+			// if seen on previous x or y coord, do not add
+			if (search->max_results > 1) {
+				odEntityChunkCoord coord_x = odEntityChunkId_get_coord_x(chunk_id);
+				odEntityChunkCoord coord_y = odEntityChunkId_get_coord_y(chunk_id);
+				float x = odChunkCoord_get_value(coord_x);
+				float y = odChunkCoord_get_value(coord_y);
+				float x_left = x - 1;
+				float y_up = y - 1;
+
+				if ((coord_x != search_bounds.x_start)
+					&& (x_left >= collider.bounds.x1)
+					&& (x_left <= collider.bounds.x2)) {
+					continue;
+				}
+
+				if ((coord_y != search_bounds.y_start)
+					&& (y_up >= collider.bounds.y1)
+					&& (y_up <= collider.bounds.y2)) {
+					continue;
 				}
 			}
-			if (seen_before) {
-				continue;
-			}
 
-			search->out_results[count] = collider.id;
-			count++;
+			search->out_results[count++] = collider.id;
 		}
 	}
 

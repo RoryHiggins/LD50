@@ -1,17 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 project(overworld LANGUAGES CXX)
 
-set(OD_BUILD_LOGS_DEFAULT 1)
+set(OD_BUILD_LOGS_DEFAULT 0)
 set(OD_BUILD_DEBUG_DEFAULT 0)
-set(OD_BUILD_TESTS_DEFAULT 1)
-set(OD_BUILD_COVERAGE_DEFAULT 0)
+set(OD_BUILD_TESTS_DEFAULT 0)
 set(OD_BUILD_PROFILE_DEFAULT 0)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	set(OD_BUILD_DEBUG_DEFAULT 1)
-endif()
-if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE")
-	set(OD_BUILD_LOGS_DEFAULT 0)
-	set(OD_BUILD_TESTS_DEFAULT 0)
+	set(OD_BUILD_LOGS_DEFAULT 1)
+	set(OD_BUILD_TESTS_DEFAULT 1)
 endif()
 
 set(OD_BUILD_LOGS ${OD_BUILD_LOGS_DEFAULT} CACHE BOOL
@@ -203,7 +200,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			-Wzero-as-null-pointer-constant -Wpacked -Wredundant-decls -Wvla
 			-Wlarger-than=16777216 -Walloc-size-larger-than=16777216 -Wstringop-overflow=4
 			-Walloc-zero -Warray-bounds=2 -Wcast-align=strict -Wconversion -Wundef
-			-Wformat=2 -Wformat-overflow=2 -Wformat-signedness -Wformat-truncation=2
+			-Wformat=2 -Wformat-overflow=2 -Wformat-signedness
 			-Wdisabled-optimization -Wfloat-conversion -Wlogical-op -Wmultichar
 			-Wplacement-new=2 -Wnon-virtual-dtor -Woverloaded-virtual
 			-Wno-stringop-truncation -Wno-missing-profile)

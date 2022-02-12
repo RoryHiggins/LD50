@@ -71,7 +71,7 @@ static int odTrianglePrimitive_compare(const void* triangle1, const void* triang
 
 	return 0;
 }
-void odTrianglePrimitive_sort_vertices(odTrianglePrimitive* triangles, int32_t triangles_count) {
+void odTrianglePrimitive_sort_triangles(odTrianglePrimitive* triangles, int32_t triangles_count) {
 	if (!OD_DEBUG_CHECK((triangles_count == 0) || (triangles != nullptr))
 		|| !OD_DEBUG_CHECK(triangles_count >= 0)) {
 		return;
@@ -82,4 +82,10 @@ void odTrianglePrimitive_sort_vertices(odTrianglePrimitive* triangles, int32_t t
 		static_cast<size_t>(triangles_count),
 		sizeof(odTrianglePrimitive),
 		odTrianglePrimitive_compare);
+}
+void odTrianglePrimitive_sort_vertices(odVertex* vertices, int32_t vertices_count) {
+	odTrianglePrimitive_sort_triangles(
+		reinterpret_cast<odTrianglePrimitive*>(vertices),
+		vertices_count / 3
+	);
 }

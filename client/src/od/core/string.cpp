@@ -142,7 +142,7 @@ bool odString_extend_formatted_variadic(odString* string, const char* format_c_s
 
 	va_list args_copy = {};
 	va_copy(args_copy, args);
-	int32_t added_required_count = static_cast<int32_t>(vsnprintf(nullptr, 0, format_c_str, args_copy));
+	int added_required_count = static_cast<int32_t>(vsnprintf(nullptr, 0, format_c_str, args_copy));
 	va_end(args_copy);
 
 	if (!OD_CHECK(added_required_count >= 0)) {
@@ -152,7 +152,7 @@ bool odString_extend_formatted_variadic(odString* string, const char* format_c_s
 	// sprintf-style calls always write null-terminated, but count in return value
 	// excludes null terminator
 	int32_t old_count = odString_get_count(string);
-	if (!OD_CHECK(odString_set_count(string, old_count + added_required_count))) {
+	if (!OD_CHECK(odString_set_count(string, old_count + static_cast<int32_t>(added_required_count)))) {
 		return false;
 	}
 
@@ -161,12 +161,8 @@ bool odString_extend_formatted_variadic(odString* string, const char* format_c_s
 		return false;
 	}
 
-	int32_t written_count = static_cast<int32_t>(vsnprintf(dest_str, static_cast<size_t>(added_required_count + 1), format_c_str, args));
-	if (!OD_DEBUG_CHECK(written_count >= 0)) {
-		return false;
-	}
-
-	if (!OD_DEBUG_CHECK(written_count == added_required_count)) {
+	int written_count = vsnprintf(dest_str, static_cast<size_t>(added_required_count + 1), format_c_str, args);
+	if (!OD_CHECK(written_count == added_required_count)) {
 		return false;
 	}
 

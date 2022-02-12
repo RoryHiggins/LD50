@@ -256,6 +256,7 @@ static OD_NO_DISCARD bool odPlatform_float_check_exceptions(void) {
 			"Uncaught floating point exception(s) occurred: 0x%x: %s",
 			static_cast<unsigned>(float_exceptions),
 			float_exception_str);
+		OD_MAYBE_UNUSED(float_exception_str);
 		return false;
 	}
 

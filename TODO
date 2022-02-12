@@ -1,24 +1,94 @@
 
 Lua - Approach
-simulation - topmost lua table - set of systems
-	systems - systems
-	rules - simulation rules - immutable after init, (de)serializable, deterministic to code
-	event - simuluation event history - list, append-only, (de)serializable
-	state - simulation state - (de)serializable, deterministic to code + inputs
-		world
-	per system:
-		game - game state - optional, encodable
-		lv - world state - optional, encodable
-		rule - system rules - optional, immutable, encodable
+--------------
+# Conceptual (not backed by a concrete impl in code)
+Serializable: str|num|bool|nil|SerializableArray|SerializableObject
+SerializableArray: [Serializable]
+SerializableObject: {[str]: Serializable}
+
+# Platform
+Window : Userdata
+- create_instance() : Window
+Renderer : Userdata
+- create_instance(window: Window) : Renderer
+- draw_{point,line,triangle,sprite,texture}({x,y,r,g,b,a,u,v}{1,2,3}, depth: num, src: Texture, dest: RenderTexture? = nil)
+- flush(dest: RenderTexture)
+Texture : Userdata
+- create_instance(window: Window, width: num, height: num) : Texture
+- create_from_png(filename: str) : Texture
+- get_size() : (num, num)
+RenderTexture : Userdata
+- create_instance(window: Window, width: num, height: num) : Texture
+- get_size() : (num, num)
+EntityIndex : Userdata
+- create_instance() : EntityIndex
+- set_collider(id: num, {x,y}{1,2}: num, tagset: str)
+- set_sprite(id: num, {u,v}{1,2}: num, {r,g,b,a}: num, depth: num, transform: [num * 16]? = nil)
+- find({x,y}{1,2}: num, tagset: str = nil, max_results: num? = nil) : {num}
+- find_any({x,y}{1,2}: num, tagset: str = nil, max_results: num? = nil) : num?
+- tagset: {str: num}
+- tagset_by_id: [str]
+
+# Engine
+Sys
+- key: str
+- on_create(sim: Sim, state: SerializableObject)?
+Sim
+- Status = enum {created, started, stopped}
+- create_instance(state: SerializableObject) : Sim
+- require(sys_key: str) : Sys  # in created status only
+- start()
+- broadcast(event_key: str, args: SerializableArray)  # in started status only
+- stop()
+- status: Sim.Status
+- state: SerializableObject
+- sys: {[str]: Sys}
+- sys_by_id: [Sys]
+
+World : Sim
+TagsetWorld : Sys
+- create_instance() : TagIndex
+- require(tag: str) : bool
+- create(tags: [str]) : str
+- create_all() : str
+- create_none() : str
+- get_tags(tagset: str) : [str]
+- get_contains(tagset: str, tag: str) : bool
+- get_intersects(tagset_superset: str, tagset_subset: str) : bool
+Entity : SerializableObject
+- id: num
+- tags: [str]
+- {x,y,w,h}: num
+- depth: num?
+- {r,g,b,a}: num?
+- transform: [num * 16]?
+- sprite: str?
+EntityWorld : Sys
+- create() : Entity
+- tagset: TagsetWorld
+- state
+	- entities: [Entity]
+	- tag_entity_ids: [[num]]
+
+Game : Sim
+- create_world() : World
+- enter_world(world: World)
+- world : World
+- window : Window
+- src_texture : Texture
+- world_texture : RenderTexture
+- game_texture : RenderTexture
 
 
-Refactoring TODOs
-- Encapsulate c++ type members, replace use with accessors
-	array.count, capacity etc in particular
-- Update error checking to allow continuation on error cases where possible
+---
 
+For odEntityIndex_search:
+- If lua wrapper not given a max count, use a static odArray results, and results.ensure_capacity(odEntityIndex_get_count(index))
+
+
+Client TODOs
+------------
 Major TODOs
-- odTextureAtlas - to be used with sprite loading in Lua sprite module
 - Audio loading
 - Audio mixing
 

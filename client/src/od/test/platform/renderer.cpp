@@ -80,9 +80,7 @@ OD_TEST_FILTERED(odTest_odRenderer_clear, OD_TEST_FILTER_SLOW) {
 	odRenderer renderer;
 	OD_ASSERT(odRenderer_init(&renderer, &window));
 	odTexture texture;
-
 	OD_ASSERT(odTexture_init_blank(&texture, &window));
-
 	odRenderState state = odTest_odRenderer_create_state(&texture);
 
 	OD_ASSERT(odRenderer_clear(&renderer, &state, odColor_get_white()));
