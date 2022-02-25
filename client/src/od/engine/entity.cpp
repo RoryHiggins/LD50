@@ -6,9 +6,6 @@
 #include <od/core/debug.h>
 #include <od/core/bounds.h>
 
-template struct odTrivialArrayT<odEntityCollider>;
-template struct odTrivialArrayT<odEntity>;
-
 const char* odEntityCollider_get_debug_string(const odEntityCollider* collider) {
 	if (collider == nullptr) {
 		return "null";

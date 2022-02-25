@@ -15,8 +15,6 @@ struct odEntityChunk {
 	odTrivialArrayT<odEntityId> entity_ids;
 };
 
-extern template struct odTrivialArrayT<odEntityIndexEntity>;
-
 struct odEntityIndex {
 	odTrivialArrayT<odEntityIndexEntity> entities;
 	odTrivialArrayT<odVertex> entity_vertices;

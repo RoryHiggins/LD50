@@ -14,7 +14,12 @@ struct odClientFrame {
 	odTrivialArrayT<odVertex> game_vertices;
 	odTrivialArrayT<odVertex> window_vertices;
 
-	odClientFrame();
+	OD_ENGINE_MODULE odClientFrame();
+	OD_ENGINE_MODULE odClientFrame(odClientFrame&& other);
+	OD_ENGINE_MODULE odClientFrame(const odClientFrame& other);
+	OD_ENGINE_MODULE ~odClientFrame();
+	OD_ENGINE_MODULE odClientFrame& operator=(odClientFrame&& other);
+	OD_ENGINE_MODULE odClientFrame& operator=(const odClientFrame& other);
 };
 
 struct odClient {

@@ -2,10 +2,6 @@
 #include <od/core/vector.h>
 #include <od/test/test.hpp>
 
-// TODO remove
-#include <cfloat>
-#include <od/core/math.h>
-
 OD_TEST(odTest_odMatrix_init) {
 	odMatrix matrix{};
 	odMatrix_init(&matrix, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f);

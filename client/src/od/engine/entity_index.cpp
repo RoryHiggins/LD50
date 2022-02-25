@@ -37,8 +37,6 @@ struct odEntityChunkIterator {
 	odEntityChunkId operator*();
 };
 
-extern template struct odTrivialArrayT<odEntityIndexEntity>;
-
 OD_NO_DISCARD bool
 odEntityIndexEntity_check_valid(const odEntityIndexEntity* entity);
 
@@ -719,8 +717,6 @@ bool odEntitySearch_matches_collider(const odEntitySearch* search, const odEntit
 
 	return true;
 }
-
-template struct odTrivialArrayT<odEntityIndexEntity>;
 
 static_assert(
 	OD_ENTITY_CHUNK_COORD_MASK_BITS <= (8 * sizeof(odEntityChunkCoord)),

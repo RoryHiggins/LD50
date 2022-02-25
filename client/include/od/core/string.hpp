@@ -24,7 +24,9 @@ struct odString {
 	OD_CORE_MODULE OD_NO_DISCARD bool
 	extend(const char* extend_src, int32_t extend_count);
 	OD_CORE_MODULE OD_NO_DISCARD bool
-	extend_formatted_variadic(const char* format_c_str, va_list args);
+	extend(const char* extend_src);
+	OD_CORE_MODULE OD_NO_DISCARD bool
+	extend_formatted_variadic(const char* format_c_str, va_list* args);
 	OD_CORE_MODULE OD_NO_DISCARD bool
 	extend_formatted(const char* format_c_str, ...);
 	OD_CORE_MODULE OD_NO_DISCARD bool

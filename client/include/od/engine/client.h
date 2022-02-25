@@ -19,12 +19,12 @@ OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odClientSettings_check_valid(const struct odClientSettings* settings);
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odClient_init(struct odClient* engine, const struct odClientSettings* opt_settings);
+odClient_init(struct odClient* client, const struct odClientSettings* opt_settings);
 OD_API_C OD_ENGINE_MODULE void
-odClient_destroy(struct odClient* engine);
+odClient_destroy(struct odClient* client);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odClient_set_settings(struct odClient* engine, const struct odClientSettings* settings);
+odClient_set_settings(struct odClient* client, const struct odClientSettings* settings);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odClient_step(struct odClient* engine);
+odClient_step(struct odClient* client);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odClient_run(struct odClient* engine, const struct odClientSettings* opt_settings);
+odClient_run(struct odClient* client, const struct odClientSettings* opt_settings);

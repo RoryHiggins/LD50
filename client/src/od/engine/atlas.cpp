@@ -410,5 +410,3 @@ odAtlas& odAtlas::operator=(odAtlas&& other) {
 odAtlas::~odAtlas() {
 	odAtlas_destroy(this);
 }
-
-template struct odTrivialArrayT<odAtlasRegion>;

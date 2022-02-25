@@ -15,7 +15,7 @@ odFile_check_valid(const struct odFile* file);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const char*
 odFile_get_debug_string(const struct odFile* file);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odFile_open(struct odFile* file, const char* mode, const char* file_path);
+odFile_open(struct odFile* file, const char* mode, const char* filename);
 OD_API_C OD_PLATFORM_MODULE void
 odFile_close(struct odFile* file);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
@@ -26,10 +26,10 @@ OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odFile_write(struct odFile* file, const void* buffer, int32_t size);
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odFilePath_read_all(const char* file_path, const char* mode, struct odAllocation* out_allocation, int32_t* out_size);
+odFile_read_all(const char* filename, const char* mode, struct odAllocation* out_allocation, int32_t* out_size);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odFilePath_write_all(const char* file_path, const char* mode, const void* buffer, int32_t size);
+odFile_write_all(const char* filename, const char* mode, const void* buffer, int32_t size);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odFilePath_delete(const char* file_path);
+odFile_delete(const char* filename);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odFilePath_get_exists(const char* file_path);
+odFile_get_exists(const char* filename);

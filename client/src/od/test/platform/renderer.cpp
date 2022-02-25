@@ -1,9 +1,9 @@
-// TODO split out texture tests
 #include <od/platform/texture.hpp>
 #include <od/platform/renderer.hpp>
 
 #include <cstring>
 
+#include <od/core/debug.hpp>
 #include <od/core/array.hpp>
 #include <od/core/bounds.h>
 #include <od/core/color.h>

@@ -35,6 +35,11 @@ void odClientFrame_start_next(odClientFrame* frame) {
 odClientFrame::odClientFrame()
 : counter{0}, game_vertices{}, window_vertices{} {
 }
+odClientFrame::odClientFrame(odClientFrame&& other) = default;
+odClientFrame::odClientFrame(const odClientFrame& other) = default;
+odClientFrame::~odClientFrame() = default;
+odClientFrame& odClientFrame::operator=(odClientFrame&& other) = default;
+odClientFrame& odClientFrame::operator=(const odClientFrame& other) = default;
 
 const odClientSettings* odClientSettings_get_defaults() {
 	static const odClientSettings settings{
@@ -57,33 +62,35 @@ bool odClientSettings_check_valid(const odClientSettings* settings) {
 	return true;
 }
 
-bool odClient_init(odClient* engine, const odClientSettings* opt_settings) {
-	if (!OD_CHECK(engine != nullptr)) {
+bool odClient_init(odClient* client, const odClientSettings* opt_settings) {
+	if (!OD_CHECK(client != nullptr)) {
 		return false;
 	}
+
+	odClient_destroy(client);
 
 	if (opt_settings != nullptr) {
 		if (!OD_CHECK(odClientSettings_check_valid(opt_settings))) {
 			return false;
 		}
-		engine->settings = *opt_settings;
+		client->settings = *opt_settings;
 	}
 
-	if (!OD_CHECK(odWindow_init(&engine->window, &engine->settings.window))) {
+	if (!OD_CHECK(odWindow_init(&client->window, &client->settings.window))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odRenderer_init(&engine->renderer, &engine->window))) {
+	if (!OD_CHECK(odRenderer_init(&client->renderer, &client->window))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odTexture_init_blank(&engine->src_texture, &engine->window))) {
+	if (!OD_CHECK(odTexture_init_blank(&client->src_texture, &client->window))) {
 		return false;
 	}
 
 	if (!OD_CHECK(odRenderTexture_init(
-		&engine->game_render_texture, &engine->window, engine->settings.game_width,
-		engine->settings.game_height))) {
+		&client->game_render_texture, &client->window, client->settings.game_width,
+		client->settings.game_height))) {
 		return false;
 	}
 
@@ -93,8 +100,8 @@ bool odClient_init(odClient* engine, const odClientSettings* opt_settings) {
 		return false;
 	}
 	if (!OD_CHECK(odTexture_init(
-		&engine->src_texture,
-		&engine->window,
+		&client->src_texture,
+		&client->window,
 		odImage_begin_const(&image),
 		image.width,
 		image.height))) {
@@ -102,63 +109,63 @@ bool odClient_init(odClient* engine, const odClientSettings* opt_settings) {
 	}
 	// END throwaway texture loading test code - TODO remove
 
-	engine->is_initialized = true;
+	client->is_initialized = true;
 
 	return true;
 }
-void odClient_destroy(odClient* engine) {
-	if (!OD_CHECK(engine != nullptr)) {
+void odClient_destroy(odClient* client) {
+	if (!OD_CHECK(client != nullptr)) {
 		return;
 	}
 
-	odEntityIndex_destroy(&engine->entity_index);
+	odEntityIndex_destroy(&client->entity_index);
 
-	engine->is_initialized = false;
-	odRenderTexture_destroy(&engine->game_render_texture);
-	odTexture_destroy(&engine->src_texture);
-	odRenderer_destroy(&engine->renderer);
-	odWindow_destroy(&engine->window);
+	client->is_initialized = false;
+	odRenderTexture_destroy(&client->game_render_texture);
+	odTexture_destroy(&client->src_texture);
+	odRenderer_destroy(&client->renderer);
+	odWindow_destroy(&client->window);
 }
-bool odClient_set_settings(odClient* engine, const odClientSettings* settings) {
-	if (!OD_CHECK(engine != nullptr)
+bool odClient_set_settings(odClient* client, const odClientSettings* settings) {
+	if (!OD_CHECK(client != nullptr)
 		|| !OD_CHECK(odClientSettings_check_valid(settings))) {
 		return false;
 	}
 
-	if (!engine->is_initialized) {
-		engine->settings = *settings;
+	if (!client->is_initialized) {
+		client->settings = *settings;
 		return true;
 	}
 
-	if (!OD_CHECK(odWindow_set_settings(&engine->window, &settings->window))) {
+	if (!OD_CHECK(odWindow_set_settings(&client->window, &settings->window))) {
 		return false;
 	}
 
-	if (!OD_CHECK(odRenderTexture_init(&engine->game_render_texture, &engine->window, settings->game_width, settings->game_height))) {
+	if (!OD_CHECK(odRenderTexture_init(&client->game_render_texture, &client->window, settings->game_width, settings->game_height))) {
 		return false;
 	}
 
-	engine->settings = *settings;
+	client->settings = *settings;
 
 	return true;
 }
-bool odClient_step(odClient* engine) {
-	if (!OD_CHECK(engine != nullptr)) {
+bool odClient_step(odClient* client) {
+	if (!OD_CHECK(client != nullptr)) {
 		return false;
 	}
 
-	if (!OD_CHECK(odWindow_check_valid(&engine->window))) {
+	if (!OD_CHECK(odWindow_check_valid(&client->window))) {
 		return false;
 	}
 
 	int32_t entity_vertices_count;
-	const odVertex* entity_vertices = odEntityIndex_get_all_vertices(&engine->entity_index, &entity_vertices_count);
+	const odVertex* entity_vertices = odEntityIndex_get_all_vertices(&client->entity_index, &entity_vertices_count);
 	if (entity_vertices_count > 0) {
 		if (!OD_CHECK(entity_vertices)) {
 			return false;
 		}
 
-		if (!OD_CHECK(engine->frame.game_vertices.extend(entity_vertices, entity_vertices_count))) {
+		if (!OD_CHECK(client->frame.game_vertices.extend(entity_vertices, entity_vertices_count))) {
 			return false;
 		}
 	}
@@ -175,8 +182,8 @@ bool odClient_step(odClient* engine) {
 		odVertex vertices[vertices_count];
 		odSpritePrimitive_get_vertices(&sprite, vertices);
 
-		// OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
-		OD_DISCARD(engine->frame.window_vertices.extend(vertices, vertices_count));
+		// OD_DISCARD(client->frame.game_vertices.extend(vertices, vertices_count));
+		OD_DISCARD(client->frame.window_vertices.extend(vertices, vertices_count));
 	}
 	{
 		const int32_t vertices_count = OD_TRIANGLE_VERTEX_COUNT;
@@ -186,15 +193,15 @@ bool odClient_step(odClient* engine) {
 			odVertex{odVector{1.0f,0.0f,0.0f,0.0f}, odColor{0xff,0xff,0x00,0xff}, 0.0f,0.0f},
 		};
 
-		const float scale_x = static_cast<float>(engine->settings.game_width / 2);
-		const float scale_y = static_cast<float>(engine->settings.game_height / 2);
+		const float scale_x = static_cast<float>(client->settings.game_width / 2);
+		const float scale_y = static_cast<float>(client->settings.game_height / 2);
 
 		const float translate_x = scale_x;
 		const float translate_y = scale_y;
 
 		odMatrix matrix{};
 		odMatrix_init(&matrix, scale_x, scale_y, 1.0f, translate_x, translate_y, 0.0f);
-		odMatrix_rotate_z_3d(&matrix, static_cast<float>(engine->frame.counter));
+		odMatrix_rotate_z_3d(&matrix, static_cast<float>(client->frame.counter));
 		odVertex vertices[vertices_count]{};
 
 		for (int32_t i = 0; i < 12; i++) {
@@ -207,12 +214,12 @@ bool odClient_step(odClient* engine) {
 				vertex.color.g = static_cast<uint8_t>(192 - (4 * i));
 				vertex.pos.z = static_cast<float>(i);
 			}
-			OD_DISCARD(engine->frame.game_vertices.extend(vertices, vertices_count));
+			OD_DISCARD(client->frame.game_vertices.extend(vertices, vertices_count));
 		}
 	}
 	// END throwaway rendering test code - TODO remove
 
-	odClientSettings* engine_settings = &engine->settings;
+	odClientSettings* engine_settings = &client->settings;
 	odMatrix projection{};
 	odMatrix_init_ortho_2d(&projection, engine_settings->game_width, engine_settings->game_height);
 	odRenderState draw_to_game{
@@ -224,11 +231,11 @@ bool odClient_step(odClient* engine) {
 			static_cast<float>(engine_settings->game_width),
 			static_cast<float>(engine_settings->game_height)
 		},
-		&engine->src_texture,
-		&engine->game_render_texture
+		&client->src_texture,
+		&client->game_render_texture
 	};
 
-	odWindowSettings* window_settings = &engine->window.settings;
+	odWindowSettings* window_settings = &client->window.settings;
 	odMatrix window_projection{};
 	odMatrix_init_ortho_2d(&window_projection, window_settings->window_width, window_settings->window_height);
 	odRenderState draw_to_window{
@@ -240,56 +247,56 @@ bool odClient_step(odClient* engine) {
 			static_cast<float>(window_settings->window_width),
 			static_cast<float>(window_settings->window_height)
 		},
-		&engine->src_texture,
+		&client->src_texture,
 		/* opt_render_texture*/ nullptr
 	};
 
 	odRenderState copy_game_to_window{draw_to_window};
-	copy_game_to_window.src_texture = odRenderTexture_get_texture(&engine->game_render_texture);
+	copy_game_to_window.src_texture = odRenderTexture_get_texture(&client->game_render_texture);
 
 	// draw game
 	odTrianglePrimitive_sort_vertices(
-		engine->frame.game_vertices.begin(),
-		engine->frame.game_vertices.get_count()
+		client->frame.game_vertices.begin(),
+		client->frame.game_vertices.get_count()
 	);
-	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_game, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&client->renderer, &draw_to_game, odColor_get_white()))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
-		&engine->renderer,
+		&client->renderer,
 		&draw_to_game,
-		engine->frame.game_vertices.begin(),
-		engine->frame.game_vertices.get_count()))) {
+		client->frame.game_vertices.begin(),
+		client->frame.game_vertices.get_count()))) {
 		return false;
 	}
 
 	// draw window
 	odTrianglePrimitive_sort_vertices(
-		engine->frame.window_vertices.begin(),
-		engine->frame.window_vertices.get_count()
+		client->frame.window_vertices.begin(),
+		client->frame.window_vertices.get_count()
 	);
-	if (!OD_CHECK(odRenderer_clear(&engine->renderer, &draw_to_window, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&client->renderer, &draw_to_window, odColor_get_white()))) {
 		return false;
 	}
-	if (!OD_CHECK(odRenderer_draw_texture(&engine->renderer, &copy_game_to_window, nullptr, nullptr))) {
+	if (!OD_CHECK(odRenderer_draw_texture(&client->renderer, &copy_game_to_window, nullptr, nullptr))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
-		&engine->renderer,
+		&client->renderer,
 		&draw_to_window,
-		engine->frame.window_vertices.begin(),
-		engine->frame.window_vertices.get_count()))) {
+		client->frame.window_vertices.begin(),
+		client->frame.window_vertices.get_count()))) {
 		return false;
 	}
 
 	// wait for draw calls
-	if (!OD_CHECK(odRenderer_flush(&engine->renderer))) {
+	if (!OD_CHECK(odRenderer_flush(&client->renderer))) {
 		return false;
 	}
 
-	odClientFrame_start_next(&engine->frame);
+	odClientFrame_start_next(&client->frame);
 
-	if (!odWindow_step(&engine->window)) {
+	if (!odWindow_step(&client->window)) {
 		return false;
 	}
 
@@ -302,23 +309,23 @@ void odClient_step_emscripten(void* engine_raw) {
 		return;
 	}
 
-	odClient* engine = reinterpret_cast<odClient*>(engine_raw);
+	odClient* client = reinterpret_cast<odClient*>(engine_raw);
 
-	if (!engine->is_initialized) {
-		if (!OD_CHECK(odClient_init(engine, nullptr))) {
+	if (!client->is_initialized) {
+		if (!OD_CHECK(odClient_init(client, nullptr))) {
 			emscripten_cancel_main_loop();
 			return;
 		}
 
-		engine->is_initialized = true;
+		client->is_initialized = true;
 	}
 
-	if (!odClient_step(engine)) {
+	if (!odClient_step(client)) {
 		emscripten_cancel_main_loop();
 	}
 }
-OD_NO_DISCARD bool odClient_run(odClient* engine, const odClientSettings* opt_settings) {
-	if (!OD_CHECK(engine != nullptr)) {
+OD_NO_DISCARD bool odClient_run(odClient* client, const odClientSettings* opt_settings) {
+	if (!OD_CHECK(client != nullptr)) {
 		return false;
 	}
 
@@ -326,16 +333,16 @@ OD_NO_DISCARD bool odClient_run(odClient* engine, const odClientSettings* opt_se
 		if (!OD_CHECK(odClientSettings_check_valid(opt_settings))) {
 			return false;
 		}
-		engine->settings = *opt_settings;
+		client->settings = *opt_settings;
 	}
 
-	emscripten_set_main_loop_arg(&odClient_step_emscripten, reinterpret_cast<void*>(engine), 0, true);
+	emscripten_set_main_loop_arg(&odClient_step_emscripten, reinterpret_cast<void*>(client), 0, true);
 
 	return true;
 }
 #else
-OD_NO_DISCARD bool odClient_run(odClient* engine, const odClientSettings* opt_settings) {
-	if (!OD_CHECK(engine != nullptr)
+OD_NO_DISCARD bool odClient_run(odClient* client, const odClientSettings* opt_settings) {
+	if (!OD_CHECK(client != nullptr)
 		|| !OD_CHECK((opt_settings == nullptr) || odClientSettings_check_valid(opt_settings))) {
 		return false;
 	}
@@ -345,10 +352,10 @@ OD_NO_DISCARD bool odClient_run(odClient* engine, const odClientSettings* opt_se
 	bool ok = true;
 	int32_t logged_errors_before = odLog_get_logged_error_count();
 
-	ok = ok && OD_CHECK(odClient_init(engine, opt_settings));
+	ok = ok && OD_CHECK(odClient_init(client, opt_settings));
 
-	while (ok && engine->window.is_open) {
-		ok = ok && OD_CHECK(odClient_step(engine));
+	while (ok && client->window.is_open) {
+		ok = ok && OD_CHECK(odClient_step(client));
 	}
 
 	ok = ok && (odLog_get_logged_error_count() == logged_errors_before);

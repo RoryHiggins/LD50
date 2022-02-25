@@ -33,7 +33,9 @@ odString_ensure_count(struct odString* string, int32_t min_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_extend(struct odString* string, const char* extend_src, int32_t extend_count);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
-odString_extend_formatted_variadic(struct odString* string, const char* format_c_str, va_list args);
+odString_extend_c_str(struct odString* string, const char* extend_src);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odString_extend_formatted_variadic(struct odString* string, const char* format_c_str, va_list* args);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odString_extend_formatted(struct odString* string, const char* format_c_str, ...);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool

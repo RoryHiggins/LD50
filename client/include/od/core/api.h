@@ -18,8 +18,16 @@
 #define OD_BUILD_TESTS 1
 #endif
 
+#if !defined(OD_BUILD_PROFILE)
+#define OD_BUILD_PROFILE 1
+#endif
+
 #if !defined(OD_BUILD_EMSCRIPTEN)
 #define OD_BUILD_EMSCRIPTEN 0
+#endif
+
+#if !defined(OD_BUILD_LUAJIT)
+#define OD_BUILD_LUAJIT 0
 #endif
 
 #if !defined(OD_BUILD_LIBBACKTRACE)
@@ -30,8 +38,8 @@
 #define OD_BUILD_DBGHELP 0
 #endif
 
-// Decorators
-// More may need to be done here for msvc, e.g. enforcing a calling convention
+// API Decorators
+// More may be needed for OD_API_C on msvc, such as enforcing a cdecl calling convention
 #if defined(__cplusplus)
 #define OD_API_C extern "C"
 #else

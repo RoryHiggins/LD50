@@ -43,13 +43,13 @@ void* odDebugString_allocate(int32_t size, int32_t alignment) {
 
 	return aligned_allocation;
 }
-const char* odDebugString_format_variadic(const char* format_c_str, va_list args) {
+const char* odDebugString_format_variadic(const char* format_c_str, va_list* args) {
 	if (format_c_str == nullptr) {
 		return "\"<format_str_null>\"";
 	}
 
 	va_list compute_size_args = {};
-	va_copy(compute_size_args, args);
+	va_copy(compute_size_args, *args);
 	// passing a nullptr buffer to the sprintf-family of calls will only compute
 	// the output size
 	int required_count = vsnprintf(/*buffer*/ nullptr, /*bufsz*/ 0, format_c_str, compute_size_args);
@@ -69,14 +69,14 @@ const char* odDebugString_format_variadic(const char* format_c_str, va_list args
 	}
 
 	char* allocation_str = static_cast<char*>(allocation);
-	vsnprintf(allocation_str, static_cast<size_t>(required_capacity), format_c_str, args);
+	vsnprintf(allocation_str, static_cast<size_t>(required_capacity), format_c_str, *args);
 
 	return allocation_str;
 }
 const char* odDebugString_format(const char* format_c_str, ...) {
 	va_list args = {};
 	va_start(args, format_c_str);
-	const char* result = odDebugString_format_variadic(format_c_str, args);
+	const char* result = odDebugString_format_variadic(format_c_str, &args);
 	va_end(args);
 
 	return result;
@@ -152,7 +152,7 @@ static const char* odLog_get_short_filename(const char* file) {
 
 	return file;
 }
-void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list args) {
+void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list* args) {
 	if (OD_BUILD_DEBUG) {
 		// preconditions without assertions/logs special case here:
 		// asserts can call this function, which might cause infinite recursion, so we
@@ -191,7 +191,7 @@ void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_leve
 
     fprintf(OD_DEBUG_OUT_STREAM, "[%.8s %s %s:%d %s] ", time_str, odLogLevel_get_name(log_level), odLog_get_short_filename(log_context->file), log_context->line, log_context->function);
 
-	vfprintf(OD_DEBUG_OUT_STREAM, format_c_str, args);
+	vfprintf(OD_DEBUG_OUT_STREAM, format_c_str, *args);
 
 	fputc('\n', OD_DEBUG_OUT_STREAM);
 	fflush(OD_DEBUG_OUT_STREAM);
@@ -203,7 +203,7 @@ void odLog_log_variadic(const struct odLogContext* log_context, int32_t log_leve
 void odLog_log(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, ...) {
 	va_list args = {};
 	va_start(args, format_c_str);
-	odLog_log_variadic(log_context, log_level, format_c_str, args);
+	odLog_log_variadic(log_context, log_level, format_c_str, &args);
 	va_end(args);
 }
 bool odLog_check(const struct odLogContext* log_context, bool success, const char* expression_c_str) {

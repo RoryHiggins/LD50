@@ -49,5 +49,7 @@ OD_TEST_SUITE_DECLARE(odTestSuite_odRenderer)
 
 OD_TEST_SUITE_DECLARE(odTestSuite_odAtlas)
 OD_TEST_SUITE_DECLARE(odTestSuite_odEntityIndex)
+OD_TEST_SUITE_DECLARE(odTestSuite_odLua)
+OD_TEST_SUITE_DECLARE(odTestSuite_odLuaClient)
 
 #endif

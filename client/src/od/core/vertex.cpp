@@ -65,5 +65,3 @@ void odVertex_transform_batch_3d(odVertex* vertices, int32_t vertices_count, con
 		odVertex_transform_3d(vertices + i, matrix);
 	}
 }
-
-template struct odTrivialArrayT<odVertex>;

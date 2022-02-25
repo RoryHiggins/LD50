@@ -134,14 +134,22 @@ bool odString_extend(odString* string, const char* extend_src, int32_t extend_co
 
 	return odTrivialArray_extend(&string->array, static_cast<const void*>(extend_src), extend_count, /*stride*/ 1);
 }
-bool odString_extend_formatted_variadic(odString* string, const char* format_c_str, va_list args) {
+bool odString_extend_c_str(odString* string, const char* extend_src) {
+	if (!OD_DEBUG_CHECK(odString_check_valid(string)
+		|| !OD_CHECK(extend_src != nullptr))) {
+		return false;
+	}
+
+	return odString_extend(string, extend_src, static_cast<int32_t>(strlen(extend_src)));
+}
+bool odString_extend_formatted_variadic(odString* string, const char* format_c_str, va_list* args) {
 	if (!OD_DEBUG_CHECK(odString_check_valid(string))
 		|| !OD_DEBUG_CHECK(format_c_str != nullptr)) {
 		return false;
 	}
 
 	va_list args_copy = {};
-	va_copy(args_copy, args);
+	va_copy(args_copy, *args);
 	int added_required_count = static_cast<int32_t>(vsnprintf(nullptr, 0, format_c_str, args_copy));
 	va_end(args_copy);
 
@@ -161,7 +169,7 @@ bool odString_extend_formatted_variadic(odString* string, const char* format_c_s
 		return false;
 	}
 
-	int written_count = vsnprintf(dest_str, static_cast<size_t>(added_required_count + 1), format_c_str, args);
+	int written_count = vsnprintf(dest_str, static_cast<size_t>(added_required_count + 1), format_c_str, *args);
 	if (!OD_CHECK(written_count == added_required_count)) {
 		return false;
 	}
@@ -177,7 +185,7 @@ bool odString_extend_formatted(odString* string, const char* format_c_str, ...) 
 
 	va_list args = {};
 	va_start(args, format_c_str);
-	bool result = OD_CHECK(odString_extend_formatted_variadic(string, format_c_str, args));
+	bool result = OD_CHECK(odString_extend_formatted_variadic(string, format_c_str, &args));
 	va_end(args);
 
 	return result;
@@ -262,13 +270,16 @@ bool odString::ensure_count(int32_t min_count) {
 bool odString::extend(const char* extend_src, int32_t extend_count) {
 	return odString_extend(this, extend_src, extend_count);
 }
-bool odString::extend_formatted_variadic(const char* format_c_str, va_list args) {
-	return odString_extend_formatted(this, format_c_str, args);
+bool odString::extend(const char* extend_src) {
+	return odString_extend_c_str(this, extend_src);
+}
+bool odString::extend_formatted_variadic(const char* format_c_str, va_list* args) {
+	return odString_extend_formatted_variadic(this, format_c_str, args);
 }
 bool odString::extend_formatted(const char* format_c_str, ...) {
 	va_list args = {};
 	va_start(args, format_c_str);
-	bool result = odString_extend_formatted_variadic(this, format_c_str, args);
+	bool result = odString_extend_formatted_variadic(this, format_c_str, &args);
 	va_end(args);
 
 	return result;

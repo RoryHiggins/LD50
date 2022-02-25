@@ -79,5 +79,3 @@ const odColor* odColor_get_transparent() {
 	static const odColor color{0x00, 0x00, 0x00, 0x00};
 	return &color;
 }
-
-template struct odTrivialArrayT<odColor>;

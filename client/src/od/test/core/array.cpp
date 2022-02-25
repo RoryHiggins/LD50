@@ -20,8 +20,6 @@ struct odArrayTestingContainer {
 	odArrayTestingContainer& operator=(const odArrayTestingContainer&) = delete;
 };
 
-extern template struct odArrayT<odArrayTestingContainer>;
-
 odArrayTestingContainer::odArrayTestingContainer()
 	: original_self{this}, move_assign_count{0}, destruct_count{0} {
 }
@@ -469,5 +467,3 @@ OD_TEST_SUITE(
 	odTest_odArray_get,
 	odTest_odArray_begin_end,
 )
-
-template struct odArrayT<odArrayTestingContainer>;

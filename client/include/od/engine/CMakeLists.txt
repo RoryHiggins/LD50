@@ -1,1 +1,1 @@
-target_sources(od_engine PUBLIC module.h atlas.h atlas.hpp tagset.h entity.h entity.hpp entity_index.h entity_index.hpp client.h client.hpp)
+target_sources(od_engine PUBLIC module.h atlas.h atlas.hpp tagset.h entity.h entity.hpp entity_index.h entity_index.hpp client.h client.hpp lua_wrappers.h lua_wrappers.hpp lua_client.h lua_client.hpp)

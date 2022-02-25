@@ -9,7 +9,6 @@
 struct odAtlasRegion {
 	odBounds bounds;
 };
-extern template struct odTrivialArrayT<odAtlasRegion>;
 
 struct odAtlas {
 	odImage image;

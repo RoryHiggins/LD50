@@ -5,20 +5,32 @@ set(OD_BUILD_LOGS_DEFAULT 0)
 set(OD_BUILD_DEBUG_DEFAULT 0)
 set(OD_BUILD_TESTS_DEFAULT 0)
 set(OD_BUILD_PROFILE_DEFAULT 0)
+set(OD_BUILD_LUAJIT_DEFAULT 0)
+set(OD_BUILD_EMSCRIPTEN_DEFAULT 0)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	set(OD_BUILD_DEBUG_DEFAULT 1)
 	set(OD_BUILD_LOGS_DEFAULT 1)
 	set(OD_BUILD_TESTS_DEFAULT 1)
 endif()
+if("${EMSCRIPTEN}" EQUAL 1)
+	set(OD_BUILD_EMSCRIPTEN_DEFAULT 1)
+else()
+	set(OD_BUILD_LUAJIT_DEFAULT 1)
+endif()
+
 
 set(OD_BUILD_LOGS ${OD_BUILD_LOGS_DEFAULT} CACHE BOOL
-	"Build with logging")
+	"Build with logging enabled")
 set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
-	"Build with debugging runtime checks")
+	"Build with debugging runtime checks enabled")
 set(OD_BUILD_TESTS ${OD_BUILD_TESTS_DEFAULT} CACHE BOOL
-	"Build with tests")
+	"Build with tests enabled")
 set(OD_BUILD_PROFILE ${OD_BUILD_PROFILE_DEFAULT} CACHE BOOL
-	"Build with profiling")
+	"Build with profiling enabled")
+set(OD_BUILD_LUAJIT ${OD_BUILD_LUAJIT_DEFAULT} CACHE BOOL
+	"Build with luajit instead of lua")
+set(OD_BUILD_EMSCRIPTEN ${OD_BUILD_EMSCRIPTEN_DEFAULT} CACHE BOOL
+	"Build with emscripten support enabled")
 
 if((${OD_BUILD_PROFILE}) AND ("${BUILD_SHARED_LIBS}" EQUAL 1))
 	message(FATAL_ERROR "profile build must be statically linked")
@@ -29,11 +41,21 @@ endif()
 if(("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE") AND ("${OD_BUILD_TESTS}" EQUAL 1))
 	message(WARNING "release build with tests may not be intentional")
 endif()
+if(("${OD_BUILD_EMSCRIPTEN}" EQUAL 1) AND NOT ("${EMSCRIPTEN}" EQUAL 1))
+	message(WARNING "emscripten support for non-emscripten platform may not be intentional")
+endif()
+if(("${OD_BUILD_EMSCRIPTEN}" EQUAL 1) AND ("${OD_BUILD_LUAJIT}" EQUAL 1))
+	message(WARNING "emscripten with luajit will likely fail, and is unlikely to ever be supported")
+endif()
 
 message("OD_BUILD_LOGS=${OD_BUILD_LOGS}")
 message("OD_BUILD_DEBUG=${OD_BUILD_DEBUG}")
 message("OD_BUILD_TESTS=${OD_BUILD_TESTS}")
+message("OD_BUILD_PROFILE=${OD_BUILD_PROFILE}")
+message("OD_BUILD_EMSCRIPTEN=${OD_BUILD_EMSCRIPTEN}")
+message("OD_BUILD_LUAJIT=${OD_BUILD_LUAJIT}")
 message("BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
+message("CMAKE_UNITY_BUILD=${CMAKE_UNITY_BUILD}")
 
 # od_core
 add_library(od_core)
@@ -78,10 +100,13 @@ foreach(od_target ${od_targets})
 		${od_target} PUBLIC
 		OD_BUILD_LOGS=${OD_BUILD_LOGS}
 		OD_BUILD_DEBUG=${OD_BUILD_DEBUG}
-		OD_BUILD_TESTS=${OD_BUILD_TESTS})
+		OD_BUILD_TESTS=${OD_BUILD_TESTS}
+		OD_BUILD_PROFILE=${OD_BUILD_PROFILE}
+		OD_BUILD_LUAJIT=${OD_BUILD_LUAJIT}
+		OD_BUILD_EMSCRIPTEN=${OD_BUILD_EMSCRIPTEN})
 endforeach()
 
-# third-party library parameters
+# parameters for non-emscripten targets
 if(NOT("${EMSCRIPTEN}" EQUAL 1))
 	# native (non-emscripten) parameters
 	find_package(SDL2 REQUIRED)
@@ -111,7 +136,7 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 		list(APPEND OD_SDL2_LIBRARIES mingw32)
 	endif()
 
-	if (NOT ("${LUAJIT_LIBRARY}" STREQUAL "") AND NOT ("${LUAJIT_INCLUDE_DIR}" STREQUAL ""))
+	if (${OD_BUILD_LUAJIT} AND NOT ("${LUAJIT_LIBRARY}" STREQUAL "") AND NOT ("${LUAJIT_INCLUDE_DIR}" STREQUAL ""))
 		set(OD_LUA_LIBRARY "${LUAJIT_LIBRARY}")
 		set(OD_LUA_INCLUDE_DIR "${LUAJIT_INCLUDE_DIR}")
 		message("-- Found LuaJIT: ${LUAJIT_LIBRARY}")
@@ -126,14 +151,9 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 
 	target_link_libraries(od_engine PRIVATE ${OD_LUA_LIBRARY})
 	target_include_directories(od_engine PRIVATE ${OD_LUA_INCLUDE_DIR})
+# parameters for emscripten target
 else()
-	# emscripten-specific parameters
 	foreach(od_target ${od_targets})
-		target_compile_definitions(
-			${od_target}
-			PRIVATE
-			OD_BUILD_EMSCRIPTEN
-		)
 		set(
 			od_emscripten_common_params
 			-O0 -g -Wall
@@ -162,7 +182,7 @@ else()
 
 	set_target_properties(od_client PROPERTIES OUTPUT_NAME "index" SUFFIX ".html")
 
-	set(od_emscripten_shell "${PROJECT_SOURCE_DIR}/client/src/od/client/main.html")
+	set(od_emscripten_shell "${PROJECT_SOURCE_DIR}/src/od/client/main.html")
 	target_link_options(
 		od_client
 		PRIVATE

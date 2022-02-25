@@ -1,6 +1,7 @@
 #include <od/platform/module.h>
 
 #include <cfenv>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -27,7 +28,9 @@
 
 static bool odPlatform_backtrace_print();
 extern "C" void odPlatform_float_reset_exceptions();
+#if !OD_BUILD_EMSCRIPTEN
 static int32_t odPlatform_float_get_enabled_exceptions();
+#endif
 static OD_NO_DISCARD bool odPlatform_float_check_exceptions(void);
 static OD_NO_DISCARD bool odPlatform_float_init_exceptions();
 
@@ -86,7 +89,7 @@ bool odPlatform_backtrace_print() {
 		return false;
 	}
 
-	puts("backtrace:");
+	puts("--- backtrace ---");
 	for (int32_t i = 0; i < stacktrace_count; i++) {
 		const int32_t buffer_size = 256;
 		char library[buffer_size] = "?";
@@ -180,8 +183,20 @@ bool odPlatform_backtrace_print() {
 		}
 #endif
 
-		printf("%s:%p\n\t%s %s:%s\n",
-			   library, stacktrace_addrs[i], function, filename, line_num_buf);
+		char library_lowercase[buffer_size];
+		for (int32_t j = 0; j < buffer_size; j++) {
+			library_lowercase[j] = static_cast<char>(tolower(library[j]));
+		}
+
+		if (strstr(function, "odLog_") != nullptr
+			|| strstr(function, "odDebug_") != nullptr
+			|| strstr(library_lowercase, "\\windows\\") != nullptr
+			|| strstr(library_lowercase, "\\system32\\") != nullptr
+			|| strstr(library_lowercase, "\\syswow64\\") != nullptr) {
+			continue;
+		}
+
+		printf("%s:%p\t%s %s:%s\n", library, stacktrace_addrs[i], function, filename, line_num_buf);
 	}
 
 	return true;
@@ -230,10 +245,13 @@ void odPlatform_float_reset_exceptions() {
 			&& OD_CHECK(odPlatform_float_check_exceptions()));
 	}
 }
+#if !OD_BUILD_EMSCRIPTEN
 static int32_t odPlatform_float_get_enabled_exceptions() {
-	return (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+	return FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW;
 }
+#endif
 static OD_NO_DISCARD bool odPlatform_float_check_exceptions(void) {
+#if !OD_BUILD_EMSCRIPTEN
 	int float_exceptions = fetestexcept(odPlatform_float_get_enabled_exceptions());
 	if (float_exceptions != 0) {
 		const char* float_exception_str = "Unknown floating point exception or multiple exceptions";
@@ -263,10 +281,12 @@ static OD_NO_DISCARD bool odPlatform_float_check_exceptions(void) {
 	if (!OD_CHECK(feclearexcept(odPlatform_float_get_enabled_exceptions()) == 0)) {
 		return false;
 	}
+#endif
 
 	return true;
 }
 static OD_NO_DISCARD bool odPlatform_float_init_exceptions() {
+#if !OD_BUILD_EMSCRIPTEN
 	if (!OD_CHECK(feclearexcept(odPlatform_float_get_enabled_exceptions()) == 0)) {
 		return false;
 	}
@@ -285,6 +305,7 @@ static OD_NO_DISCARD bool odPlatform_float_init_exceptions() {
 			return false;
 		}
 	}
+#endif
 
 	return true;
 }

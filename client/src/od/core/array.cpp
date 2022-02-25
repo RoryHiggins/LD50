@@ -598,6 +598,3 @@ odArray& odArray::operator=(odArray&& other) {
 odArray::~odArray() {
 	odArray_destroy(this);
 }
-
-template struct odTrivialArrayT<char>;
-template struct odTrivialArrayT<int32_t>;

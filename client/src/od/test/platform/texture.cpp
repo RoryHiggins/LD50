@@ -1,4 +1,3 @@
-// TODO split out texture tests
 #include <od/platform/texture.hpp>
 #include <od/platform/renderer.hpp>
 

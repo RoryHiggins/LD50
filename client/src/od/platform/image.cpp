@@ -204,7 +204,7 @@ bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size)
 bool odImage_read_png_file(odImage* image, const char* file_path) {
 	if (!OD_CHECK(image != nullptr)
 		|| !OD_CHECK(file_path != nullptr)
-		|| !OD_CHECK(odFilePath_get_exists(file_path))) {
+		|| !OD_CHECK(odFile_get_exists(file_path))) {
 		return false;
 	}
 
@@ -212,7 +212,7 @@ bool odImage_read_png_file(odImage* image, const char* file_path) {
 
 	struct odAllocation allocation{};
 	int32_t src_png_size = 0;
-	if (!OD_CHECK(odFilePath_read_all(file_path, "rb", &allocation, &src_png_size))) {
+	if (!OD_CHECK(odFile_read_all(file_path, "rb", &allocation, &src_png_size))) {
 		return false;
 	}
 

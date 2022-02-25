@@ -1,7 +1,10 @@
 #include <od/test/test.hpp>
 
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
 
+#include <od/core/string.hpp>
 #include <od/platform/timer.h>
 
 bool odTest_run(int32_t filters, char const* opt_name_filter) {
@@ -21,6 +24,8 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 
 		odTestSuite_odAtlas(),
 		odTestSuite_odEntityIndex(),
+		odTestSuite_odLua(),
+		odTestSuite_odLuaClient(),
 	};
 
 	OD_INFO("Running tests");
@@ -81,6 +86,33 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 	double time_elapsed = static_cast<double>(odTimer_get_elapsed_seconds(&timer));
 	OD_INFO("Tests run successfully, %d run of %d in ~%g second(s)", run_test_count, total_test_count, time_elapsed);
 	OD_MAYBE_UNUSED(time_elapsed);
+	return true;
+}
+bool odTest_get_random_filename(struct odString* out_name) {
+	const char prefix[] = "./odTest_file_";
+	const int32_t prefix_size = sizeof(prefix) - 1;
+	const int32_t random_size = 16;
+	const int32_t size = prefix_size + random_size;
+	OD_ASSERT(out_name->set_count(size));
+
+	char* name_ptr = out_name->begin();
+	OD_ASSERT(name_ptr != nullptr);
+
+	memcpy(name_ptr, prefix, prefix_size);
+
+	// mitigate collision risk from parallel test runs
+	static bool random_seed_set = false;
+	if (!random_seed_set) {
+		unsigned seed =
+			(static_cast<unsigned>(time(nullptr)) + static_cast<unsigned>(reinterpret_cast<uintptr_t>(name_ptr)));
+		srand(seed);
+		random_seed_set = true;
+	}
+
+	for (int32_t i = prefix_size; i < size; i++) {
+		name_ptr[i] = static_cast<char>(static_cast<int>('a') + (rand() % 20));
+	}
+
 	return true;
 }
 

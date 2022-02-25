@@ -48,7 +48,7 @@ struct odLogContext {
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD void*
 odDebugString_allocate(int32_t size, int32_t alignment);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
-odDebugString_format_variadic(const char* format_c_str, va_list args);
+odDebugString_format_variadic(const char* format_c_str, va_list* args);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
 odDebugString_format(const char* format_c_str, ...) OD_API_PRINTF(1, 2);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD const char*
@@ -58,7 +58,7 @@ odDebugString_format_array(const char* (*to_debug_str)(const void*),
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
 odLog_get_logged_error_count(void);
 OD_API_C OD_CORE_MODULE void
-odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list args);
+odLog_log_variadic(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, va_list* args);
 OD_API_C OD_CORE_MODULE void
 odLog_log(const struct odLogContext* log_context, int32_t log_level, const char* format_c_str, ...) OD_API_PRINTF(3, 4);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool

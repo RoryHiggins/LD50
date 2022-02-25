@@ -30,4 +30,3 @@ odAtlas_set_region(struct odAtlas* atlas, odAtlasRegionId region_id,
 				   int32_t width, int32_t height, const struct odColor* src, int32_t src_image_width);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odAtlas_reset_region(struct odAtlas* atlas, odAtlasRegionId region_id);
-// TODO: method to merge of free regions

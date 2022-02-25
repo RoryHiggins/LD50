@@ -40,14 +40,14 @@ const char* odFile_get_debug_string(const struct odFile* file) {
 
 	return odDebugString_format("\"%p\"", static_cast<const void*>(file->native_file));
 }
-bool odFile_open(odFile* file, const char* mode, const char* file_path) {
+bool odFile_open(odFile* file, const char* mode, const char* filename) {
 	OD_DEBUG(
-		"file=%s, mode=%s, file_path=%s",
+		"file=%s, mode=%s, filename=%s",
 		odFile_get_debug_string(file),
 		mode ? mode : "<nullptr>",
-		file_path ? file_path : "<nullptr>");
+		filename ? filename : "<nullptr>");
 
-	if (!OD_CHECK(file_path != nullptr)
+	if (!OD_CHECK(filename != nullptr)
 		|| !OD_CHECK(mode != nullptr)
 		|| !OD_CHECK(file != nullptr)) {
 		return false;
@@ -55,11 +55,11 @@ bool odFile_open(odFile* file, const char* mode, const char* file_path) {
 
 	odFile_close(file);
 
-	file->native_file = static_cast<void*>(fopen(file_path, mode));
+	file->native_file = static_cast<void*>(fopen(filename, mode));
 	if (!OD_CHECK(file->native_file != nullptr)) {
 		OD_ERROR(
-			"failed to open file, file=%s, mode=%s, file_path=%s, errno_str=%s",
-			odFile_get_debug_string(file), mode, file_path, strerror(errno));
+			"failed to open file, file=%s, mode=%s, filename=%s, errno_str=%s",
+			odFile_get_debug_string(file), mode, filename, strerror(errno));
 		return false;
 	}
 
@@ -168,16 +168,16 @@ bool odFile_write(odFile* file, const void* buffer, int32_t size) {
 	return true;
 }
 
-bool odFilePath_read_all(
-	const char* file_path, const char* mode, struct odAllocation* out_allocation, int32_t* out_size) {
+bool odFile_read_all(
+	const char* filename, const char* mode, struct odAllocation* out_allocation, int32_t* out_size) {
 	OD_TRACE(
-		"file_path=%s, mode=%s, out_allocation=%p, out_size=%p",
-		file_path ? file_path : "<nullptr>",
+		"filename=%s, mode=%s, out_allocation=%p, out_size=%p",
+		filename ? filename : "<nullptr>",
 		mode ? mode : "<nullptr>",
 		static_cast<const void*>(out_allocation),
 		static_cast<const void*>(out_size));
 
-	if (!OD_CHECK(file_path != nullptr)
+	if (!OD_CHECK(filename != nullptr)
 		|| !OD_CHECK(mode != nullptr)
 		|| !OD_CHECK(out_allocation != nullptr)
 		|| !OD_CHECK(out_size != nullptr)) {
@@ -185,7 +185,7 @@ bool odFilePath_read_all(
 	}
 
 	odFile file;
-	if (!OD_CHECK(odFile_open(&file, mode, file_path))) {
+	if (!OD_CHECK(odFile_open(&file, mode, filename))) {
 		return false;
 	}
 
@@ -216,15 +216,15 @@ bool odFilePath_read_all(
 
 	return odFile_read(&file, allocation_buffer, file_size, out_size);
 }
-bool odFilePath_write_all(const char* file_path, const char* mode, const void* buffer, int32_t size) {
+bool odFile_write_all(const char* filename, const char* mode, const void* buffer, int32_t size) {
 	OD_TRACE(
-		"file_path=%s, mode=%s, out_allocation=%p, size=%d",
-		file_path ? file_path : "<nullptr>",
+		"filename=%s, mode=%s, out_allocation=%p, size=%d",
+		filename ? filename : "<nullptr>",
 		mode ? mode : "<nullptr>",
 		static_cast<const void*>(buffer),
 		size);
 
-	if (!OD_CHECK(file_path != nullptr)
+	if (!OD_CHECK(filename != nullptr)
 		|| !OD_CHECK(mode != nullptr)
 		|| !OD_CHECK(buffer != nullptr)
 		|| !OD_CHECK(size > 0)) {
@@ -232,7 +232,7 @@ bool odFilePath_write_all(const char* file_path, const char* mode, const void* b
 	}
 
 	odFile file;
-	if (!OD_CHECK(odFile_open(&file, mode, file_path))) {
+	if (!OD_CHECK(odFile_open(&file, mode, filename))) {
 		return false;
 	}
 
@@ -242,30 +242,30 @@ bool odFilePath_write_all(const char* file_path, const char* mode, const void* b
 
 	return odFile_write(&file, buffer, size);
 }
-bool odFilePath_delete(const char* file_path) {
-	OD_TRACE("file_path=%s", file_path ? file_path : "<nullptr>");
+bool odFile_delete(const char* filename) {
+	OD_TRACE("filename=%s", filename ? filename : "<nullptr>");
 
-	if (!OD_CHECK(file_path != nullptr)) {
+	if (!OD_CHECK(filename != nullptr)) {
 		return false;
 	}
 
-	if (!OD_CHECK(remove(file_path) == 0)) {
-		OD_ERROR("failed to delete file, file_path=%s, err_str=%s", file_path, strerror(errno));
+	if (!OD_CHECK(remove(filename) == 0)) {
+		OD_ERROR("failed to delete file, filename=%s, err_str=%s", filename, strerror(errno));
 		return false;
 	}
 
 	return true;
 }
-bool odFilePath_get_exists(const char* file_path) {
-	OD_TRACE("file_path=%s", file_path ? file_path : "<nullptr>");
+bool odFile_get_exists(const char* filename) {
+	OD_TRACE("filename=%s", filename ? filename : "<nullptr>");
 
-	if (!OD_CHECK(file_path != nullptr)) {
+	if (!OD_CHECK(filename != nullptr)) {
 		return false;
 	}
 
-	FILE* file = fopen(file_path, "r");
+	FILE* file = fopen(filename, "r");
 	if ((file != nullptr) && !OD_CHECK(fclose(file) != EOF)) {
-		OD_WARN("error closing file, file_path=%s, errno_str=%s", file_path, strerror(errno));
+		OD_WARN("error closing file, filename=%s, errno_str=%s", filename, strerror(errno));
 		return false;
 	}
 
@@ -282,4 +282,15 @@ odFile& odFile::operator=(odFile&& other) {
 }
 odFile::~odFile() {
 	odFile_close(this);
+}
+
+odScopedTempFile::odScopedTempFile(odString in_filename)
+: filename{static_cast<odString&&>(in_filename)} {
+}
+odScopedTempFile::~odScopedTempFile() {
+	const char* filename_c_str = filename.get_c_str();
+	if (odFile_get_exists(filename_c_str)) {
+		OD_DISCARD(OD_CHECK(odFile_delete(filename_c_str)));
+	}
+	OD_DISCARD(filename.set_count(0));
 }

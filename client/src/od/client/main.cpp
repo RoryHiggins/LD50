@@ -3,6 +3,8 @@
 
 #include <od/core/debug.h>
 #include <od/engine/client.hpp>
+#include <od/engine/lua_wrappers.hpp>
+#include <od/engine/lua_client.hpp>
 #include <od/test/test.hpp>
 
 const char* __asan_default_options();
@@ -21,9 +23,11 @@ const char* __asan_default_options() {
 
 int main(int argc, char** argv) {
 	bool run_tests = false;
-	bool run_client = true;
+	bool run_client = false;
+	bool run_lua_client = false;
 	int32_t test_filter = OD_TEST_FILTER_NONE;
-	char const* opt_test_name_filter = nullptr;
+	char const* test_name_filter = nullptr;
+	char const* lua_client_path = nullptr;
 
 	OD_TRACE("argc=%d", argc);
 	for (int i = 0; i < argc; i++) {
@@ -35,6 +39,21 @@ int main(int argc, char** argv) {
 		if (strspn(argv[i], whitespace) == arg_size) {
 			continue;
 		}
+		if (strncmp(argv[i], "--lua-client", arg_size) == 0) {
+			if (((i + 1) >= argc) || (strcmp(argv[i + 1], "") == 0)) {
+				OD_ERROR("Missing value for --lua-client");
+				return 1;
+			}
+
+			i++;
+			lua_client_path = argv[i];
+			run_lua_client = true;
+			continue;
+		}
+		if (strncmp(argv[i], "--no-lua-client", arg_size) == 0) {
+			run_lua_client = false;
+			continue;
+		}
 		if (strncmp(argv[i], "--client", arg_size) == 0) {
 			run_client = true;
 			continue;
@@ -43,6 +62,7 @@ int main(int argc, char** argv) {
 			run_client = false;
 			continue;
 		}
+
 		if (OD_BUILD_LOGS) {
 			if (strncmp(argv[i], "--log", arg_size) == 0) {
 				odLogLevel_set_max(OD_LOG_LEVEL_INFO);
@@ -87,7 +107,7 @@ int main(int argc, char** argv) {
 				}
 
 				i++;
-				opt_test_name_filter = argv[i];
+				test_name_filter = argv[i];
 				continue;
 			}
 		}
@@ -97,16 +117,25 @@ int main(int argc, char** argv) {
 		}
 	}
 
+#if OD_BUILD_TESTS
 	if (run_tests) {
-		if (!OD_CHECK(OD_BUILD_TESTS) || !odTest_run(test_filter, opt_test_name_filter)) {
+		if (!OD_CHECK(OD_BUILD_TESTS) || !odTest_run(test_filter, test_name_filter)) {
+			return 1;
+		}
+	}
+#endif
+
+	if (run_lua_client) {
+		odLuaClient lua_client;
+		if (!odLua_run_file(lua_client.lua, lua_client_path, const_cast<const char**>(argv), argc)) {
 			return 1;
 		}
 	}
 
 	if (run_client) {
-		odClient engine;
-		odClientSettings engine_settings{*odClientSettings_get_defaults()};
-		if (!odClient_run(&engine, &engine_settings)) {
+		odClient client;
+		odClientSettings client_settings{*odClientSettings_get_defaults()};
+		if (!odClient_run(&client, &client_settings)) {
 			return 1;
 		}
 	}
