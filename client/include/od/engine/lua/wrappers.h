@@ -2,7 +2,7 @@
 
 #include <od/engine/module.h>
 
-#define OD_LUA_NAMESPACE "od"
+#define OD_LUA_NAMESPACE "odClient"
 #define OD_LUA_METATABLE_NAME_KEY "_metatable_name"
 #define OD_LUA_CPP_TYPE_KEY "_cpp_type"
 
@@ -21,6 +21,8 @@ struct odLuaBinding {
 
 OD_API_C OD_ENGINE_MODULE const char*
 odLua_get_error(struct lua_State* lua);
+OD_API_C OD_ENGINE_MODULE int32_t
+odLua_get_length(struct lua_State* lua, int32_t index);
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD void*
 odLua_get_userdata(struct lua_State* lua, int32_t index);

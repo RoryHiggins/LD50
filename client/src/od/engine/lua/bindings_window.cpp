@@ -16,46 +16,46 @@ static bool odLuaBindings_odWindow_get_settings_impl(lua_State* lua, odWindowSet
 	lua_getfield(lua, settings_index, "width");
 	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TNUMBER)) {
-			return false;
+			return luaL_error(lua, "settings.width must be a number or nil");
 		}
 
 		settings->width = static_cast<int32_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
 
 		if (!OD_CHECK(settings->width > 0)) {
-			return false;
+			return luaL_error(lua, "settings.width must be > 0");
 		}
 	}
 
 	lua_getfield(lua, settings_index, "height");
 	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TNUMBER)) {
-			return false;
+			return luaL_error(lua, "settings.height must be a number or nil");
 		}
 
 		settings->height = static_cast<int32_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
 
 		if (!OD_CHECK(settings->height > 0)) {
-			return false;
+			return luaL_error(lua, "settings.width must be > 0");
 		}
 	}
 
 	lua_getfield(lua, settings_index, "fps_limit");
 	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TNUMBER)) {
-			return false;
+			return luaL_error(lua, "settings.fps_limit must be a number or nil");
 		}
 
 		settings->fps_limit = static_cast<int32_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
 
 		if (!OD_CHECK(settings->fps_limit > 0)) {
-			return false;
+			return luaL_error(lua, "settings.fps_limit must be > 0");
 		}
 	}
 
 	lua_getfield(lua, settings_index, "is_fps_limit_enabled");
 	if ((lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL)) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TBOOLEAN)) {
-			return false;
+			return luaL_error(lua, "settings.is_fps_limit_enabled must be a boolean or nil");
 		}
 
 		settings->is_fps_limit_enabled = static_cast<bool>(lua_toboolean(lua, OD_LUA_STACK_TOP));
@@ -64,7 +64,7 @@ static bool odLuaBindings_odWindow_get_settings_impl(lua_State* lua, odWindowSet
 	lua_getfield(lua, settings_index, "is_vsync_enabled");
 	if ((lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL)) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TBOOLEAN)) {
-			return false;
+			return luaL_error(lua, "settings.is_fps_limit_enabled must be a boolean or nil");
 		}
 
 		settings->is_vsync_enabled = static_cast<bool>(lua_toboolean(lua, OD_LUA_STACK_TOP));
@@ -73,7 +73,7 @@ static bool odLuaBindings_odWindow_get_settings_impl(lua_State* lua, odWindowSet
 	lua_getfield(lua, settings_index, "is_visible");
 	if ((lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL)) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TBOOLEAN)) {
-			return false;
+			return luaL_error(lua, "settings.is_visible must be a boolean or nil");
 		}
 
 		settings->is_visible = static_cast<bool>(lua_toboolean(lua, OD_LUA_STACK_TOP));
@@ -223,14 +223,14 @@ bool odLuaBindings_odWindow_register(lua_State* lua) {
 		return false;
 	}
 
-	auto window_function = [lua](const char* name, odLuaFn* fn) -> bool {
+	auto add_method = [lua](const char* name, odLuaFn* fn) -> bool {
 		return odLua_metatable_set_function(lua, OD_LUA_BINDINGS_WINDOW, name, fn);
 	};
-	if (!OD_CHECK(window_function("init", odLuaBindings_odWindow_init))
-		|| !OD_CHECK(window_function("destroy", odLuaBindings_odWindow_destroy))
-		|| !OD_CHECK(window_function("step", odLuaBindings_odWindow_step))
-		|| !OD_CHECK(window_function("set_settings", odLuaBindings_odWindow_set_settings))
-		|| !OD_CHECK(window_function("get_settings", odLuaBindings_odWindow_get_settings))) {
+	if (!OD_CHECK(add_method("init", odLuaBindings_odWindow_init))
+		|| !OD_CHECK(add_method("destroy", odLuaBindings_odWindow_destroy))
+		|| !OD_CHECK(add_method("step", odLuaBindings_odWindow_step))
+		|| !OD_CHECK(add_method("set_settings", odLuaBindings_odWindow_set_settings))
+		|| !OD_CHECK(add_method("get_settings", odLuaBindings_odWindow_get_settings))) {
 		return false;
 	}
 

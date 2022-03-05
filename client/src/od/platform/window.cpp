@@ -496,7 +496,7 @@ bool odWindow_step(odWindow* window) {
 		}
 
 		if (!window->is_open) {
-			return true;
+			return false;
 		}
 	}
 

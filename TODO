@@ -4,6 +4,8 @@ lua wrappers: have bool fail/succeed functions always return bool, not a mix of 
 
 lua: move metatable helpers from wrappers.h to bindings.h
 
+c++-lua: table schema definition and validation helper with meaningful errors
+
 Lua - Approach
 --------------
 # Conceptual (not backed by a concrete impl in code)

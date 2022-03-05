@@ -3,11 +3,21 @@
 #include <cmath>
 #include <cfloat>
 
-bool odFloat_is_precise_int(float x) {
+bool odFloat_is_precise_int24(float x) {
 	if (!std::isfinite(x)
 		|| (floorf(x) != x)
 		|| (x < OD_FLOAT_PRECISE_INT_MIN)
 		|| (x > OD_FLOAT_PRECISE_INT_MAX)) {
+		return false;
+	}
+
+	return true;
+}
+bool odFloat_is_precise_uint8(float x) {
+	if (!std::isfinite(x)
+		|| (floorf(x) != x)
+		|| (x < 0)
+		|| (x > 0xFF)) {
 		return false;
 	}
 

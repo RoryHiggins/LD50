@@ -2,7 +2,7 @@
 #include <od/platform/renderer.hpp>
 
 #include <od/core/array.hpp>
-#include <od/core/color.hpp>
+#include <od/core/color.h>
 #include <od/platform/window.hpp>
 #include <od/core/vertex.h>
 #include <od/test/test.hpp>

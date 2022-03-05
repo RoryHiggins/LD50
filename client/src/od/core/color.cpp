@@ -1,4 +1,4 @@
-#include <od/core/color.hpp>
+#include <od/core/color.h>
 
 #include <cinttypes>
 #include <cstring>

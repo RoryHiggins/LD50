@@ -191,7 +191,7 @@ odEntityChunkIterator::odEntityChunkIterator(const odBounds& bounds)
 }
 
 odEntityChunkCoord odChunkCoord_init(float value) {
-	OD_DISCARD(OD_DEBUG_CHECK(odFloat_is_precise_int(value)));
+	OD_DISCARD(OD_DEBUG_CHECK(odFloat_is_precise_int24(value)));
 	const int32_t coord_bitmask =
 		static_cast<int32_t>((1 << OD_ENTITY_CHUNK_COORD_MASK_BITS) - 1);
 	return static_cast<odEntityChunkCoord>(

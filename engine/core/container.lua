@@ -1,4 +1,5 @@
 local container = {}
+container.unpack = unpack or table.unpack  -- luacheck: globals unpack, ignore table
 function container.deep_copy(xs)
 	local xs_type = type(xs)
 

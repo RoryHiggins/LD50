@@ -9,10 +9,10 @@ bool odBounds_check_valid(const odBounds* bounds) {
 	if (!OD_CHECK(bounds != nullptr)
 		|| !OD_CHECK(bounds->x2 >= bounds->x1)
 		|| !OD_CHECK(bounds->y2 >= bounds->y1)
-		|| !OD_CHECK(odFloat_is_precise_int(bounds->x1))
-		|| !OD_CHECK(odFloat_is_precise_int(bounds->y1))
-		|| !OD_CHECK(odFloat_is_precise_int(bounds->x2))
-		|| !OD_CHECK(odFloat_is_precise_int(bounds->y2))) {
+		|| !OD_CHECK(odFloat_is_precise_int24(bounds->x1))
+		|| !OD_CHECK(odFloat_is_precise_int24(bounds->y1))
+		|| !OD_CHECK(odFloat_is_precise_int24(bounds->x2))
+		|| !OD_CHECK(odFloat_is_precise_int24(bounds->y2))) {
 		return false;
 	}
 

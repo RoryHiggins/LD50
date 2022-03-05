@@ -1,6 +1,8 @@
-local debugger_lib = nil
+local shim = require("engine/core/shim")
 
+local debugger_lib = nil
 local debugger_enabled = false
+
 local debugging = {}
 function debugging.set_debugger_enabled(enabled)
 	debugger_enabled = enabled
@@ -23,7 +25,7 @@ function debugging.protected_call(fn, ...)
 
 	if not debugger_enabled then
 		local function fn_wrapped()
-			fn(unpack(args))
+			fn(shim.unpack(args))
 		end
 		local function on_error(err)
 			print(debug.traceback("error :"..tostring(err), 2))
@@ -32,7 +34,7 @@ function debugging.protected_call(fn, ...)
 		return xpcall(fn_wrapped, on_error)
 	end
 
-	return debugger_lib.call(fn, unpack(args))
+	return debugger_lib.call(fn, shim.unpack(args))
 end
 
 return debugging

@@ -1,5 +1,5 @@
 local debugging = require("engine/core/debugging")
-local logger = require("engine/core/logger")
+local logging = require("engine/core/logging")
 
 local CallWatcher = {}
 CallWatcher.__index = CallWatcher
@@ -44,15 +44,15 @@ end
 local Test = {}
 Test.__index = Test
 function Test:run()
-	logger.debug("Running test %s.%s", self.suite_name, self.name)
+	logging.debug("Running test %s.%s", self.suite_name, self.name)
 
 	local ok = debugging.protected_call(self.fn)
 	if not ok then
-		logger.info("Failed test %s.%s", self.suite_name, self.name)
+		logging.info("Failed test %s.%s", self.suite_name, self.name)
 		return false
 	end
 
-	logger.debug("Completed test %s.%s", self.suite_name, self.name)
+	logging.debug("Completed test %s.%s", self.suite_name, self.name)
 	return true
 end
 function Test.create(suite_name, name, fn)
@@ -123,7 +123,7 @@ function testing.add_suite(suite_name, test_name_fn_map)
 	testing.test_suites[#testing.test_suites + 1] = test_suite
 end
 function testing.run_all()
-	logger.info("Running all tests")
+	logging.info("Running all tests")
 
 	local ok = true
 	for _, test_suite in ipairs(testing.test_suites) do
@@ -133,11 +133,11 @@ function testing.run_all()
 	end
 
 	if not ok then
-		logger.info("Not all tests completed successfully")
+		logging.info("Not all tests completed successfully")
 		return false
 	end
 
-	logger.debug("Completed all tests")
+	logging.debug("Completed all tests")
 	return true
 end
 

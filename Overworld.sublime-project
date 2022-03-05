@@ -1,12 +1,17 @@
 {
 	"build_systems":
 	[
-		// {
-		// 	"name": "Run headless",
-		// 	"cmd": "luajit $file",
-		// 	// "cmd": "echo $project_path",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "Run headless",
+			"cmd": "luajit $file",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Luacheck",
+			"cmd": "luacheck.bat engine examples",
+			"working_dir": "$project_path",
+		},
+
 		// {
 		// 	"name": "Run headless in separate window",
 		// 	"shell_cmd": "start luajit $file",

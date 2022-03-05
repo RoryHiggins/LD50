@@ -79,7 +79,7 @@ function serializer.serialize(xs)
 	return table.concat(serializer._get_strs(xs, {}))
 end
 function serializer.deserialize(str)
-	local success, result = pcall(loadstring("return "..str))
+	local success, result = pcall(load("return "..str))
 	if not success then
 		error("failed to deserialize "..str)
 	end

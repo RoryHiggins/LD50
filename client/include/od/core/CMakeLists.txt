@@ -1,1 +1,1 @@
-target_sources(od_core PUBLIC api.h module.h debug.h debug.hpp math.h type.h type.hpp allocation.h allocation.hpp array.h array.hpp color.h color.hpp bounds.h vector.h matrix.h vertex.h vertex.hpp string.h string.hpp)
+target_sources(od_core PUBLIC api.h module.h debug.h debug.hpp math.h type.h type.hpp allocation.h allocation.hpp array.h array.hpp color.h bounds.h vector.h matrix.h vertex.h vertex.hpp string.h string.hpp)

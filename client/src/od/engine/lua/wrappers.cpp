@@ -98,6 +98,17 @@ const char* odLua_get_error(lua_State* lua) {
 
 	return error_str;
 }
+int32_t odLua_get_length(struct lua_State* lua, int32_t index) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+#if LUA_VERSION_NUM < 502
+	return static_cast<int32_t>(lua_objlen(lua, index));
+#else
+	return static_cast<int32_t>(lua_rawlen(lua, index));
+#endif
+}
 void* odLua_get_userdata(lua_State* lua, int32_t index) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return nullptr;

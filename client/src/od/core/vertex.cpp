@@ -21,9 +21,9 @@ const char* odVertex_get_debug_string(const odVertex* vertex) {
 bool odVertex_check_valid_3d(const odVertex* vertex) {
 	if (!OD_CHECK(vertex != nullptr)
 		|| !OD_CHECK(odVector_check_valid(&vertex->pos))
-		|| !OD_CHECK(odFloat_is_precise_int(vertex->u))
+		|| !OD_CHECK(odFloat_is_precise_int24(vertex->u))
 		|| !OD_CHECK(vertex->u >= 0)
-		|| !OD_CHECK(odFloat_is_precise_int(vertex->v))
+		|| !OD_CHECK(odFloat_is_precise_int24(vertex->v))
 		|| !OD_CHECK(vertex->v >= 0)) {
 		return false;
 	}
