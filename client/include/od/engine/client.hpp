@@ -6,6 +6,7 @@
 #include <od/core/vertex.hpp>
 #include <od/platform/window.hpp>
 #include <od/platform/texture.hpp>
+#include <od/platform/render_texture.hpp>
 #include <od/platform/renderer.hpp>
 #include <od/engine/entity_index.hpp>
 

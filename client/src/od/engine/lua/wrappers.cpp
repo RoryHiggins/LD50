@@ -1,12 +1,12 @@
-#include <od/engine/lua_wrappers.hpp>
+#include <od/engine/lua/wrappers.hpp>
 
-// #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
-
-#include <od/engine/lua_includes.h>
+#include <od/core/string.hpp>
+#include <od/engine/lua/includes.h>
 
 static const odType* odLua_table_get_type(lua_State* lua, int32_t metatable_index) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -15,36 +15,37 @@ static const odType* odLua_table_get_type(lua_State* lua, int32_t metatable_inde
 
 	odLuaScope scope{lua};
 
-	lua_pushvalue(lua, metatable_index);
-	lua_getfield(lua, metatable_index, "_cpp_type");
+	lua_getfield(lua, metatable_index, OD_LUA_CPP_TYPE_KEY);
 	if (!OD_CHECK(lua_islightuserdata(lua, OD_LUA_STACK_TOP))) {
 		return nullptr;
 	}
 
 	return static_cast<odType*>(lua_touserdata(lua, OD_LUA_STACK_TOP));
 }
-static int odLuaFn_table_new(lua_State* lua) {
+static int odLua_cpp_new(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
 
-	odLuaScope scope{lua};
+	const int32_t metatable_index = lua_upvalueindex(1);
 
-	int32_t metatable_index = lua_upvalueindex(1);
+	luaL_checktype(lua, metatable_index, LUA_TTABLE);
 
 	const odType* type = odLua_table_get_type(lua, metatable_index);
 	if (!OD_CHECK(type != nullptr)) {
-		return 0;
+		return luaL_error(lua, "odLua_table_get_type() failed");
 	}
 
-	void** userdata = static_cast<void**>(lua_newuserdata(lua, sizeof(void*)));
+	size_t ptr_size = sizeof(void*);
+	void** userdata = static_cast<void**>(lua_newuserdata(lua, ptr_size));
 	if (!OD_CHECK(userdata != nullptr)) {
-		return 0;
+		return luaL_error(lua, "userdata creation failed for size=%llu", ptr_size);
 	}
 
-	void* allocation = calloc(1, static_cast<size_t>(type->size));
+	size_t allocation_size = static_cast<size_t>(type->size);
+	void* allocation = calloc(1, allocation_size);
 	if (!OD_CHECK(allocation != nullptr)) {
-		return 0;
+		return luaL_error(lua, "calloc() failed for size=%llu", allocation_size);
 	}
 
 	lua_pushvalue(lua, metatable_index);
@@ -54,17 +55,14 @@ static int odLuaFn_table_new(lua_State* lua) {
 	type->default_construct_fn(allocation, 1);
 	*userdata = allocation;
 
-	scope.return_count(1);
 	return 1;
 }
-static int odLuaFn_table_delete(lua_State* lua) {
+static int odLua_cpp_delete(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
 
-	odLuaScope scope{lua};
-
-	int32_t userdata_index = 1;
+	const int32_t userdata_index = 1;
 
 	const odType* type = odLua_table_get_type(lua, userdata_index);
 	if (!OD_CHECK(type != nullptr)) {
@@ -78,6 +76,8 @@ static int odLuaFn_table_delete(lua_State* lua) {
 
 	void* allocation = *userdata;
 	*userdata = nullptr; // clear userdata to prevent double free
+	
+	// not a check as it is ok for allocation to already be unset (never initted, or already deleted)
 	if (allocation != nullptr) {
 		type->destruct_fn(allocation, 1);
 		free(allocation);
@@ -98,18 +98,23 @@ const char* odLua_get_error(lua_State* lua) {
 
 	return error_str;
 }
-void* odLua_function_get_userdata(lua_State* lua) {
+void* odLua_get_userdata(lua_State* lua, int32_t index) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return nullptr;
 	}
 
 	odLuaScope scope{lua};
 
-	int32_t userdata_index = 1;
+	if (!OD_CHECK(lua_type(lua, index) == LUA_TUSERDATA)) {
+		return nullptr;
+	}
 
-	void** userdata = static_cast<void**>(lua_touserdata(lua, userdata_index));
+	void** userdata = static_cast<void**>(lua_touserdata(lua, index));
 	if (userdata == nullptr) {
-		luaL_argerror(lua, userdata_index, "userdata arg not provided; possibly a method called with '.' instead of ':'?");
+		OD_ERROR(
+			"lua_touserdata(index=%d) returned nullptr; "
+			"possibly a method called with '.' instead of ':?",
+			index);
 		return nullptr;
 	}
 
@@ -120,6 +125,26 @@ void* odLua_function_get_userdata(lua_State* lua) {
 
 	return allocation;
 }
+void* odLua_get_userdata_typed(lua_State* lua, int32_t index, const char* metatable_name) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return nullptr;
+	}
+
+	odLuaScope scope{lua};
+
+	lua_getfield(lua, index, OD_LUA_METATABLE_NAME_KEY);
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TSTRING)) {
+		return nullptr;
+	}
+
+	const char* actual_metatable_name = lua_tostring(lua, OD_LUA_STACK_TOP);
+	if (!OD_CHECK(actual_metatable_name != nullptr)
+		|| !OD_CHECK(strcmp(actual_metatable_name, metatable_name) == 0)) {
+		return nullptr;
+	}
+
+	return odLua_get_userdata(lua, index);
+}
 bool odLua_metatable_declare(lua_State* lua, const char* metatable_name) {
 	if (!OD_CHECK(lua != nullptr)
 		|| !OD_CHECK(metatable_name != nullptr)) {
@@ -128,13 +153,30 @@ bool odLua_metatable_declare(lua_State* lua, const char* metatable_name) {
 
 	odLuaScope scope{lua};
 
+	// global scope metatable
+	lua_getglobal(lua, OD_LUA_NAMESPACE);
+	if (!lua_istable(lua, OD_LUA_STACK_TOP)) {
+		lua_newtable(lua);
+
+		lua_pushvalue(lua, OD_LUA_STACK_TOP);
+		lua_setglobal(lua, OD_LUA_NAMESPACE);
+	}
+	int namespace_index = lua_gettop(lua);
+
 	// 0 = already exists, 1 = new, need to set index and assign to global
-	if (luaL_newmetatable(lua, metatable_name) == 1) {
+	lua_getfield(lua, OD_LUA_STACK_TOP, metatable_name);
+	if (!lua_istable(lua, OD_LUA_STACK_TOP)) {
+		lua_newtable(lua);
+
 		lua_pushvalue(lua, OD_LUA_STACK_TOP);
 		lua_setfield(lua, OD_LUA_STACK_TOP, "__index");
 
 		lua_pushvalue(lua, OD_LUA_STACK_TOP);
-		lua_setglobal(lua, metatable_name);
+		lua_setfield(lua, namespace_index, metatable_name);
+
+		lua_pushstring(lua, OD_LUA_METATABLE_NAME_KEY);
+		lua_pushstring(lua, metatable_name);
+		lua_settable(lua, OD_LUA_STACK_TOP - 2);
 	}
 
 	return true;
@@ -148,15 +190,34 @@ bool odLua_metatable_set_double(lua_State* lua, const char* metatable_name, cons
 
 	odLuaScope scope{lua};
 
-	luaL_getmetatable(lua, metatable_name);
+	lua_getglobal(lua, OD_LUA_NAMESPACE);
+	lua_getfield(lua, OD_LUA_STACK_TOP, metatable_name);
+
 	lua_pushstring(lua, name);
 	lua_pushnumber(lua, value);
-
 	lua_settable(lua, OD_LUA_STACK_TOP - 2);
 
 	return true;
 }
-bool odLua_metatable_set_function(lua_State* lua, const char* metatable_name, const char* name, int (*fn)(lua_State*)) {
+bool odLua_metatable_set_string(lua_State* lua, const char* metatable_name, const char* name, char const* value) {
+		if (!OD_CHECK(lua != nullptr)
+		|| !OD_CHECK(metatable_name != nullptr)
+		|| !OD_CHECK(name != nullptr)) {
+		return false;
+	}
+
+	odLuaScope scope{lua};
+
+	lua_getglobal(lua, OD_LUA_NAMESPACE);
+	lua_getfield(lua, OD_LUA_STACK_TOP, metatable_name);
+
+	lua_pushstring(lua, name);
+	lua_pushstring(lua, value);
+	lua_settable(lua, OD_LUA_STACK_TOP - 2);
+
+	return true;
+}
+bool odLua_metatable_set_function(lua_State* lua, const char* metatable_name, const char* name, odLuaFn *fn) {
 	if (!OD_CHECK(lua != nullptr)
 		|| !OD_CHECK(metatable_name != nullptr)
 		|| !OD_CHECK(name != nullptr)
@@ -166,13 +227,12 @@ bool odLua_metatable_set_function(lua_State* lua, const char* metatable_name, co
 
 	odLuaScope scope{lua};
 
-	luaL_getmetatable(lua, metatable_name);
+	lua_getglobal(lua, OD_LUA_NAMESPACE);
+	lua_getfield(lua, OD_LUA_STACK_TOP, metatable_name);
 
 	lua_pushstring(lua, name);
-
-	luaL_getmetatable(lua, metatable_name);
+	lua_pushvalue(lua, OD_LUA_STACK_TOP - 1);  // _G[namespace][metatable_name]
 	lua_pushcclosure(lua, fn, 1);
-
 	lua_settable(lua, OD_LUA_STACK_TOP - 2);
 
 	return true;
@@ -186,10 +246,11 @@ bool odLua_metatable_set_ptr(lua_State* lua, const char* metatable_name, const c
 
 	odLuaScope scope{lua};
 
-	luaL_getmetatable(lua, metatable_name);
+	lua_getglobal(lua, OD_LUA_NAMESPACE);
+	lua_getfield(lua, OD_LUA_STACK_TOP, metatable_name);
+
 	lua_pushstring(lua, name);
 	lua_pushlightuserdata(lua, ptr);
-
 	lua_settable(lua, OD_LUA_STACK_TOP - 2);
 
 	return true;
@@ -201,19 +262,20 @@ bool odLua_metatable_set_new_delete(lua_State* lua, const char* metatable_name, 
 		return false;
 	}
 
-	if (!OD_CHECK(odLua_metatable_set_ptr(lua, metatable_name, "_cpp_type", static_cast<void*>(const_cast<odType*>(type))))) {
+	void* type_raw = static_cast<void*>(const_cast<odType*>(type));
+
+	if (!OD_CHECK(odLua_metatable_set_ptr(lua, metatable_name, OD_LUA_CPP_TYPE_KEY, type_raw))) {
 		return false;
 	}
-	if (!OD_CHECK(odLua_metatable_set_function(lua, metatable_name, "new", odLuaFn_table_new))) {
+	if (!OD_CHECK(odLua_metatable_set_function(lua, metatable_name, "new", odLua_cpp_new))) {
 		return false;
 	}
-	if (!OD_CHECK(odLua_metatable_set_function(lua, metatable_name, "__gc", odLuaFn_table_delete))) {
+	if (!OD_CHECK(odLua_metatable_set_function(lua, metatable_name, "__gc", odLua_cpp_delete))) {
 		return false;
 	}
 
 	return true;
 }
-
 bool odLua_run_file(lua_State* lua, const char* filename, const char** args, int32_t args_count) {
 	if (!OD_CHECK(lua != nullptr)
 		|| !OD_CHECK(filename != nullptr)
@@ -298,6 +360,58 @@ bool odLua_run_string(lua_State* lua, const char* string, const char** args, int
 
 	return true;
 }
+bool odLua_run_check(lua_State* lua, const char* format_c_str, ...) {
+	if (!OD_CHECK(lua != nullptr)
+		|| !OD_CHECK(format_c_str != nullptr)) {
+		return false;
+	}
+
+	odString str;
+	if (!OD_CHECK(str.extend("assert("))) {
+		return false;
+	}
+
+	va_list args = {};
+	va_start(args, format_c_str);
+	bool extend_formatted_variadic_ok = str.extend_formatted_variadic(format_c_str, &args);
+	va_end(args);
+
+	if (!OD_CHECK(extend_formatted_variadic_ok)) {
+		return false;
+	}
+
+	if (!OD_CHECK(str.extend(")"))) {
+		return false;
+	}
+
+	return OD_CHECK(odLua_run_string(lua, str.get_c_str(), nullptr, 0));
+}
+bool odLua_run_assert(lua_State* lua, const char* format_c_str, ...) {
+	if (!OD_ASSERT(lua != nullptr)
+		|| !OD_ASSERT(format_c_str != nullptr)) {
+		return false;
+	}
+
+	odString str;
+	if (!OD_ASSERT(str.extend("assert("))) {
+		return false;
+	}
+
+	va_list args = {};
+	va_start(args, format_c_str);
+	bool extend_formatted_variadic_ok = str.extend_formatted_variadic(format_c_str, &args);
+	va_end(args);
+
+	if (!OD_ASSERT(extend_formatted_variadic_ok)) {
+		return false;
+	}
+
+	if (!OD_ASSERT(str.extend(")"))) {
+		return false;
+	}
+
+	return OD_ASSERT(odLua_run_string(lua, str.get_c_str(), nullptr, 0));
+}
 void odLua_print_stack(lua_State* lua) {
 	odLuaScope scope{lua};
 
@@ -329,6 +443,8 @@ void odLua_print_stack(lua_State* lua) {
 			}
 		}
 	}
+
+	fflush(stdout);
 }
 
 void odLuaScope::return_count(int32_t count) {

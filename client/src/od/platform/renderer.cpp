@@ -11,6 +11,7 @@
 #include <od/platform/primitive.h>
 #include <od/platform/window.hpp>
 #include <od/platform/texture.hpp>
+#include <od/platform/render_texture.hpp>
 #include <od/platform/gl.h>
 
 #if OD_BUILD_EMSCRIPTEN
@@ -125,7 +126,9 @@ bool odRenderer_init(odRenderer* renderer, odWindow* window) {
 
 	odRenderer_destroy(renderer);
 
-	renderer->window = window;
+	if (!OD_CHECK(odWindowResource_init(renderer, window))) {
+		return false;
+	}
 
 	odWindowScope window_scope;
 	if (!OD_CHECK(odWindowScope_bind(&window_scope, renderer->window))) {
@@ -291,7 +294,7 @@ void odRenderer_destroy(odRenderer* renderer) {
 	renderer->vao = 0;
 	renderer->vbo = 0;
 
-	renderer->window = nullptr;
+	odWindowResource_destroy(renderer);
 }
 bool odRenderer_flush(odRenderer* renderer) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))) {
@@ -488,7 +491,7 @@ static void odRenderer_bind(odRenderer* renderer) {
 }
 
 odRenderer::odRenderer()
-	: window{nullptr}, vbo{0}, vao{0}, vertex_shader{0}, fragment_shader{0}, program{0} {
+	: odWindowResource{}, vbo{0}, vao{0}, vertex_shader{0}, fragment_shader{0}, program{0} {
 }
 odRenderer::odRenderer(odRenderer&& other) {
 	odRenderer_swap(this, &other);

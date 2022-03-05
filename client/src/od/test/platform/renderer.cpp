@@ -1,4 +1,3 @@
-#include <od/platform/texture.hpp>
 #include <od/platform/renderer.hpp>
 
 #include <cstring>
@@ -11,6 +10,8 @@
 #include <od/core/vertex.h>
 #include <od/platform/primitive.h>
 #include <od/platform/window.hpp>
+#include <od/platform/texture.hpp>
+#include <od/platform/render_texture.hpp>
 #include <od/test/test.hpp>
 
 #define OD_RENDER_TEST_VERTEX_COUNT OD_TRIANGLE_VERTEX_COUNT

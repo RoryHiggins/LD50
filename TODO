@@ -1,5 +1,9 @@
 lua alignment TODO: switch client from float to double for lua
 
+lua wrappers: have bool fail/succeed functions always return bool, not a mix of bool and nil
+
+lua: move metatable helpers from wrappers.h to bindings.h
+
 Lua - Approach
 --------------
 # Conceptual (not backed by a concrete impl in code)

@@ -54,7 +54,7 @@ OD_TEST_FILTERED(odTest_odWindow_set_settings_headless, OD_TEST_FILTER_SLOW) {
 
 	odWindowSettings settings = *odWindowSettings_get_headless_defaults();
 	settings.caption = "no";
-	settings.window_width = 44;
+	settings.width = 44;
 	settings.is_vsync_enabled = false;
 
 	OD_ASSERT(odWindow_set_settings(&window, &settings));
@@ -74,7 +74,7 @@ OD_TEST_FILTERED(odTest_odWindow_set_settings_visible, OD_TEST_FILTER_SLOW) {
 
 	odWindowSettings settings = *odWindowSettings_get_headless_defaults();
 	settings.caption = "no";
-	settings.window_width = 44;
+	settings.width = 44;
 	settings.is_vsync_enabled = true;
 	settings.is_visible = false;
 

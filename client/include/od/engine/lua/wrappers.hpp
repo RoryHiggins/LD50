@@ -1,6 +1,6 @@
 #pragma once
 
-#include <od/engine/lua_wrappers.h>
+#include <od/engine/lua/wrappers.h>
 
 struct odLuaScope {
 	lua_State* lua;

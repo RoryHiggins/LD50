@@ -20,11 +20,13 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odImage(),
 		odTestSuite_odWindow(),
 		odTestSuite_odTexture(),
+		odTestSuite_odRenderTexture(),
 		odTestSuite_odRenderer(),
 
 		odTestSuite_odAtlas(),
 		odTestSuite_odEntityIndex(),
 		odTestSuite_odLua(),
+		odTestSuite_odLuaBindings(),
 		odTestSuite_odLuaClient(),
 	};
 

@@ -1,11 +1,12 @@
-#include <od/engine/lua_client.hpp>
+#include <od/engine/lua/client.hpp>
 
 #include <cstddef>
 
 #include <od/core/debug.h>
 
-#include <od/engine/lua_includes.h>
-#include <od/engine/lua_wrappers.h>
+#include <od/engine/lua/includes.h>
+#include <od/engine/lua/wrappers.h>
+#include <od/engine/lua/bindings.h>
 
 bool odLuaClient_init(odLuaClient* client) {
 	if (!OD_CHECK(client != nullptr)) {
@@ -21,6 +22,10 @@ bool odLuaClient_init(odLuaClient* client) {
 	}
 
 	luaL_openlibs(client->lua);
+
+	if (!OD_CHECK(odLuaBindings_register(client->lua))) {
+		return false;
+	}
 
 	lua_settop(client->lua, 0);
 

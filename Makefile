@@ -21,6 +21,7 @@ CMAKE := cmake
 BUILD_ROOT := build
 BUILD := $(BUILD_ROOT)/$(TARGET)_$(KEY)
 CLIENT := $(BUILD)/od_client
+LUA_CLIENT := examples/minimal/main.lua
 
 # Commands
 # ---
@@ -31,11 +32,11 @@ $(CLIENT):
 	$(CMAKE) \-S $(CLIENT_SRC) -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" $(CLIENT_CMAKE_ARGS)
 	$(CMAKE) --build $(BUILD)
 run: $(CLIENT)
-	$(CLIENT) $(CLIENT_ARGS)
+	$(CLIENT) --lua-client $(LUA_CLIENT) $(CLIENT_ARGS)
 test: $(CLIENT)
-	$(CLIENT) --no-client --test $(CLIENT_ARGS)
+	$(CLIENT) --no-client --no-lua-client --test $(CLIENT_ARGS)
 gdb: $(CLIENT)
-	gdb --ex 'break main' --ex "break odDebug_error" --ex "run" --args $(CLIENT) --test $(CLIENT_ARGS)
+	gdb --ex 'break main' --ex "break odDebug_error" --ex "run" --args $(CLIENT) --test --lua-client $(LUA_CLIENT) $(CLIENT_ARGS)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:

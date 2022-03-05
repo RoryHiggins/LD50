@@ -58,11 +58,11 @@ const char* odWindowSettings_get_debug_string(const odWindowSettings* settings) 
 	}
 
 	return odDebugString_format(
-		"{\"caption\": %s, \"window_width\": %d, \"window_height\": %d, \"fps_limit\": %d, "
+		"{\"caption\": %s, \"width\": %d, \"height\": %d, \"fps_limit\": %d, "
 		"\"is_fps_limit_enabled\": %d, \"is_vsync_enabled\": %d, \"is_visible\": %d}",
 		settings->caption,
-		settings->window_width,
-		settings->window_height,
+		settings->width,
+		settings->height,
 		settings->fps_limit,
 		static_cast<int>(settings->is_fps_limit_enabled),
 		static_cast<int>(settings->is_vsync_enabled),
@@ -72,8 +72,8 @@ const char* odWindowSettings_get_debug_string(const odWindowSettings* settings) 
 const odWindowSettings* odWindowSettings_get_defaults() {
 	static const odWindowSettings settings{
 		/*caption*/ "",
-		/*window_width*/ 640,
-		/*window_height*/ 480,
+		/*width*/ 640,
+		/*height*/ 480,
 		/*fps_limit*/ 60,
 		/*is_fps_limit_enabled*/ true,
 		/*is_vsync_enabled"*/ true,
@@ -84,8 +84,8 @@ const odWindowSettings* odWindowSettings_get_defaults() {
 const odWindowSettings* odWindowSettings_get_headless_defaults() {
 	static const odWindowSettings settings{
 		/*caption*/ "",
-		/*window_width*/ 640,
-		/*window_height*/ 480,
+		/*width*/ 640,
+		/*height*/ 480,
 		/*fps_limit*/ 60,
 		/*is_fps_limit_enabled*/ false,
 		/*is_vsync_enabled"*/ false,
@@ -95,10 +95,10 @@ const odWindowSettings* odWindowSettings_get_headless_defaults() {
 }
 bool odWindowSettings_check_valid(const odWindowSettings* settings) {
 	if (!OD_CHECK(settings != nullptr)
-		|| !OD_CHECK(odInt32_fits_float(settings->window_width))
-		|| !OD_CHECK(settings->window_width > 0)
-		|| !OD_CHECK(odInt32_fits_float(settings->window_height))
-		|| !OD_CHECK(settings->window_height > 0)
+		|| !OD_CHECK(odInt32_fits_float(settings->width))
+		|| !OD_CHECK(settings->width > 0)
+		|| !OD_CHECK(odInt32_fits_float(settings->height))
+		|| !OD_CHECK(settings->height > 0)
 		|| !OD_CHECK(settings->fps_limit > 0)
 		|| !OD_CHECK(settings->fps_limit <= 120)) {
 		return false;
@@ -267,8 +267,8 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 		window->settings.caption,
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
-		static_cast<int>(window->settings.window_width),
-		static_cast<int>(window->settings.window_height),
+		static_cast<int>(window->settings.width),
+		static_cast<int>(window->settings.height),
 		static_cast<SDL_WindowFlags>(
 			(window->settings.is_visible ? SDL_WINDOW_SHOWN : SDL_WINDOW_HIDDEN)
 			| SDL_WINDOW_OPENGL
@@ -308,6 +308,11 @@ void odWindow_destroy(odWindow* window) {
 	if (!OD_CHECK(window != nullptr)) {
 		return;
 	}
+
+	for (odWindowResource* resource: window->resources) {
+		resource->window = nullptr;
+	}
+	OD_DISCARD(OD_CHECK(window->resources.set_count(0)));
 
 	window->next_frame_ms = 0;
 	window->is_open = false;
@@ -473,7 +478,8 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 	return true;
 }
 bool odWindow_step(odWindow* window) {
-	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
+	if (!window->is_open
+		|| !OD_CHECK(odWindow_check_valid(window))) {
 		return false;
 	}
 
@@ -528,12 +534,12 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 		return false;
 	}
 
-	if ((width == window->settings.window_width) && (height == window->settings.window_height)) {
+	if ((width == window->settings.width) && (height == window->settings.height)) {
 		return true;
 	}
 
-	window->settings.window_width = width;
-	window->settings.window_height = height;
+	window->settings.width = width;
+	window->settings.height = height;
 
 	return true;
 }
@@ -590,7 +596,7 @@ bool odWindow_set_settings(struct odWindow* window, const odWindowSettings* sett
 		return false;
 	}
 
-	if (!OD_CHECK(odWindow_set_size(window, settings->window_width, settings->window_height))) {
+	if (!OD_CHECK(odWindow_set_size(window, settings->width, settings->height))) {
 		return false;
 	}
 
@@ -625,6 +631,64 @@ odWindow& odWindow::operator=(odWindow&& other) {
 }
 odWindow::~odWindow() {
 	odWindow_destroy(this);
+}
+
+OD_NO_DISCARD bool odWindowResource_init(odWindowResource* resource, odWindow* opt_window) {
+	if (!OD_CHECK(resource != nullptr)
+		|| !OD_CHECK(opt_window == nullptr || (opt_window->window_native != nullptr))) {
+		return false;
+	}
+
+	odWindowResource_destroy(resource);
+
+	if (opt_window == nullptr) {
+		return true;
+	}
+	
+	if (!OD_CHECK(opt_window->resources.push(resource))) {
+		return false;
+	}
+
+	resource->window = opt_window;
+
+	return true;
+}
+void odWindowResource_destroy(odWindowResource* resource) {
+	if (!OD_CHECK(resource != nullptr)) {
+		return;
+	}
+
+	if (resource->window == nullptr) {
+		return;
+	}
+	odWindow* window = resource->window;
+
+	resource->window = nullptr;
+
+	odWindowResource** resources = window->resources.begin();
+	int32_t resources_count = window->resources.get_count();
+	for (int32_t i = 0; i < resources_count; i++) {
+		if (resources[i] == resource) {
+			OD_DISCARD(OD_CHECK(window->resources.swap_pop(i)));
+			break;
+		}
+	}
+}
+odWindowResource::odWindowResource()
+: window{nullptr} {
+}
+odWindowResource::odWindowResource(odWindowResource&& other)
+: odWindowResource{} {
+	OD_DISCARD(OD_CHECK(odWindowResource_init(this, other.window)));
+	odWindowResource_destroy(&other);
+}
+odWindowResource& odWindowResource::operator=(odWindowResource&& other) {
+	OD_DISCARD(OD_CHECK(odWindowResource_init(this, other.window)));
+	odWindowResource_destroy(&other);
+	return *this;
+}
+odWindowResource::~odWindowResource() {
+	odWindowResource_destroy(this);
 }
 
 bool odWindowScope_bind(odWindowScope* scope, odWindow* window) {

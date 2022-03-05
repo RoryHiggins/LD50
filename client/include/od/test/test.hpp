@@ -45,11 +45,13 @@ OD_TEST_SUITE_DECLARE(odTestSuite_odFile)
 OD_TEST_SUITE_DECLARE(odTestSuite_odImage)
 OD_TEST_SUITE_DECLARE(odTestSuite_odWindow)
 OD_TEST_SUITE_DECLARE(odTestSuite_odTexture)
+OD_TEST_SUITE_DECLARE(odTestSuite_odRenderTexture)
 OD_TEST_SUITE_DECLARE(odTestSuite_odRenderer)
 
 OD_TEST_SUITE_DECLARE(odTestSuite_odAtlas)
 OD_TEST_SUITE_DECLARE(odTestSuite_odEntityIndex)
 OD_TEST_SUITE_DECLARE(odTestSuite_odLua)
+OD_TEST_SUITE_DECLARE(odTestSuite_odLuaBindings)
 OD_TEST_SUITE_DECLARE(odTestSuite_odLuaClient)
 
 #endif

@@ -12,6 +12,7 @@
 #include <od/platform/primitive.h>
 #include <od/platform/image.hpp>
 #include <od/platform/texture.hpp>
+#include <od/platform/render_texture.hpp>
 #include <od/platform/renderer.hpp>
 #include <od/platform/window.hpp>
 
@@ -237,15 +238,15 @@ bool odClient_step(odClient* client) {
 
 	odWindowSettings* window_settings = &client->window.settings;
 	odMatrix window_projection{};
-	odMatrix_init_ortho_2d(&window_projection, window_settings->window_width, window_settings->window_height);
+	odMatrix_init_ortho_2d(&window_projection, window_settings->width, window_settings->height);
 	odRenderState draw_to_window{
 		*odMatrix_get_identity(),
 		window_projection,
 		odBounds{
 			0.0f,
 			0.0f,
-			static_cast<float>(window_settings->window_width),
-			static_cast<float>(window_settings->window_height)
+			static_cast<float>(window_settings->width),
+			static_cast<float>(window_settings->height)
 		},
 		&client->src_texture,
 		/* opt_render_texture*/ nullptr

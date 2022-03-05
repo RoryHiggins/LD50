@@ -1,6 +1,6 @@
 #pragma once
 
-#include <od/engine/lua_client.h>
+#include <od/engine/lua/client.h>
 
 struct odLuaClient {
 	struct lua_State* lua;

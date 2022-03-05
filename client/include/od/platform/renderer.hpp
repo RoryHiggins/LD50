@@ -2,9 +2,9 @@
 
 #include <od/platform/renderer.h>
 
-struct odRenderer {
-	odWindow* window;
+#include <od/platform/window.hpp>
 
+struct odRenderer : odWindowResource {
 	uint32_t vbo;
 	uint32_t vao;
 	uint32_t vertex_shader;

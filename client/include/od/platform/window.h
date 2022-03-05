@@ -4,12 +4,13 @@
 
 struct odType;
 struct odWindow;
+struct odWindowResource;
 struct odWindowScope;
 
 struct odWindowSettings {
 	const char* caption;  // pointed-to string must outlive the window
-	int32_t window_width;
-	int32_t window_height;
+	int32_t width;
+	int32_t height;
 	int32_t fps_limit;
 	bool is_fps_limit_enabled;
 	bool is_vsync_enabled;
@@ -49,6 +50,11 @@ OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odWindow_set_settings(struct odWindow* window, const struct odWindowSettings* settings);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odWindowSettings*
 odWindow_get_settings(const struct odWindow* window);
+
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odWindowResource_init(struct odWindowResource* resource, struct odWindow* opt_window);
+OD_API_C OD_PLATFORM_MODULE void
+odWindowResource_destroy(struct odWindowResource* resource);
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odWindowScope_bind(struct odWindowScope* scope, struct odWindow* window);

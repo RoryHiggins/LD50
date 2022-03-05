@@ -3,8 +3,8 @@
 
 #include <od/core/debug.h>
 #include <od/engine/client.hpp>
-#include <od/engine/lua_wrappers.hpp>
-#include <od/engine/lua_client.hpp>
+#include <od/engine/lua/wrappers.hpp>
+#include <od/engine/lua/client.hpp>
 #include <od/test/test.hpp>
 
 const char* __asan_default_options();
@@ -100,9 +100,9 @@ int main(int argc, char** argv) {
 				test_filter = test_filter | OD_TEST_FILTER_SLOW;
 				continue;
 			}
-			if (strncmp(argv[i], "--test-name", arg_size) == 0) {
+			if (strncmp(argv[i], "--test-name-filter", arg_size) == 0) {
 				if (((i + 1) >= argc) || (strcmp(argv[i + 1], "") == 0)) {
-					OD_ERROR("Missing value for --test-name");
+					OD_ERROR("Missing value for --test-name-filter");
 					return 1;
 				}
 

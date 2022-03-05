@@ -1,4 +1,4 @@
-#include <od/engine/lua_client.hpp>
+#include <od/engine/lua/client.hpp>
 
 #include <od/core/debug.h>
 #include <od/test/test.hpp>
