@@ -18,6 +18,10 @@
 #define OD_BUILD_TESTS 1
 #endif
 
+#if !defined(OD_BUILD_STACK_TRACES)
+#define OD_BUILD_STACK_TRACES 0
+#endif
+
 #if !defined(OD_BUILD_PROFILE)
 #define OD_BUILD_PROFILE 1
 #endif

@@ -155,14 +155,17 @@ OD_TEST(odTest_odLua_metatable_set_new_delete) {
 
 		
 		OD_ASSERT(odLua_metatable_set_new_delete(lua.lua, OD_TEST_LUA_CLIENT_TABLE, odType_get<odLuaTestRAII>()));
-		odLua_run_assert(lua.lua, "type(%s.new) == 'function'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
+		odLua_run_assert(
+			lua.lua, "type(%s.%s) == 'function'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
 
 		// re-set
 		OD_ASSERT(odLua_metatable_set_new_delete(lua.lua, OD_TEST_LUA_CLIENT_TABLE, odType_get<odLuaTestRAII>()));
-		odLua_run_assert(lua.lua, "type(%s.new) == 'function'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
+		odLua_run_assert(
+			lua.lua, "type(%s.%s) == 'function'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
 
 		// instantiate
-		odLua_run_assert(lua.lua, "type(%s.new()) == 'userdata'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
+		odLua_run_assert(
+			lua.lua, "type(%s.%s()) == 'userdata'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
 
 		OD_ASSERT(construct_count == 1);
 		OD_ASSERT(move_assign_count == 0);
@@ -179,15 +182,19 @@ OD_TEST(odTest_odLua_metatable_set_new_delete) {
 		OD_ASSERT(odLua_metatable_set_new_delete(lua.lua, OD_TEST_LUA_CLIENT_TABLE, odType_get<odLuaTestRAII>()));
 		OD_ASSERT(odLua_metatable_set_function(lua.lua, OD_TEST_LUA_CLIENT_TABLE, "test_call", odLuaTestRAII::test_call));
 
-		odLua_run_assert(lua.lua, "type(getmetatable(%s.new())) == 'table'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
-		odLua_run_assert(lua.lua, "type(getmetatable(%s.new()).__gc) == 'function'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
+		odLua_run_assert(
+			lua.lua, "type(getmetatable(%s.%s())) == 'table'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
+		odLua_run_assert(
+			lua.lua, "type(getmetatable(%s.%s()).__gc) == 'function'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
 
 		OD_ASSERT(test_call_count == 0);
-		odLua_run_assert(lua.lua, "%s.new():test_call() == nil", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
+		odLua_run_assert(
+			lua.lua, "%s.%s():test_call() == nil", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
 		OD_ASSERT(test_call_count == 1);
 
 		// re-call
-		odLua_run_assert(lua.lua, "%s.new():test_call() == nil", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
+		odLua_run_assert(
+			lua.lua, "%s.%s():test_call() == nil", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
 		OD_ASSERT(test_call_count == 2);
 	}
 
@@ -207,12 +214,19 @@ OD_TEST(odTest_odLua_metatable_set_new_delete_call_no_colon_fails) {
 	OD_ASSERT(odLua_metatable_set_new_delete(lua.lua, OD_TEST_LUA_CLIENT_TABLE, odType_get<int>()));
 	OD_ASSERT(odLua_metatable_set_function(lua.lua, OD_TEST_LUA_CLIENT_TABLE, "test_call", test_call));
 
-	odLua_run_assert(lua.lua, "type(%s.new()) == 'userdata'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
-	odLua_run_assert(lua.lua, "%s.new():test_call() == nil", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED);
+	odLua_run_assert(
+		lua.lua, "type(%s.%s()) == 'userdata'", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
+	odLua_run_assert(
+		lua.lua, "%s.%s():test_call() == nil", OD_TEST_LUA_CLIENT_TABLE_QUALIFIED, OD_LUA_DEFAULT_NEW_KEY);
 
 	{
 		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-		OD_ASSERT(!odLua_run_string(lua.lua, OD_LUA_NAMESPACE "." OD_TEST_LUA_CLIENT_TABLE ".new().test_call()", nullptr, 0));
+		OD_ASSERT(!odLua_run_string(
+			lua.lua,
+			OD_LUA_NAMESPACE "." OD_TEST_LUA_CLIENT_TABLE "." OD_LUA_DEFAULT_NEW_KEY "().test_call()",
+			nullptr,
+			0
+		));
 	}
 }
 OD_TEST(odTest_odLua_run_string) {

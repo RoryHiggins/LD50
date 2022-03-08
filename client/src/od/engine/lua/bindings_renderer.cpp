@@ -60,6 +60,37 @@ static int odLuaBindings_odRenderer_destroy(lua_State* lua) {
 
 	return 0;
 }
+static int odLuaBindings_odRenderer_new(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int settings_index = 1;
+	const int32_t metatable_index = lua_upvalueindex(1);
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+	luaL_checktype(lua, metatable_index, LUA_TTABLE);
+
+	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
+	}
+
+	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
+	const int self_index = lua_gettop(lua);
+
+	lua_getfield(lua, self_index, "init");
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.init must be of type function");
+	}
+
+	lua_pushvalue(lua, self_index);
+	lua_pushvalue(lua, settings_index);
+	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
+
+	lua_pushvalue(lua, self_index);
+	return 1;
+}
 static int odLuaBindings_odRenderer_flush(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
@@ -134,7 +165,7 @@ static int odLuaBindings_odRenderer_clear(lua_State* lua) {
 
 	return 0;
 }
-static int odLuaBindings_odRenderer_draw_vertices(lua_State* lua) {
+static int odLuaBindings_odRenderer_draw_vertex_array(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
@@ -158,83 +189,19 @@ static int odLuaBindings_odRenderer_draw_vertices(lua_State* lua) {
 		return luaL_error(lua, "settings.render_state invalid");
 	}
 
-	lua_getfield(lua, settings_index, "vertices");
-	const int vertices_index = lua_gettop(lua);
-	if (!OD_CHECK(lua_type(lua, vertices_index) == LUA_TTABLE)) {
-		return luaL_error(lua, "settings.vertices must be of type table");
+	lua_getfield(lua, settings_index, "vertex_array");
+	const int vertex_array_index = lua_gettop(lua);
+	if (!OD_CHECK(lua_type(lua, vertex_array_index) == LUA_TUSERDATA)) {
+		return luaL_error(lua, "settings.vertex_array must be of type userdata");
 	}
 
-	int vertices_count = odLua_get_length(lua, vertices_index);
-	OD_DEBUG("vertices_count=%d", vertices_count);
-	if (!OD_DEBUG_CHECK(vertices_count % 3 == 0)) {
-			return luaL_error(lua, "settings.vertices length must be divisible by 3 (only supports triangles)");
-		}
-
-	static odArrayT<odVertex> vertices;
-	if (!OD_CHECK(vertices.set_count(vertices_count))) {
-		return luaL_error(lua, "vertices.set_count(%d) failed", vertices_count);
-	}
-	odVertex* vertices_raw = vertices.begin();
-
-	for (int i = 1; i <= vertices_count; i++) {
-		lua_rawgeti(lua, vertices_index, i);
-		const int vertex_index = lua_gettop(lua);
-
-		if (!OD_DEBUG_CHECK(lua_type(lua, vertex_index) == LUA_TTABLE)) {
-			return luaL_error(lua, "settings.vertices[%d] must be of type table", i);
-		}
-
-		const int values_count = 10;
-		if (!OD_DEBUG_CHECK(odLua_get_length(lua, vertex_index) == 10)) {
-			return luaL_error(lua, "settings.vertices[%d] must provide 10 elements", i);
-		}
-
-		lua_Number values[values_count + 1];  // over allocate to align with lua's 1-indexing
-
-		for (int j = 1; j <= values_count; j++) {
-			lua_rawgeti(lua, vertex_index, j);
-			if (!OD_DEBUG_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TNUMBER)) {
-				return luaL_error(lua, "settings.vertices[%d][%d] must be of type number", i, j);
-			}
-
-			values[j] = lua_tonumber(lua, OD_LUA_STACK_TOP);
-		}
-
-		lua_settop(lua, vertex_index);
-
-		odVertex vertex = {
-			odVector{
-				static_cast<float>(values[1]),
-				static_cast<float>(values[2]),
-				static_cast<float>(values[3]),
-				static_cast<float>(values[4]),
-			},
-			odColor{
-				static_cast<uint8_t>(values[5]),
-				static_cast<uint8_t>(values[6]),
-				static_cast<uint8_t>(values[7]),
-				static_cast<uint8_t>(values[8]),
-			},
-			static_cast<float>(values[9]),
-			static_cast<float>(values[10])
-		};
-
-		for (int j = 5; j < 9; j++) {
-			if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(values[j])))) {
-				return luaL_error(
-					lua, "settings.vertices[%d][%d] (color) must be an integer value in the range [0, 255]", i, j - 4);
-			}
-		}
-
-		if (!OD_DEBUG_CHECK(odVertex_check_valid_3d(&vertex))) {
-			return luaL_error(
-				lua, "settings.vertices[%d] not valid", 1, 4);
-		}
-
-		vertices_raw[i - 1] = vertex;
+	odTrivialArrayT<odVertex>* vertex_array = static_cast<odTrivialArrayT<odVertex>*>(odLua_get_userdata_typed(
+		lua, vertex_array_index, OD_LUA_BINDINGS_VERTEX_ARRAY));
+	if (!OD_CHECK(vertex_array != nullptr)) {
+		return 0;
 	}
 
-	if (!OD_CHECK(odRenderer_draw_vertices(renderer, render_state, vertices_raw, vertices_count))) {
+	if (!OD_CHECK(odRenderer_draw_vertices(renderer, render_state, vertex_array->begin(), vertex_array->get_count()))) {
 		return luaL_error(lua, "odRenderer_draw_vertices() failed");
 	}
 
@@ -255,9 +222,10 @@ bool odLuaBindings_odRenderer_register(lua_State* lua) {
 	};
 	if (!OD_CHECK(add_method("init", odLuaBindings_odRenderer_init))
 		|| !OD_CHECK(add_method("destroy", odLuaBindings_odRenderer_destroy))
+		|| !OD_CHECK(add_method("new", odLuaBindings_odRenderer_new))
 		|| !OD_CHECK(add_method("flush", odLuaBindings_odRenderer_flush))
 		|| !OD_CHECK(add_method("clear", odLuaBindings_odRenderer_clear))
-		|| !OD_CHECK(add_method("draw_vertices", odLuaBindings_odRenderer_draw_vertices))) {
+		|| !OD_CHECK(add_method("draw_vertex_array", odLuaBindings_odRenderer_draw_vertex_array))) {
 		return false;
 	}
 

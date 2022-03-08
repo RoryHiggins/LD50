@@ -25,7 +25,6 @@ struct odRendererScope {
 	~odRendererScope();
 };
 
-
 /*https://www.khronos.org/registry/OpenGL/specs/gl/glspec21.pdf*/
 /*https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.20.pdf*/
 static const char odRenderer_vertex_shader[] =

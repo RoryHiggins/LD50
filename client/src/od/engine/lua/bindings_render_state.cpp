@@ -147,6 +147,39 @@ static int odLuaBindings_odRenderState_destroy(lua_State* lua) {
 
 	return 0;
 }
+static int odLuaBindings_odRenderState_new_ortho_2d(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int settings_index = 1;
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	const int32_t metatable_index = lua_upvalueindex(1);
+
+	luaL_checktype(lua, metatable_index, LUA_TTABLE);
+
+	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
+	}
+
+	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
+	const int self_index = lua_gettop(lua);
+
+	lua_getfield(lua, self_index, "init_ortho_2d");
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.init must be of type function");
+	}
+
+	lua_pushvalue(lua, self_index);
+	lua_pushvalue(lua, settings_index);
+	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
+
+	lua_pushvalue(lua, self_index);
+	return 1;
+}
 bool odLuaBindings_odRenderState_register(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return false;
@@ -161,7 +194,8 @@ bool odLuaBindings_odRenderState_register(lua_State* lua) {
 		return odLua_metatable_set_function(lua, OD_LUA_BINDINGS_RENDER_STATE, name, fn);
 	};
 	if (!OD_CHECK(add_method("init_ortho_2d", odLuaBindings_odRenderState_init_ortho_2d))
-		|| !OD_CHECK(add_method("destroy", odLuaBindings_odRenderState_destroy))) {
+		|| !OD_CHECK(add_method("destroy", odLuaBindings_odRenderState_destroy))
+		|| !OD_CHECK(add_method("new_ortho_2d", odLuaBindings_odRenderState_new_ortho_2d))) {
 		return false;
 	}
 

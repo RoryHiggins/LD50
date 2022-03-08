@@ -26,7 +26,7 @@ static int odLuaBindings_odTexture_init(lua_State* lua) {
 
 	if (!OD_CHECK(texture != nullptr)
 		|| !OD_CHECK(lua_type(lua, settings_index) == LUA_TTABLE)) {
-		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_WINDOW);
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_TEXTURE);
 	}
 
 	lua_getfield(lua, settings_index, "window");
@@ -58,7 +58,6 @@ static int odLuaBindings_odTexture_init(lua_State* lua) {
 
 	return 0;
 }
-
 static int odLuaBindings_odTexture_init_from_png_file(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
@@ -74,7 +73,7 @@ static int odLuaBindings_odTexture_init_from_png_file(lua_State* lua) {
 
 	if (!OD_CHECK(texture != nullptr)
 		|| !OD_CHECK(lua_type(lua, settings_index) == LUA_TTABLE)) {
-		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_WINDOW);
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_TEXTURE);
 	}
 
 	lua_getfield(lua, settings_index, "window");
@@ -106,6 +105,72 @@ static int odLuaBindings_odTexture_init_from_png_file(lua_State* lua) {
 
 	return 0;
 }
+static int odLuaBindings_odTexture_new(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int settings_index = 1;
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	const int32_t metatable_index = lua_upvalueindex(1);
+
+	luaL_checktype(lua, metatable_index, LUA_TTABLE);
+
+	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
+	}
+
+	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
+	const int self_index = lua_gettop(lua);
+
+	lua_getfield(lua, self_index, "init");
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.init must be of type function");
+	}
+
+	lua_pushvalue(lua, self_index);
+	lua_pushvalue(lua, settings_index);
+	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
+
+	lua_pushvalue(lua, self_index);
+	return 1;
+}
+static int odLuaBindings_odTexture_new_from_png_file(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int settings_index = 1;
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	const int32_t metatable_index = lua_upvalueindex(1);
+
+	luaL_checktype(lua, metatable_index, LUA_TTABLE);
+
+	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
+	}
+
+	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
+	const int self_index = lua_gettop(lua);
+
+	lua_getfield(lua, self_index, "init_from_png_file");
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.init must be of type function");
+	}
+
+	lua_pushvalue(lua, self_index);
+	lua_pushvalue(lua, settings_index);
+	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
+
+	lua_pushvalue(lua, self_index);
+	return 1;
+}
 static int odLuaBindings_odTexture_destroy(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
@@ -113,9 +178,10 @@ static int odLuaBindings_odTexture_destroy(lua_State* lua) {
 
 	const int self_index = 1;
 
-	odTexture* texture = static_cast<odTexture*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_TEXTURE));
+	odTexture* texture = static_cast<odTexture*>(odLua_get_userdata_typed(
+		lua, self_index, OD_LUA_BINDINGS_TEXTURE));
 	if (!OD_CHECK(texture != nullptr)) {
-		return 0;
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_TEXTURE);
 	}
 
 	odTexture_destroy(texture);
@@ -129,9 +195,10 @@ static int odLuaBindings_odTexture_get_size(lua_State* lua) {
 
 	const int self_index = 1;
 
-	odTexture* texture = static_cast<odTexture*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_TEXTURE));
+	const odTexture* texture = static_cast<odTexture*>(odLua_get_userdata_typed(
+		lua, self_index, OD_LUA_BINDINGS_TEXTURE));
 	if (!OD_CHECK(texture != nullptr)) {
-		return 0;
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_TEXTURE);
 	}
 
 	int32_t width = 0;
@@ -159,6 +226,8 @@ bool odLuaBindings_odTexture_register(lua_State* lua) {
 	};
 	if (!OD_CHECK(add_method("init", odLuaBindings_odTexture_init))
 		|| !OD_CHECK(add_method("init_from_png_file", odLuaBindings_odTexture_init_from_png_file))
+		|| !OD_CHECK(add_method("new", odLuaBindings_odTexture_new))
+		|| !OD_CHECK(add_method("new_from_png_file", odLuaBindings_odTexture_new_from_png_file))
 		|| !OD_CHECK(add_method("destroy", odLuaBindings_odTexture_destroy))
 		|| !OD_CHECK(add_method("get_size", odLuaBindings_odTexture_get_size))) {
 		return false;

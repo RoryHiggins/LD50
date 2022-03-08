@@ -243,7 +243,7 @@ bool odLua_metatable_set_function(lua_State* lua, const char* metatable_name, co
 
 	lua_pushstring(lua, name);
 	lua_pushvalue(lua, OD_LUA_STACK_TOP - 1);  // _G[namespace][metatable_name]
-	lua_pushcclosure(lua, fn, 1);
+	lua_pushcclosure(lua, fn, 1);  // metatable as the sole upvalue
 	lua_settable(lua, OD_LUA_STACK_TOP - 2);
 
 	return true;
@@ -275,10 +275,11 @@ bool odLua_metatable_set_new_delete(lua_State* lua, const char* metatable_name, 
 
 	void* type_raw = static_cast<void*>(const_cast<odType*>(type));
 
+	// these should never get overridden by bindings
 	if (!OD_CHECK(odLua_metatable_set_ptr(lua, metatable_name, OD_LUA_CPP_TYPE_KEY, type_raw))) {
 		return false;
 	}
-	if (!OD_CHECK(odLua_metatable_set_function(lua, metatable_name, "new", odLua_cpp_new))) {
+	if (!OD_CHECK(odLua_metatable_set_function(lua, metatable_name, OD_LUA_DEFAULT_NEW_KEY, odLua_cpp_new))) {
 		return false;
 	}
 	if (!OD_CHECK(odLua_metatable_set_function(lua, metatable_name, "__gc", odLua_cpp_delete))) {
@@ -314,9 +315,9 @@ bool odLua_run_file(lua_State* lua, const char* filename, const char** args, int
 	}
 	OD_TRACE("args_count=%d", args_count);
 
-	int run_result = lua_pcall(lua, args_count, /*nresults*/ 0, /*errFunc*/ 0);
-	if (!OD_CHECK(run_result == 0)) {
-		OD_ERROR(
+	int run_result = lua_pcall(lua, args_count, /*nresults*/ LUA_MULTRET, /*errFunc*/ 0);
+	if (run_result != 0) {
+		OD_INFO(
 			"lua_pcall() failed, filename=%s, result=%d, error=%s",
 			filename,
 			run_result,
@@ -324,8 +325,6 @@ bool odLua_run_file(lua_State* lua, const char* filename, const char** args, int
 		);
 		return false;
 	}
-
-	lua_settop(lua, 0);
 
 	return true;
 }
@@ -356,7 +355,7 @@ bool odLua_run_string(lua_State* lua, const char* string, const char** args, int
 	}
 	OD_TRACE("args_count=%d", args_count);
 
-	int run_result = lua_pcall(lua, args_count, /*nresults*/ 0, /*errFunc*/ 0);
+	int run_result = lua_pcall(lua, args_count, /*nresults*/ LUA_MULTRET, /*errFunc*/ 0);
 	if (run_result != 0) {
 		OD_ERROR(
 			"lua_pcall() failed, string=%s, result=%d, error=%s",
@@ -366,8 +365,6 @@ bool odLua_run_string(lua_State* lua, const char* string, const char** args, int
 		);
 		return false;
 	}
-
-	lua_settop(lua, 0);
 
 	return true;
 }

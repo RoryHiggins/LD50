@@ -1,14 +1,10 @@
 #include <od/engine/lua/bindings.h>
 
 #include <od/core/debug.h>
+#include <od/core/string.hpp>
+#include <od/engine/lua/includes.h>
+#include <od/engine/lua/wrappers.h>
 
-bool odLuaBindings_odRenderTexture_register(lua_State* lua) {
-	if (!OD_CHECK(lua != nullptr)) {
-		return false;
-	}
-
-	return true;
-}
 bool odLuaBindings_odEntityIndex_register(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return false;
@@ -21,7 +17,8 @@ bool odLuaBindings_register(lua_State* lua) {
 		return false;
 	}
 
-	if (!OD_CHECK(odLuaBindings_odWindow_register(lua))
+	if (!OD_CHECK(odLuaBindings_odVertexArray_register(lua))
+		|| !OD_CHECK(odLuaBindings_odWindow_register(lua))
 		|| !OD_CHECK(odLuaBindings_odTexture_register(lua))
 		|| !OD_CHECK(odLuaBindings_odRenderTexture_register(lua))
 		|| !OD_CHECK(odLuaBindings_odRenderState_register(lua))

@@ -2,9 +2,10 @@
 
 #include <od/engine/module.h>
 
-#define OD_LUA_NAMESPACE "odClient"
+#define OD_LUA_NAMESPACE "odClientWrapper"
 #define OD_LUA_METATABLE_NAME_KEY "_metatable_name"
 #define OD_LUA_CPP_TYPE_KEY "_cpp_type"
+#define OD_LUA_DEFAULT_NEW_KEY "new_default"
 
 #define OD_LUA_STACK_TOP -1
 

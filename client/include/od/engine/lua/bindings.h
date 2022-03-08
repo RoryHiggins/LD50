@@ -2,6 +2,7 @@
 
 #include <od/engine/module.h>
 
+#define OD_LUA_BINDINGS_VERTEX_ARRAY "VertexArray"
 #define OD_LUA_BINDINGS_WINDOW "Window"
 #define OD_LUA_BINDINGS_TEXTURE "Texture"
 #define OD_LUA_BINDINGS_RENDER_TEXTURE "RenderTexture"
@@ -10,6 +11,8 @@
 
 struct lua_State;
 
+OD_API_C OD_ENGINE_MODULE bool
+odLuaBindings_odVertexArray_register(struct lua_State* lua);
 OD_API_C OD_ENGINE_MODULE bool
 odLuaBindings_odWindow_register(struct lua_State* lua);
 OD_API_C OD_ENGINE_MODULE bool

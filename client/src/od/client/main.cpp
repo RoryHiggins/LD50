@@ -127,6 +127,8 @@ int main(int argc, char** argv) {
 
 	if (run_lua_client) {
 		odLuaClient lua_client;
+
+		OD_INFO("Running lua client, filename: %s", lua_client_path);
 		if (!odLua_run_file(lua_client.lua, lua_client_path, const_cast<const char**>(argv), argc)) {
 			return 1;
 		}
@@ -135,6 +137,8 @@ int main(int argc, char** argv) {
 	if (run_client) {
 		odClient client;
 		odClientSettings client_settings{*odClientSettings_get_defaults()};
+
+		OD_INFO("Running c++ client");
 		if (!odClient_run(&client, &client_settings)) {
 			return 1;
 		}

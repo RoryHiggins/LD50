@@ -318,7 +318,9 @@ struct odPlatform {
 static odPlatform odPlatform_instance{};
 
 odPlatform::odPlatform() {
-	odDebug_set_backtrace_handler(&odPlatform_backtrace_print);
+	if (OD_BUILD_STACK_TRACES) {
+		odDebug_set_backtrace_handler(&odPlatform_backtrace_print);
+	}
 
 	if (!OD_CHECK(odPlatform_float_init_exceptions())) {
 		exit(1);

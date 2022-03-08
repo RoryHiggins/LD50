@@ -4,7 +4,9 @@ project(overworld LANGUAGES CXX)
 set(OD_BUILD_LOGS_DEFAULT 0)
 set(OD_BUILD_DEBUG_DEFAULT 0)
 set(OD_BUILD_TESTS_DEFAULT 0)
+set(OD_BUILD_STACK_TRACES_DEFAULT 0)
 set(OD_BUILD_PROFILE_DEFAULT 0)
+
 set(OD_BUILD_LUAJIT_DEFAULT 0)
 set(OD_BUILD_EMSCRIPTEN_DEFAULT 0)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
@@ -25,6 +27,8 @@ set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
 	"Build with debugging runtime checks enabled")
 set(OD_BUILD_TESTS ${OD_BUILD_TESTS_DEFAULT} CACHE BOOL
 	"Build with tests enabled")
+set(OD_BUILD_STACK_TRACES ${OD_BUILD_STACK_TRACES_DEFAULT} CACHE BOOL
+	"Build with stack traces enabled")
 set(OD_BUILD_PROFILE ${OD_BUILD_PROFILE_DEFAULT} CACHE BOOL
 	"Build with profiling enabled")
 set(OD_BUILD_LUAJIT ${OD_BUILD_LUAJIT_DEFAULT} CACHE BOOL
@@ -41,6 +45,9 @@ endif()
 if(("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE") AND ("${OD_BUILD_TESTS}" EQUAL 1))
 	message(WARNING "release build with tests may not be intentional")
 endif()
+if(("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE") AND ("${OD_BUILD_STACK_TRACES}" EQUAL 1))
+	message(WARNING "release build with stack traces may not be intentional")
+endif()
 if(("${OD_BUILD_EMSCRIPTEN}" EQUAL 1) AND NOT ("${EMSCRIPTEN}" EQUAL 1))
 	message(WARNING "emscripten support for non-emscripten platform may not be intentional")
 endif()
@@ -51,7 +58,9 @@ endif()
 message("OD_BUILD_LOGS=${OD_BUILD_LOGS}")
 message("OD_BUILD_DEBUG=${OD_BUILD_DEBUG}")
 message("OD_BUILD_TESTS=${OD_BUILD_TESTS}")
+message("OD_BUILD_STACK_TRACES=${OD_BUILD_STACK_TRACES}")
 message("OD_BUILD_PROFILE=${OD_BUILD_PROFILE}")
+
 message("OD_BUILD_EMSCRIPTEN=${OD_BUILD_EMSCRIPTEN}")
 message("OD_BUILD_LUAJIT=${OD_BUILD_LUAJIT}")
 message("BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
@@ -101,6 +110,7 @@ foreach(od_target ${od_targets})
 		OD_BUILD_LOGS=${OD_BUILD_LOGS}
 		OD_BUILD_DEBUG=${OD_BUILD_DEBUG}
 		OD_BUILD_TESTS=${OD_BUILD_TESTS}
+		OD_BUILD_STACK_TRACES=${OD_BUILD_STACK_TRACES}
 		OD_BUILD_PROFILE=${OD_BUILD_PROFILE}
 		OD_BUILD_LUAJIT=${OD_BUILD_LUAJIT}
 		OD_BUILD_EMSCRIPTEN=${OD_BUILD_EMSCRIPTEN})

@@ -109,6 +109,55 @@ static int odLuaBindings_odWindow_init(lua_State* lua) {
 
 	return 0;
 }
+static int odLuaBindings_odWindow_destroy(lua_State* lua) {
+	const int self_index = 1;
+
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	odWindow* window = static_cast<odWindow*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_WINDOW));
+	if (!OD_CHECK(window != nullptr)) {
+		return 0;
+	}
+
+	odWindow_destroy(window);
+
+	return 0;
+}
+static int odLuaBindings_odWindow_new(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int settings_index = 1;
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	const int32_t metatable_index = lua_upvalueindex(1);
+
+	luaL_checktype(lua, metatable_index, LUA_TTABLE);
+
+	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
+	}
+
+	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
+	const int self_index = lua_gettop(lua);
+
+	lua_getfield(lua, self_index, "init");
+	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
+		return luaL_error(lua, "metatable.init must be of type function");
+	}
+
+	lua_pushvalue(lua, self_index);
+	lua_pushvalue(lua, settings_index);
+	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
+
+	lua_pushvalue(lua, self_index);
+	return 1;
+}
 static int odLuaBindings_odWindow_set_settings(lua_State* lua) {
 	const int self_index = 1;
 	const int settings_index = 2;
@@ -180,22 +229,6 @@ static int odLuaBindings_odWindow_get_settings(lua_State* lua) {
 	lua_pushvalue(lua, settings_index);
 	return 1;
 }
-static int odLuaBindings_odWindow_destroy(lua_State* lua) {
-	const int self_index = 1;
-
-	if (!OD_CHECK(lua != nullptr)) {
-		return 0;
-	}
-
-	odWindow* window = static_cast<odWindow*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_WINDOW));
-	if (!OD_CHECK(window != nullptr)) {
-		return 0;
-	}
-
-	odWindow_destroy(window);
-
-	return 0;
-}
 static int odLuaBindings_odWindow_step(lua_State* lua) {
 	const int self_index = 1;
 
@@ -228,6 +261,7 @@ bool odLuaBindings_odWindow_register(lua_State* lua) {
 	};
 	if (!OD_CHECK(add_method("init", odLuaBindings_odWindow_init))
 		|| !OD_CHECK(add_method("destroy", odLuaBindings_odWindow_destroy))
+		|| !OD_CHECK(add_method("new", odLuaBindings_odWindow_new))
 		|| !OD_CHECK(add_method("step", odLuaBindings_odWindow_step))
 		|| !OD_CHECK(add_method("set_settings", odLuaBindings_odWindow_set_settings))
 		|| !OD_CHECK(add_method("get_settings", odLuaBindings_odWindow_get_settings))) {
