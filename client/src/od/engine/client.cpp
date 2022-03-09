@@ -201,7 +201,7 @@ bool odClient_step(odClient* client) {
 		const float translate_y = scale_y;
 
 		odMatrix matrix{};
-		odMatrix_init(&matrix, scale_x, scale_y, 1.0f, translate_x, translate_y, 0.0f);
+		odMatrix_init_3d(&matrix, scale_x, scale_y, 1.0f, translate_x, translate_y, 0.0f);
 		odMatrix_rotate_z_3d(&matrix, static_cast<float>(client->frame.counter));
 		odVertex vertices[vertices_count]{};
 

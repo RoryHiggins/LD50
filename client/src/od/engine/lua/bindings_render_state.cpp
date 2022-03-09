@@ -10,7 +10,7 @@
 #include <od/engine/lua/includes.h>
 #include <od/engine/lua/wrappers.h>
 
-static int odLuaBindings_odRenderState_init_ortho_2d(lua_State* lua) {
+static int odLuaBindings_odRenderState_init(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
@@ -98,7 +98,7 @@ static int odLuaBindings_odRenderState_init_ortho_2d(lua_State* lua) {
 			return luaL_error(lua, "odRenderTexture_check_valid() failed");
 		}
 
-		src_texture = odRenderTexture_get_texture_const(opt_render_texture);
+		src_texture = odRenderTexture_get_texture_const(src_render_texture);
 	} else {
 		return luaL_error(lua, "invalid settings.src.%s=%s", OD_LUA_METATABLE_NAME_KEY, src_type);
 	}
@@ -106,12 +106,9 @@ static int odLuaBindings_odRenderState_init_ortho_2d(lua_State* lua) {
 		return luaL_error(lua, "odRenderTexture_get_texture_const() failed");
 	}
 
-	odMatrix projection{};
-	odMatrix_init_ortho_2d(&projection, width, height);
-
 	*render_state = odRenderState{
 		*odMatrix_get_identity(),
-		projection,
+		*odMatrix_get_identity(),
 		odBounds{
 			0.0f,
 			0.0f,
@@ -121,6 +118,35 @@ static int odLuaBindings_odRenderState_init_ortho_2d(lua_State* lua) {
 		src_texture,
 		opt_render_texture,
 	};
+
+	return 0;
+}
+static int odLuaBindings_odRenderState_init_ortho_2d(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int self_index = 1;
+	const int settings_index = 2;
+
+	luaL_checktype(lua, self_index, LUA_TUSERDATA);
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	odRenderState* render_state = static_cast<odRenderState*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_RENDER_STATE));
+	if (!OD_CHECK(render_state != nullptr)) {
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_RENDER_STATE);
+	}
+
+	lua_getfield(lua, self_index, "init");
+	lua_pushvalue(lua, self_index);
+	lua_pushvalue(lua, settings_index);
+	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
+
+	int32_t width = static_cast<int32_t>(render_state->viewport.x2);
+	int32_t height = static_cast<int32_t>(render_state->viewport.y2);
+
+	render_state->projection = odMatrix{};
+	odMatrix_init_ortho_2d(&render_state->projection, width, height);
 
 	return 0;
 }
@@ -147,6 +173,31 @@ static int odLuaBindings_odRenderState_destroy(lua_State* lua) {
 
 	return 0;
 }
+static int odLuaBindings_odRenderState_new(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int settings_index = 1;
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	const int32_t metatable_index = lua_upvalueindex(1);
+
+	luaL_checktype(lua, metatable_index, LUA_TTABLE);
+
+	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
+	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
+	const int self_index = lua_gettop(lua);
+
+	lua_getfield(lua, self_index, "init");
+	lua_pushvalue(lua, self_index);
+	lua_pushvalue(lua, settings_index);
+	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
+
+	lua_pushvalue(lua, self_index);
+	return 1;
+}
 static int odLuaBindings_odRenderState_new_ortho_2d(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
@@ -161,18 +212,10 @@ static int odLuaBindings_odRenderState_new_ortho_2d(lua_State* lua) {
 	luaL_checktype(lua, metatable_index, LUA_TTABLE);
 
 	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
-		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
-	}
-
 	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
 	const int self_index = lua_gettop(lua);
 
 	lua_getfield(lua, self_index, "init_ortho_2d");
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
-		return luaL_error(lua, "metatable.init must be of type function");
-	}
-
 	lua_pushvalue(lua, self_index);
 	lua_pushvalue(lua, settings_index);
 	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
@@ -193,8 +236,10 @@ bool odLuaBindings_odRenderState_register(lua_State* lua) {
 	auto add_method = [lua](const char* name, odLuaFn* fn) -> bool {
 		return odLua_metatable_set_function(lua, OD_LUA_BINDINGS_RENDER_STATE, name, fn);
 	};
-	if (!OD_CHECK(add_method("init_ortho_2d", odLuaBindings_odRenderState_init_ortho_2d))
+	if (!OD_CHECK(add_method("init", odLuaBindings_odRenderState_init))
+		|| !OD_CHECK(add_method("init_ortho_2d", odLuaBindings_odRenderState_init_ortho_2d))
 		|| !OD_CHECK(add_method("destroy", odLuaBindings_odRenderState_destroy))
+		|| !OD_CHECK(add_method("new", odLuaBindings_odRenderState_new))
 		|| !OD_CHECK(add_method("new_ortho_2d", odLuaBindings_odRenderState_new_ortho_2d))) {
 		return false;
 	}

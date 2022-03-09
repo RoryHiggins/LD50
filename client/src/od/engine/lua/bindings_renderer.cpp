@@ -72,18 +72,10 @@ static int odLuaBindings_odRenderer_new(lua_State* lua) {
 	luaL_checktype(lua, metatable_index, LUA_TTABLE);
 
 	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
-		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
-	}
-
 	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
 	const int self_index = lua_gettop(lua);
 
 	lua_getfield(lua, self_index, "init");
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
-		return luaL_error(lua, "metatable.init must be of type function");
-	}
-
 	lua_pushvalue(lua, self_index);
 	lua_pushvalue(lua, settings_index);
 	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
@@ -207,6 +199,36 @@ static int odLuaBindings_odRenderer_draw_vertex_array(lua_State* lua) {
 
 	return 0;
 }
+static int odLuaBindings_odRenderer_draw_texture(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int self_index = 1;
+	const int settings_index = 2;
+
+	luaL_checktype(lua, self_index, LUA_TUSERDATA);
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	odRenderer* renderer = static_cast<odRenderer*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_RENDERER));
+	if (!OD_CHECK(renderer != nullptr)) {
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_RENDERER);
+	}
+
+	lua_getfield(lua, settings_index, "render_state");
+	const int window_index = lua_gettop(lua);
+	odRenderState* render_state = static_cast<odRenderState*>(odLua_get_userdata_typed(
+		lua, window_index, OD_LUA_BINDINGS_RENDER_STATE));
+	if (!OD_CHECK(render_state != nullptr)) {
+		return luaL_error(lua, "settings.render_state invalid");
+	}
+
+	if (!OD_CHECK(odRenderer_draw_texture(renderer, render_state, nullptr, nullptr))) {
+		return luaL_error(lua, "odRenderer_draw_vertices() failed");
+	}
+
+	return 0;
+}
 bool odLuaBindings_odRenderer_register(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return false;
@@ -225,7 +247,8 @@ bool odLuaBindings_odRenderer_register(lua_State* lua) {
 		|| !OD_CHECK(add_method("new", odLuaBindings_odRenderer_new))
 		|| !OD_CHECK(add_method("flush", odLuaBindings_odRenderer_flush))
 		|| !OD_CHECK(add_method("clear", odLuaBindings_odRenderer_clear))
-		|| !OD_CHECK(add_method("draw_vertex_array", odLuaBindings_odRenderer_draw_vertex_array))) {
+		|| !OD_CHECK(add_method("draw_vertex_array", odLuaBindings_odRenderer_draw_vertex_array))
+		|| !OD_CHECK(add_method("draw_texture", odLuaBindings_odRenderer_draw_texture))) {
 		return false;
 	}
 

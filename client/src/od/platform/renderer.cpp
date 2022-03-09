@@ -149,7 +149,7 @@ bool odRenderer_init(odRenderer* renderer, odWindow* window) {
 	// we sort geometry instead, to properly support transparency
 	glDisable(GL_DEPTH_TEST);
 
-	glEnable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
 
 	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
 		OD_ERROR("OpenGL error when configuring opengl context, renderer=%s", odRenderer_get_debug_string(renderer));
@@ -434,13 +434,13 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	}
 
 	odMatrix transform{};
-	odMatrix_init(
+	odMatrix_init_3d(
 		&transform,
-		static_cast<float>(odBounds_get_width(&state->viewport)),
-		static_cast<float>(odBounds_get_height(&state->viewport)),
+		2.0f,
+		2.0f,
 		1.0f,
-		0.0f,
-		0.0f,
+		-1.0f,
+		-1.0f,
 		0.0f
 	);
 
@@ -450,7 +450,7 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 
 	odSpritePrimitive sprite{
 		odBounds{0.0f, 0.0f, 1.0f, 1.0f},
-		odBounds{src_bounds.x1, src_bounds.y1, src_bounds.x2, src_bounds.y2},
+		src_bounds,
 		*odColor_get_white(),
 		0.0f,
 	};

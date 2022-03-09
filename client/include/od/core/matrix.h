@@ -17,9 +17,9 @@ odMatrix_check_valid(const struct odMatrix* matrix);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odMatrix_check_valid_3d(const struct odMatrix* matrix);
 OD_API_C OD_CORE_MODULE void
-odMatrix_init(struct odMatrix* matrix,
-							 float scale_x, float scale_y, float scale_z,
-							 float translate_x, float translate_y, float translate_z);
+odMatrix_init_3d(struct odMatrix* matrix,
+				 float scale_x, float scale_y, float scale_z,
+				 float translate_x, float translate_y, float translate_z);
 OD_API_C OD_CORE_MODULE void
 odMatrix_init_ortho_2d(struct odMatrix* matrix, int32_t width, int32_t height);
 OD_API_C OD_CORE_MODULE void

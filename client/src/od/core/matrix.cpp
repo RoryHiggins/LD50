@@ -55,9 +55,9 @@ bool odMatrix_check_valid_3d(const odMatrix* matrix) {
 
 	return true;
 }
-void odMatrix_init(odMatrix* matrix,
-				   float scale_x, float scale_y, float scale_z,
-				   float translate_x, float translate_y, float translate_z) {
+void odMatrix_init_3d(odMatrix* matrix,
+					  float scale_x, float scale_y, float scale_z,
+					  float translate_x, float translate_y, float translate_z) {
 	if (!OD_DEBUG_CHECK(matrix != nullptr)
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_x))
 		|| !OD_DEBUG_CHECK(std::isfinite(scale_y))
@@ -88,7 +88,7 @@ void odMatrix_init_ortho_2d(odMatrix* matrix, int32_t width, int32_t height) {
 	// from x=0..view_width, y=0..view_height
 	// to x=-1..1, y=-1..1
 	// it also flips y, so (0,0)=top left, (0,height)=bottom left
-	return odMatrix_init(
+	return odMatrix_init_3d(
 		matrix,
 
 		// scales xy from 0..width,0..height to 0..2,0..2

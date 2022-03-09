@@ -139,10 +139,6 @@ static int odLuaBindings_odVertexArray_init(lua_State* lua) {
 	*vertex_array = odVertexArray{};
 
 	lua_getfield(lua, self_index, "add_vertices");
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
-		return luaL_error(lua, "metatable.add_vertices must be of type function");
-	}
-
 	lua_pushvalue(lua, self_index);
 	lua_pushvalue(lua, vertices_index);
 	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
@@ -161,18 +157,10 @@ static int odLuaBindings_odVertexArray_new(lua_State* lua) {
 	luaL_checktype(lua, metatable_index, LUA_TTABLE);
 
 	lua_getfield(lua, metatable_index, OD_LUA_DEFAULT_NEW_KEY);
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
-		return luaL_error(lua, "metatable.%s must be of type function", OD_LUA_DEFAULT_NEW_KEY);
-	}
-
 	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
 	const int self_index = lua_gettop(lua);
 
 	lua_getfield(lua, self_index, "init");
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TFUNCTION)) {
-		return luaL_error(lua, "metatable.init must be of type function");
-	}
-
 	lua_pushvalue(lua, self_index);
 	lua_pushvalue(lua, vertices_index);
 	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);

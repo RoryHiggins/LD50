@@ -147,6 +147,15 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderer, OD_TEST_FILTER_SLOW) {
 		renderer:draw_vertex_array{render_state = render_state, vertex_array = vertex_array}
 		renderer:flush()
 
+		local render_texture = odClientWrapper.RenderTexture.new{window = window, width = 32, height = 32}
+		local render_to_texture_state = odClientWrapper.RenderState.new_ortho_2d{target = render_texture, src = texture}
+
+		renderer:draw_vertex_array{render_state = render_to_texture_state, vertex_array = vertex_array}
+		renderer:flush()
+
+		local copy_to_window_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = render_texture}
+		renderer:draw_texture{render_state = copy_to_window_state}
+
 		renderer:destroy()
 		renderer:destroy()  -- re-destroy
 	)";
