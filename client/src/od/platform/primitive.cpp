@@ -24,9 +24,7 @@ bool odSpritePrimitive_check_valid(const odSpritePrimitive* sprite) {
 }
 void odSpritePrimitive_get_vertices(const odSpritePrimitive* sprite, odVertex *out_vertices) {
 	if (!OD_DEBUG_CHECK(odSpritePrimitive_check_valid(sprite))
-		|| !OD_DEBUG_CHECK(out_vertices != nullptr)
-		|| !OD_DEBUG_CHECK(odBounds_check_valid(&sprite->bounds))
-		|| !OD_DEBUG_CHECK(odBounds_check_valid(&sprite->texture_bounds))) {
+		|| !OD_DEBUG_CHECK(out_vertices != nullptr)) {
 		return;
 	}
 
@@ -52,6 +50,49 @@ void odSpritePrimitive_get_vertices(const odSpritePrimitive* sprite, odVertex *o
 	out_vertices[3] = top_right;
 	out_vertices[4] = bottom_left;
 	out_vertices[5] = bottom_right;
+}
+
+
+bool odLinePrimitive_check_valid(const odLinePrimitive* line) {
+	if (!OD_DEBUG_CHECK(line != nullptr)) {
+		return false;
+	}
+
+	if (!OD_CHECK(std::isfinite(line->depth))
+		|| (!OD_CHECK(odBounds_check_valid(&line->bounds)))) {
+		return false;
+	}
+
+	return true;
+}
+void odLinePrimitive_get_vertices(const odLinePrimitive* line, odVertex *out_vertices) {
+	if (!OD_DEBUG_CHECK(odLinePrimitive_check_valid(line))
+		|| !OD_DEBUG_CHECK(out_vertices != nullptr)) {
+		return;
+	}
+
+	odVertex start = odVertex{odVector{line->bounds.x1, line->bounds.y1, line->depth, 1.0f}, line->color, 0.0f, 0.0f};
+	odVertex end = odVertex{odVector{line->bounds.x2, line->bounds.y2, line->depth, 1.0f}, line->color, 0.0f, 0.0f};
+
+	out_vertices[0] = start;
+	out_vertices[1] = start;
+	out_vertices[2] = end;
+	out_vertices[3] = end;
+	out_vertices[4] = start;
+	out_vertices[5] = end;
+
+	// Give the triangles actual width -  OpenGL can't render degenerate triangles
+	static const float width = 1.0f;
+	float length_x = fabsf(end.pos.x - start.pos.x);
+	float length_y = fabsf(end.pos.y - start.pos.y);
+	float is_horizontal_line = width * static_cast<float>(length_x > length_y);
+	float is_vertical_line = width * static_cast<float>(length_x <= length_y);
+	out_vertices[1].pos.x += is_vertical_line;
+	out_vertices[1].pos.y += is_horizontal_line;
+	out_vertices[4].pos.x += is_vertical_line;
+	out_vertices[4].pos.y += is_horizontal_line;
+	out_vertices[5].pos.x += is_vertical_line;
+	out_vertices[5].pos.y += is_horizontal_line;
 }
 
 static int odTrianglePrimitive_compare(const void* triangle1, const void* triangle2) {

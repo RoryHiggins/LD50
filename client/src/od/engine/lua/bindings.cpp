@@ -5,13 +5,6 @@
 #include <od/engine/lua/includes.h>
 #include <od/engine/lua/wrappers.h>
 
-bool odLuaBindings_odEntityIndex_register(lua_State* lua) {
-	if (!OD_CHECK(lua != nullptr)) {
-		return false;
-	}
-
-	return true;
-}
 bool odLuaBindings_register(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return false;

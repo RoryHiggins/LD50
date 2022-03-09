@@ -8,6 +8,7 @@
 #define OD_LUA_BINDINGS_RENDER_TEXTURE "RenderTexture"
 #define OD_LUA_BINDINGS_RENDER_STATE "RenderState"
 #define OD_LUA_BINDINGS_RENDERER "Renderer"
+#define OD_LUA_BINDINGS_ENTITY_INDEX "EntityIndex"
 
 struct lua_State;
 

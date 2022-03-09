@@ -149,6 +149,7 @@ bool odRenderer_init(odRenderer* renderer, odWindow* window) {
 	// we sort geometry instead, to properly support transparency
 	glDisable(GL_DEPTH_TEST);
 
+	// not worth supporting for a 2d engine
 	glDisable(GL_CULL_FACE);
 
 	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
@@ -436,11 +437,16 @@ bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 	odMatrix transform{};
 	odMatrix_init_3d(
 		&transform,
+		// scale x,y from 0..1 to 0..2
 		2.0f,
 		2.0f,
+
 		1.0f,
+
+		// transform x,y from 0..2 to -1..1
 		-1.0f,
 		-1.0f,
+
 		0.0f
 	);
 

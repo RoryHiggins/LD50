@@ -28,6 +28,12 @@ OD_TEST(odTest_odLuaBindings_odVertexArray) {
 			0,1,0,0, 255,0,0,255, 0,0,
 			1,0,0,0, 255,0,0,255, 0,0,
 		}
+		vertex_array:add_sprite(8,8,16,16, 0,8,8,16, 255,255,255,255, 0)
+		vertex_array:add_rect(8,8,16,16, 255,255,255,255, 0)
+		vertex_array:add_rect_outline(8,8,16,16, 255,255,255,255, 0)
+		vertex_array:add_line(0,0,256,256, 255,255,255,255, 0)
+		vertex_array:add_point(4,4, 255,255,255,255, 0)
+		vertex_array:add_triangle(0,0, 0,1, 1,0, 0,255,0,255)
 		vertex_array:sort()
 	)";
 
@@ -162,6 +168,25 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderer, OD_TEST_FILTER_SLOW) {
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
 }
+OD_TEST(odTest_odLuaBindings_odEntityIndex) {
+	odLuaClient lua;
+	OD_ASSERT(odLuaClient_init(&lua));
+
+	const char test_script[] = R"(
+		local entity_index = odClientWrapper.EntityIndex.new()
+		entity_index:init() -- re-init
+
+		entity_index:set_collider(1, 0,0,0,0, 0,1,95)
+
+		local vertex_array = odClientWrapper.VertexArray.new{}
+		entity_index:add_to_vertex_array{vertex_array = vertex_array}
+
+		entity_index:destroy()
+		entity_index:destroy()  -- re-destroy
+	)";
+
+	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
+}
 
 OD_TEST_SUITE(
 	odTestSuite_odLuaBindings,
@@ -171,5 +196,6 @@ OD_TEST_SUITE(
 	odTest_odLuaBindings_odTexture,
 	odTest_odLuaBindings_odRenderTexture,
 	odTest_odLuaBindings_odRenderState,
-	odTest_odLuaBindings_odRenderer
+	odTest_odLuaBindings_odRenderer,
+	odTest_odLuaBindings_odEntityIndex
 )
