@@ -18,3 +18,6 @@ odFloat_epsilon_get_equals(float x, float y);
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odInt32_fits_float(int32_t x);
+
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD int32_t
+odUint32_popcount(uint32_t x);

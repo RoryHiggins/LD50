@@ -110,18 +110,18 @@ int32_t odLua_get_length(struct lua_State* lua, int32_t index) {
 #endif
 }
 void* odLua_get_userdata(lua_State* lua, int32_t index) {
-	if (!OD_CHECK(lua != nullptr)) {
+	if (!OD_DEBUG_CHECK(lua != nullptr)) {
 		return nullptr;
 	}
 
 	odLuaScope scope{lua};
 
-	if (!OD_CHECK(lua_type(lua, index) == LUA_TUSERDATA)) {
+	if (!OD_DEBUG_CHECK(lua_type(lua, index) == LUA_TUSERDATA)) {
 		return nullptr;
 	}
 
 	void** userdata = static_cast<void**>(lua_touserdata(lua, index));
-	if (userdata == nullptr) {
+	if (!OD_CHECK(userdata != nullptr)) {
 		OD_ERROR(
 			"lua_touserdata(index=%d) returned nullptr; "
 			"possibly a method called with '.' instead of ':?",
@@ -143,15 +143,17 @@ void* odLua_get_userdata_typed(lua_State* lua, int32_t index, const char* metata
 
 	odLuaScope scope{lua};
 
-	lua_getfield(lua, index, OD_LUA_METATABLE_NAME_KEY);
-	if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TSTRING)) {
-		return nullptr;
-	}
+	if (OD_BUILD_DEBUG) {
+		lua_getfield(lua, index, OD_LUA_METATABLE_NAME_KEY);
+		if (!OD_DEBUG_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TSTRING)) {
+			return nullptr;
+		}
 
-	const char* actual_metatable_name = lua_tostring(lua, OD_LUA_STACK_TOP);
-	if (!OD_CHECK(actual_metatable_name != nullptr)
-		|| !OD_CHECK(strcmp(actual_metatable_name, metatable_name) == 0)) {
-		return nullptr;
+		const char* actual_metatable_name = lua_tostring(lua, OD_LUA_STACK_TOP);
+		if (!OD_DEBUG_CHECK(actual_metatable_name != nullptr)
+			|| !OD_DEBUG_CHECK(strcmp(actual_metatable_name, metatable_name) == 0)) {
+			return nullptr;
+		}
 	}
 
 	return odLua_get_userdata(lua, index);

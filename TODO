@@ -9,6 +9,8 @@ c++-lua: table schema definition and validation helper with meaningful errors
 
 c++: move primitive out of platform and into core?
 
+c++: rename odTagset to odEntityTagset
+
 Lua - Approach
 --------------
 # Conceptual (not backed by a concrete impl in code)

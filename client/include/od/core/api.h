@@ -56,20 +56,10 @@
 #define OD_API_PRINTF(FORMAT_ARG, VA_ARG)
 #endif
 
-#if defined(__cplusplus) && (__cplusplus >= 201703)
-#define OD_NO_DISCARD [[nodiscard]]
-#elif defined(__clang__) || defined(__GNUC__)
+#if defined(__clang__) || defined(__GNUC__)
 #define OD_NO_DISCARD __attribute__((warn_unused_result))
 #else
 #define OD_NO_DISCARD
-#endif
-
-#if defined(__cplusplus) && (__cplusplus >= 201103)
-#define OD_NO_RETURN [[noreturn]]
-#elif defined(__clang__) || defined(__GNUC__)
-#define OD_NO_RETURN __attribute__((noreturn))
-#else
-#define OD_NO_RETURN
 #endif
 
 #define OD_UNUSED(LVALUE) static_cast<void>(LVALUE)

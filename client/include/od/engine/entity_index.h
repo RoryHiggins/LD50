@@ -24,10 +24,11 @@ struct odVertex;
 struct odEntityIndex;
 
 struct odEntitySearch {
-	odEntityId* out_results;
+	odEntityId* opt_out_results;
 	int32_t max_results;
 	struct odBounds bounds;
 	struct odTagset tagset;
+	const odEntityId* opt_exclude_entity_id;
 };
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const char*
@@ -44,6 +45,8 @@ OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const struct odVertex*
 odEntityIndex_get_all_vertices(const struct odEntityIndex* entity_index, int32_t* out_vertex_count);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const struct odEntity*
 odEntityIndex_get(const struct odEntityIndex* entity_index, odEntityId entity_id);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const struct odEntity*
+odEntityIndex_get_or_add(struct odEntityIndex* entity_index, odEntityId entity_id);
 OD_API_C OD_ENGINE_MODULE void
 odEntityIndex_set_collider(struct odEntityIndex* entity_index, const struct odEntityCollider* collider);
 OD_API_C OD_ENGINE_MODULE void

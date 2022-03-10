@@ -3,6 +3,10 @@
 #include <cmath>
 #include <cfloat>
 
+#if defined(__cplusplus) && (__cplusplus >= 202002)
+#include <bit>
+#endif
+
 bool odFloat_is_precise_int24(float x) {
 	if (!std::isfinite(x)
 		|| (floorf(x) != x)
@@ -38,4 +42,20 @@ bool odInt32_fits_float(int32_t x) {
 	}
 
 	return true;
+}
+
+int32_t odUint32_popcount(uint32_t x) {
+#if defined(__cplusplus) && (__cplusplus >= 202002)
+	return static_cast<int32_t>(std::popcount(x));
+#elif defined(__clang__) || defined(__GNUC__)
+	return static_cast<int32_t>(__builtin_popcount(x));
+#else
+	int32_t count = 0;
+	for (int32_t i = 0; i < 32; i++) {
+		if ((x & (1 << i)) > 0) {
+			count++;
+		}
+	}
+	return count;
+#endif
 }

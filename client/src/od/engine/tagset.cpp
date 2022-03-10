@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include <od/core/debug.h>
+#include <od/core/math.h>
 
 static_assert(
 	OD_TAGSET_ELEMENT_SIZE == sizeof(odTagsetElement),
@@ -52,6 +53,17 @@ bool odTagset_get(const odTagset *tagset, int32_t required_tag_id) {
 	odTagsetElement bit_mask = static_cast<odTagsetElement>(1 << bit);
 
 	return (tagset->tagset[element] & bit_mask) > 0;
+}
+int32_t odTagset_get_count(const odTagset* tagset) {
+	if (!OD_DEBUG_CHECK(tagset != nullptr)) {
+		return false;
+	}
+
+	int32_t tag_count = 0;
+	for (int32_t i = 0; i < OD_TAGSET_ELEMENT_COUNT; i++) {
+		tag_count += odUint32_popcount(static_cast<uint32_t>(tagset->tagset[i]));
+	}
+	return tag_count;
 }
 bool odTagset_intersects(const odTagset* tagset, const odTagset* required_tags) {
 	if (!OD_DEBUG_CHECK(tagset != nullptr)

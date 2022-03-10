@@ -68,7 +68,7 @@ odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunkId ch
 static OD_NO_DISCARD bool
 odEntityIndex_ensure_count(odEntityIndex* entity_index, int32_t min_count);
 static OD_NO_DISCARD odEntityIndexEntity*
-odEntityIndex_get_or_allocate_entity(odEntityIndex* entity_index, odEntityId entity_id);
+odEntityIndex_get_or_add_allocation(odEntityIndex* entity_index, odEntityId entity_id);
 static OD_NO_DISCARD bool
 odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEntityIndexEntity* entity);
 static OD_NO_DISCARD bool
@@ -359,8 +359,15 @@ bool odEntityIndex_ensure_count(odEntityIndex* entity_index, int32_t min_count) 
 		return false;
 	}
 
-	if (!OD_CHECK(entity_index->entities.ensure_count(min_count))) {
-		return false;
+	int32_t old_count = entity_index->entities.get_count();
+	if (min_count > old_count) {
+		if (!OD_CHECK(entity_index->entities.ensure_count(min_count))) {
+			return false;
+		}
+
+		for (int32_t i = old_count; i < min_count; i++) {
+			entity_index->entities[i].entity.collider.id = i;
+		}
 	}
 
 	int32_t min_vertices_count = min_count * 6;
@@ -370,7 +377,7 @@ bool odEntityIndex_ensure_count(odEntityIndex* entity_index, int32_t min_count) 
 
 	return true;
 }
-odEntityIndexEntity* odEntityIndex_get_or_allocate_entity(odEntityIndex* entity_index, odEntityId entity_id) {
+odEntityIndexEntity* odEntityIndex_get_or_add_allocation(odEntityIndex* entity_index, odEntityId entity_id) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK(entity_id >= 0)) {
 		return nullptr;
@@ -380,12 +387,13 @@ odEntityIndexEntity* odEntityIndex_get_or_allocate_entity(odEntityIndex* entity_
 		return nullptr;
 	}
 
-	odEntityIndexEntity* old_entity = entity_index->entities.get(entity_id);
-	if (!OD_DEBUG_CHECK(odEntityIndexEntity_check_valid(old_entity))) {
+	odEntityIndexEntity* entity_allocation = entity_index->entities.get(entity_id);
+	if (!OD_DEBUG_CHECK(odEntityIndexEntity_check_valid(entity_allocation))
+		|| !OD_DEBUG_CHECK(entity_allocation->entity.collider.id == entity_id)) {
 		return nullptr;
 	}
 
-	return old_entity;
+	return entity_allocation;
 }
 bool odEntityIndex_update_vertices_impl(odEntityIndex* entity_index, const odEntityIndexEntity* entity) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
@@ -560,13 +568,22 @@ const odEntity* odEntityIndex_get(const odEntityIndex* entity_index, odEntityId 
 
 	return &entity_index->entities[entity_id].entity;
 }
+const odEntity* odEntityIndex_get_or_add(odEntityIndex* entity_index, odEntityId entity_id) {
+	if (!OD_DEBUG_CHECK(entity_index != nullptr)
+		|| !OD_DEBUG_CHECK((entity_id >= 0))) {
+		return nullptr;
+	}
+
+	const odEntityIndexEntity* entity = odEntityIndex_get_or_add_allocation(entity_index, entity_id);
+	return &entity->entity;
+}
 void odEntityIndex_set_collider(odEntityIndex* entity_index, const odEntityCollider* collider) {
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(collider))) {
 		return;
 	}
 
-	odEntityIndexEntity* old_entity = odEntityIndex_get_or_allocate_entity(entity_index, collider->id);
+	odEntityIndexEntity* old_entity = odEntityIndex_get_or_add_allocation(entity_index, collider->id);
 	if (!OD_DEBUG_CHECK(odEntityIndexEntity_check_valid(old_entity))) {
 		return;
 	}
@@ -586,7 +603,7 @@ void odEntityIndex_set_sprite(odEntityIndex* entity_index, odEntityId entity_id,
 		return;
 	}
 
-	odEntityIndexEntity* old_entity = odEntityIndex_get_or_allocate_entity(entity_index, entity_id);
+	odEntityIndexEntity* old_entity = odEntityIndex_get_or_add_allocation(entity_index, entity_id);
 	if (!OD_DEBUG_CHECK(odEntityIndexEntity_check_valid(old_entity))) {
 		return;
 	}
@@ -605,7 +622,7 @@ void odEntityIndex_set(odEntityIndex* entity_index, const odEntity* entity) {
 		return;
 	}
 
-	odEntityIndexEntity* old_entity = odEntityIndex_get_or_allocate_entity(entity_index, entity->collider.id);
+	odEntityIndexEntity* old_entity = odEntityIndex_get_or_add_allocation(entity_index, entity->collider.id);
 	if (!OD_DEBUG_CHECK(odEntityIndexEntity_check_valid(old_entity))) {
 		return;
 	}
@@ -644,6 +661,10 @@ void odEntityIndex_set(odEntityIndex* entity_index, const odEntity* entity) {
 				continue;
 			}
 
+			if ((search->opt_exclude_entity_id != nullptr) && (*search->opt_exclude_entity_id == collider.id)) {
+				continue;
+			}
+
 			// if seen on previous x or y coord, do not add
 			if (search->max_results > 1) {
 				odEntityChunkCoord coord_x = odEntityChunkId_get_coord_x(chunk_id);
@@ -666,7 +687,12 @@ void odEntityIndex_set(odEntityIndex* entity_index, const odEntity* entity) {
 				}
 			}
 
-			search->out_results[count++] = collider.id;
+			int32_t index = count++;
+			if (search->opt_out_results == nullptr) {
+				continue;
+			}
+
+			search->opt_out_results[index] = collider.id;
 		}
 	}
 
@@ -685,8 +711,8 @@ const char* odEntitySearch_get_debug_string(const odEntitySearch* search) {
 	}
 
 	return odDebugString_format(
-		"{\"out_results\": \"%p\", \"max_results\": %d, \"tagset\": %s, \"bounds\": %s}",
-		static_cast<const void*>(search->out_results),
+		"{\"opt_out_results\": \"%p\", \"max_results\": %d, \"tagset\": %s, \"bounds\": %s}",
+		static_cast<const void*>(search->opt_out_results),
 		search->max_results,
 		odTagset_get_debug_string(&search->tagset),
 		odBounds_get_debug_string(&search->bounds));
@@ -696,8 +722,7 @@ bool odEntitySearch_check_valid(const odEntitySearch* search) {
 		return false;
 	}
 
-	if (!OD_CHECK(search->out_results != nullptr)
-		|| !OD_CHECK(search->max_results >= 0)
+	if (!OD_CHECK(search->max_results >= 0)
 		|| !OD_CHECK(odBounds_check_valid(&search->bounds))) {
 		return false;
 	}

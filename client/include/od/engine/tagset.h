@@ -22,8 +22,8 @@ OD_API_C OD_ENGINE_MODULE void
 odTagset_set(struct odTagset* tagset, int32_t tag_id, bool enabled);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odTagset_get(const struct odTagset* tagset, int32_t required_tag_id);
-OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD uint8_t
-odTagset_get_max(void);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD int32_t
+odTagset_get_count(const struct odTagset* tagset);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odTagset_intersects(const struct odTagset* tagset, const struct odTagset* required_tags);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool

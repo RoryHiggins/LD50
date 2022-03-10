@@ -247,7 +247,12 @@ void odPlatform_float_reset_exceptions() {
 }
 #if !OD_BUILD_EMSCRIPTEN
 static int32_t odPlatform_float_get_enabled_exceptions() {
-	return FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW;
+	return (
+		FE_DIVBYZERO
+		// | FE_INVALID  // lua(jit) impl relies on "invalid" numbers (nan etc)
+		| FE_OVERFLOW
+		| FE_UNDERFLOW
+	);
 }
 #endif
 static OD_NO_DISCARD bool odPlatform_float_check_exceptions(void) {

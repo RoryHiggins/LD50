@@ -55,7 +55,7 @@ OD_TEST(odTest_odEntityIndex_search) {
 
 	const int32_t search_results_count = 4;
 	int32_t search_results[search_results_count];
-	odEntitySearch search{search_results, search_results_count, odBounds{0.0f, 0.0f, 128.0f, 128.0f}, odTagset{}};
+	odEntitySearch search{search_results, search_results_count, odBounds{0.0f, 0.0f, 128.0f, 128.0f}, odTagset{}, nullptr};
 	OD_ASSERT(odEntityIndex_search(&entity_index, &search) == 0);
 
 	odEntity entity{};
@@ -190,7 +190,8 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 				search_results,
 				small_search_results_count,
 				odBounds{x, y, x + tile_width_f + 1.0f, y + tile_width_f + 1.0f},
-				odTagset{}};
+				odTagset{},
+				nullptr};
 			cumulative += odEntityIndex_search(&entity_index, &search);
 		}
 		OD_ASSERT(cumulative > 0);
@@ -202,7 +203,8 @@ OD_TEST_FILTERED(odTest_odEntityIndex_search_performance, OD_TEST_FILTER_SLOW) {
 				search_results,
 				large_search_results_count,
 				odBounds{0.0f, 0.0f, grid_width_f / 4.0f, grid_width_f / 4.0f},
-				odTagset{}};
+				odTagset{},
+				nullptr};
 			cumulative += odEntityIndex_search(&entity_index, &search);
 		}
 		OD_ASSERT(cumulative > 0);
