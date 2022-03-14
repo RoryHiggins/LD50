@@ -24,13 +24,13 @@ const char* odBounds_get_debug_string(const odBounds* bounds) {
 	}
 
 	return odDebugString_format(
-		"{\"x1\": %g, \"x2\": %g, \"y1\": %g, \"y2\": %g}",
+		"{\"x1\": %g, \"y1\": %g, \"x2\": %g, \"y2\": %g}",
 		static_cast<double>(bounds->x1),
-		static_cast<double>(bounds->x2),
 		static_cast<double>(bounds->y1),
+		static_cast<double>(bounds->x2),
 		static_cast<double>(bounds->y2));
 }
-bool odBounds_is_collidable(const odBounds* bounds) {
+bool odBounds_has_area(const odBounds* bounds) {
 	if (!OD_DEBUG_CHECK(odBounds_check_valid(bounds))) {
 		return false;
 	}
@@ -45,8 +45,8 @@ bool odBounds_is_collidable(const odBounds* bounds) {
 bool odBounds_collides(const odBounds* a, const odBounds* b) {
 	if (!OD_DEBUG_CHECK(odBounds_check_valid(a))
 		|| !OD_DEBUG_CHECK(odBounds_check_valid(b))
-		|| !OD_DEBUG_CHECK(odBounds_is_collidable(a))
-		|| !OD_DEBUG_CHECK(odBounds_is_collidable(b))) {
+		|| !OD_DEBUG_CHECK(odBounds_has_area(a))
+		|| !OD_DEBUG_CHECK(odBounds_has_area(b))) {
 		return false;
 	}
 
@@ -62,8 +62,8 @@ bool odBounds_collides(const odBounds* a, const odBounds* b) {
 bool odBounds_contains(const odBounds* outer, const odBounds* inner) {
 	if (!OD_DEBUG_CHECK(odBounds_check_valid(outer))
 		|| !OD_DEBUG_CHECK(odBounds_check_valid(inner))
-		|| !OD_DEBUG_CHECK(odBounds_is_collidable(outer))
-		|| !OD_DEBUG_CHECK(odBounds_is_collidable(inner))) {
+		|| !OD_DEBUG_CHECK(odBounds_has_area(outer))
+		|| !OD_DEBUG_CHECK(odBounds_has_area(inner))) {
 		return false;
 	}
 

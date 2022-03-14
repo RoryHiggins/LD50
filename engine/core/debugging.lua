@@ -20,18 +20,15 @@ function debugging.breakpoint()
 
 	debugger_lib()
 end
-function debugging.protected_call(fn, ...)
+function debugging.pcall(fn, ...)
 	local args = {...}
 
 	if not debugger_enabled then
 		local function fn_wrapped()
 			fn(shim.unpack(args))
 		end
-		local function on_error(err)
-			print(debug.traceback("error :"..tostring(err), 2))
-		end
 
-		return xpcall(fn_wrapped, on_error)
+		return pcall(fn_wrapped)
 	end
 
 	return debugger_lib.call(fn, shim.unpack(args))

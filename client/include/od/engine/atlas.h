@@ -15,6 +15,8 @@ OD_API_C OD_ENGINE_MODULE void
 odAtlas_destroy(struct odAtlas* atlas);
 OD_API_C OD_ENGINE_MODULE void
 odAtlas_swap(struct odAtlas* atlas1, struct odAtlas* atlas2);
+OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
+odAtlas_check_valid(const struct odAtlas* atlas);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD const struct odColor*
 odAtlas_begin_const(const struct odAtlas* atlas);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD int32_t

@@ -88,6 +88,9 @@ OD_API_C OD_CORE_MODULE void
 odDebug_error(void);
 OD_API_C OD_CORE_MODULE void
 odDebug_set_backtrace_handler(bool(*fn)(void));
+OD_API_C OD_CORE_MODULE void
+odDebug_set_backtrace_enabled(bool enabled);
+
 inline void odDebug_discard_result_inline(bool result) {
 	OD_UNUSED(result);
 }

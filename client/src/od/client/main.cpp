@@ -83,6 +83,16 @@ int main(int argc, char** argv) {
 				continue;
 			}
 		}
+		if (OD_BUILD_DEBUG) {
+			if (strncmp(argv[i], "--backtrace", arg_size) == 0) {
+				odDebug_set_backtrace_enabled(true);
+				continue;
+			}
+			if (strncmp(argv[i], "--no-backtrace", arg_size) == 0) {
+				odDebug_set_backtrace_enabled(false);
+				continue;
+			}
+		}
 		if (OD_BUILD_TESTS) {
 			if (strncmp(argv[i], "--test", arg_size) == 0) {
 				run_tests = true;

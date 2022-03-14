@@ -4,7 +4,7 @@ local logging = {}
 logging.Level = {
 	none = 0,
 	error = 2,
-	warn = 2,
+	warn = 3,
 	info = 4,
 	debug = 5,
 	trace = 6,
@@ -54,11 +54,13 @@ function logging.trace(format, ...)
 end
 
 function logging.push_level(new_level)
-	logging._level_stack[#logging._level_stack + 1] = logging.logLevel
+	logging._level_stack[#logging._level_stack + 1] = logging.level
 	logging.level = new_level
 end
 function logging.pop_level()
 	if #logging._level_stack == 0 then
+		print("logging.pop_level failed, log level may not be valid")
+		logging.level = logging.Level.info
 		return false
 	end
 

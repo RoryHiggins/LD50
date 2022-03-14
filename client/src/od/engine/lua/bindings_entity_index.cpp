@@ -74,7 +74,6 @@ static int odLuaBindings_odEntityIndex_add_to_vertex_array(lua_State* lua) {
 	if (!OD_CHECK(lua_type(lua, vertex_array_index) == LUA_TUSERDATA)) {
 		return luaL_error(lua, "settings.vertex_array must be of type userdata");
 	}
-
 	odTrivialArrayT<odVertex>* vertex_array = static_cast<odTrivialArrayT<odVertex>*>(odLua_get_userdata_typed(
 		lua, vertex_array_index, OD_LUA_BINDINGS_VERTEX_ARRAY));
 	if (!OD_CHECK(vertex_array != nullptr)) {

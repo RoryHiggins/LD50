@@ -10,10 +10,10 @@ Inputs.defaults = {
 	lx = 0,
 	ly = 0,
 }
-Inputs.keys = container.get_keys(Inputs.defaults)
-container.update_for_keys(Inputs, Inputs.defaults, Inputs.keys)
+Inputs.keys = container.table_get_keys(Inputs.defaults)
+container.object_update_for_keys(Inputs, Inputs.defaults, Inputs.keys)
 function Inputs:getEqual(other)
-	return container.get_equal_for_keys(self.keys, self, other)
+	return container.table_get_equal_for_keys(self.keys, self, other)
 end
 function Inputs.create()
 	return setmetatable({}, Inputs)

@@ -45,7 +45,7 @@ bool odAtlasRegion_has_space(const odAtlasRegion* region) {
 		return false;
 	}
 
-	if (!odBounds_is_collidable(&region->bounds)) {
+	if (!odBounds_has_area(&region->bounds)) {
 		return false;
 	}
 
@@ -295,6 +295,16 @@ void odAtlas_swap(odAtlas* atlas1, odAtlas* atlas2) {
 	odTrivialArray_swap(&atlas1->regions, &atlas2->regions);
 	odTrivialArray_swap(&atlas1->free_regions, &atlas2->free_regions);
 }
+bool odAtlas_check_valid(const odAtlas* atlas) {
+	if (!OD_CHECK(atlas != nullptr)
+		|| !OD_CHECK(odImage_check_valid(&atlas->image))
+		|| !OD_CHECK(odTrivialArray_check_valid(&atlas->regions))
+		|| !OD_CHECK(odTrivialArray_check_valid(&atlas->free_regions))) {
+		return false;
+	}
+
+	return true;
+}
 const odColor* odAtlas_begin_const(const odAtlas* atlas) {
 	if (!OD_CHECK(atlas != nullptr)) {
 		return nullptr;
@@ -400,7 +410,8 @@ bool odAtlas_reset_region(odAtlas* atlas, odAtlasRegionId region_id) {
 odAtlas::odAtlas()
 : image{}, regions{}, free_regions{} {
 }
-odAtlas::odAtlas(odAtlas&& other) {
+odAtlas::odAtlas(odAtlas&& other)
+: odAtlas{} {
 	odAtlas_swap(this, &other);
 }
 odAtlas& odAtlas::operator=(odAtlas&& other) {

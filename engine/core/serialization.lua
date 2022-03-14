@@ -1,7 +1,7 @@
 local testing = require("engine/core/testing")
 
-local serializer = {}
-function serializer.get_escaped_string(str)
+local serialization = {}
+function serialization.get_escaped_string(str)
 	return (
 		str
 		:gsub('\\', '\\\\')
@@ -11,7 +11,7 @@ function serializer.get_escaped_string(str)
 		:gsub("[^%w%p%s]", "?")
 	)
 end
-function serializer._get_strs(xs, out_strs, xs_type)
+function serialization._get_strs(xs, out_strs, xs_type)
 	xs_type = xs_type or type(xs)
 	if xs_type == "table" then
 		out_strs[#out_strs + 1] = "{"
@@ -34,7 +34,7 @@ function serializer._get_strs(xs, out_strs, xs_type)
 				end
 			elseif key_type == "string" then
 				out_strs[#out_strs + 1] = "[\""
-				out_strs[#out_strs + 1] = serializer.get_escaped_string(key)
+				out_strs[#out_strs + 1] = serialization.get_escaped_string(key)
 				out_strs[#out_strs + 1] = "\"]="
 				has_string_keys = true
 			else
@@ -44,13 +44,13 @@ function serializer._get_strs(xs, out_strs, xs_type)
 			local x_type = type(x)
 			if x_type == "string" then
 				out_strs[#out_strs + 1] = "\""
-				out_strs[#out_strs + 1] = serializer.get_escaped_string(x)
+				out_strs[#out_strs + 1] = serialization.get_escaped_string(x)
 				out_strs[#out_strs + 1] = "\""
 			elseif x_type == "number" or x_type == "boolean" then
 				out_strs[#out_strs + 1] = tostring(x)
 				int_val_count = int_val_count + 1
 			else
-				serializer._get_strs(x, out_strs, x_type)
+				serialization._get_strs(x, out_strs, x_type)
 			end
 		end
 
@@ -66,7 +66,7 @@ function serializer._get_strs(xs, out_strs, xs_type)
 		out_strs[#out_strs + 1] = "}"
 	elseif xs_type == "string" then
 		out_strs[#out_strs + 1] = "\""
-		out_strs[#out_strs + 1] = serializer.get_escaped_string(xs)
+		out_strs[#out_strs + 1] = serialization.get_escaped_string(xs)
 		out_strs[#out_strs + 1] = "\""
 	elseif xs_type == "number" or xs_type == "boolean" then
 		out_strs[#out_strs + 1] = tostring(xs)
@@ -75,10 +75,10 @@ function serializer._get_strs(xs, out_strs, xs_type)
 	end
 	return out_strs
 end
-function serializer.serialize(xs)
-	return table.concat(serializer._get_strs(xs, {}))
+function serialization.serialize(xs)
+	return table.concat(serialization._get_strs(xs, {}))
 end
-function serializer.deserialize(str)
+function serialization.deserialize(str)
 	local success, result = pcall(load("return "..str))
 	if not success then
 		error("failed to deserialize "..str)
@@ -86,8 +86,7 @@ function serializer.deserialize(str)
 	return result
 end
 
-
-testing.add_suite("core.serializer", {
+testing.add_suite("core.serialization", {
 	serialize_deserialize = function()
 		local test_values = {
 			0,
@@ -109,17 +108,16 @@ testing.add_suite("core.serializer", {
 			{yes = {1, 2, 3}, no = {4, 5}},
 		}
 		for _, val in ipairs(test_values) do
-			local serialized = serializer.serialize(val)
+			local serialized = serialization.serialize(val)
 			assert(type(serialized) == "string")
-			print(serialized)
 
-			local deserialized = serializer.deserialize(serialized)
+			local deserialized = serialization.deserialize(serialized)
 			assert(type(deserialized) == type(val))
-			assert(serializer.serialize(deserialized) == serialized)
+			assert(serialization.serialize(deserialized) == serialized)
 		end
 	end,
 })
 
 testing.run_all()
 
-return serializer
+return serialization

@@ -322,7 +322,7 @@ bool odEntityIndex_chunk_set_collider(odEntityIndex* entity_index, odEntityChunk
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)
 		|| !OD_DEBUG_CHECK((chunk_id >= 0) && (chunk_id < OD_ENTITY_CHUNK_ID_COUNT))
 		|| !OD_DEBUG_CHECK(odEntityCollider_check_valid(collider))
-		|| !OD_DEBUG_CHECK(odBounds_is_collidable(&collider->bounds))
+		|| !OD_DEBUG_CHECK(odBounds_has_area(&collider->bounds))
 		|| !OD_DEBUG_CHECK(collider->id < entity_index->entities.get_count())) {
 		return false;
 	}

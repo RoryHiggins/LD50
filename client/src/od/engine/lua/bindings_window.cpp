@@ -15,41 +15,17 @@ static bool odLuaBindings_odWindow_get_settings_impl(lua_State* lua, odWindowSet
 
 	lua_getfield(lua, settings_index, "width");
 	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
-		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TNUMBER)) {
-			return luaL_error(lua, "settings.width must be a number or nil");
-		}
-
-		settings->width = static_cast<int32_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
-
-		if (!OD_CHECK(settings->width > 0)) {
-			return luaL_error(lua, "settings.width must be > 0");
-		}
+		settings->width = static_cast<int32_t>(luaL_checknumber(lua, OD_LUA_STACK_TOP));
 	}
 
 	lua_getfield(lua, settings_index, "height");
 	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
-		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TNUMBER)) {
-			return luaL_error(lua, "settings.height must be a number or nil");
-		}
-
-		settings->height = static_cast<int32_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
-
-		if (!OD_CHECK(settings->height > 0)) {
-			return luaL_error(lua, "settings.width must be > 0");
-		}
+		settings->height = static_cast<int32_t>(luaL_checknumber(lua, OD_LUA_STACK_TOP));
 	}
 
 	lua_getfield(lua, settings_index, "fps_limit");
 	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
-		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TNUMBER)) {
-			return luaL_error(lua, "settings.fps_limit must be a number or nil");
-		}
-
-		settings->fps_limit = static_cast<int32_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
-
-		if (!OD_CHECK(settings->fps_limit > 0)) {
-			return luaL_error(lua, "settings.fps_limit must be > 0");
-		}
+		settings->fps_limit = static_cast<int32_t>(luaL_checknumber(lua, OD_LUA_STACK_TOP));
 	}
 
 	lua_getfield(lua, settings_index, "is_fps_limit_enabled");

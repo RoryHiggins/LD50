@@ -20,7 +20,7 @@ odImage_swap(struct odImage* image1, struct odImage* image2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odImage_resize(struct odImage* image, int32_t new_width, int32_t new_height);
 OD_API_C OD_PLATFORM_MODULE void
-odImage_begin_size(const struct odImage* image, int32_t* out_opt_width, int32_t* out_opt_height);
+odImage_get_size(const struct odImage* image, int32_t* out_opt_width, int32_t* out_opt_height);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odImage_read_png(struct odImage* image, const void* src_png, int32_t src_png_size);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool

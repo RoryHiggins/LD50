@@ -7,6 +7,7 @@
 #include <od/platform/window.hpp>
 #include <od/platform/render_texture.hpp>
 #include <od/platform/renderer.hpp>
+#include <od/engine/texture_atlas.hpp>
 #include <od/engine/lua/includes.h>
 #include <od/engine/lua/wrappers.h>
 
@@ -99,11 +100,19 @@ static int odLuaBindings_odRenderState_init(lua_State* lua) {
 		}
 
 		src_texture = odRenderTexture_get_texture_const(src_render_texture);
+	} else if (strcmp(src_type, OD_LUA_BINDINGS_TEXTURE_ATLAS) == 0) {
+		const odTextureAtlas* src_render_texture = static_cast<odTextureAtlas*>(odLua_get_userdata_typed(
+			lua, src_index, OD_LUA_BINDINGS_TEXTURE_ATLAS));
+		if (!OD_CHECK(odTextureAtlas_check_valid(src_render_texture))) {
+			return luaL_error(lua, "odTextureAtlas_check_valid() failed");
+		}
+
+		src_texture = odTextureAtlas_get_texture_const(src_render_texture);
 	} else {
 		return luaL_error(lua, "invalid settings.src.%s=%s", OD_LUA_METATABLE_NAME_KEY, src_type);
 	}
 	if (!OD_CHECK(odTexture_check_valid(src_texture))) {
-		return luaL_error(lua, "odRenderTexture_get_texture_const() failed");
+		return luaL_error(lua, "texture validation failed");
 	}
 
 	*render_state = odRenderState{

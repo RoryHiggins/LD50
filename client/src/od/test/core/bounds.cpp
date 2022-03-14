@@ -46,7 +46,7 @@ OD_TEST(odTest_odBounds_collides) {
 	}
 
 	for (const odBounds& non_collidable_bounds: expected_not_collidable) {
-		if (odBounds_is_collidable(&non_collidable_bounds)) {
+		if (odBounds_has_area(&non_collidable_bounds)) {
 			OD_ERROR("bounds expected not to be collidable:\nbounds=%s", odBounds_get_debug_string(&non_collidable_bounds));
 		}
 	}

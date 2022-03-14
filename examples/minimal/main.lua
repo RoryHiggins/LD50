@@ -8,7 +8,7 @@ local function main()
 	end
 
 	local window = Client.Window.new{is_visible = true, width = 512, height = 512}
-	local texture = Client.Texture.new_from_png_file{window = window, filename = "examples/minimal/data/sprites.png"}
+	local texture = Client.Texture.new_png_file{window = window, filename = "examples/minimal/data/sprites.png"}
 	local draw_to_window = Client.RenderState.new_ortho_2d{target = window, src = texture}
 
 	local game_render_texture = Client.RenderTexture.new{window = window, width = 128, height = 128}
@@ -37,6 +37,28 @@ local function main()
 
 	vertex_array:add_point(24,8, 255,255,0,255, 1)
 	entity_index:add_to_vertex_array{vertex_array = vertex_array}
+
+	local ascii_font = Client.AsciiFont.new{
+		u1 = 0,
+		v1 = 160,
+		u2 = 64,
+		v2 = 256,
+		char_w = 8,
+		char_h = 8,
+		char_first = ' ',
+		char_last = '~',
+	}
+	ascii_font:add_text_to_vertex_array{
+		vertex_array = vertex_array,
+		str = "hello world!",
+		x = 16,
+		y = 16,
+		max_w = 32,
+		max_h = 32,
+		color = {0,255,0,255},
+		depth = 0.0,
+	}
+
 
 	local window_vertex_array = Client.VertexArray.new{}
 	window_vertex_array:add_line(0,0,512,512, 255,255,0,255, 0)

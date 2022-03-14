@@ -16,6 +16,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odMatrix(),
 		odTestSuite_odString(),
 
+		odTestSuite_odAsciiFont(),
 		odTestSuite_odFile(),
 		odTestSuite_odImage(),
 		odTestSuite_odWindow(),
@@ -24,6 +25,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odRenderer(),
 
 		odTestSuite_odAtlas(),
+		odTestSuite_odTextureAtlas(),
 		odTestSuite_odEntityIndex(),
 		odTestSuite_odLua(),
 		odTestSuite_odLuaBindings(),

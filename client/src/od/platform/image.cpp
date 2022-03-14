@@ -148,7 +148,7 @@ bool odImage_resize(odImage* image, int32_t new_width, int32_t new_height) {
 
 	return true;
 }
-void odImage_begin_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
+void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out_opt_height) {
 	int32_t unused;
 	out_opt_width = (out_opt_width != nullptr) ? out_opt_width : &unused;
 	out_opt_height = (out_opt_height != nullptr) ? out_opt_height : &unused;

@@ -1,1 +1,1 @@
-target_sources(od_platform PUBLIC module.h file.h file.hpp image.h image.hpp texture.h texture.hpp render_texture.h render_texture.hpp renderer.h renderer.hpp window.h window.hpp)
+target_sources(od_platform PUBLIC module.h timer.h primitive.h ascii_font.h file.h file.hpp image.h image.hpp texture.h texture.hpp render_texture.h render_texture.hpp renderer.h renderer.hpp window.h window.hpp)

@@ -20,23 +20,28 @@ function CallWatcher.create(fn)
 	assert(
 		type(fn) == "function" or type(fn) == "nil",
 		"fn must be a function or nil")
-	fn = fn or function() end
+	if fn == nil then
+		fn = function() end
+	end
 
 	local watcher = {
 		calls = {},
 	}
 	setmetatable(watcher, CallWatcher)
 	function watcher.call (...)
-		fn(...)
 		watcher.calls[#watcher.calls + 1] = {...}
+		return fn(...)
 	end
 
 	return watcher
 end
-function CallWatcher.patch(xs, key)
+function CallWatcher.patch(xs, key, fn)
 	assert(type(xs) == "table", "xs must be a table")
 
-	local watcher = CallWatcher.create(xs[key])
+	if fn == nil then
+		fn = xs[key]
+	end
+	local watcher = CallWatcher.create(fn)
 	xs[key] = watcher.call
 	return watcher
 end
@@ -46,9 +51,9 @@ Test.__index = Test
 function Test:run()
 	logging.debug("Running test %s.%s", self.suite_name, self.name)
 
-	local ok = debugging.protected_call(self.fn)
+	local ok, err = debugging.pcall(self.fn)
 	if not ok then
-		logging.info("Failed test %s.%s", self.suite_name, self.name)
+		logging.error("Failed test %s.%s, err=\n%s", self.suite_name, self.name, err)
 		return false
 	end
 
@@ -137,8 +142,14 @@ function testing.run_all()
 		return false
 	end
 
-	logging.debug("Completed all tests")
+	logging.info("Completed all tests")
 	return true
+end
+function testing.suppress_log_errors(fn)
+	logging.push_level(logging.Level.none)
+	fn()
+
+	assert(logging.pop_level() == true)
 end
 
 return testing

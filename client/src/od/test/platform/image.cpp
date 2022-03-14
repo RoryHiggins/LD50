@@ -9,7 +9,7 @@ OD_TEST(odTest_odImage_init_destroy) {
 
 	odImage image;
 	OD_ASSERT(odImage_begin(&image) == nullptr);
-	odImage_begin_size(&image, &allocated_width, &allocated_height);
+	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == 0);
 	OD_ASSERT(allocated_height == 0);
 
@@ -18,13 +18,13 @@ OD_TEST(odTest_odImage_init_destroy) {
 	OD_ASSERT(odImage_init(&image, width, height));
 	OD_ASSERT(odImage_begin(&image) != nullptr);
 
-	odImage_begin_size(&image, &allocated_width, &allocated_height);
+	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == width);
 	OD_ASSERT(allocated_height == height);
 
 	odImage_destroy(&image);
 	OD_ASSERT(odImage_begin(&image) == nullptr);
-	odImage_begin_size(&image, &allocated_width, &allocated_height);
+	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == 0);
 	OD_ASSERT(allocated_height == 0);
 
@@ -45,7 +45,7 @@ OD_TEST(odTest_odImage_resize) {
 
 	odImage image;
 	OD_ASSERT(odImage_init(&image, start_width, start_height));
-	odImage_begin_size(&image, &allocated_width, &allocated_height);
+	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == start_width);
 	OD_ASSERT(allocated_height == start_height);
 
@@ -63,7 +63,7 @@ OD_TEST(odTest_odImage_resize) {
 		int32_t new_width = start_width * 2;
 		int32_t new_height = start_height * 2;
 		OD_ASSERT(odImage_resize(&image, new_width, new_height));
-		odImage_begin_size(&image, &allocated_width, &allocated_height);
+		odImage_get_size(&image, &allocated_width, &allocated_height);
 		pixels = odImage_begin(&image);
 		OD_ASSERT(allocated_width == new_width);
 		OD_ASSERT(allocated_height == new_height);
@@ -83,7 +83,7 @@ OD_TEST(odTest_odImage_resize) {
 		int32_t new_width = start_width / 2;
 		int32_t new_height = start_height / 2;
 		OD_ASSERT(odImage_resize(&image, new_width, new_height));
-		odImage_begin_size(&image, &allocated_width, &allocated_height);
+		odImage_get_size(&image, &allocated_width, &allocated_height);
 		pixels = odImage_begin(&image);
 		OD_ASSERT(allocated_width == new_width);
 		OD_ASSERT(allocated_height == new_height);
@@ -103,7 +103,7 @@ OD_TEST(odTest_odImage_resize) {
 		int32_t new_width = 0;
 		int32_t new_height = 0;
 		OD_ASSERT(odImage_resize(&image, new_width, new_height));
-		odImage_begin_size(&image, &allocated_width, &allocated_height);
+		odImage_get_size(&image, &allocated_width, &allocated_height);
 		OD_ASSERT(allocated_width == new_width);
 		OD_ASSERT(allocated_height == new_height);
 	}
@@ -113,7 +113,7 @@ OD_TEST(odTest_odImage_resize_empty) {
 	int32_t allocated_height = -1;
 	odImage image;
 	OD_ASSERT(odImage_resize(&image, 0, 0));
-	odImage_begin_size(&image, &allocated_width, &allocated_height);
+	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == 0);
 	OD_ASSERT(allocated_height == 0);
 }
@@ -132,7 +132,7 @@ OD_TEST(odTest_odImage_read_png) {
 
 	int32_t allocated_width = 0;
 	int32_t allocated_height = 0;
-	odImage_begin_size(&image, &allocated_width, &allocated_height);
+	odImage_get_size(&image, &allocated_width, &allocated_height);
 	OD_ASSERT(allocated_width == 1);
 	OD_ASSERT(allocated_height == 1);
 }

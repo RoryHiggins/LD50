@@ -65,7 +65,9 @@ bool odRenderState_check_valid(const odRenderState* state) {
 		|| !OD_CHECK(odMatrix_check_valid(&state->projection))
 		|| !OD_CHECK(odBounds_check_valid(&state->viewport))
 		|| !OD_CHECK(odTexture_check_valid(state->src_texture))
-		|| !OD_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_check_valid(state->opt_render_texture))) {
+		|| !OD_CHECK((state->opt_render_texture == nullptr) || odRenderTexture_check_valid(state->opt_render_texture))
+		// the source and destination cannot be the same (in any portable/safe manner at least)
+		|| !OD_CHECK(static_cast<const void*>(state->opt_render_texture) != static_cast<const void*>(state->src_texture))) {
 		return false;
 	}
 

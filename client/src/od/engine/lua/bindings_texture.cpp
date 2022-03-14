@@ -40,16 +40,8 @@ static int odLuaBindings_odTexture_init(lua_State* lua) {
 	lua_getfield(lua, settings_index, "width");
 	int32_t width = static_cast<int32_t>(luaL_checknumber(lua, OD_LUA_STACK_TOP));
 
-	if (!OD_CHECK(width > 0)) {
-		return luaL_argerror(lua, settings_index, "settings.width must be > 0");
-	}
-
 	lua_getfield(lua, settings_index, "height");
 	int32_t height = static_cast<int32_t>(luaL_checknumber(lua, OD_LUA_STACK_TOP));
-
-	if (!OD_CHECK(height > 0)) {
-		return luaL_argerror(lua, settings_index, "settings.height must be > 0");
-	}
 
 	odImage image{};
 	if (!OD_CHECK(odTexture_init(texture, window, nullptr, width, height))) {
@@ -58,7 +50,7 @@ static int odLuaBindings_odTexture_init(lua_State* lua) {
 
 	return 0;
 }
-static int odLuaBindings_odTexture_init_from_png_file(lua_State* lua) {
+static int odLuaBindings_odTexture_init_png_file(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
@@ -128,7 +120,7 @@ static int odLuaBindings_odTexture_new(lua_State* lua) {
 	lua_pushvalue(lua, self_index);
 	return 1;
 }
-static int odLuaBindings_odTexture_new_from_png_file(lua_State* lua) {
+static int odLuaBindings_odTexture_new_png_file(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
@@ -143,7 +135,7 @@ static int odLuaBindings_odTexture_new_from_png_file(lua_State* lua) {
 	lua_call(lua, /*nargs*/ 0, /*nresults*/ 1);  // call metatable.default_new
 	const int self_index = lua_gettop(lua);
 
-	lua_getfield(lua, self_index, "init_from_png_file");
+	lua_getfield(lua, self_index, "init_png_file");
 	lua_pushvalue(lua, self_index);
 	lua_pushvalue(lua, settings_index);
 	lua_call(lua, /*nargs*/ 2, /*nresults*/ 1);
@@ -205,9 +197,9 @@ bool odLuaBindings_odTexture_register(lua_State* lua) {
 		return odLua_metatable_set_function(lua, OD_LUA_BINDINGS_TEXTURE, name, fn);
 	};
 	if (!OD_CHECK(add_method("init", odLuaBindings_odTexture_init))
-		|| !OD_CHECK(add_method("init_from_png_file", odLuaBindings_odTexture_init_from_png_file))
+		|| !OD_CHECK(add_method("init_png_file", odLuaBindings_odTexture_init_png_file))
 		|| !OD_CHECK(add_method("new", odLuaBindings_odTexture_new))
-		|| !OD_CHECK(add_method("new_from_png_file", odLuaBindings_odTexture_new_from_png_file))
+		|| !OD_CHECK(add_method("new_png_file", odLuaBindings_odTexture_new_png_file))
 		|| !OD_CHECK(add_method("destroy", odLuaBindings_odTexture_destroy))
 		|| !OD_CHECK(add_method("get_size", odLuaBindings_odTexture_get_size))) {
 		return false;

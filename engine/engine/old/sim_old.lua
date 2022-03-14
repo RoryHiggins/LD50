@@ -33,7 +33,7 @@ function Sim:protected_broadcast(event, ...)
 	for _, sys in ipairs(self._systems) do
 		local event_handler = sys[event]
 		if event_handler then
-			debugging.protected_call(event_handler, sys, ...)
+			debugging.pcall(event_handler, sys, ...)
 		end
 	end
 end

@@ -15,6 +15,7 @@ static int32_t odLog_logged_error_count = 0;
 static int32_t odLogLevel_max = OD_LOG_LEVEL_DEFAULT;
 
 static bool (*odDebug_platform_backtrace_handler)() = nullptr;
+static bool odDebug_backtrace_handler_enabled = true;
 
 void* odDebugString_allocate(int32_t size, int32_t alignment) {
 	static int32_t currentSize = 0;
@@ -292,12 +293,15 @@ void odLogLevel_set_max(int32_t log_level) {
 }
 
 void odDebug_error() {
-	if (odDebug_platform_backtrace_handler != nullptr) {
+	if (odDebug_backtrace_handler_enabled && (odDebug_platform_backtrace_handler != nullptr)) {
 		odDebug_platform_backtrace_handler();
 	}
 }
 void odDebug_set_backtrace_handler(bool(*handler)()) {
 	odDebug_platform_backtrace_handler = handler;
+}
+void odDebug_set_backtrace_enabled(bool enabled) {
+	odDebug_backtrace_handler_enabled = enabled;
 }
 
 odLogLevelScoped::odLogLevelScoped() : backup_log_level{odLogLevel_get_max()} {

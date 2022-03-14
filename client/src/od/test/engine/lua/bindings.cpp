@@ -39,6 +39,43 @@ OD_TEST(odTest_odLuaBindings_odVertexArray) {
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
 }
+OD_TEST(odTest_odLuaBindings_odAsciiFont) {
+	odLuaClient lua;
+	OD_ASSERT(odLuaClient_init(&lua));
+
+	const char test_script[] = R"(
+		local ascii_font = odClientWrapper.AsciiFont.new{
+			u1 = 0,
+			v1 = 160,
+			u2 = 64,
+			v2 = 256,
+			char_w = 8,
+			char_h = 8,
+			char_first = ' ',
+			char_last = '~',
+		}
+
+		local vertex_array = odClientWrapper.VertexArray.new{}
+		ascii_font:add_text_to_vertex_array{
+			vertex_array = vertex_array,
+			str = "hello world",
+			x = 16,
+			y = 16,
+		}
+		ascii_font:add_text_to_vertex_array{
+			vertex_array = vertex_array,
+			str = "hello world",
+			x = 16,
+			y = 16,
+			max_w = 32,
+			max_h = 32,
+			color = {255,255,255,255},
+			depth = 0.0,
+		}
+	)";
+
+	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
+}
 OD_TEST_FILTERED(odTest_odLuaBindings_odWindow, OD_TEST_FILTER_SLOW) {
 	odLuaClient lua;
 	OD_ASSERT(odLuaClient_init(&lua));
@@ -85,6 +122,8 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odTexture, OD_TEST_FILTER_SLOW) {
 		assert(height == target_height)
 
 		texture:init{window = window, width = 1, height = 1}  -- re-init
+
+		texture:init_png_file{window = window, filename = './examples/minimal/data/sprites.png'}
 
 		texture:destroy()
 		texture:destroy()  -- re-destroy
@@ -168,12 +207,51 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderer, OD_TEST_FILTER_SLOW) {
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
 }
+OD_TEST_FILTERED(odTest_odLuaBindings_odTextureAtlas, OD_TEST_FILTER_SLOW) {
+	odLuaClient lua;
+	OD_ASSERT(odLuaClient_init(&lua));
+
+	const char test_script[] = R"(
+		local window = odClientWrapper.Window.new{is_visible = false}
+
+		local atlas = odClientWrapper.TextureAtlas.new{window = window}
+		local width, height = atlas:get_size()
+		assert(width == 0)
+		assert(height == 0)
+
+		assert(atlas:get_count() == 0)
+		atlas:set_region_png_file{id = 0, filename = './examples/minimal/data/sprites.png'}
+		assert(atlas:get_count() == 1)
+
+		atlas:set_region_png_file{id = 1, filename = './examples/minimal/data/sprites.png'}
+		assert(atlas:get_count() == 2)
+		atlas:reset_region{id = 1}
+		local x1,y1,x2,y2 = atlas:get_region_bounds{id = 0}
+		assert(x1 < x2)
+		assert(y1 < y2)
+
+		local x1,y1,x2,y2 = atlas:get_region_bounds{id = 1}
+		assert(x1 == 0)
+		assert(y1 == 0)
+		assert(x2 == 0)
+		assert(y2 == 0)
+
+		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = atlas}
+
+		atlas:init{window = window}  -- re-init
+
+		atlas:destroy()
+		atlas:destroy()  -- re-destroy
+	)";
+
+	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
+}
 OD_TEST(odTest_odLuaBindings_odEntityIndex) {
 	odLuaClient lua;
 	OD_ASSERT(odLuaClient_init(&lua));
 
 	const char test_script[] = R"(
-local entity_index = odClientWrapper.EntityIndex.new{}
+		local entity_index = odClientWrapper.EntityIndex.new{}
 		entity_index:init{} -- re-init
 
 		entity_index:set_collider(1, 0,0,4,4, 0,1,95)
@@ -308,11 +386,13 @@ OD_TEST_SUITE(
 	odTestSuite_odLuaBindings,
 	odTest_odLuaBindings_register,
 	odTest_odLuaBindings_odVertexArray,
+	odTest_odLuaBindings_odAsciiFont,
 	odTest_odLuaBindings_odWindow,
 	odTest_odLuaBindings_odTexture,
 	odTest_odLuaBindings_odRenderTexture,
 	odTest_odLuaBindings_odRenderState,
 	odTest_odLuaBindings_odRenderer,
+	odTest_odLuaBindings_odTextureAtlas,
 	odTest_odLuaBindings_odEntityIndex,
 	odTest_odLuaBindings_odEntityIndex_odVertexArray_integration
 )

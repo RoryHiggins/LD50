@@ -54,12 +54,9 @@ void odSpritePrimitive_get_vertices(const odSpritePrimitive* sprite, odVertex *o
 
 
 bool odLinePrimitive_check_valid(const odLinePrimitive* line) {
-	if (!OD_DEBUG_CHECK(line != nullptr)) {
-		return false;
-	}
-
-	if (!OD_CHECK(std::isfinite(line->depth))
-		|| (!OD_CHECK(odBounds_check_valid(&line->bounds)))) {
+	if (!OD_DEBUG_CHECK(line != nullptr)
+		|| !OD_CHECK(std::isfinite(line->depth))
+		|| !OD_CHECK(odBounds_check_valid(&line->bounds))) {
 		return false;
 	}
 
