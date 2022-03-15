@@ -137,7 +137,16 @@ static int odLuaBindings_odTextureAtlas_set_region_png_file(lua_State* lua) {
 		return luaL_error(lua, "odTextureAtlas_set_region() failed, filename=%s", filename);
 	}
 
-	return 0;
+	const odBounds* bounds = odTextureAtlas_get_region_bounds(atlas, id);
+	if (!OD_CHECK(odBounds_check_valid(bounds))) {
+		return luaL_error(lua, "odTextureAtlas_get_region_bounds() failed");
+	}
+
+	lua_pushnumber(lua, static_cast<lua_Number>(bounds->x1));
+	lua_pushnumber(lua, static_cast<lua_Number>(bounds->y1));
+	lua_pushnumber(lua, static_cast<lua_Number>(bounds->x2));
+	lua_pushnumber(lua, static_cast<lua_Number>(bounds->y2));
+	return 4;
 }
 static int odLuaBindings_odTextureAtlas_reset_region(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {

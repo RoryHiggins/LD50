@@ -114,7 +114,7 @@ bool odTrivialArray_set_capacity(odTrivialArray* array, int32_t new_capacity, in
 
 	int32_t new_size = new_capacity * stride;
 
-	odAllocation new_allocation;
+	odAllocation new_allocation{};
 	// over-allocate to guarantee null termination of allocated strings
 	int32_t new_allocation_size = new_size + static_cast<int32_t>(sizeof(char32_t));
 	if (!OD_CHECK(odAllocation_init(&new_allocation, new_allocation_size))) {
@@ -350,9 +350,7 @@ void odArray_swap(odArray* array1, odArray* array2) {
 	}
 
 	const odType* swap_type = array1->type;
-
 	array1->type = array2->type;
-
 	array2->type = swap_type;
 
 	odTrivialArray_swap(&array1->array, &array2->array);

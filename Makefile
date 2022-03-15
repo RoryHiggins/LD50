@@ -21,7 +21,7 @@ CMAKE := cmake
 BUILD_ROOT := build
 BUILD := $(BUILD_ROOT)/$(TARGET)_$(KEY)
 CLIENT := $(BUILD)/od_client
-LUA_CLIENT := examples/minimal/main.lua
+LUA_CLIENT := examples/engine_test/main.lua
 
 # Commands
 # ---

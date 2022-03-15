@@ -163,6 +163,7 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderState, OD_TEST_FILTER_SLOW) {
 		local texture = odClientWrapper.Texture.new{window = window, width = 1, height = 1}
 		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = texture}
 		render_state:init_ortho_2d{target = window, src = texture}
+		--render_state:init{target = window, src = texture}
 	)";
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
