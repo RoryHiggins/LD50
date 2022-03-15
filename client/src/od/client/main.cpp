@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
 #if OD_BUILD_TESTS
 	if (run_tests) {
 		if (!OD_CHECK(OD_BUILD_TESTS) || !odTest_run(test_filter, test_name_filter)) {
+			OD_ERROR("Tests exited with error(s)");
 			return 1;
 		}
 	}
@@ -140,6 +141,7 @@ int main(int argc, char** argv) {
 
 		OD_INFO("Running lua client, filename: %s", lua_client_path);
 		if (!odLua_run_file(lua_client.lua, lua_client_path, const_cast<const char**>(argv), argc)) {
+			OD_ERROR("Lua client exited with error(s)");
 			return 1;
 		}
 	}
@@ -150,9 +152,11 @@ int main(int argc, char** argv) {
 
 		OD_INFO("Running c++ client");
 		if (!odClient_run(&client, &client_settings)) {
+			OD_ERROR("C++ client exited with error(s)");
 			return 1;
 		}
 	}
 
+	OD_INFO("C++ client ended gracefully");
 	return 0;
 }

@@ -1,5 +1,7 @@
 #include <od/engine/lua/bindings.h>
 
+#include <cstdio>
+
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
 #include <od/platform/window.hpp>
@@ -201,6 +203,9 @@ static int odLuaBindings_odWindow_step(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
+
+	// flush any lua output
+	fflush(stdout);
 
 	luaL_checktype(lua, self_index, LUA_TUSERDATA);
 

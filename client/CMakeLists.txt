@@ -158,8 +158,14 @@ else()
 	foreach(od_target ${od_targets})
 		set(
 			od_emscripten_common_params
-			-O0 -g -Wall
-			"SHELL:-s USE_SDL=2" "SHELL:-s DISABLE_EXCEPTION_CATCHING=1")
+			-Wall "SHELL:-s USE_SDL=2" "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
+		)
+		set(
+			od_emscripten_debug_params
+			-O0 -g2 -gsource-map "SHELL:--source-map-base http://localhost:8000/"
+			"SHELL:-s ASSERTIONS=1" "SHELL:-s SAFE_HEAP=1" "SHELL:-s STACK_OVERFLOW_CHECK=1"
+			"SHELL:-s DEMANGLE_SUPPORT=1" "SHELL:-s ASYNCIFY=1"
+		)
 		target_compile_options(
 			${od_target}
 			PRIVATE
@@ -170,14 +176,18 @@ else()
 			PRIVATE
 			${od_emscripten_common_params}
 			"SHELL:-s WASM=1" "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s NO_EXIT_RUNTIME=0"
-			"SHELL:-s NO_FILESYSTEM=1"
+			"SHELL:-s NO_FILESYSTEM=0" "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/../examples/@examples/"
 		)
 		if("${CMAKE_BUILD_TYPE}" STREQUAL DEBUG)
 			target_link_options(
 				${od_target}
 				PRIVATE
-				"SHELL:-s ASSERTIONS=1" "SHELL:-s SAFE_HEAP=1" "SHELL:-s STACK_OVERFLOW_CHECK=1"
-				"SHELL:-s DEMANGLE_SUPPORT=1"
+				${od_emscripten_debug_params}
+			)
+			target_link_options(
+				${od_target}
+				PRIVATE
+				${od_emscripten_debug_params}
 			)
 		endif()
 	endforeach()

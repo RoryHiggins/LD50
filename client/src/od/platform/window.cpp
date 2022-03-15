@@ -3,6 +3,10 @@
 #include <cstring>
 #include <SDL2/SDL.h>
 
+#if OD_BUILD_EMSCRIPTEN
+#include <emscripten.h>
+#endif   // OD_BUILD_EMSCRIPTEN
+
 #if !OD_BUILD_EMSCRIPTEN
 #include <GL/glew.h>
 #endif  // !OD_BUILD_EMSCRIPTEN
@@ -471,7 +475,11 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 	}
 
 	if (wait_ms >= 1) {
+#if OD_BUILD_EMSCRIPTEN
+		emscripten_sleep(static_cast<unsigned>(wait_ms));
+#else
 		SDL_Delay(static_cast<Uint32>(wait_ms));
+#endif
 	}
 	window->next_frame_ms += frame_duration_ms;
 
@@ -547,6 +555,10 @@ static void odWindow_try_set_vsync_enabled(odWindow* window, bool is_vsync_enabl
 	OD_DEBUG("window=%s, is_vsync_enabled=%d", odWindow_get_debug_string(window), int(is_vsync_enabled));
 
 	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
+		return;
+	}
+
+	if (OD_BUILD_EMSCRIPTEN) {
 		return;
 	}
 

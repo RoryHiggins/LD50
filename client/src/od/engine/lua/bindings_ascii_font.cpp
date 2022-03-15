@@ -110,7 +110,6 @@ static int odLuaBindings_odAsciiFont_new(lua_State* lua) {
 	lua_pushvalue(lua, self_index);
 	return 1;
 }
-
 static int odLuaBindings_odAsciiFont_add_text_to_vertex_array(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
