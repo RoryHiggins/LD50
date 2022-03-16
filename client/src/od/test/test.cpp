@@ -21,6 +21,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odFile(),
 		odTestSuite_odImage(),
 		odTestSuite_odWindow(),
+		odTestSuite_odAudio(),
 		odTestSuite_odTexture(),
 		odTestSuite_odRenderTexture(),
 		odTestSuite_odRenderer(),

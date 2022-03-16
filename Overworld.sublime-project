@@ -11,11 +11,11 @@
 			"shell_cmd": ".\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test --lua-client $file",
 			"working_dir": "$project_path",
 		},
-		{
-			"name": "Luacheck",
-			"cmd": "luacheck.bat engine examples",
-			"working_dir": "$project_path",
-		},
+		// {
+		// 	"name": "Luacheck",
+		// 	"cmd": "luacheck.bat engine examples",
+		// 	"working_dir": "$project_path",
+		// },
 
 		// {
 		// 	"name": "Run headless in separate window",
@@ -23,17 +23,17 @@
 		// 	// "cmd": "echo $project_path",
 		// 	"working_dir": "$project_path",
 		// },
-		// {
-		// 	"name": "DEBUG run lua client",
-		// 	"cmd": ".\\build\\DEBUG_ANY\\od_client.exe --lua-client examples/engine_test/main.lua",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "DEBUG build and run lua client",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test --lua-client examples/minimal/main.lua",
+			"working_dir": "$project_path",
+		},
 
-		// {
-		// 	"name": "DEBUG generate and rebuild shared",
-		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CLIENT_CMAKE_ARGS='-D BUILD_SHARED_LIBS=1'",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "DEBUG generate and rebuild shared",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CLIENT_CMAKE_ARGS='-D BUILD_SHARED_LIBS=1'",
+			"working_dir": "$project_path",
+		},
 		// {
 		// 	"name": "DEBUG generate and rebuild static",
 		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG",
@@ -44,11 +44,11 @@
 			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --no-slow-test",
 			"working_dir": "$project_path",
 		},
-		// {
-		// 	"name": "DEBUG build iteratively and run tests by name",
-		// 	"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name-filter odTest_odLuaBindings",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "DEBUG build iteratively and run tests by name",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name-filter odTest_odAudio",
+			"working_dir": "$project_path",
+		},
 		{
 			"name": "DEBUG run tests + lua client with gdb",
 			"shell_cmd": "start make gdb TARGET=DEBUG CLIENT_ARGS=''",

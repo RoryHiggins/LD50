@@ -119,23 +119,30 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 
 	find_package(Backtrace)
 
-	find_library(LUAJIT_LIBRARY
-		NAMES luajit luajit-5.1
-		HINTS ENV LUA_DIR
-		PATH_SUFFIXES lib)
+	find_library(OD_SDL2_MIXER_LIBRARY NAMES SDL2_mixer PATH_SUFFIXES lib bin REQUIRED)
+	find_path(OD_SDL2_MIXER_INCLUDE_DIR SDL2/SDL_mixer.h PATH_SUFFIXES include/SDL2 REQUIRED)
 
-	find_path(LUAJIT_INCLUDE_DIR luajit.h
-	  HINTS ENV LUA_DIR
-	  PATH_SUFFIXES include/luajit include/luajit-2.1)
+	find_library(LUAJIT_LIBRARY NAMES luajit luajit-5.1 HINTS ENV LUA_DIR PATH_SUFFIXES lib bin)
+	find_path(LUAJIT_INCLUDE_DIR luajit.h HINTS ENV LUA_DIR PATH_SUFFIXES include/luajit include/luajit-2.1)
 
 	if ("${SDL2_LIBRARIES}" STREQUAL "")
-		set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
+		set(OD_SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2 ${OD_SDL2_MIXER_LIBRARY})
 	else()
-		set(OD_SDL2_LIBRARIES "${SDL2_LIBRARIES}")
+		set(OD_SDL2_LIBRARIES ${SDL2_LIBRARIES} ${OD_SDL2_MIXER_LIBRARY})
 	endif()
+
+	if (("${OD_SDL2_MIXER_LIBRARY}" STREQUAL "OD_SDL2_MIXER_LIBRARY-NOTFOUND")
+		OR ("${OD_SDL2_MIXER_INCLUDE_DIR}" STREQUAL "OD_SDL2_MIXER_INCLUDE_DIR-NOTFOUND"))
+		message(WARNING "Failed to find SDL2_mixer, may fail to link")
+	else()
+		message("-- Found SDL2_mixer: ${OD_SDL2_MIXER_LIBRARY}, ${OD_SDL2_MIXER_INCLUDE_DIR}")
+		set(OD_SDL2_MIXER_LIBRARY)
+		set(OD_SDL2_MIXER_INCLUDE_DIR)
+	endif()
+
 	# mingw32 must be linked before sdl2main
 	if("${MINGW}" EQUAL 1)
-		list(APPEND OD_SDL2_LIBRARIES mingw32)
+		list(PREPEND OD_SDL2_LIBRARIES mingw32)
 	endif()
 
 	if (${OD_BUILD_LUAJIT} AND NOT ("${LUAJIT_LIBRARY}" STREQUAL "") AND NOT ("${LUAJIT_INCLUDE_DIR}" STREQUAL ""))
@@ -153,12 +160,15 @@ if(NOT("${EMSCRIPTEN}" EQUAL 1))
 
 	target_link_libraries(od_engine PRIVATE ${OD_LUA_LIBRARY})
 	target_include_directories(od_engine PRIVATE ${OD_LUA_INCLUDE_DIR})
+
+	target_link_libraries(od_engine PRIVATE ${OD_SDL2_MIXER_LIBRARY})
+	target_include_directories(od_engine PRIVATE ${OD_SDL2_MIXER_INCLUDE_DIR})
 # parameters for emscripten target
 else()
 	foreach(od_target ${od_targets})
 		set(
 			od_emscripten_common_params
-			-Wall "SHELL:-s USE_SDL=2" "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
+			-Wall "SHELL:-s USE_SDL=2" "SHELL:-s USE_SDL_MIXER=2" "SHELL:-s DISABLE_EXCEPTION_CATCHING=1"
 		)
 		set(
 			od_emscripten_debug_params

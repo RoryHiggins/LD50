@@ -188,12 +188,15 @@ static int odLuaBindings_odEntityIndex_set(lua_State* lua) {
 		}
 	};
 
-	for (int i = r_index; i <= a_index; i++) {
-		lua_Number coord_value = lua_tonumber(lua, i);
+	if (OD_BUILD_DEBUG) {
+		for (int i = r_index; i <= a_index; i++) {
+			lua_Number coord_value = lua_tonumber(lua, i);
 
-		if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(coord_value)))) {
-			return luaL_error(
-				lua, "[%d] color element must be an integer value in the range [0, 255]", i);
+			if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(coord_value)))) {
+				return luaL_error(
+					lua, "[%d] color element must be an integer value in the range [0, 255]", i);
+			}
+			OD_MAYBE_UNUSED(coord_value);
 		}
 	}
 
@@ -451,11 +454,6 @@ static int odLuaBindings_odEntityIndex_set_sprite(lua_State* lua) {
 		lua, self_index, OD_LUA_BINDINGS_ENTITY_INDEX));
 	if (!OD_DEBUG_CHECK(entity_index != nullptr)) {
 		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_ENTITY_INDEX);
-	}
-
-	const odEntity* entity = odEntityIndex_get_or_add(entity_index, entity_id);
-	if (!OD_DEBUG_CHECK(entity != nullptr)) {
-		return luaL_error(lua, "odEntityIndex_get_or_add(%d) failed", entity_id);
 	}
 
 	odEntitySprite sprite{

@@ -1,6 +1,7 @@
 #include <od/platform/window.hpp>
 
 #include <cstring>
+
 #include <SDL2/SDL.h>
 
 #if OD_BUILD_EMSCRIPTEN
@@ -30,8 +31,13 @@ bool odSDL_init_reentrant() {
 	OD_DEBUG("odSDL_init_counter=%d", odSDL_init_counter);
 
 	if (odSDL_init_counter == 0) {
-		const Uint32 flags = (SDL_INIT_EVENTS | SDL_INIT_TIMER | SDL_INIT_VIDEO);
-		int init_result = SDL_Init(flags);
+		const Uint32 sdl_flags = (
+			SDL_INIT_EVENTS
+			| SDL_INIT_TIMER
+			| SDL_INIT_VIDEO
+			| SDL_INIT_AUDIO
+		);
+		int init_result = SDL_Init(sdl_flags);
 		if (!OD_CHECK(init_result == 0)) {
 			OD_ERROR("SDL_Init failed, init_result=%d", init_result);
 			return false;
@@ -563,8 +569,8 @@ static void odWindow_try_set_vsync_enabled(odWindow* window, bool is_vsync_enabl
 	}
 
 	if (is_vsync_enabled && (SDL_GL_GetSwapInterval() != static_cast<int>(is_vsync_enabled))) {
-		if (!OD_CHECK(SDL_GL_SetSwapInterval(static_cast<int>(is_vsync_enabled)) >= 0)) {
-			OD_WARN("SDL_GL_SetSwapInterval toggle failed, message=\"%s\"\n", SDL_GetError());
+		if (SDL_GL_SetSwapInterval(static_cast<int>(is_vsync_enabled)) < 0) {
+			OD_INFO("SDL_GL_SetSwapInterval toggle failed, message=\"%s\"\n", SDL_GetError());
 			return;
 		}
 	}

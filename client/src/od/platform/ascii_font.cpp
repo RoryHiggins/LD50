@@ -14,10 +14,10 @@
 
 bool odAsciiTextPrimitive_check_valid(const odAsciiTextPrimitive* text) {
 	if (!OD_DEBUG_CHECK(text != nullptr)
-		|| !OD_DEBUG_CHECK(text->str != nullptr)
-		|| !OD_DEBUG_CHECK(text->str_count >= 0)
-		|| !OD_DEBUG_CHECK(odBounds_check_valid(&text->max_bounds))
-		|| !OD_DEBUG_CHECK(odBounds_has_area(&text->max_bounds))) {
+		|| !OD_CHECK(text->str != nullptr)
+		|| !OD_CHECK(text->str_count >= 0)
+		|| !OD_CHECK(odBounds_check_valid(&text->max_bounds))
+		|| !OD_CHECK(odBounds_has_area(&text->max_bounds))) {
 		return false;
 	}
 

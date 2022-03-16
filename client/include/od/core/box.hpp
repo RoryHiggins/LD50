@@ -53,3 +53,33 @@ struct odBoxT : public odBox {
 	odBoxT(const odBoxT& other) = delete;
 	odBoxT& operator=(const odBoxT& other) = delete;
 };
+
+template<typename T>
+struct odCopyableBoxT : public odBoxT<T> {
+	using odBoxT<T>::get;
+	using odBoxT<T>::ensure;
+
+	using odBoxT<T>::odBoxT;
+
+	bool
+	assign(const odCopyableBoxT& other) {
+		T* this_value = get();
+		T* other_value = other.get();
+		if (!OD_CHECK(this_value != nullptr)
+			|| !OD_CHECK(other_value != nullptr)) {
+			return false;
+		}
+
+		*this_value = *other_value;
+		return true;
+	}
+
+	odCopyableBoxT(const odCopyableBoxT& other)
+	: odCopyableBoxT() {
+		OD_DISCARD(OD_CHECK(assign(other)));
+	}
+	odCopyableBoxT& operator=(const odCopyableBoxT& other) {
+		OD_DISCARD(OD_CHECK(assign(other)));
+		return *this;
+	}
+};

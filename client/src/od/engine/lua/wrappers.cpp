@@ -154,6 +154,8 @@ void* odLua_get_userdata_typed(lua_State* lua, int32_t index, const char* metata
 			|| !OD_DEBUG_CHECK(strcmp(actual_metatable_name, metatable_name) == 0)) {
 			return nullptr;
 		}
+		OD_MAYBE_UNUSED(actual_metatable_name);
+		OD_MAYBE_UNUSED(metatable_name);
 	}
 
 	return odLua_get_userdata(lua, index);

@@ -75,7 +75,7 @@ function Sim:require(sys_metatable, allow_circular_dependency)
 
 	return sys
 end
-function Sim:find_by_name(sys_name)
+function Sim:get(sys_name)
 	assert(type(sys_name) == "string")
 	assert(string.match(sys_name, "[a-zA-Z_][a-zA-Z0-9_]*") == sys_name)
 
@@ -156,14 +156,14 @@ testing.add_suite("engine.sim", {
 		local sys = sim:require(TestSys, true)
 		assert(sys.init_complete)
 	end,
-	find_by_name = function()
+	get = function()
 		local TestSys = Sys.new_metatable("test")
 
 		local sim = Sim.new()
-		assert(sim:find_by_name("test") == nil)
+		assert(sim:get("test") == nil)
 
 		local sys = sim:require(TestSys)
-		assert(sim:find_by_name("test") == sys)
+		assert(sim:get("test") == sys)
 	end,
 	send = function()
 		local TestSys = Sys.new_metatable("test")

@@ -135,6 +135,9 @@ int main(int argc, char** argv) {
 		}
 	}
 #endif
+	OD_MAYBE_UNUSED(run_tests);
+	OD_MAYBE_UNUSED(test_filter);
+	OD_MAYBE_UNUSED(test_name_filter);
 
 	if (run_lua_client) {
 		odLuaClient lua_client;
@@ -157,6 +160,6 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	OD_INFO("C++ client ended gracefully");
+	OD_INFO("Exited gracefully");
 	return 0;
 }

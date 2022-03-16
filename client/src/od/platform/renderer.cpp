@@ -207,6 +207,10 @@ bool odRenderer_init(odRenderer* renderer, odWindow* window) {
 
 	glLinkProgram(renderer->program);
 
+	renderer->program_view_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "view"));
+	renderer->program_projection_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "projection"));
+	renderer->program_uv_scale_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "uv_scale"));
+
 	if (!odGl_check_ok(OD_LOG_GET_CONTEXT()) || !odGl_check_program_ok(OD_LOG_GET_CONTEXT(), renderer->program)) {
 		OD_ERROR("OpenGL error when creating program, renderer=%s", odRenderer_get_debug_string(renderer));
 		return false;
@@ -310,10 +314,6 @@ bool odRenderer_flush(odRenderer* renderer) {
 
 	glFlush();
 
-	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
-		return false;
-	}
-
 	return true;
 }
 bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor* color) {
@@ -338,10 +338,6 @@ bool odRenderer_clear(odRenderer* renderer, odRenderState* state, const odColor*
 		static_cast<GLfloat>(color->a) / 255.0f
 	);
 	glClear(GL_COLOR_BUFFER_BIT);
-
-	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
-		return false;
-	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -377,13 +373,9 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 	glBindTexture(GL_TEXTURE_2D, state->src_texture->texture);
 	glBindFramebuffer(GL_FRAMEBUFFER, (state->opt_render_texture != nullptr) ? state->opt_render_texture->fbo : 0);
 
-	GLuint view_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "view"));
-	GLuint projection_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "projection"));
-	GLuint uv_scale_uniform = static_cast<GLuint>(glGetUniformLocation(renderer->program, "uv_scale"));
-
-	glUniformMatrix4fv(view_uniform, 1, false, state->view.matrix);
-	glUniformMatrix4fv(projection_uniform, 1, false, state->projection.matrix);
-	glUniform2f(uv_scale_uniform, texture_scale_x, texture_scale_y);
+	glUniformMatrix4fv(renderer->program_view_uniform, 1, false, state->view.matrix);
+	glUniformMatrix4fv(renderer->program_projection_uniform, 1, false, state->projection.matrix);
+	glUniform2f(renderer->program_uv_scale_uniform, texture_scale_x, texture_scale_y);
 
 	glViewport(
 		static_cast<GLint>(state->viewport.x1),
@@ -401,11 +393,6 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	if (!odGl_check_ok(OD_LOG_GET_CONTEXT())) {
-		OD_ERROR("OpenGL error when drawing, renderer=%s", odRenderer_get_debug_string(renderer));
-		return false;
-	}
 
 	return true;
 }

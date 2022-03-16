@@ -1,7 +1,7 @@
 local Client = odClientWrapper  -- luacheck: globals odClientWrapper
 
 local function main()
-	local window = Client.Window.new{is_visible = true, width = 512, height = 512}
+	local window = Client.Window.new{width = 512, height = 512}
 
 	local atlas = Client.TextureAtlas.new{window = window}
 	local sprites_u, sprites_v = atlas:set_region_png_file{id = 0, filename = './examples/engine_test/data/sprites.png'}
