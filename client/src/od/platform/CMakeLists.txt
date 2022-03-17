@@ -1,1 +1,1 @@
-target_sources(od_platform PRIVATE platform.cpp timer.cpp primitive.cpp ascii_font.cpp file.cpp image.cpp gl.h gl.cpp texture.cpp render_texture.cpp renderer.cpp window.cpp audio.cpp)
+target_sources(od_platform PRIVATE platform.cpp timer.cpp primitive.cpp ascii_font.cpp file.cpp image.cpp gl.h gl.cpp sdl.cpp texture.cpp render_texture.cpp renderer.cpp window.cpp audio.cpp)

@@ -120,8 +120,8 @@ static int odLuaBindings_odTextureAtlas_set_region_png_file(lua_State* lua) {
 	odAtlasRegionId id = static_cast<odAtlasRegionId>(luaL_checknumber(lua, id_index));
 
 	odImage image{};
-	if (!OD_CHECK(odImage_read_png_file(&image, filename))) {
-		return luaL_error(lua, "odImage_read_png_file() failed, filename=%s", filename);
+	if (!OD_CHECK(odImage_init_png_file(&image, filename))) {
+		return luaL_error(lua, "odImage_init_png_file() failed, filename=%s", filename);
 	}
 
 	int32_t width = -1;

@@ -15,53 +15,12 @@
 #include <od/core/debug.h>
 #include <od/core/math.h>
 #include <od/core/type.hpp>
-
-OD_NO_DISCARD static bool
-odSDL_init_reentrant();
-static void
-odSDL_destroy_reentrant();
+#include <od/platform/sdl.h>
 
 OD_NO_DISCARD static bool
 odWindow_try_set_vsync_enabled(odWindow* window);
 OD_NO_DISCARD static bool
 odWindow_set_caption(odWindow* window, const char* caption);
-
-static int32_t odSDL_init_counter = 0;
-
-bool odSDL_init_reentrant() {
-	OD_DEBUG("odSDL_init_counter=%d", odSDL_init_counter);
-
-	if (odSDL_init_counter == 0) {
-		const Uint32 sdl_flags = (
-			SDL_INIT_EVENTS
-			| SDL_INIT_TIMER
-			| SDL_INIT_VIDEO
-			| SDL_INIT_AUDIO
-		);
-		int init_result = SDL_Init(sdl_flags);
-		if (!OD_CHECK(init_result == 0)) {
-			OD_ERROR("SDL_Init failed, init_result=%d", init_result);
-			return false;
-		}
-	}
-
-	odSDL_init_counter++;
-	return true;
-}
-static void odSDL_destroy_reentrant() {
-	OD_DEBUG("odSDL_init_counter=%d", odSDL_init_counter);
-
-	if (odSDL_init_counter <= 0) {
-		OD_WARN("odSDL_destroy_reentrant with no matching odSDL_init_reentrant");
-		return;
-	}
-
-	odSDL_init_counter--;
-
-	if (odSDL_init_counter == 0) {
-		SDL_Quit();
-	}
-}
 
 const char* odWindowSettings_get_debug_string(const odWindowSettings* settings) {
 	if (settings == nullptr) {

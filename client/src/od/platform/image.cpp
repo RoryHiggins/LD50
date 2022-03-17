@@ -7,7 +7,7 @@
 #include <od/core/debug.h>
 #include <od/core/color.h>
 #include <od/core/allocation.hpp>
-#include <od/platform/file.hpp>
+#include <od/platform/file.h>
 
 bool odImage_check_valid(const odImage* image) {
 	if (!OD_CHECK(image != nullptr)
@@ -56,6 +56,69 @@ bool odImage_init(odImage* image, int32_t width, int32_t height) {
 
 	image->width = width;
 	image->height = height;
+
+	return true;
+}
+bool odImage_init_png(odImage* image, const void* src_png, int32_t src_png_size) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(src_png != nullptr)
+		|| !OD_CHECK(src_png_size > 0)) {
+		return false;
+	}
+
+	png_image png;
+	memset(static_cast<void*>(&png), 0, sizeof(png));
+	png.version = PNG_IMAGE_VERSION;
+
+	if (!OD_CHECK(png_image_begin_read_from_memory(&png, src_png, static_cast<size_t>(src_png_size)) != 0)) {
+		return false;
+	}
+
+	png.format = PNG_FORMAT_RGBA;
+
+	image->width = static_cast<int32_t>(png.width);
+	image->height = static_cast<int32_t>(png.height);
+	if (!OD_CHECK(PNG_IMAGE_SIZE(png) == static_cast<unsigned>(image->width * image->height * static_cast<int32_t>(sizeof(odColor))))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odImage_init(image, image->width, image->height))) {
+		return false;
+	}
+
+	void* image_data = odAllocation_get(&image->allocation);
+	if (!OD_CHECK(image_data != nullptr)) {
+		return false;
+	}
+
+	if (!OD_CHECK(png_image_finish_read(&png, /*background*/ nullptr, image_data, /*row_stride*/ 0, /*colormap*/ nullptr) != 0)) {
+		return false;
+	}
+
+	return true;
+}
+bool odImage_init_png_file(odImage* image, const char* filename) {
+	if (!OD_CHECK(image != nullptr)
+		|| !OD_CHECK(filename != nullptr)
+		|| !OD_CHECK(odFile_get_exists(filename))) {
+		return false;
+	}
+
+	struct odAllocation allocation{};
+	int32_t file_size = 0;
+	if (!OD_CHECK(odFile_read_all(filename, "rb", &allocation, &file_size))) {
+		return false;
+	}
+
+	void* file_data = odAllocation_get(&allocation);
+	if (!OD_CHECK(file_data != nullptr)
+		|| !OD_CHECK(file_size > 0)) {
+		return false;
+	}
+
+	if (!OD_CHECK(odImage_init_png(image, file_data, file_size))) {
+		return false;
+	}
 
 	return true;
 }
@@ -162,71 +225,6 @@ void odImage_get_size(const odImage* image, int32_t* out_opt_width, int32_t* out
 
 	*out_opt_width = image->width;
 	*out_opt_height = image->height;
-}
-bool odImage_read_png(odImage* image, const void* src_png, int32_t src_png_size) {
-	if (!OD_CHECK(image != nullptr)
-		|| !OD_CHECK(src_png != nullptr)
-		|| !OD_CHECK(src_png_size > 0)) {
-		return false;
-	}
-
-	png_image png;
-	memset(static_cast<void*>(&png), 0, sizeof(png));
-	png.version = PNG_IMAGE_VERSION;
-
-	if (!OD_CHECK(png_image_begin_read_from_memory(&png, src_png, static_cast<size_t>(src_png_size)) != 0)) {
-		return false;
-	}
-
-	png.format = PNG_FORMAT_RGBA;
-
-	image->width = static_cast<int32_t>(png.width);
-	image->height = static_cast<int32_t>(png.height);
-	if (!OD_CHECK(PNG_IMAGE_SIZE(png) == static_cast<unsigned>(image->width * image->height * static_cast<int32_t>(sizeof(odColor))))) {
-		return false;
-	}
-
-	if (!OD_CHECK(odImage_init(image, image->width, image->height))) {
-		return false;
-	}
-
-	void* image_data = odAllocation_get(&image->allocation);
-	if (!OD_CHECK(image_data != nullptr)) {
-		return false;
-	}
-
-	if (!OD_CHECK(png_image_finish_read(&png, /*background*/ nullptr, image_data, /*row_stride*/ 0, /*colormap*/ nullptr) != 0)) {
-		return false;
-	}
-
-	return true;
-}
-bool odImage_read_png_file(odImage* image, const char* file_path) {
-	if (!OD_CHECK(image != nullptr)
-		|| !OD_CHECK(file_path != nullptr)
-		|| !OD_CHECK(odFile_get_exists(file_path))) {
-		return false;
-	}
-
-	odImage_destroy(image);
-
-	struct odAllocation allocation{};
-	int32_t src_png_size = 0;
-	if (!OD_CHECK(odFile_read_all(file_path, "rb", &allocation, &src_png_size))) {
-		return false;
-	}
-
-	void* src_png = odAllocation_get(&allocation);
-	if (!OD_CHECK(src_png != nullptr)
-		|| !OD_CHECK(src_png_size > 0)) {
-		return false;
-	}
-
-	if (!OD_CHECK(odImage_read_png(image, src_png, src_png_size))) {
-		return false;
-	}
-
-	return true;
 }
 odColor* odImage_get(odImage* image, int32_t x, int32_t y) {
 	if (!OD_DEBUG_CHECK(odImage_check_valid(image))

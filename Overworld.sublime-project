@@ -31,7 +31,7 @@
 
 		{
 			"name": "DEBUG generate and rebuild shared",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CLIENT_CMAKE_ARGS='-D BUILD_SHARED_LIBS=1'",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_GENERATE_ARGS='-D BUILD_SHARED_LIBS=1'",
 			"working_dir": "$project_path",
 		},
 		// {
@@ -83,7 +83,7 @@
 
 		// {
 		// 	"name": "PROFILE generate and rebuild",
-		// 	"shell_cmd": "rm -rf .\\build\\RELEASE_PROFILE_WIN && make TARGET=RELEASE KEY=PROFILE_WIN CLIENT_CMAKE_ARGS='-D OD_BUILD_PROFILE=1 -D OD_BUILD_TESTS=1'",
+		// 	"shell_cmd": "rm -rf .\\build\\RELEASE_PROFILE_WIN && make TARGET=RELEASE KEY=PROFILE_WIN CMAKE_GENERATE_ARGS='-D OD_BUILD_PROFILE=1 -D OD_BUILD_TESTS=1'",
 		// 	"working_dir": "$project_path",
 		// },
 		// {
@@ -93,7 +93,7 @@
 		// },
 		// {
 		// 	"name": "PROFILE create report",
-		// 	"shell_cmd": "make profile TARGET=RELEASE KEY=PROFILE_WIN CLIENT_CMAKE_ARGS='-D OD_BUILD_PROFILE=1 -D OD_BUILD_TESTS=1'",
+		// 	"shell_cmd": "make profile TARGET=RELEASE KEY=PROFILE_WIN CMAKE_GENERATE_ARGS='-D OD_BUILD_PROFILE=1 -D OD_BUILD_TESTS=1'",
 		// 	"working_dir": "$project_path",
 		// },
 

@@ -87,8 +87,8 @@ static int odLuaBindings_odTexture_init_png_file(lua_State* lua) {
 	}
 
 	odImage image{};
-	if (!OD_CHECK(odImage_read_png_file(&image, filename))) {
-		return luaL_error(lua, "odImage_read_png_file() filename=%s", filename);
+	if (!OD_CHECK(odImage_init_png_file(&image, filename))) {
+		return luaL_error(lua, "odImage_init_png_file() filename=%s", filename);
 	}
 
 	if (!OD_CHECK(odTexture_init(texture, window, odImage_begin_const(&image), image.width, image.height))) {

@@ -45,7 +45,7 @@ OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odLua_metatable_set_new_delete(struct lua_State* lua, const char* metatable_name, const struct odType* type);
 
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
-odLua_run_file(struct lua_State* lua, const char* file_path, const char** args, int32_t args_count);
+odLua_run_file(struct lua_State* lua, const char* filename, const char** args, int32_t args_count);
 OD_API_C OD_ENGINE_MODULE OD_NO_DISCARD bool
 odLua_run_string(struct lua_State* lua, const char* string, const char** args, int32_t args_count);
 OD_API_C OD_ENGINE_MODULE bool

@@ -97,7 +97,7 @@ bool odClient_init(odClient* client, const odClientSettings* opt_settings) {
 
 	// BEGIN throwaway texture loading test code - TODO remove
 	odImage image{};
-	if (!OD_CHECK(odImage_read_png_file(&image, "./examples/minimal/data/sprites.png"))) {
+	if (!OD_CHECK(odImage_init_png_file(&image, "./examples/minimal/data/sprites.png"))) {
 		return false;
 	}
 	if (!OD_CHECK(odTexture_init(

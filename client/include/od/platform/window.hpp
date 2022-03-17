@@ -12,7 +12,7 @@ struct odWindow {
 	bool is_open;
 	int32_t next_frame_ms;
 
-	odArrayT<odWindowResource*> resources;
+	odTrivialArrayT<odWindowResource*> resources;
 
 	OD_PLATFORM_MODULE odWindow();
 	OD_PLATFORM_MODULE odWindow(odWindow&& other);
