@@ -1,5 +1,9 @@
 #include <od/platform/sdl.h>
 
+#if OD_BUILD_EMSCRIPTEN
+#include <emscripten.h>
+#endif   // OD_BUILD_EMSCRIPTEN
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
@@ -45,6 +49,13 @@ void odSDL_destroy_reentrant() {
 		SDL_Quit();
 	}
 }
+void odSDL_sleep(int32_t min_sleep_ms) {
+#if OD_BUILD_EMSCRIPTEN
+		emscripten_sleep(static_cast<unsigned>(min_sleep_ms));
+#else
+		SDL_Delay(static_cast<Uint32>(min_sleep_ms));
+#endif
+}
 
 bool odSDLMixer_init_reentrant() {
 	OD_DEBUG("odSDLMixer_init_counter=%d", odSDLMixer_init_counter);
@@ -63,8 +74,8 @@ bool odSDLMixer_init_reentrant() {
 			return false;
 		}
 
-		int channels = 2;  // stereo
-		int chunk_size = 1024; // smallest commonly used value to avoid skipping while staying low latency
+		int channels = 2;  // number of sound channels, 2 = stereo.  not to be confused with mixing channels
+		int chunk_size = 2048;
 		if (!OD_CHECK(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, channels, chunk_size) == 0)) {
 			OD_ERROR("Mix_OpenAudio failed, err=%s", Mix_GetError());
 			return false;

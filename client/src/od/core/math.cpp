@@ -7,6 +7,15 @@
 #include <bit>
 #endif
 
+bool odFloat_is_normalized(float x) {
+	if (!std::isfinite(x)
+		|| (x < 0.0f)
+		|| (x > 1.0f)) {
+		return false;
+	}
+
+	return true;
+}
 bool odFloat_is_precise_int24(float x) {
 	if (!std::isfinite(x)
 		|| (floorf(x) != x)

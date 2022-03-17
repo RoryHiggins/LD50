@@ -26,32 +26,25 @@ static bool odLuaBindings_odWindow_get_settings_impl(lua_State* lua, odWindowSet
 	}
 
 	lua_getfield(lua, settings_index, "fps_limit");
+	settings->is_fps_limit_enabled = false;
 	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
 		settings->fps_limit = static_cast<int32_t>(luaL_checknumber(lua, OD_LUA_STACK_TOP));
+		settings->is_fps_limit_enabled = true;
 	}
 
-	lua_getfield(lua, settings_index, "is_fps_limit_enabled");
+	lua_getfield(lua, settings_index, "vsync");
 	if ((lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL)) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TBOOLEAN)) {
-			return luaL_error(lua, "settings.is_fps_limit_enabled must be a boolean or nil");
-		}
-
-		settings->is_fps_limit_enabled = static_cast<bool>(lua_toboolean(lua, OD_LUA_STACK_TOP));
-	}
-
-	lua_getfield(lua, settings_index, "is_vsync_enabled");
-	if ((lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL)) {
-		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TBOOLEAN)) {
-			return luaL_error(lua, "settings.is_fps_limit_enabled must be a boolean or nil");
+			return luaL_error(lua, "settings.vsync must be a boolean or nil");
 		}
 
 		settings->is_vsync_enabled = static_cast<bool>(lua_toboolean(lua, OD_LUA_STACK_TOP));
 	}
 
-	lua_getfield(lua, settings_index, "is_visible");
+	lua_getfield(lua, settings_index, "visible");
 	if ((lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL)) {
 		if (!OD_CHECK(lua_type(lua, OD_LUA_STACK_TOP) == LUA_TBOOLEAN)) {
-			return luaL_error(lua, "settings.is_visible must be a boolean or nil");
+			return luaL_error(lua, "settings.visible must be a boolean or nil");
 		}
 
 		settings->is_visible = static_cast<bool>(lua_toboolean(lua, OD_LUA_STACK_TOP));

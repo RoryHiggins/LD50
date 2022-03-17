@@ -10,6 +10,8 @@
 #define OD_FLOAT_PRECISE_INT_MIN (-OD_FLOAT_PRECISE_INT_MAX)
 
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
+odFloat_is_normalized(float x);
+OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odFloat_is_precise_int24(float x);
 OD_API_C OD_CORE_MODULE OD_NO_DISCARD bool
 odFloat_is_precise_uint8(float x);

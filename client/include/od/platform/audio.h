@@ -2,33 +2,49 @@
 
 #include <od/platform/module.h>
 
-struct odAudioMixer;
-struct odAudioMixerResource;
+#define OD_AUDIO_MIXER_CHANNELS 64
+
+typedef int32_t odAudioPlaybackId;
+
 struct odAudio;
 
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odAudioMixer_init(struct odAudioMixer* mixer);
-OD_API_C OD_PLATFORM_MODULE void
-odAudioMixer_destroy(struct odAudioMixer* mixer);
-OD_API_C OD_PLATFORM_MODULE void
-odAudioMixer_swap(struct odAudioMixer* mixer1, struct odAudioMixer* mixer2);
-OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odAudioMixer_check_valid(const struct odAudioMixer* mixer);
+struct odAudioPlaybackSettings {
+	int32_t loop_count;
+	int32_t cutoff_time_ms;
+	int32_t fade_in_time_ms;
+	float volume;  // 0..1
+
+	bool is_loop_forever_enabled;
+	bool is_cutoff_time_enabled;
+};
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odAudioMixerResource_init(struct odAudioMixerResource* resource, struct odAudioMixer* opt_mixer);
-OD_API_C OD_PLATFORM_MODULE void
-odAudioMixerResource_destroy(struct odAudioMixerResource* resource);
+odAudioPlaybackId_check_valid(odAudioPlaybackId playback_id);
+
+OD_API_C OD_PLATFORM_MODULE const struct odAudioPlaybackSettings*
+odAudioPlaybackSettings_get_defaults(void);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odAudioPlaybackSettings_check_valid(const struct odAudioPlaybackSettings* settings);
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odAudio_init(struct odAudio* audio, struct odAudioMixer* mixer);
+odAudio_init(struct odAudio* audio);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odAudio_init_wav(struct odAudio* audio, struct odAudioMixer* mixer, const void* src_wav, int32_t src_wav_size);
+odAudio_init_wav(struct odAudio* audio, const void* src_wav, int32_t src_wav_size);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
-odAudio_init_wav_file(struct odAudio* audio, struct odAudioMixer* mixer, const char* filename);
+odAudio_init_wav_file(struct odAudio* audio, const char* filename);
 OD_API_C OD_PLATFORM_MODULE void
 odAudio_destroy(struct odAudio* audio);
 OD_API_C OD_PLATFORM_MODULE void
 odAudio_swap(struct odAudio* audio1, struct odAudio* audio2);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odAudio_check_valid(const struct odAudio* audio);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odAudio_set_volume(struct odAudio* audio, float volume);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD odAudioPlaybackId
+odAudio_play(struct odAudio* audio, const struct odAudioPlaybackSettings* opt_settings);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odAudio_stop(odAudioPlaybackId playback_id);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odAudio_stop_all(void);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odAudio_is_playing(odAudioPlaybackId playback_id);

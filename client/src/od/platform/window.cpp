@@ -4,10 +4,6 @@
 
 #include <SDL2/SDL.h>
 
-#if OD_BUILD_EMSCRIPTEN
-#include <emscripten.h>
-#endif   // OD_BUILD_EMSCRIPTEN
-
 #if !OD_BUILD_EMSCRIPTEN
 #include <GL/glew.h>
 #endif  // !OD_BUILD_EMSCRIPTEN
@@ -447,11 +443,7 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 	}
 
 	if (wait_ms >= 1) {
-#if OD_BUILD_EMSCRIPTEN
-		emscripten_sleep(static_cast<unsigned>(wait_ms));
-#else
-		SDL_Delay(static_cast<Uint32>(wait_ms));
-#endif
+		odSDL_sleep(wait_ms);
 	}
 	window->next_frame_ms += frame_duration_ms;
 
