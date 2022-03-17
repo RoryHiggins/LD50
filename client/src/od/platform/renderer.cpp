@@ -347,7 +347,7 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 							  const odVertex* vertices, int32_t vertices_count) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK(odVertex_check_valid_batch_3d(vertices, vertices_count))) {
+		|| !OD_DEBUG_CHECK(odVertex_check_valid_batch_3d(vertices, vertices_count))) {
 		return false;
 	}
 
@@ -399,10 +399,9 @@ bool odRenderer_draw_vertices(odRenderer* renderer, odRenderState *state,
 bool odRenderer_draw_texture(odRenderer* renderer, odRenderState* state,
 							 const odBounds* opt_src_bounds, const struct odMatrix* opt_transform) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
-		|| !OD_CHECK(renderer != nullptr)
 		|| !OD_CHECK(odRenderState_check_valid(state))
-		|| !OD_CHECK((opt_src_bounds == nullptr) || (odBounds_check_valid(opt_src_bounds)))
-		|| !OD_CHECK((opt_transform == nullptr) || odMatrix_check_valid_3d(opt_transform))) {
+		|| !OD_DEBUG_CHECK((opt_src_bounds == nullptr) || (odBounds_check_valid(opt_src_bounds)))
+		|| !OD_DEBUG_CHECK((opt_transform == nullptr) || odMatrix_check_valid_3d(opt_transform))) {
 		return false;
 	}
 

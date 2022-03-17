@@ -21,7 +21,8 @@ odSDL_init_reentrant();
 static void
 odSDL_destroy_reentrant();
 
-static void odWindow_try_set_vsync_enabled(odWindow* window, bool is_vsync_enabled);
+OD_NO_DISCARD static bool
+odWindow_try_set_vsync_enabled(odWindow* window);
 OD_NO_DISCARD static bool
 odWindow_set_caption(odWindow* window, const char* caption);
 
@@ -166,12 +167,18 @@ static bool odWindow_set_context_impl(void* window_native, void* render_context_
 		return false;
 	}
 
+	static void* render_context_native_cached = nullptr;
+	if (render_context_native_cached == render_context_native) {
+		return true;
+	}
+
 	if (!OD_CHECK(SDL_GL_MakeCurrent(
 		static_cast<SDL_Window*>(window_native),
 		static_cast<SDL_GLContext>(render_context_native)) == 0)) {
 		OD_ERROR("SDL_GL_MakeCurrent failed, error=%s", SDL_GetError());
 		return false;
 	}
+	render_context_native_cached = render_context_native;
 
 	return true;
 }
@@ -306,7 +313,11 @@ bool odWindow_init(odWindow* window, const odWindowSettings* opt_settings) {
 	}
 	window->is_open = true;
 
-	odWindow_try_set_vsync_enabled(window, window->settings.is_vsync_enabled);
+	if (window->settings.is_vsync_enabled) {
+		if (!odWindow_try_set_vsync_enabled(window)) {
+			window->settings.is_vsync_enabled = false;
+		}
+	}
 
 	OD_DEBUG("Window opened");
 
@@ -456,11 +467,7 @@ OD_NO_DISCARD static bool odWindow_wait_step(odWindow* window) {
 		return false;
 	}
 
-	if (!window->settings.is_fps_limit_enabled) {
-		return true;
-	}
-
-	if (window->settings.is_vsync_enabled) {
+	if (!window->settings.is_fps_limit_enabled || window->settings.is_vsync_enabled) {
 		return true;
 	}
 
@@ -557,25 +564,26 @@ bool odWindow_set_size(odWindow* window, int32_t width, int32_t height) {
 
 	return true;
 }
-static void odWindow_try_set_vsync_enabled(odWindow* window, bool is_vsync_enabled) {
-	OD_DEBUG("window=%s, is_vsync_enabled=%d", odWindow_get_debug_string(window), int(is_vsync_enabled));
+bool odWindow_try_set_vsync_enabled(odWindow* window) {
+	OD_DEBUG("window=%s", odWindow_get_debug_string(window));
 
 	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))) {
-		return;
+		return false;
 	}
 
 	if (OD_BUILD_EMSCRIPTEN) {
-		return;
+		OD_INFO("Vsync cannot be enabled for emscripten target, skipping");
+		return false;
 	}
 
-	if (is_vsync_enabled && (SDL_GL_GetSwapInterval() != static_cast<int>(is_vsync_enabled))) {
-		if (SDL_GL_SetSwapInterval(static_cast<int>(is_vsync_enabled)) < 0) {
+	if (SDL_GL_GetSwapInterval() != 1) {
+		if (SDL_GL_SetSwapInterval(1) < 0) {
 			OD_INFO("SDL_GL_SetSwapInterval toggle failed, message=\"%s\"\n", SDL_GetError());
-			return;
+			return false;
 		}
 	}
 
-	window->settings.is_vsync_enabled = window->settings.is_vsync_enabled;
+	return true;
 }
 static bool odWindow_set_caption(odWindow* window, const char* caption) {
 	OD_DEBUG("window=%s, caption=%s", odWindow_get_debug_string(window), caption);
@@ -622,10 +630,14 @@ bool odWindow_set_settings(struct odWindow* window, const odWindowSettings* sett
 		return false;
 	}
 
-	// failing to set/unset vsync is not an error
-	odWindow_try_set_vsync_enabled(window, settings->is_vsync_enabled);
-
 	window->settings = *settings;
+
+	// failing to set/unset vsync is not an error
+	if (settings->is_vsync_enabled) {
+		if (!odWindow_try_set_vsync_enabled(window)) {
+			window->settings.is_vsync_enabled = false;
+		}
+	}
 
 	return true;
 }

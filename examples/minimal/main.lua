@@ -1,6 +1,6 @@
 -- luacheck: globals odClientWrapper
 
-local window = odClientWrapper.Window.new{is_visible = true, width = 512, height = 512}
+local window = odClientWrapper.Window.new{width = 512, height = 512}
 local atlas = odClientWrapper.TextureAtlas.new{window = window}
 local renderer = odClientWrapper.Renderer.new{window = window}
 local vertex_array = odClientWrapper.VertexArray.new{}

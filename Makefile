@@ -10,7 +10,8 @@ KEY := ANY
 # client input arguments
 CLIENT_SRC := ./client
 CLIENT_ARGS :=
-CLIENT_CMAKE_ARGS :=
+CMAKE_GENERATE_ARGS :=
+CMAKE_BUILD_ARGS :=
 
 # Dependencies
 # ---
@@ -29,8 +30,8 @@ LUA_CLIENT := examples/minimal/main.lua
 .DEFAULT_GOAL := $(CLIENT)
 
 $(CLIENT):
-	$(CMAKE) \-S $(CLIENT_SRC) -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" $(CLIENT_CMAKE_ARGS)
-	$(CMAKE) --build $(BUILD)
+	$(CMAKE) \-S $(CLIENT_SRC) -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" $(CMAKE_GENERATE_ARGS)
+	$(CMAKE) --build $(BUILD) -- $(CMAKE_BUILD_ARGS)
 run: $(CLIENT)
 	$(CLIENT) --lua-client $(LUA_CLIENT) $(CLIENT_ARGS)
 test: $(CLIENT)

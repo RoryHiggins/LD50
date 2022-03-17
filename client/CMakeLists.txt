@@ -5,9 +5,14 @@ set(OD_BUILD_LOGS_DEFAULT 0)
 set(OD_BUILD_DEBUG_DEFAULT 0)
 set(OD_BUILD_TESTS_DEFAULT 0)
 set(OD_BUILD_PROFILE_DEFAULT 0)
+set(OD_BUILD_COVERAGE_DEFAULT 0)
 
 set(OD_BUILD_LUAJIT_DEFAULT 0)
 set(OD_BUILD_EMSCRIPTEN_DEFAULT 0)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "PROFILE")
+	set(CMAKE_BUILD_TYPE "RELEASE")
+	set(OD_BUILD_PROFILE_DEFAULT 1)
+endif()
 if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
 	set(OD_BUILD_DEBUG_DEFAULT 1)
 	set(OD_BUILD_LOGS_DEFAULT 1)
@@ -28,6 +33,9 @@ set(OD_BUILD_TESTS ${OD_BUILD_TESTS_DEFAULT} CACHE BOOL
 	"Build with tests enabled")
 set(OD_BUILD_PROFILE ${OD_BUILD_PROFILE_DEFAULT} CACHE BOOL
 	"Build with profiling enabled")
+set(OD_BUILD_COVERAGE ${OD_BUILD_COVERAGE_DEFAULT} CACHE BOOL
+	"Build with coverage enabled")
+
 set(OD_BUILD_LUAJIT ${OD_BUILD_LUAJIT_DEFAULT} CACHE BOOL
 	"Build with luajit instead of lua")
 set(OD_BUILD_EMSCRIPTEN ${OD_BUILD_EMSCRIPTEN_DEFAULT} CACHE BOOL
@@ -49,6 +57,10 @@ if(("${OD_BUILD_EMSCRIPTEN}" EQUAL 1) AND ("${OD_BUILD_LUAJIT}" EQUAL 1))
 	message(WARNING "emscripten with luajit will likely fail, and is unlikely to ever be supported")
 endif()
 
+message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+message("BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
+message("CMAKE_UNITY_BUILD=${CMAKE_UNITY_BUILD}")
+
 message("OD_BUILD_LOGS=${OD_BUILD_LOGS}")
 message("OD_BUILD_DEBUG=${OD_BUILD_DEBUG}")
 message("OD_BUILD_TESTS=${OD_BUILD_TESTS}")
@@ -56,8 +68,6 @@ message("OD_BUILD_PROFILE=${OD_BUILD_PROFILE}")
 
 message("OD_BUILD_EMSCRIPTEN=${OD_BUILD_EMSCRIPTEN}")
 message("OD_BUILD_LUAJIT=${OD_BUILD_LUAJIT}")
-message("BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
-message("CMAKE_UNITY_BUILD=${CMAKE_UNITY_BUILD}")
 
 # od_core
 add_library(od_core)
@@ -75,14 +85,14 @@ target_link_libraries(od_engine PRIVATE m od_core od_platform)
 # od_test
 add_library(od_test)
 target_link_libraries(od_test PRIVATE m od_core od_platform od_engine)
-if (NOT (${OD_BUILD_TESTS}))
+if (NOT ("${OD_BUILD_TESTS}" EQUAL 1))
 	set_target_properties(od_test PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
 endif()
 
 # od_client
 add_executable(od_client)
 target_link_libraries(od_client PRIVATE m od_core od_platform od_engine)
-if (${OD_BUILD_TESTS})
+if ("${OD_BUILD_TESTS}" EQUAL 1)
 	target_link_libraries(od_client PRIVATE od_test)
 endif()
 
@@ -280,7 +290,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			target_compile_options(${od_target} PUBLIC -ffast-math -flto -Os)
 			target_link_options(${od_target} PUBLIC -flto -fwhole-program -Os)
 
-			if(NOT(${OD_BUILD_PROFILE}))
+			if(NOT("${OD_BUILD_PROFILE}" EQUAL 1))
 				target_compile_options(${od_target} PUBLIC -s)
 				target_link_options(${od_target} PUBLIC -s)
 			endif()
@@ -290,13 +300,13 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			endif()
 		endif()
 
-		if (${OD_BUILD_COVERAGE})
+		if ("${OD_BUILD_COVERAGE}" EQUAL 1)
 			set(od_coverage_options -fprofile-arcs -ftest-coverage)
 			target_compile_options(${od_target} PUBLIC ${od_coverage_options})
 			target_link_options(${od_target} PUBLIC ${od_coverage_options})
 		endif()
 
-		if(${OD_BUILD_PROFILE})
+		if("${OD_BUILD_PROFILE}" EQUAL 1)
 			target_compile_options(${od_target} PUBLIC -g -pg)
 			target_link_options(${od_target} PUBLIC -g -pg)
 		endif()
