@@ -3,6 +3,7 @@
 #include <od/platform/module.h>
 
 #define OD_AUDIO_MIXER_CHANNELS 64
+#define OD_AUDIO_PLAYBACK_ID_NO_CHANNELS -1
 
 typedef int32_t odAudioPlaybackId;
 
@@ -11,7 +12,7 @@ struct odAudio;
 struct odAudioPlaybackSettings {
 	int32_t loop_count;
 	int32_t cutoff_time_ms;
-	int32_t fade_in_time_ms;
+	int32_t fadein_time_ms;
 	float volume;  // 0..1
 
 	bool is_loop_forever_enabled;

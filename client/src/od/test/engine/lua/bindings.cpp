@@ -81,19 +81,19 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odWindow, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odLuaClient_init(&lua));
 
 	const char test_script[] = R"(
-		local window = odClientWrapper.Window.new{is_visible = false, width = 1, height = 2}
-		window:init{is_visible = false, width = 3, height = 4}  -- re-init
+		local window = odClientWrapper.Window.new{visible = false, width = 1, height = 2}
+		window:init{visible = false, width = 3, height = 4}  -- re-init
 		assert(window._metatable_name == 'Window')
 		local settings = window:get_settings()
 		assert(settings.width == 3)
 		assert(settings.height == 4)
-		assert(settings.is_visible == false)
+		assert(settings.visible == false)
 
 		window:set_settings{width = 5, height = 6}
 		local settings = window:get_settings()
 		assert(settings.width == 5)
 		assert(settings.height == 6)
-		assert(settings.is_visible == false)
+		assert(settings.visible == false)
 
 		local frames = 0
 		while window:step() do
@@ -112,7 +112,7 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odTexture, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odLuaClient_init(&lua));
 
 	const char test_script[] = R"(
-		local window = odClientWrapper.Window.new{is_visible = false}
+		local window = odClientWrapper.Window.new{visible = false}
 
 		local target_width = 8
 		local target_height = 32
@@ -123,10 +123,49 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odTexture, OD_TEST_FILTER_SLOW) {
 
 		texture:init{window = window, width = 1, height = 1}  -- re-init
 
-		texture:init_png_file{window = window, filename = './examples/minimal/data/sprites.png'}
+		texture:init_png_file{window = window, filename = './examples/engine_test/data/sprites.png'}
 
 		texture:destroy()
 		texture:destroy()  -- re-destroy
+	)";
+
+	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
+}
+OD_TEST_FILTERED(odTest_odLuaBindings_odTextureAtlas, OD_TEST_FILTER_SLOW) {
+	odLuaClient lua;
+	OD_ASSERT(odLuaClient_init(&lua));
+
+	const char test_script[] = R"(
+		local window = odClientWrapper.Window.new{visible = false}
+
+		local atlas = odClientWrapper.TextureAtlas.new{window = window}
+		local width, height = atlas:get_size()
+		assert(width == 0)
+		assert(height == 0)
+
+		assert(atlas:get_count() == 0)
+		atlas:set_region_png_file{id = 0, filename = './examples/engine_test/data/sprites.png'}
+		assert(atlas:get_count() == 1)
+
+		atlas:set_region_png_file{id = 1, filename = './examples/engine_test/data/sprites.png'}
+		assert(atlas:get_count() == 2)
+		atlas:reset_region{id = 1}
+		local x1,y1,x2,y2 = atlas:get_region_bounds{id = 0}
+		assert(x1 < x2)
+		assert(y1 < y2)
+
+		local x1,y1,x2,y2 = atlas:get_region_bounds{id = 1}
+		assert(x1 == 0)
+		assert(y1 == 0)
+		assert(x2 == 0)
+		assert(y2 == 0)
+
+		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = atlas}
+
+		atlas:init{window = window}  -- re-init
+
+		atlas:destroy()
+		atlas:destroy()  -- re-destroy
 	)";
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
@@ -136,7 +175,7 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderTexture, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odLuaClient_init(&lua));
 
 	const char test_script[] = R"(
-		local window = odClientWrapper.Window.new{is_visible = false}
+		local window = odClientWrapper.Window.new{visible = false}
 
 		local target_width = 8
 		local target_height = 32
@@ -159,7 +198,7 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderState, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odLuaClient_init(&lua));
 
 	const char test_script[] = R"(
-		local window = odClientWrapper.Window.new{is_visible = false}
+		local window = odClientWrapper.Window.new{visible = false}
 		local texture = odClientWrapper.Texture.new{window = window, width = 1, height = 1}
 		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = texture}
 		render_state:init_ortho_2d{target = window, src = texture}
@@ -180,7 +219,7 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderer, OD_TEST_FILTER_SLOW) {
 			1,0,0,0, 255,0,0,255, 0,0,
 		}
 
-		local window = odClientWrapper.Window.new{is_visible = false}
+		local window = odClientWrapper.Window.new{visible = false}
 
 		local texture = odClientWrapper.Texture.new{window = window, width = 1, height = 1}
 
@@ -208,41 +247,44 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderer, OD_TEST_FILTER_SLOW) {
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
 }
-OD_TEST_FILTERED(odTest_odLuaBindings_odTextureAtlas, OD_TEST_FILTER_SLOW) {
+OD_TEST_FILTERED(odTest_odLuaBindings_odAudio, OD_TEST_FILTER_SLOW) {
 	odLuaClient lua;
 	OD_ASSERT(odLuaClient_init(&lua));
 
 	const char test_script[] = R"(
-		local window = odClientWrapper.Window.new{is_visible = false}
+		local audio = odClientWrapper.Audio.new{}
+		audio:init{}
+		audio:init{} -- re-init
 
-		local atlas = odClientWrapper.TextureAtlas.new{window = window}
-		local width, height = atlas:get_size()
-		assert(width == 0)
-		assert(height == 0)
+		audio:init_wav_file{filename = 'examples/engine_test/data/1_sample_silence_22050hz_s16.wav'}
+		audio:set_volume{volume = 0}
 
-		assert(atlas:get_count() == 0)
-		atlas:set_region_png_file{id = 0, filename = './examples/minimal/data/sprites.png'}
-		assert(atlas:get_count() == 1)
+		local playback = audio:play{
+			loop_count = 0, cutoff_time = 1, fadein_time = 0.001, volume = 0, loop_forever = false}
+		assert(audio.is_playing(playback))
 
-		atlas:set_region_png_file{id = 1, filename = './examples/minimal/data/sprites.png'}
-		assert(atlas:get_count() == 2)
-		atlas:reset_region{id = 1}
-		local x1,y1,x2,y2 = atlas:get_region_bounds{id = 0}
-		assert(x1 < x2)
-		assert(y1 < y2)
+		local window = odClientWrapper.Window.new{visible = false}
+		local frames = 0
+		while window:step() do
+			frames = frames + 1
+			if frames > 10 then
+				window:destroy()
+				window:destroy() -- re-destroy
+			end
+		end
 
-		local x1,y1,x2,y2 = atlas:get_region_bounds{id = 1}
-		assert(x1 == 0)
-		assert(y1 == 0)
-		assert(x2 == 0)
-		assert(y2 == 0)
+		assert(not audio.is_playing(playback))
 
-		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = atlas}
+		local playback = audio:play{}
+		assert(audio.is_playing(playback))
 
-		atlas:init{window = window}  -- re-init
+		audio.stop(playback)
+		assert(not audio.is_playing(playback))
 
-		atlas:destroy()
-		atlas:destroy()  -- re-destroy
+		audio.stop_all()
+
+		audio:destroy()
+		audio:destroy() -- re-destroy
 	)";
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
@@ -390,10 +432,11 @@ OD_TEST_SUITE(
 	odTest_odLuaBindings_odAsciiFont,
 	odTest_odLuaBindings_odWindow,
 	odTest_odLuaBindings_odTexture,
+	odTest_odLuaBindings_odTextureAtlas,
 	odTest_odLuaBindings_odRenderTexture,
 	odTest_odLuaBindings_odRenderState,
 	odTest_odLuaBindings_odRenderer,
-	odTest_odLuaBindings_odTextureAtlas,
+	odTest_odLuaBindings_odAudio,
 	odTest_odLuaBindings_odEntityIndex,
 	odTest_odLuaBindings_odEntityIndex_odVertexArray_integration
 )

@@ -46,7 +46,7 @@
 		},
 		{
 			"name": "DEBUG build iteratively and run tests by name",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name-filter odTest_odAudio",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --no-client --test --test-name-filter odTest_odLuaBindings_odAudio",
 			"working_dir": "$project_path",
 		},
 		{

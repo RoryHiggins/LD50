@@ -66,7 +66,7 @@ const odAudioPlaybackSettings* odAudioPlaybackSettings_get_defaults() {
 	static const odAudioPlaybackSettings settings{
 		/*loop_count*/ 1,
 		/*cutoff_time_ms*/ 0,
-		/*fade_in_time_ms*/ 0,
+		/*fadein_time_ms*/ 0,
 		/*volume*/ 1.0f,
 		/*is_loop_forever_enabled*/ false,
 		/*is_cutoff_time_enabled*/ false,
@@ -77,7 +77,7 @@ bool odAudioPlaybackSettings_check_valid(const odAudioPlaybackSettings* settings
 	if (!OD_CHECK(settings != nullptr)
 		|| !OD_CHECK(settings->loop_count >= 0)
 		|| !OD_CHECK(settings->cutoff_time_ms >= 0)
-		|| !OD_CHECK(settings->fade_in_time_ms >= 0)
+		|| !OD_CHECK(settings->fadein_time_ms >= 0)
 		|| !OD_CHECK(odFloat_is_normalized(settings->volume))) {
 		return false;
 	}
@@ -230,7 +230,7 @@ odAudioPlaybackId odAudio_play(odAudio* audio, const odAudioPlaybackSettings* op
 		cutoff_time_ms = -1;  // -1 = no cutoff
 	}
 
-	int fade_in_time_ms = static_cast<int>(settings.fade_in_time_ms);
+	int fadein_time_ms = static_cast<int>(settings.fadein_time_ms);
 
 	Mix_Volume(
 		-1,
@@ -240,12 +240,12 @@ odAudioPlaybackId odAudio_play(odAudio* audio, const odAudioPlaybackSettings* op
 		/*channel*/ -1,  // -1 = first unused channel
 		static_cast<Mix_Chunk*>(audio->audio_native),
 		loop_count,
-		fade_in_time_ms,
+		fadein_time_ms,
 		cutoff_time_ms
 	);
 	if (!OD_CHECK(channel >= 0)) {
-		OD_ERROR("Mix_FadeInChannelTimed() failed, error=%s", Mix_GetError());
-		return 0;
+		OD_WARN("Mix_FadeInChannelTimed() failed, audio not played, error=%s", Mix_GetError());
+		return OD_AUDIO_PLAYBACK_ID_NO_CHANNELS;
 	}
 	if (!OD_CHECK(channel < OD_AUDIO_MIXER_CHANNELS)) {
 		OD_ERROR("Mix_FadeInChannelTimed() returned channel >= OD_AUDIO_MIXER_CHANNELS");

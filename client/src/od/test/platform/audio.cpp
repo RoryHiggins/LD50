@@ -50,7 +50,7 @@ const odAudioPlaybackSettings* odTest_odAudioAudioPlaybackSettings_get_defaults(
 	static const odAudioPlaybackSettings settings{
 		/*loop_count*/ 0,
 		/*cutoff_time_ms*/ 10,
-		/*fade_in_time_ms*/ 0,
+		/*fadein_time_ms*/ 0,
 		/*volume*/ 0.0f,
 		/*is_loop_forever_enabled*/ true,
 		/*is_cutoff_time_enabled*/ true,
@@ -142,9 +142,10 @@ OD_TEST_FILTERED(odTest_odAudio_play_simultaneous_above_max_fails, OD_TEST_FILTE
 	// 1 more than OD_AUDIO_MIXER_CHANNELS should fail
 	{
 		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
-		odAudioPlaybackId invalid_playback_id = odAudio_play(
+		odAudioPlaybackId no_channels_playback_id = odAudio_play(
 			&audio, odTest_odAudioAudioPlaybackSettings_get_defaults());
-		OD_ASSERT(!odAudioPlaybackId_check_valid(invalid_playback_id));
+		OD_ASSERT(!odAudioPlaybackId_check_valid(no_channels_playback_id));
+		OD_ASSERT(no_channels_playback_id = OD_AUDIO_PLAYBACK_ID_NO_CHANNELS);
 	}
 
 	OD_ASSERT(odAudio_stop_all());

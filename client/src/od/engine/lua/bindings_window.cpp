@@ -178,14 +178,14 @@ static int odLuaBindings_odWindow_get_settings(lua_State* lua) {
 	lua_setfield(lua, settings_index, "width");
 	lua_pushnumber(lua, static_cast<lua_Number>(settings->height));
 	lua_setfield(lua, settings_index, "height");
-	lua_pushnumber(lua, static_cast<lua_Number>(settings->fps_limit));
-	lua_setfield(lua, settings_index, "fps_limit");
-	lua_pushboolean(lua, settings->is_fps_limit_enabled);
-	lua_setfield(lua, settings_index, "is_fps_limit_enabled");
+	if (settings->is_fps_limit_enabled) {
+		lua_pushnumber(lua, static_cast<lua_Number>(settings->fps_limit));
+		lua_setfield(lua, settings_index, "fps_limit");
+	}
 	lua_pushboolean(lua, settings->is_vsync_enabled);
-	lua_setfield(lua, settings_index, "is_vsync_enabled");
+	lua_setfield(lua, settings_index, "vsync");
 	lua_pushboolean(lua, settings->is_visible);
-	lua_setfield(lua, settings_index, "is_visible");
+	lua_setfield(lua, settings_index, "visible");
 
 	lua_pushvalue(lua, settings_index);
 	return 1;
