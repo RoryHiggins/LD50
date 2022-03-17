@@ -16,6 +16,13 @@ struct odWindowSettings {
 	bool is_vsync_enabled;
 	bool is_visible;
 };
+struct odWindowMouseState {
+	int32_t x;
+	int32_t y;
+	bool is_left_down;
+	bool is_middle_down;
+	bool is_right_down;
+};
 
 OD_API_C OD_PLATFORM_MODULE const char*
 odWindowSettings_get_debug_string(const struct odWindowSettings* settings);
@@ -50,6 +57,11 @@ OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odWindow_set_settings(struct odWindow* window, const struct odWindowSettings* settings);
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD const struct odWindowSettings*
 odWindow_get_settings(const struct odWindow* window);
+OD_API_C OD_PLATFORM_MODULE void
+odWindow_get_mouse_state(const struct odWindow* window, struct odWindowMouseState* out_mouse_state);
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odWindow_get_key_state(const struct odWindow* window, const char* key_name);
+
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odWindowResource_init(struct odWindowResource* resource, struct odWindow* opt_window);

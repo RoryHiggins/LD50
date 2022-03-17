@@ -12,6 +12,8 @@ struct odWindow {
 	bool is_open;
 	int32_t next_frame_ms;
 
+	odWindowMouseState mouse_state;
+
 	odTrivialArrayT<odWindowResource*> resources;
 
 	OD_PLATFORM_MODULE odWindow();

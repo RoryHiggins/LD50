@@ -92,6 +92,34 @@ OD_TEST_FILTERED(odTest_odWindow_get_open, OD_TEST_FILTER_SLOW) {
 
 	odWindow_destroy(&window);
 }
+OD_TEST_FILTERED(odTest_odWindow_get_mouse_state, OD_TEST_FILTER_SLOW) {
+	odWindow window;
+	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
+	OD_ASSERT(odWindow_check_valid(&window));
+
+	odWindowMouseState state;
+	odWindow_get_mouse_state(&window, &state);
+}
+OD_TEST_FILTERED(odTest_odWindow_get_key_state, OD_TEST_FILTER_SLOW) {
+	odWindow window;
+	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
+	OD_ASSERT(odWindow_check_valid(&window));
+
+	OD_DISCARD(odWindow_get_key_state(&window, "Up"));
+	OD_DISCARD(odWindow_get_key_state(&window, "Down"));
+	OD_DISCARD(odWindow_get_key_state(&window, "Left"));
+	OD_DISCARD(odWindow_get_key_state(&window, "Right"));
+}
+OD_TEST_FILTERED(odTest_odWindow_get_key_state_invalid_name_fails, OD_TEST_FILTER_SLOW) {
+	odWindow window;
+	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
+	OD_ASSERT(odWindow_check_valid(&window));
+
+	{
+		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
+		OD_ASSERT(!odWindow_get_key_state(&window, "Top"));
+	}
+}
 OD_TEST_FILTERED(odTest_odWindow_init_multiple_windows, OD_TEST_FILTER_SLOW) {
 	odWindow window;
 	OD_ASSERT(odWindow_init(&window, odWindowSettings_get_headless_defaults()));
@@ -120,6 +148,9 @@ OD_TEST_SUITE(
 	odTest_odWindow_set_settings_headless,
 	odTest_odWindow_set_settings_visible,
 	odTest_odWindow_get_open,
+	odTest_odWindow_get_mouse_state,
+	odTest_odWindow_get_key_state,
+	odTest_odWindow_get_key_state_invalid_name_fails,
 	odTest_odWindow_init_multiple_windows,
 	odTest_odWindow_destroy_invalid,
 )

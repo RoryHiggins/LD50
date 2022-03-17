@@ -98,6 +98,9 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odWindow, OD_TEST_FILTER_SLOW) {
 		local frames = 0
 		while window:step() do
 			frames = frames + 1
+			local mouse_state = window:get_mouse_state()
+			local up_state = window:get_key_state("up")
+			local down_state = window:get_key_state("down")
 			if frames > 60 then
 				window:destroy()
 				window:destroy() -- re-destroy

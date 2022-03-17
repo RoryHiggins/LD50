@@ -290,6 +290,8 @@ void odWindow_destroy(odWindow* window) {
 	}
 	OD_DISCARD(OD_CHECK(window->resources.set_count(0)));
 
+	window->mouse_state = odWindowMouseState{};
+
 	window->next_frame_ms = 0;
 	window->is_open = false;
 
@@ -476,6 +478,19 @@ bool odWindow_step(odWindow* window) {
 		return false;
 	}
 
+	if (SDL_GetMouseFocus() == static_cast<SDL_Window*>(window->window_native)) {
+		int x = 0;
+		int y = 0;
+		Uint32 buttons = SDL_GetMouseState(&x, &y);
+		window->mouse_state = odWindowMouseState{
+			static_cast<int32_t>(x),
+			static_cast<int32_t>(y),
+			((buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0),
+			((buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0),
+			((buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0)
+		};
+	}
+
 	return true;
 }
 bool odWindow_set_visible(odWindow* window, bool is_visible) {
@@ -554,7 +569,7 @@ static bool odWindow_set_caption(odWindow* window, const char* caption) {
 
 	return true;
 }
-bool odWindow_set_settings(struct odWindow* window, const odWindowSettings* settings) {
+bool odWindow_set_settings(odWindow* window, const odWindowSettings* settings) {
 	if (!OD_CHECK(window != nullptr)
 		|| !OD_CHECK(odWindowSettings_check_valid(settings))) {
 		return false;
@@ -599,9 +614,41 @@ const odWindowSettings* odWindow_get_settings(const odWindow* window) {
 
 	return &window->settings;
 }
+void odWindow_get_mouse_state(const odWindow* window, odWindowMouseState* out_mouse_state) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))
+		|| !OD_CHECK(out_mouse_state != nullptr)) {
+		return;
+	}
+
+	*out_mouse_state = window->mouse_state;
+}
+bool odWindow_get_key_state(const odWindow* window, const char* key_name) {
+	if (!OD_CHECK(!window->is_open || odWindow_check_valid(window))
+		|| !OD_CHECK(key_name != nullptr)) {
+		return false;
+	}
+
+	SDL_Keycode key = SDL_GetKeyFromName(key_name);
+	if (!OD_CHECK(key != SDLK_UNKNOWN)) {
+		return false;
+	}
+	SDL_Scancode scancode = SDL_GetScancodeFromKey(key);
+
+	if (SDL_GetKeyboardFocus() != static_cast<SDL_Window*>(window->window_native)) {
+		return false;
+	}
+
+	int num_keys = 0;
+	const Uint8* scancode_states = SDL_GetKeyboardState(&num_keys);
+	if (!OD_CHECK(scancode < num_keys)) {
+		return false;
+	}
+
+	return scancode_states[scancode];
+}
 odWindow::odWindow()
 	: settings{*odWindowSettings_get_defaults()}, window_native{nullptr}, render_context_native{nullptr},
-	is_sdl_init{false}, is_open{false}, next_frame_ms{0} {
+	is_sdl_init{false}, is_open{false}, next_frame_ms{0}, mouse_state{}, resources{} {
 }
 odWindow::odWindow(odWindow&& other) : odWindow{} {
 	odWindow_swap(this, &other);

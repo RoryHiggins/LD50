@@ -5,6 +5,7 @@
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
+#include <od/core/matrix.h>
 #include <od/core/string.hpp>
 #include <od/engine/lua/includes.h>
 
@@ -98,7 +99,7 @@ const char* odLua_get_error(lua_State* lua) {
 
 	return error_str;
 }
-int32_t odLua_get_length(struct lua_State* lua, int32_t index) {
+int32_t odLua_get_length(lua_State* lua, int32_t index) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
@@ -108,6 +109,63 @@ int32_t odLua_get_length(struct lua_State* lua, int32_t index) {
 #else
 	return static_cast<int32_t>(lua_rawlen(lua, index));
 #endif
+}
+bool odLua_get_matrix(lua_State* lua, int32_t index, odMatrix* out_matrix) {
+	if (!OD_DEBUG_CHECK(lua != nullptr)
+		|| !OD_DEBUG_CHECK(out_matrix != nullptr)) {
+		return false;
+	}
+
+	odLuaScope scope{lua};
+
+	if (!OD_DEBUG_CHECK(lua_type(lua, index) == LUA_TTABLE)) {
+		return false;
+	}
+
+	float scale_x = 1.0f;
+	float scale_y = 1.0f;
+	float scale_z = 1.0f;
+	float translate_x = 0.0f;
+	float translate_y = 0.0f;
+	float translate_z = 0.0f;
+	float rotate_z = 0.0f;
+
+	lua_getfield(lua, index, "scale_x");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		scale_x = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "scale_y");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		scale_y = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "scale_z");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		scale_z = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "translate_x");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		translate_x = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "translate_y");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		translate_y = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "translate_z");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		translate_z = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "rotate_z");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		rotate_z = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+
+	odMatrix_init_3d(out_matrix, scale_x, scale_y, scale_z, translate_x, translate_y, translate_z);
+
+	if (rotate_z != 0.0f) {
+		odMatrix_rotate_z_3d(out_matrix, rotate_z);
+	}
+
+	return true;
 }
 void* odLua_get_userdata(lua_State* lua, int32_t index) {
 	if (!OD_DEBUG_CHECK(lua != nullptr)) {

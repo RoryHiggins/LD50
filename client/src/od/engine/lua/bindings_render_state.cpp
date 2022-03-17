@@ -4,6 +4,8 @@
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
+#include <od/core/vector.h>
+#include <od/core/matrix.h>
 #include <od/platform/window.hpp>
 #include <od/platform/render_texture.hpp>
 #include <od/platform/renderer.hpp>
@@ -112,12 +114,36 @@ static int odLuaBindings_odRenderState_init(lua_State* lua) {
 		return luaL_error(lua, "invalid settings.src.%s=%s", OD_LUA_METATABLE_NAME_KEY, src_type);
 	}
 	if (!OD_CHECK(odTexture_check_valid(src_texture))) {
-		return luaL_error(lua, "texture validation failed");
+		return luaL_error(lua, "settings.texture validation failed");
+	}
+
+	odMatrix view = *odMatrix_get_identity();
+	lua_getfield(lua, settings_index, "view");
+	const int view_index = lua_gettop(lua);
+	if (lua_type(lua, view_index) != LUA_TNIL) {
+		if (!OD_CHECK(lua_type(lua, view_index) == LUA_TTABLE)) {
+			return luaL_error(lua, "settings.view must be of type table");
+		}
+		if (!OD_CHECK(odLua_get_matrix(lua, view_index, &view))) {
+			return luaL_error(lua, "settings.view validation failed");
+		}
+	}
+
+	odMatrix projection = *odMatrix_get_identity();
+	lua_getfield(lua, settings_index, "projection");
+	const int projection_index = lua_gettop(lua);
+	if (lua_type(lua, projection_index) != LUA_TNIL) {
+		if (!OD_CHECK(lua_type(lua, projection_index) == LUA_TTABLE)) {
+			return luaL_error(lua, "settings.projection must be of type table");
+		}
+		if (!OD_CHECK(odLua_get_matrix(lua, projection_index, &projection))) {
+			return luaL_error(lua, "settings.projection validation failed");
+		}
 	}
 
 	*render_state = odRenderState{
-		*odMatrix_get_identity(),
-		*odMatrix_get_identity(),
+		view,
+		projection,
 		odBounds{
 			0.0f,
 			0.0f,

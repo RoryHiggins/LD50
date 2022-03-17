@@ -120,12 +120,12 @@ static int odLuaBindings_odWindow_new(lua_State* lua) {
 	return 1;
 }
 static int odLuaBindings_odWindow_set_settings(lua_State* lua) {
-	const int self_index = 1;
-	const int settings_index = 2;
-
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
+
+	const int self_index = 1;
+	const int settings_index = 2;
 
 	luaL_checktype(lua, self_index, LUA_TUSERDATA);
 	luaL_checktype(lua, settings_index, LUA_TTABLE);
@@ -153,11 +153,11 @@ static int odLuaBindings_odWindow_set_settings(lua_State* lua) {
 	return 0;
 }
 static int odLuaBindings_odWindow_get_settings(lua_State* lua) {
-	const int self_index = 1;
-
 	if (!OD_CHECK(lua != nullptr)) {
 		return 0;
 	}
+
+	const int self_index = 1;
 
 	luaL_checktype(lua, self_index, LUA_TUSERDATA);
 
@@ -188,6 +188,61 @@ static int odLuaBindings_odWindow_get_settings(lua_State* lua) {
 	lua_setfield(lua, settings_index, "visible");
 
 	lua_pushvalue(lua, settings_index);
+	return 1;
+}
+static int odLuaBindings_odWindow_get_mouse_state(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int self_index = 1;
+
+	luaL_checktype(lua, self_index, LUA_TUSERDATA);
+
+	odWindow* window = static_cast<odWindow*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_WINDOW));
+	if (!OD_CHECK(odWindow_check_valid(window))) {
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_WINDOW);
+	}
+
+	odWindowMouseState state{};
+	odWindow_get_mouse_state(window, &state);
+
+	lua_newtable(lua);
+	const int settings_index = lua_gettop(lua);
+
+	lua_pushnumber(lua, static_cast<lua_Number>(state.x));
+	lua_setfield(lua, settings_index, "x");
+	lua_pushnumber(lua, static_cast<lua_Number>(state.y));
+	lua_setfield(lua, settings_index, "y");
+	lua_pushboolean(lua, state.is_left_down);
+	lua_setfield(lua, settings_index, "left");
+	lua_pushboolean(lua, state.is_middle_down);
+	lua_setfield(lua, settings_index, "middle");
+	lua_pushboolean(lua, state.is_right_down);
+	lua_setfield(lua, settings_index, "right");
+
+	lua_pushvalue(lua, settings_index);
+	return 1;
+}
+static int odLuaBindings_odWindow_get_key_state(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	const int self_index = 1;
+	const int key_name_index = 2;
+
+	luaL_checktype(lua, self_index, LUA_TUSERDATA);
+	luaL_checktype(lua, key_name_index, LUA_TSTRING);
+
+	odWindow* window = static_cast<odWindow*>(odLua_get_userdata_typed(lua, self_index, OD_LUA_BINDINGS_WINDOW));
+	if (!OD_CHECK(odWindow_check_valid(window))) {
+		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_WINDOW);
+	}
+
+	const char* key_name = luaL_checkstring(lua, key_name_index);
+
+	lua_pushboolean(lua, odWindow_get_key_state(window, key_name));
 	return 1;
 }
 static int odLuaBindings_odWindow_step(lua_State* lua) {
@@ -228,7 +283,9 @@ bool odLuaBindings_odWindow_register(lua_State* lua) {
 		|| !OD_CHECK(add_method("new", odLuaBindings_odWindow_new))
 		|| !OD_CHECK(add_method("step", odLuaBindings_odWindow_step))
 		|| !OD_CHECK(add_method("set_settings", odLuaBindings_odWindow_set_settings))
-		|| !OD_CHECK(add_method("get_settings", odLuaBindings_odWindow_get_settings))) {
+		|| !OD_CHECK(add_method("get_settings", odLuaBindings_odWindow_get_settings))
+		|| !OD_CHECK(add_method("get_mouse_state", odLuaBindings_odWindow_get_mouse_state))
+		|| !OD_CHECK(add_method("get_key_state", odLuaBindings_odWindow_get_key_state))) {
 		return false;
 	}
 
