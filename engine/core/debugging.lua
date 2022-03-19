@@ -1,9 +1,11 @@
 local shim = require("engine/core/shim")
+local logging = require("engine/core/logging")
 
 local debugger_lib = nil
 local debugger_enabled = false
 
 local debugging = {}
+debugging.debug_checks_enabled = true
 function debugging.set_debugger_enabled(enabled)
 	debugger_enabled = enabled
 
@@ -33,5 +35,6 @@ function debugging.pcall(fn, ...)
 
 	return debugger_lib.call(fn, shim.unpack(args))
 end
+logging.add_error_handler(debugging.breakpoint)
 
 return debugging

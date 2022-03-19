@@ -43,6 +43,12 @@ bool odFloat_epsilon_get_equals(float x, float y) {
 	}
 	return fabsf(y - x) <= FLT_EPSILON;
 }
+float odFloat_deg_to_rad(float deg) {
+	return deg * (OD_FLOAT_PI / 180.0f);
+}
+float odFloat_rad_to_deg(float rad) {
+	return rad * (180.0f / OD_FLOAT_PI);
+}
 
 bool odInt32_fits_float(int32_t x) {
 	if ((x < OD_FLOAT_PRECISE_INT_MIN)

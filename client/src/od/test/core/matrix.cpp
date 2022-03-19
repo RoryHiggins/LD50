@@ -157,7 +157,6 @@ OD_TEST(odTest_odMatrix_multiply_vector_3d_with_indentity) {
 	OD_ASSERT(odVector_get_equals(&vector, &expected_vector));
 }
 
-
 OD_TEST_SUITE(
 	odTestSuite_odMatrix,
 	odTest_odMatrix_init,

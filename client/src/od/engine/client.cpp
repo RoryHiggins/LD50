@@ -232,8 +232,6 @@ bool odClient_step(odClient* client) {
 			static_cast<float>(engine_settings->game_width),
 			static_cast<float>(engine_settings->game_height)
 		},
-		&client->src_texture,
-		&client->game_render_texture
 	};
 
 	odWindowSettings* window_settings = &client->window.settings;
@@ -248,26 +246,25 @@ bool odClient_step(odClient* client) {
 			static_cast<float>(window_settings->width),
 			static_cast<float>(window_settings->height)
 		},
-		&client->src_texture,
-		/* opt_render_texture*/ nullptr
 	};
 
 	odRenderState copy_game_to_window{draw_to_window};
-	copy_game_to_window.src_texture = odRenderTexture_get_texture(&client->game_render_texture);
 
 	// draw game
 	odTrianglePrimitive_sort_vertices(
 		client->frame.game_vertices.begin(),
 		client->frame.game_vertices.get_count()
 	);
-	if (!OD_CHECK(odRenderer_clear(&client->renderer, &draw_to_game, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&client->renderer, odColor_get_white(), &draw_to_game, &client->game_render_texture))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
 		&client->renderer,
-		&draw_to_game,
 		client->frame.game_vertices.begin(),
-		client->frame.game_vertices.get_count()))) {
+		client->frame.game_vertices.get_count(),
+		&draw_to_game,
+		&client->src_texture,
+		&client->game_render_texture))) {
 		return false;
 	}
 
@@ -276,17 +273,25 @@ bool odClient_step(odClient* client) {
 		client->frame.window_vertices.begin(),
 		client->frame.window_vertices.get_count()
 	);
-	if (!OD_CHECK(odRenderer_clear(&client->renderer, &draw_to_window, odColor_get_white()))) {
+	if (!OD_CHECK(odRenderer_clear(&client->renderer, odColor_get_white(), &draw_to_window, nullptr))) {
 		return false;
 	}
-	if (!OD_CHECK(odRenderer_draw_texture(&client->renderer, &copy_game_to_window, nullptr, nullptr))) {
+	if (!OD_CHECK(odRenderer_draw_texture(
+		&client->renderer,
+		&copy_game_to_window,
+		odRenderTexture_get_texture(&client->game_render_texture),
+		nullptr,
+		nullptr,
+		nullptr))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
 		&client->renderer,
-		&draw_to_window,
 		client->frame.window_vertices.begin(),
-		client->frame.window_vertices.get_count()))) {
+		client->frame.window_vertices.get_count(),
+		&draw_to_window,
+		&client->src_texture,
+		nullptr))) {
 		return false;
 	}
 

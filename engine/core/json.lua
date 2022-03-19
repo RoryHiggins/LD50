@@ -70,12 +70,10 @@ function json._get_strs(xs, out_strs)
 	end
 	return out_strs
 end
-
 function json.encode(xs)
 	return table.concat(json._get_strs(xs, {}))
 end
-
-testing.add_suite("core.json", {
+json.tests =  testing.add_suite("core.json", {
 	encode = function()
 		local test_values = {
 			0,

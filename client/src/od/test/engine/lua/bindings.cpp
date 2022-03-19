@@ -163,7 +163,7 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odTextureAtlas, OD_TEST_FILTER_SLOW) {
 		assert(x2 == 0)
 		assert(y2 == 0)
 
-		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = atlas}
+		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window}
 
 		atlas:init{window = window}  -- re-init
 
@@ -202,10 +202,21 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderState, OD_TEST_FILTER_SLOW) {
 
 	const char test_script[] = R"(
 		local window = odClientWrapper.Window.new{visible = false}
-		local texture = odClientWrapper.Texture.new{window = window, width = 1, height = 1}
-		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = texture}
-		render_state:init_ortho_2d{target = window, src = texture}
-		--render_state:init{target = window, src = texture}
+		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window}
+		render_state:init_ortho_2d{target = window}
+		render_state:init{target = window}
+
+		render_state_2 = odClientWrapper.RenderState.new{target = window}
+		render_state:assign(render_state_2)
+
+		render_state_3 = render_state_2:copy()
+		local transform = {rotate_z = 0.5 * math.pi, scale_x = 2, scale_y = 2, translate_x = 2, translate_y = 4}
+		render_state_3:transform_view(transform)
+		render_state_3:transform_projection(transform)
+		render_state_3:transform_projection{}
+
+		render_state_3:set_viewport{viewport = {x = 5, y = 6, w = 2, h = 3}}
+		render_state_3:set_viewport_ortho_2d{viewport = {x = 5, y = 6, w = 2, h = 3}, target = window}
 	)";
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
@@ -229,20 +240,20 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderer, OD_TEST_FILTER_SLOW) {
 		local renderer = odClientWrapper.Renderer.new{window = window}
 		renderer:init{window = window}  -- re-init
 
-		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = texture}
+		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window}
 
 		renderer:clear{render_state = render_state, color = {255, 255, 255, 255}}
-		renderer:draw_vertex_array{render_state = render_state, vertex_array = vertex_array}
+		renderer:draw_vertex_array{render_state = render_state, src = texture, vertex_array = vertex_array}
 		renderer:flush()
 
 		local render_texture = odClientWrapper.RenderTexture.new{window = window, width = 32, height = 32}
-		local render_to_texture_state = odClientWrapper.RenderState.new_ortho_2d{target = render_texture, src = texture}
+		local render_to_texture_state = odClientWrapper.RenderState.new_ortho_2d{target = render_texture}
 
-		renderer:draw_vertex_array{render_state = render_to_texture_state, vertex_array = vertex_array}
+		renderer:draw_vertex_array{render_state = render_to_texture_state, src = texture, target = render_texture, vertex_array = vertex_array}
 		renderer:flush()
 
-		local copy_to_window_state = odClientWrapper.RenderState.new_ortho_2d{target = window, src = render_texture}
-		renderer:draw_texture{render_state = copy_to_window_state}
+		local copy_to_window_state = odClientWrapper.RenderState.new_ortho_2d{target = window}
+		renderer:draw_texture{render_state = copy_to_window_state, src = texture,}
 
 		renderer:destroy()
 		renderer:destroy()  -- re-destroy

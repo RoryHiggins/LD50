@@ -9,10 +9,92 @@
 #include <od/core/vector.h>
 #include <od/core/vertex.h>
 #include <od/core/array.hpp>
+#include <od/platform/texture.hpp>
+#include <od/platform/render_texture.hpp>
 #include <od/platform/renderer.hpp>
 #include <od/platform/window.hpp>
+#include <od/engine/texture_atlas.hpp>
 #include <od/engine/lua/includes.h>
 #include <od/engine/lua/wrappers.hpp>
+
+static odRenderTexture* odLuaBindings_odRenderer_get_render_texture_impl(lua_State* lua, int settings_index, const odRenderer* renderer) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return nullptr;
+	}
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	lua_getfield(lua, settings_index, "target");
+	const int target_index = lua_gettop(lua);
+
+	if (lua_type(lua, target_index) == LUA_TNIL) {
+		return nullptr;
+	}
+
+	lua_getfield(lua, target_index, OD_LUA_METATABLE_NAME_KEY);
+	const char* target_type = luaL_checkstring(lua, OD_LUA_STACK_TOP);
+
+	odRenderTexture* opt_render_texture = nullptr;
+	if (strcmp(target_type, OD_LUA_BINDINGS_WINDOW) == 0) {
+		if (OD_BUILD_DEBUG) {
+			const odWindow* window = static_cast<odWindow*>(odLua_get_userdata_typed(
+				lua, target_index, OD_LUA_BINDINGS_WINDOW));
+			if (!OD_DEBUG_CHECK(window == renderer->window)) {
+				luaL_error(lua, "settings.target is a window that doesn't match renderer.window");    // NOTE: does not return
+			}
+		}
+	} else if (strcmp(target_type, OD_LUA_BINDINGS_RENDER_TEXTURE) == 0) {
+		opt_render_texture = static_cast<odRenderTexture*>(odLua_get_userdata_typed(
+			lua, target_index, OD_LUA_BINDINGS_RENDER_TEXTURE));
+		if (!OD_CHECK(odRenderTexture_check_valid(opt_render_texture))) {
+			luaL_error(lua, "odRenderTexture_check_valid() failed");    // NOTE: does not return
+		}
+	} else {
+		luaL_error(lua, "invalid settings.target.%s=%s", OD_LUA_METATABLE_NAME_KEY, target_type);    // NOTE: does not return
+	}
+
+	return opt_render_texture;
+}
+static const odTexture* odLuaBindings_odRenderer_get_src_texture_impl(lua_State* lua, int settings_index) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return nullptr;
+	}
+
+	luaL_checktype(lua, settings_index, LUA_TTABLE);
+
+	lua_getfield(lua, settings_index, "src");
+	const int src_index = lua_gettop(lua);
+	luaL_checktype(lua, src_index, LUA_TUSERDATA);
+
+	lua_getfield(lua, src_index, OD_LUA_METATABLE_NAME_KEY);
+	const char* src_type = luaL_checkstring(lua, OD_LUA_STACK_TOP);
+
+	const odTexture* src_texture = nullptr;
+	if (strcmp(src_type, OD_LUA_BINDINGS_TEXTURE) == 0) {
+		src_texture = static_cast<const odTexture*>(odLua_get_userdata_typed(
+			lua, src_index, OD_LUA_BINDINGS_TEXTURE));
+	} else if (strcmp(src_type, OD_LUA_BINDINGS_RENDER_TEXTURE) == 0) {
+		const odRenderTexture* src_render_texture = static_cast<odRenderTexture*>(odLua_get_userdata_typed(
+			lua, src_index, OD_LUA_BINDINGS_RENDER_TEXTURE));
+		if (!OD_CHECK(odRenderTexture_check_valid(src_render_texture))) {
+			luaL_error(lua, "odRenderTexture_check_valid() failed");  // NOTE: does not return
+		}
+
+		src_texture = odRenderTexture_get_texture_const(src_render_texture);
+	} else if (strcmp(src_type, OD_LUA_BINDINGS_TEXTURE_ATLAS) == 0) {
+		const odTextureAtlas* src_render_texture = static_cast<odTextureAtlas*>(odLua_get_userdata_typed(
+			lua, src_index, OD_LUA_BINDINGS_TEXTURE_ATLAS));
+		if (!OD_CHECK(odTextureAtlas_check_valid(src_render_texture))) {
+			luaL_error(lua, "odTextureAtlas_check_valid() failed");  // NOTE: does not return
+		}
+
+		src_texture = odTextureAtlas_get_texture_const(src_render_texture);
+	} else {
+		luaL_error(lua, "invalid settings.src.%s=%s", OD_LUA_METATABLE_NAME_KEY, src_type);  // NOTE: does not return
+	}
+
+	return src_texture;
+}
 
 static int odLuaBindings_odRenderer_init(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -138,6 +220,8 @@ static int odLuaBindings_odRenderer_clear(lua_State* lua) {
 		return luaL_error(lua, "settings.color must have 4 elements (rgba)");
 	}
 
+	odRenderTexture* opt_render_texture = odLuaBindings_odRenderer_get_render_texture_impl(lua, settings_index, renderer);
+
 	odColor color{};
 	uint8_t* color_bytes = reinterpret_cast<uint8_t*>(&color);
 	for (int i = 1; i <= 4; i++) {
@@ -151,7 +235,7 @@ static int odLuaBindings_odRenderer_clear(lua_State* lua) {
 		color_bytes[i - 1] = static_cast<uint8_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
 	}
 
-	if (!OD_CHECK(odRenderer_clear(renderer, render_state, &color))) {
+	if (!OD_CHECK(odRenderer_clear(renderer, &color, render_state, opt_render_texture))) {
 		return luaL_error(lua, "odRenderer_clear() failed");
 	}
 
@@ -183,17 +267,16 @@ static int odLuaBindings_odRenderer_draw_vertex_array(lua_State* lua) {
 
 	lua_getfield(lua, settings_index, "vertex_array");
 	const int vertex_array_index = lua_gettop(lua);
-	if (!OD_CHECK(lua_type(lua, vertex_array_index) == LUA_TUSERDATA)) {
-		return luaL_error(lua, "settings.vertex_array must be of type userdata");
-	}
-
 	odTrivialArrayT<odVertex>* vertex_array = static_cast<odTrivialArrayT<odVertex>*>(odLua_get_userdata_typed(
 		lua, vertex_array_index, OD_LUA_BINDINGS_VERTEX_ARRAY));
 	if (!OD_CHECK(vertex_array != nullptr)) {
 		return 0;
 	}
 
-	if (!OD_CHECK(odRenderer_draw_vertices(renderer, render_state, vertex_array->begin(), vertex_array->get_count()))) {
+	const odTexture* src_texture = odLuaBindings_odRenderer_get_src_texture_impl(lua, settings_index);
+	odRenderTexture* opt_render_texture = odLuaBindings_odRenderer_get_render_texture_impl(lua, settings_index, renderer);
+
+	if (!OD_CHECK(odRenderer_draw_vertices(renderer, vertex_array->begin(), vertex_array->get_count(), render_state, src_texture, opt_render_texture))) {
 		return luaL_error(lua, "odRenderer_draw_vertices() failed");
 	}
 
@@ -223,7 +306,10 @@ static int odLuaBindings_odRenderer_draw_texture(lua_State* lua) {
 		return luaL_error(lua, "settings.render_state invalid");
 	}
 
-	if (!OD_CHECK(odRenderer_draw_texture(renderer, render_state, nullptr, nullptr))) {
+	const odTexture* src_texture = odLuaBindings_odRenderer_get_src_texture_impl(lua, settings_index);
+	odRenderTexture* opt_render_texture = odLuaBindings_odRenderer_get_render_texture_impl(lua, settings_index, renderer);
+
+	if (!OD_CHECK(odRenderer_draw_texture(renderer, render_state, src_texture, nullptr, nullptr, opt_render_texture))) {
 		return luaL_error(lua, "odRenderer_draw_vertices() failed");
 	}
 

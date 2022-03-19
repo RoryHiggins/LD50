@@ -1,5 +1,3 @@
-local debugging = require("engine/core/debugging")
-
 local logging = {}
 logging.Level = {
 	none = 0,
@@ -12,6 +10,10 @@ logging.Level = {
 logging.level = logging.Level.info
 logging.error_count = 0
 logging._level_stack = {}
+logging.error_handlers = {}
+function logging.add_error_handler(handler)
+	logging.error_handlers[#logging.error_handlers + 1] = handler
+end
 function logging._log_impl(level, prefix, format, ...)
 	if logging.level < level then
 		return
@@ -32,7 +34,10 @@ function logging._log_impl(level, prefix, format, ...)
 		end
 
 		io.flush()
-		debugging.breakpoint()
+
+		for _, handler in ipairs(logging.error_handlers) do
+			handler()
+		end
 	end
 
 	io.flush()
@@ -52,7 +57,6 @@ end
 function logging.trace(format, ...)
 	logging._log_impl(logging.Level.trace, "[trace %s:%d] %s() ", format, ...)
 end
-
 function logging.push_level(new_level)
 	logging._level_stack[#logging._level_stack + 1] = logging.level
 	logging.level = new_level

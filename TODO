@@ -1,110 +1,267 @@
 
-
-Lua - Approach
+Lua Approach
 --------------
-Serializable: str|num|bool|nil|[Serializable]|{[str]: Serializable}  # conceptual, not a concrete type
+schema.Any: function() -> bool
+schema.Null: function(x) -> bool
+schema.Boolean: function(x) -> bool
+schema.String: function(x) -> bool
+schema.Number: function(x) -> bool
+schema.Integer: function(x) -> bool
+schema.Normalized: function(x) -> bool
+schema.NonNegative: function(x) -> bool
+schema.NonEmpty: function(x) -> bool
+schema.Array(t): function(x) -> bool
+schema.Mapping(k, v): function(x) -> bool
+schema.Object(xs, additional_values=false): function(x) -> bool
+schema.AnyOf(...): function(x) -> bool
+schema.AllOf(...): function(x) -> bool
+schema.Enum(...): function(x) -> bool
+schema.Const(c): function(x) -> bool
+schema.Optional(t): function(x) -> bool
+schema.Check(fn): function(x) -> bool
+schema.Serializable: function(x) -> bool
 
-Sim
-- new(state: Serializable) : Sim
-- require(sys_metatable: Metatable[Sym.Sys]) : Sys
-- find_by_name(sys_name: str) : Sys|nil
-- send(event: str, ...args: [Serializable])
-- state: Serializable
-- _systems: {[str]: Sys}
-- _systems_ordered: [Sys]
-- _systems_by_event: {[str]: [Sys]}
-Sim.Sys
-- new_metatable(name: str) : Metatable[Sym.Sys]
-- on_init(sim: Sim, state: Serializable)?
-- on_step()?
-- on_draw(dest: VertexArray)?
-- name: str
+sim.model.Status : schema.Enum{new, running, stopped}
+sim.Sim
+	new(state: schema.Serializable|nil, settings: schema.Serializable|nil) : Sim
+	require(sys_metatable: Metatable[sim.Sys]) : sim.Sys
+	find_by_name(sys_name: str) : sim.Sys|nil
+	broadcast(event_name: str, ...args: [schema.Serializable])	state: schema.Serializable
+	get_state(sys: sim.Sys) : schema.Serializable
+	get_settings(sys: sim.Sys) : schema.Serializable
+	state: schema.Serializable
+	settings: schema.Serializable
+	status: sim.model.Status
+	current_step: num
+	_systems: {[str]: sim.Sys}
+	_systems_ordered: [sim.Sys]
+	_systems_by_event: {[str]: [sim.Sys]}
+sim.Sys : Metatable
+	new_metatable(name: str) : Metatable[sim.Sys]
+	on_require(sys)?, on_start()?, on_step()?, on_stop()?
+	sys_name: str
 
-Game : Sim
-Game.Sys : Metatable[Sim.Sys]
+game.Game = sim.Sim
+game.Sys = sim.Sys
 
-World : Sim
-- send_to_game(event: str, ...args: [Serializable])
-World.Sys : Metatable[Sim.Sys]
-World.Game : World.Sys
-- world: World
+world.World = sim.Sim
+world.Sys = sim.Sys
+world.GameSys : game.Sys
+	get() : World
+	set(World)  # stops running world, sends on_world_set, starts new world
+	on_start()  # invokes world.set_status(Status.running)
+	on_step()  # invokes world.step()
+	on_stop()  # invokes world.set_status(Status.stopped)
+	_world: World
 
-RenderTarget
-- render_texture: odClient.RenderTexture
-- vertex_array: odClient.VertexArray
-- render_states: odClient.RenderState
-- render_texture_to_window_render_states: odClient.RenderState
-- point, line, rect_outline, rect, sprite, triangle, vertices
-Client
-- window: Window
-- texture_atlas: odClient.TextureAtlas
-- renderer: odClient.Renderer
-- render_target: RenderTarget
-- gui_render_target: RenderTarget
-Client.Game : Sys
-- Client
-- on_step()  # invokes on_draw(dest: VertexArray), on_draw_gui(dest: VertexArray)
+client.Context
+	window: Window
+	texture_atlas: odClient.TextureAtlas
+	renderer: odClient.Renderer	
+client.GameSys : game.Sys
+	on_start()  # creates and configures resources
+	on_step()  # invokes on_draw(odClient.VertexArray, client.Context), window.step()
+	settings
+		window
+			width, height, fps_limit: num
+			vsync: bool
+	context: client.Context
+	_vertices: odClient.VertexArray
 
-Sprite
-- name: str
-- x, y, w, h: num
-Sprite.Set
-- new_from_png(filename: str, sprites_relative: [Sprite]) : Spritesheet
-- filename: str
-- sprites: [Sprite]
-Sprite.Game
-- new(texture_atlas: odClient.TextureAtlas)
-- add_sprite_set(Sprite.Set)
-- find(sprite_name: str) : Sprite|nil
-- _texture_atlas: odClient.TextureAtlas  #  depends on Client.Game to get this
-- _sprites: {[str]: Sprite}
+view.model.View : schema.Serializable
+	transform: {translate_x, translate_y, scale_x, scale_y, rotate_z : num|nil}
+	viewport: {x, y, w, h} : num
+view.GameSys : world.Sys
+	set(name: str, view.model.View)
+	find(name: str) : view.model.View|nil
+	on_world_set()
+	on_draw()  # invokes world.on_draw(odClient.VertexArray, client.Context), adds vertices for each view
+	state
+		views : {[str]: view.model.View}
+view.WorldSys : world.Sys
+	set(name: str, view.model.View)
+	find(name: str) : view.model.View|nil
+	on_start()  # ensures "default" view exists
+	on_step()  # invokes world.on_draw(odClient.VertexArray)
+	state
+		cameras : {[str]: view.model.View}
+		_render_target: odClient.RenderTexture
+	_vertices: odClient.VertexArray
+	_render_target: odClient.RenderTexture
 
-Entity : Serializable
-- tags: [str]|nil
-- name: str|nil
-- x, y, w, h: num|nil
-- sprite: table|nil
-	- name: str
-	- r, g, b, a, depth, rotation, scale_x, scale_y, translation_x, translation_y: num
-Entity.World : World.Sys
-- add(src: Serializable|nil) : Entity
-- set(entity: Entity, src: Serializable|nil)
-- update(entity: Entity, src: Serializable)
-- destroy(entity: Entity)
-- iterate() : [Entity]
-- id_get(entity: Entity) : num
-- id_find(id: num) : Entity
-- name_find(name: str) : Entity|nil
-- name_set(entity: Entity, name: str|nil) : str  # invokes on_entity_name_set
-- tag_is_set(entity: Entity, ...tags: [str]) : bool
-- tag_set(entity: Entity, ...tags: [str])  # invokes on_entity_tag_set
-- tag_add(entity: Entity, ...tags: [str])
-- tag_iterate(tag: str) : [Entity]
-- bounds_find(x, y, w, h: num, exclude_entity: Entity, ...tags: [str]) : Entity|nil
-- bounds_find_all(x, y, w, h: num, exclude_entity: Entity, ...tags: [str]) : [Entity]
-- bounds_set(entity: Entity, x, y, w, h: num)  # invokes on_entity_bounds_set
-- pos_set(entity: Entity, x, y: num)
-- pos_move(entity: Entity, offset_x, offset_y: num)
-- _tag_id_to_tag: [str]
-- _tag_to_tag_id: {[str]: num}
-- _entity_id_to_entity: [Entity]  -- reference to state.entities
-- _entity_to_entity_id: {[Entity]: num}
-- _entity_name_to_entity: {[str]: Entity}
-- _tag_to_entities: {[str]: [Entity]}
-- _entity_id_lookup_for_tag_to_entities: [{[str]: num}]  -- for efficient cleanup of _tag_to_entities
-- _entity_index: odClient.EntityIndex
+controller.model.Input : schema.Serializable
+	held: bool
+	steps_in_state: num  # for tap detection
+	steps_in_last_state: num  # for double-tap detection
+controller.model.ControllerInputs : schema.Serializable
+	inputs: {[str]: controller.model.Input}  # by input name
+	get_held(name: str) : bool
+	tapped(name: str) : bool
+	double_tapped(name: str, max_released_steps: num = 5) : bool
+	binding_find(name: str) : controller.model.Binding
+	binding_set(name: str, controller.model.Binding)
+controller.model.Inputs : schema.Serializable
+	controllers: [controller.model.ControllerInputs]  # by controller id -> input name
+controller.model.BindingType : enum str {"keyboard"}
+controller.model.Binding : schema.Serializable
+	input_name: str
+	controller_id: num
+	type: controller.model.BindingType
+	keyboard_key: str?
+controller.GameSys : game.Sys
+	find_controller(controller_id: num, input_name: str) : controller.model.Input|nil
+	on_step()  # updates inputs from bindings, triggers world.on_input(name, controller_id, held)
+	state
+		inputs: controller.model.Inputs
+	settings
+		bindings: [controller.model.Binding]
+controller.WorldSys : world.Sys
+	on_input_change()
+	state
+		inputs: input.model.Inputs
 
+entity.model.Entity : schema.Serializable
+	name: str|nil
+	sprite: sprite.Component|nil
+entity.WorldSys : world.Sys
+	add(src: schema.Serializable|nil) : entity.model.Entity
+	set(entity.model.Entity, src: schema.Serializable|nil)
+	update(entity.model.Entity, src: schema.Serializable)
+	destroy(entity.model.Entity)
+	iterate() : [entity.model.Entity]
+	find(name: str) : entity.model.Entity|nil
+	set_name(entity.model.Entity, name: str) : str
+	require_name(entity.model.Entity) : str
+	on_start()
+	state
+		entities: [entity.model.Entity]
+	_tag_id_to_tag: [str]
+	_tag_to_tag_id: {[str]: num}
+	_entity_to_entity_id: {[entity.model.Entity]: num}
+	_entity_name_to_entity: {[str]: entity.model.Entity}
+	_tag_to_entities: {[str]: [entity.model.Entity]}
+	_entity_id_lookup_for_tag_to_entities: [{[str]: num}]  # for efficient cleanup of _tag_to_entities
+	_entity_index: EntityIndex
+	_sprite_game: sprite.GameSys : game.Sys  # for index access to atlas tex coords, which are not in world state
+
+tag.WorldSys : world.Sys
+	is_set(entity.model.Entity, ...tags: [str]) : bool
+	set(entity.model.Entity, ...tags: [str])  # invokes on_entity_tag_set
+	add(entity.model.Entity, ...tags: [str])
+	remove(entity.model.Entity, ...tags: [str])
+	iterate(tag: str) : [entity.model.Entity]
+	_entity_world: entity.WorldSys
+
+bounds.Component : schema.Serializable
+	x, y, w, h: num
+bounds.WorldSys
+	find(x, y, w, h: num, entity.model.Entity, ...tags: [str]) : entity.model.Entity|nil
+	find_all(x, y, w, h: num, entity.model.Entity, ...tags: [str]) : [entity.model.Entity]
+	get(entity.model.Entity) : num, num, num, num
+	set(entity.model.Entity, x, y: num, w, h: num|nil)
+	move(entity.model.Entity, offset_x, offset_y: num)
+	_entity_world: entity.WorldSys
+
+sprite.Component : schema.Serializable
+	new(sprite_name: str) : sprite.Component
+	sprite_name: str
+	depth, r, g, b, a, scale_x, scale_y, translate_x, translate_y, rotate: num
+sprite.Asset : schema.Serializable
+	file_name: str
+	u1, v1, u2, v2: num
+sprite.Allocation : schema.Serializable
+	region_id: num
+	u1, v1, u2, v2: num
+sprite.GameSys : game.Sys
+	add_png(file_name: str, sprites: {[str]: sprite.Asset]})
+	find(sprite_name: str) : sprite.Asset|nil
+	draw(odClient.VertexArray, sprite.Component, x, y: num)
+	get_atlas_coords(sprite_name: str) : num, num, num, num
+	state
+		sprites: {[str]: sprite.Asset}
+	_sprite_allocations: {[str]: sprite.Allocation}
+sprite.worldSys : world.Sys
+	set(entity.model.Entity, sprite.Component)
+	set_name(entity.model.Entity, sprite_name: str)
+	remove(entity.model.Entity)
+	draw(odClient.VertexArray, sprite.Component, x, y: num)
+	on_draw(odClient.VertexArray)  # draw the sprites of entites
+
+animation.Component : schema.Serializable
+	anim_name: str
+	pos: num
+	loop: bool
+	ended: bool
+animation.Asset : schema.Serializable
+	frames: [str]
+animation.GameSys : game.Sys
+	set(anim_name: str, animation.Asset)
+	find(anim_name: str) : animation.Asset
+	state
+		animations: {[str]: animation.Asset}
+	# optimization: index frames by anim for fast frame updates
+animation.WorldSys : world.Sys
+	set(entity.model.Entity, animation.Component)
+	set_name(entity.model.Entity, anim_name: str)
+	remove(entity.model.Entity)
+	on_step()  # progress the animation of entities
+	_animation_game: animation.GameSys : game.Sys
+	_sprite_game: sprite.GameSys : game.Sys
+
+text.Component : schema.Serializable
+	font_name: str
+	depth, r, g, b, a, max_width, max_height: num
+text.FontAsset : schema.Serializable
+	filename: str
+	type = "ascii"  # only currently supported type
+text.GameSys : game.Sys
+	set(font_name: str, text.FontAsset)
+	find(font_name: str) : text.FontAsset|nil
+	draw(odClient.VertexArray, text.Component, x, y: num)
+	on_start()
+	state
+		fonts: {[str]: text.FontAsset}
+	_ascii_fonts: {[str]: odClient.AsciiFont}
+text.WorldSys : world.Sys
+	set(entity.model.Entity, text.Component)
+	set_font_text(entity.model.Entity, font_name: str, text: str, max_width, max_height: num|nil)
+	remove(entity.model.Entity)
+	draw(odClient.VertexArray, text.Component, x, y: num)
+	on_draw(odClient.VertexArray)  # draw the text of entites
+	_animation_game: animation.GameSys : game.Sys
+	_sprite_game: sprite.GameSys : game.Sys
+
+audio.PlaybackId = num
+audio.PlaybackSettings : schema.Serializable
+	loop_count, cutoff_time, fadein_time, volume : num
+	loop_forever : bool
+audio.Asset : schema.Serializable
+	filename: str
+	volume: num  # 0..1
+audio.GameSys : game.Sys
+	add(audio_name: str, audio.Asset)
+	find(audio_name: str) : audio.Asset|nil
+	play(audio.Asset, audio.PlaybackSettings|nil) : audio.PlaybackId
+	playing(audio.PlaybackId) : bool
+	stop(audio.PlaybackId)
+	stop_all()
+
+camera_target.model.Component : schema.Serializable
+	entity_name: str
+	speed: num?
+	margin: num?
+camera_target.WorldSys : world.Sys
+	set(entity.model.Entity, camera_target.model.Component)
+	remove(entity.model.Entity)
+	on_step()
+	on_entity_destroy()  # remove if named view removed
 
 Client TODOs
-------------
-Major TODOs
-- Text support
-- Audio loading
-- Audio mixing
-
-Long-term major TODOs
-- Unicode font loading, unicode text rendering
-
+============
 Refactoring TODOs
------------------
-lua bindings: add get_raw_texture() and get_raw_render_texture() to bindings, remove type branching logic in texture init
+	lua bindings: add get_raw_texture() and get_raw_render_texture() to bindings, remove type branching logic in texture init
+
+Long-term TODOs
+	Unicode font loading, unicode text rendering
+	adjustable 2D positions for positional audio playback?
+	streaming audio playback from formats other than wav...?

@@ -1,4 +1,3 @@
-local debugging = require("engine/core/debugging")
 local logging = require("engine/core/logging")
 
 local CallWatcher = {}
@@ -51,7 +50,7 @@ Test.__index = Test
 function Test:run()
 	logging.debug("Running test %s.%s", self.suite_name, self.name)
 
-	local ok, err = debugging.pcall(self.fn)
+	local ok, err = pcall(self.fn)
 	if not ok then
 		logging.error("Failed test %s.%s, err=\n%s", self.suite_name, self.name, err)
 		return false
@@ -126,6 +125,7 @@ function testing.add_suite(suite_name, test_name_fn_map)
 		test_suite:add(Test.create(suite_name, test_name, test_fn))
 	end
 	testing.test_suites[#testing.test_suites + 1] = test_suite
+	return test_suite
 end
 function testing.run_all()
 	logging.info("Running all tests")

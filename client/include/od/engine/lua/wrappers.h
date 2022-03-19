@@ -11,6 +11,7 @@
 
 struct lua_State;
 
+struct odBounds;
 struct odMatrix;
 struct odType;
 
@@ -25,6 +26,8 @@ OD_API_C OD_ENGINE_MODULE const char*
 odLua_get_error(struct lua_State* lua);
 OD_API_C OD_ENGINE_MODULE int32_t
 odLua_get_length(struct lua_State* lua, int32_t index);
+OD_API_C OD_ENGINE_MODULE bool
+odLua_get_bounds(struct lua_State* lua, int32_t index, struct odBounds* out_bounds);
 OD_API_C OD_ENGINE_MODULE bool
 odLua_get_matrix(struct lua_State* lua, int32_t index, struct odMatrix* out_matrix);
 

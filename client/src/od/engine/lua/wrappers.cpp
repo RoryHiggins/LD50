@@ -5,6 +5,7 @@
 
 #include <od/core/debug.h>
 #include <od/core/type.hpp>
+#include <od/core/bounds.h>
 #include <od/core/matrix.h>
 #include <od/core/string.hpp>
 #include <od/engine/lua/includes.h>
@@ -110,6 +111,48 @@ int32_t odLua_get_length(lua_State* lua, int32_t index) {
 	return static_cast<int32_t>(lua_rawlen(lua, index));
 #endif
 }
+bool odLua_get_bounds(lua_State* lua, int32_t index, odBounds* out_bounds) {
+	if (!OD_DEBUG_CHECK(lua != nullptr)
+		|| !OD_DEBUG_CHECK(out_bounds != nullptr)) {
+		return false;
+	}
+
+	odLuaScope scope{lua};
+
+	if (!OD_DEBUG_CHECK(lua_type(lua, index) == LUA_TTABLE)) {
+		return false;
+	}
+
+	float x = 0.0f;
+	float y = 0.0f;
+	float width = 0.0f;
+	float height = 0.0f;
+
+	lua_getfield(lua, index, "x");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		x = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "y");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		y = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "width");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		width = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+	lua_getfield(lua, index, "height");
+	if (lua_type(lua, OD_LUA_STACK_TOP) != LUA_TNIL) {
+		height = static_cast<float>(lua_tonumber(lua, OD_LUA_STACK_TOP));
+	}
+
+	*out_bounds = odBounds{x, y, x + width, y + height};
+
+	if (!OD_DEBUG_CHECK(odBounds_check_valid(out_bounds))) {
+		return false;
+	}
+
+	return true;
+}
 bool odLua_get_matrix(lua_State* lua, int32_t index, odMatrix* out_matrix) {
 	if (!OD_DEBUG_CHECK(lua != nullptr)
 		|| !OD_DEBUG_CHECK(out_matrix != nullptr)) {
@@ -163,6 +206,10 @@ bool odLua_get_matrix(lua_State* lua, int32_t index, odMatrix* out_matrix) {
 
 	if (rotate_z != 0.0f) {
 		odMatrix_rotate_z_3d(out_matrix, rotate_z);
+	}
+
+	if (!OD_DEBUG_CHECK(odMatrix_check_valid_3d(out_matrix))) {
+		return false;
 	}
 
 	return true;

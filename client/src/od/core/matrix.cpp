@@ -259,7 +259,7 @@ void odMatrix_rotate_z_3d(odMatrix* matrix, float rotate_clock_deg) {
 		return;
 	}
 
-	float rotate_rad = rotate_clock_deg * (OD_FLOAT_PI / 180.0f);
+	float rotate_rad = odFloat_deg_to_rad(rotate_clock_deg);
 	float rotate_sin = sinf(rotate_rad);
 	float rotate_cos = cosf(rotate_rad);
 

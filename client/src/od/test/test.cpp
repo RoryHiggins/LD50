@@ -34,13 +34,13 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 		odTestSuite_odLuaClient(),
 	};
 
-	OD_INFO("Running tests");
+	OD_INFO("Running client tests");
 	if (filters & OD_TEST_FILTER_SLOW) {
-		OD_INFO("Skipping slow tests");
+		OD_INFO("Skipping slow client tests");
 	}
 
 	if (opt_name_filter != nullptr) {
-		OD_INFO("Skipping tests not matching name=\"%s\"", opt_name_filter);
+		OD_INFO("Skipping client tests not matching name=\"%s\"", opt_name_filter);
 	}
 
 	odTimer timer;
@@ -49,7 +49,7 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 	int32_t total_test_count = 0;
 	int32_t run_test_count = 0;
 	for (odTestSuite suite: test_suites) {
-		OD_DEBUG("Starting test suite \"%s\"", suite.name);
+		OD_DEBUG("Starting client test suite \"%s\"", suite.name);
 
 		for (int32_t i = 0; i < suite.tests_count; i++) {
 			total_test_count++;
@@ -57,19 +57,19 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 			odTest test = suite.tests[i];
 
 			if ((opt_name_filter != nullptr) && (strstr(test.name, opt_name_filter) == nullptr)) {
-				OD_DEBUG("Skipping test \"%s\"", test.name);
+				OD_DEBUG("Skipping client test \"%s\"", test.name);
 				continue;
 			}
 
 			if ((test.filters & filters) > 0) {
-				OD_DEBUG("Skipping test \"%s\"", test.name);
+				OD_DEBUG("Skipping client test \"%s\"", test.name);
 				continue;
 			}
 
 			if (opt_name_filter) {
-				OD_INFO("Starting test \"%s\"", test.name);
+				OD_INFO("Starting client test \"%s\"", test.name);
 			} else {
-				OD_DEBUG("Starting test \"%s\"", test.name);
+				OD_DEBUG("Starting client test \"%s\"", test.name);
 			}
 
 			int32_t logged_errors_before = odLog_get_logged_error_count();
@@ -79,18 +79,18 @@ bool odTest_run(int32_t filters, char const* opt_name_filter) {
 			int32_t new_errors = logged_errors_after - logged_errors_before;
 
 			if (new_errors) {
-				OD_ERROR("Failed test \"%s\"", test.name);
+				OD_ERROR("Failed client test \"%s\"", test.name);
 				return false;
 			}
 
-			OD_DEBUG("Successfully completed test \"%s\"", test.name);
+			OD_DEBUG("Successfully completed client test \"%s\"", test.name);
 		}
 
-		OD_DEBUG("Successfully completed test suite \"%s\"", suite.name);
+		OD_DEBUG("Successfully completed client test suite \"%s\"", suite.name);
 	}
 
 	double time_elapsed = static_cast<double>(odTimer_get_elapsed_seconds(&timer));
-	OD_INFO("Tests run successfully, %d run of %d in ~%g second(s)", run_test_count, total_test_count, time_elapsed);
+	OD_INFO("Client tests run successfully, %d run of %d in ~%g second(s)", run_test_count, total_test_count, time_elapsed);
 	OD_MAYBE_UNUSED(time_elapsed);
 	return true;
 }

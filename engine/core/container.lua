@@ -203,8 +203,7 @@ function container.assert_equal(xs, ys)
 	local ys_str = container.get_comparable_str(ys)
 	assert(xs_str == ys_str, "container.assert_equal failed\n------\nxs=\n"..xs_str.."\nys=\n"..ys_str.."\n------\n")
 end
-
-testing.add_suite("core.container", {
+container.tests = testing.add_suite("core.container", {
 	get_comparable_str = function()
 		local recursive = {1, 2, 3, yes="no", a={1, 2, "ye"}}
 		recursive.recursive = recursive
@@ -255,6 +254,5 @@ testing.add_suite("core.container", {
 		assert(not container.table_get_equal_for_keys({1, 2, 3}, {5, 10, 15}, {5, 10, 20}))
 	end
 })
-testing.run_all()
 
 return container

@@ -1,0 +1,1 @@
+return odClientWrapper.EntityIndex  -- luacheck: globals odClientWrapper

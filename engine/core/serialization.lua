@@ -12,6 +12,7 @@ function serialization.get_escaped_string(str)
 	)
 end
 function serialization._get_strs(xs, out_strs, xs_type)
+	out_strs = out_strs or {}
 	xs_type = xs_type or type(xs)
 	if xs_type == "table" then
 		out_strs[#out_strs + 1] = "{"
@@ -76,7 +77,10 @@ function serialization._get_strs(xs, out_strs, xs_type)
 	return out_strs
 end
 function serialization.serialize(xs)
-	return table.concat(serialization._get_strs(xs, {}))
+	return table.concat(serialization._get_strs(xs))
+end
+function serialization.check_serializable(xs)
+	serialization._get_strs(xs)
 end
 function serialization.deserialize(str)
 	local success, result = pcall(load("return "..str))
@@ -85,8 +89,7 @@ function serialization.deserialize(str)
 	end
 	return result
 end
-
-testing.add_suite("core.serialization", {
+serialization.tests = testing.add_suite("core.serialization", {
 	serialize_deserialize = function()
 		local test_values = {
 			0,
@@ -117,7 +120,5 @@ testing.add_suite("core.serialization", {
 		end
 	end,
 })
-
-testing.run_all()
 
 return serialization
