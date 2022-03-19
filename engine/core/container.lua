@@ -121,7 +121,7 @@ function container._get_comparable_strs(xs, out_strs, stack, indentation)
 
 		for _, seen in pairs(stack) do
 			if xs == seen then
-				out_strs[#out_strs + 1] = "\"<unencodable recursive "..tostring(xs)..">\""
+				out_strs[#out_strs + 1] = container.string_escape("<recursive="..tostring(xs)..">")
 				return
 			end
 		end
@@ -166,9 +166,8 @@ function container._get_comparable_strs(xs, out_strs, stack, indentation)
 			end
 
 			if has_string_keys then
-				out_strs[#out_strs + 1] = "\""
-				out_strs[#out_strs + 1] = container.string_escape(container.get_comparable_str(key))
-				out_strs[#out_strs + 1] = "\": "
+				out_strs[#out_strs + 1] = container.get_comparable_str(key)
+				out_strs[#out_strs + 1] = ": "
 			end
 
 			container._get_comparable_strs(x, out_strs, stack, inner_indentation)
@@ -187,7 +186,9 @@ function container._get_comparable_strs(xs, out_strs, stack, indentation)
 	elseif xs_type == "nil" then
 		out_strs[#out_strs + 1] = "null"
 	else
-		out_strs[#out_strs + 1] = "\"<unencodable type "..tostring(xs)..">\""
+		out_strs[#out_strs + 1] = "\""
+		out_strs[#out_strs + 1] = container.string_escape("<"..tostring(xs)..">")
+		out_strs[#out_strs + 1] = "\""
 	end
 
 	return out_strs

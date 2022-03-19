@@ -128,21 +128,22 @@ function testing.add_suite(suite_name, test_name_fn_map)
 	return test_suite
 end
 function testing.run_all()
-	logging.info("Running all tests")
-
+	logging.info("Running all lua tests")
+	local count = 0
 	local ok = true
 	for _, test_suite in ipairs(testing.test_suites) do
 		if not test_suite:run() then
 			ok = false
 		end
+		count = count + #test_suite.tests
 	end
 
 	if not ok then
-		logging.info("Not all tests completed successfully")
+		logging.info("Not all lua tests completed successfully")
 		return false
 	end
 
-	logging.info("Completed all tests")
+	logging.info("Completed %s lua tests", count)
 	return true
 end
 function testing.suppress_log_errors(fn)

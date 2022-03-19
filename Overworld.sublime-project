@@ -17,33 +17,32 @@
 		// 	"working_dir": "$project_path",
 		// },
 
-		// {
-		// 	"name": "Run headless in separate window",
-		// 	"shell_cmd": "start luajit $file",
-		// 	// "cmd": "echo $project_path",
-		// 	"working_dir": "$project_path",
-		// },
 		{
-			"name": "DEBUG build and run lua client",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test --lua-client examples/minimal/main.lua",
+			"name": "DEBUG build and run lua engine test",
+			"shell_cmd": "make engine_test LUACHECK=luacheck.bat",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "DEBUG build and run lua minimal engine test",
+			"shell_cmd": "make engine_test_minimal",
 			"working_dir": "$project_path",
 		},
 
-		{
-			"name": "DEBUG generate and rebuild shared",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_GENERATE_ARGS='-D BUILD_SHARED_LIBS=1'",
-			"working_dir": "$project_path",
-		},
+		// {
+		// 	"name": "DEBUG generate and rebuild shared",
+		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_GENERATE_ARGS='-D BUILD_SHARED_LIBS=1'",
+		// 	"working_dir": "$project_path",
+		// },
 		// {
 		// 	"name": "DEBUG generate and rebuild static",
 		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG",
 		// 	"working_dir": "$project_path",
 		// },
-		{
-			"name": "DEBUG build iteratively and run fast tests",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test",
-			"working_dir": "$project_path",
-		},
+		// {
+		// 	"name": "DEBUG build iteratively and run fast tests",
+		// 	"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test",
+		// 	"working_dir": "$project_path",
+		// },
 		{
 			"name": "DEBUG build iteratively and run tests by name",
 			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --test-name-filter odTest_odLuaBindings_odRenderer",
@@ -109,17 +108,17 @@
 		// 	"working_dir": "$project_path",
 		// },
 
-		{
-			"name": "Emscripten debug generate and rebuild",
-			"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S .\\client -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
-			"working_dir": "$project_path",
-		},
-		{
-			"name": "Emscripten debug iterative build and host",
-			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && cp -rf .\\client\\ .\\build\\DEBUG_EMSCRIPTEN_ANY && echo 'hosting server' && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
-			"working_dir": "$project_path",
-			// 
-		},
+		// {
+		// 	"name": "Emscripten debug generate and rebuild",
+		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S .\\client -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
+		// 	"working_dir": "$project_path",
+		// },
+		// {
+		// 	"name": "Emscripten debug iterative build and host",
+		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && cp -rf .\\client\\ .\\build\\DEBUG_EMSCRIPTEN_ANY && echo 'hosting server' && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
+		// 	"working_dir": "$project_path",
+		// 	// 
+		// },
 		// {
 		// 	"name": "Emscripten debug iterative build",
 		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",

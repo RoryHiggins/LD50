@@ -29,6 +29,8 @@ int main(int argc, char** argv) {
 	char const* test_name_filter = nullptr;
 	char const* lua_client_path = nullptr;
 
+	odDebug_set_backtrace_enabled(false);
+
 	OD_TRACE("argc=%d", argc);
 	for (int i = 0; i < argc; i++) {
 		OD_TRACE("argv[%d]=%s", i, argv[i]);

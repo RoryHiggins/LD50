@@ -1,45 +1,78 @@
 local debugging = require("engine/core/debugging")
 local logging = require("engine/core/logging")
 local testing = require("engine/core/testing")
-local serialization = require("engine/core/serialization")
 local shim = require("engine/core/shim")
 local container = require("engine/core/container")
+local schema = require("engine/core/schema")
+
+local debug_checks_enabled = debugging.debug_checks_enabled
 
 local Status = {
 	new = "new",
 	running = "running",
 	stopped = "stopped",
 }
+local StatusSchema = schema.Enum(shim.unpack(container.table_get_keys(Status)))
 
 local Sys = {}
 Sys.__index = Sys
+Sys.schema = schema.PartialObject{
+	sys_name = schema.String,
+	_is_sys = schema.Const(true),
+	_is_sys_instance = schema.Const(true)
+}
+Sys.metatable_schema = schema.PartialObject{
+	_is_sys = schema.Const(true),
+	_is_sys_instance = schema.Optional(schema.Const(false)),
+}
 Sys._is_sys = true
-function Sys.new_metatable(sys_name)
-	assert(type(sys_name) == "string" and string.match(sys_name, "[a-zA-Z_][a-zA-Z0-9_]*") == sys_name,
-		   "system name must be an alphanumeric string (alphabet, digits, underscore), and must not start with a digit")
+function Sys.new_metatable(sys_name, metatable)
+	assert(schema.LabelString(sys_name))
+	assert(schema.Optional(Sys.metatable_schema)(metatable))
+	metatable = metatable or Sys
 
 	local sys_metatable = {
-		sys_name = sys_name
+		sys_name = sys_name,
+		_is_sys_instance = false,
 	}
 	sys_metatable.__index = sys_metatable
-	return setmetatable(sys_metatable, Sys)
+	setmetatable(sys_metatable, metatable)
+	assert(metatable.metatable_schema(sys_metatable))
+
+	return sys_metatable
 end
 
 local Sim = {}
+Sim.schema = schema.PartialObject{
+	state = schema.SerializableObject,
+	settings = schema.SerializableObject,
+	status = StatusSchema,
+	events = schema.Mapping(schema.String, schema.String),
+	step_count = schema.NonNegativeInteger,
+	_is_sim = schema.Const(true),
+	_is_sim_instance = schema.Const(true),
+	_systems = schema.Mapping(schema.String, Sys.schema),
+	_systems_ordered = schema.Array(Sys.schema),
+	_systems_by_event_cached = schema.Mapping(schema.String, schema.Array(Sys.schema)),
+}
+Sim.metatable_schema = schema.PartialObject{
+	_is_sim = schema.Const(true),
+	_is_sim_instance = schema.Optional(schema.Const(false)),
+}
 Sim.__index = Sim
 Sim._is_sim = true
 Sim.Sys = Sys
-Sim.Status = Status
-function Sim.new(state, settings)
-	if state == nil then
-		state = {}
-	end
-	assert(type(state) == "table")
-
-	if settings == nil then
-		settings = {}
-	end
-	assert(type(settings) == "table")
+Sim.events = {}
+Sim.events.start = "on_start"
+Sim.events.stop = "on_stop"
+Sim.events.step = "on_step"
+function Sim.new(state, settings, metatable)
+	assert(schema.Optional(schema.SerializableObject)(state))
+	assert(schema.Optional(schema.SerializableObject)(settings))
+	assert(schema.Optional(Sim.metatable_schema)(metatable))
+	state = state or {}
+	settings = settings or {}
+	metatable = metatable or Sim
 
 	local sim = {
 		state = state,
@@ -51,16 +84,22 @@ function Sim.new(state, settings)
 		_systems_ordered = {},
 		_systems_by_event_cached = {},
 	}
-	return setmetatable(sim, Sim)
+	setmetatable(sim, metatable)
+
+	if debug_checks_enabled then
+		assert(metatable.schema(sim))
+	end
+
+	return sim
 end
 function Sim:require(sys_metatable)
-	assert(self.status == Status.new)
-	assert(type(sys_metatable) == "table" and sys_metatable._is_sys and not sys_metatable._is_sys_instance,
-		   "sys_metatable must be a table returned by Sys.new_metatable()")
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(self.Sys.metatable_schema(sys_metatable))
+		assert(self.status == Status.new)
+	end
 
 	local sys_name = sys_metatable.sys_name
-	assert(type(sys_name) == "string", "system name must be a string")
-
 	local sys = self._systems[sys_name]
 	if sys ~= nil then
 		logging.trace("returning existing system %s", sys_name)
@@ -84,35 +123,50 @@ function Sim:require(sys_metatable)
 
 	sys._is_sys_init_complete = true
 
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(self.Sys.schema(sys))
+	end
+
 	logging.debug("built system %s", sys_name)
 
 	return sys
 end
 function Sim:get(sys_name)
-	assert(type(sys_name) == "string")
-	assert(string.match(sys_name, "[a-zA-Z_][a-zA-Z0-9_]*") == sys_name)
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(schema.LabelString(sys_name))
+	end
 
 	return self._systems[sys_name]
 end
 function Sim:_cache_systems_for_event(event_name)
-	assert(type(event_name) == "string")
-	assert(string.match(event_name, "on_[a-zA-Z_][a-zA-Z0-9_]*") == event_name)
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(schema.LabelString(event_name))
+	end
 
 	logging.debug("regenerating cache of systems for event_name %s", event_name)
+
 	local event_systems = {}
 	for _, sys in ipairs(self._systems_ordered) do
 		if sys[event_name] ~= nil then
 			event_systems[#event_systems + 1] = sys
 		end
 	end
-
 	self._systems_by_event_cached[event_name] = event_systems
+
+	if debug_checks_enabled then
+		assert(self.schema(self))
+	end
+
 	return event_systems
 end
 function Sim:broadcast(event_name, ...)
-	if debugging.debug_checks_enabled then
-		assert(self._is_sim_instance)
-		assert(type(event_name) == "string")
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(schema.LabelString(event_name))
+		assert(schema.SerializableArray({...}))
 		assert(self.status == Status.running)
 	end
 
@@ -124,11 +178,16 @@ function Sim:broadcast(event_name, ...)
 	for _, sys in ipairs(event_systems) do
 		sys[event_name](sys, ...)
 	end
+
+	if debug_checks_enabled then
+		assert(self.schema(self))
+	end
 end
 function Sim:broadcast_pcall(event_name, ...)
-	if debugging.debug_checks_enabled then
-		assert(self._is_sim_instance)
-		assert(type(event_name) == "string")
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(schema.LabelString(event_name))
+		assert(schema.SerializableArray({...}))
 		assert(self.status == Status.running)
 	end
 
@@ -145,70 +204,84 @@ function Sim:broadcast_pcall(event_name, ...)
 			send_ok = false
 		end
 	end
+
+	if debug_checks_enabled then
+		assert(self.schema(self))
+	end
 	return send_ok
 end
 function Sim:step()
-	if debugging.debug_checks_enabled then
-		assert(self._is_sim_instance)
+	if debug_checks_enabled then
+		assert(self.schema(self))
 		assert(self.status == Status.running)
 	end
 
-	self:broadcast("on_step")
+	self:broadcast(self.events.step)
 
 	self.step_count = self.step_count + 1
 
-	if debugging.debug_checks_enabled then
-		serialization.check_serializable(self.state)
+	if debug_checks_enabled then
+		assert(self.schema(self))
 	end
 end
 function Sim:set_status(new_status)
-	assert(self._is_sim_instance)
-	assert(type(new_status) == "string")
-	assert(Status[new_status] ~= nil)
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(StatusSchema(new_status))
+	end
 
 	if (self.status == Status.new) and (new_status == Status.running) then
 		self.status = Status.running
-		self:broadcast("on_start")
+		self:broadcast(self.events.start)
 	elseif (self.status == Status.running) and (new_status == Status.stopped) then
-		self:broadcast("on_stop")
+		self:broadcast(self.events.stop)
 		self.status = Status.stopped
 	else
 		logging.error("unsupported state transition from %s to %s", self.status, new_status)
 	end
 
-	assert(type(self.status) == "string")
-	assert(Status[self.status] ~= nil)
+	if debug_checks_enabled then
+		assert(self.schema(self))
+	end
 end
-function Sim:get_state(sys)
-	assert(self._is_sim_instance)
-	assert(self.status == Status.new)
-	assert(sys._is_sys_instance)
+function Sim:get_sys_state(sys)
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(self.Sys.schema(sys))
+	end
 
 	local state = self.state[sys.sys_name]
 	if state == nil then
 		state = {}
 		self.state[sys.sys_name] = state
 	end
-	assert(type(state) == "table")
+
+	if debug_checks_enabled then
+		assert(self.schema(self))
+	end
 
 	return state
 end
-function Sim:get_settings(sys)
-	assert(self._is_sim_instance)
-	assert(self.status == Status.new)
-	assert(sys._is_sys_instance)
+function Sim:get_sys_settings(sys)
+	if debug_checks_enabled then
+		assert(self.schema(self))
+		assert(self.Sys.schema(sys))
+	end
 
 	local settings = self.settings[sys.sys_name]
 	if settings == nil then
 		settings = {}
 		self.settings[sys.sys_name] = settings
 	end
-	assert(type(settings) == "table")
+
+	if debug_checks_enabled then
+		assert(self.schema(self))
+	end
 
 	return settings
 end
 
-Sim.tests = testing.add_suite("engine.sim", {
+local tests = testing.add_suite("engine.sim", {
 	require = function()
 		local TestSys = Sys.new_metatable("test")
 		local init_patch = testing.CallWatcher.patch(TestSys, "on_require")
@@ -291,4 +364,12 @@ Sim.tests = testing.add_suite("engine.sim", {
 	end,
 })
 
-return Sim
+local sim = {}
+sim.model = {}
+sim.model.Status = Status
+sim.model.StatusSchema = StatusSchema
+sim.Sys = Sys
+sim.Sim = Sim
+sim.tests = tests
+
+return sim

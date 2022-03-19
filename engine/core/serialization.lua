@@ -79,9 +79,6 @@ end
 function serialization.serialize(xs)
 	return table.concat(serialization._get_strs(xs))
 end
-function serialization.check_serializable(xs)
-	serialization._get_strs(xs)
-end
 function serialization.deserialize(str)
 	local success, result = pcall(load("return "..str))
 	if not success then

@@ -1,13 +1,15 @@
-local Window = require("engine/client/window")
-local TextureAtlas = require("engine/client/texture_atlas")
-local RenderTexture = require("engine/client/render_texture")
-local Renderer = require("engine/client/renderer")
-local RenderState = require("engine/client/render_state")
-local AsciiFont = require("engine/client/ascii_font")
-local VertexArray = require("engine/client/vertex_array")
-local EntityIndex = require("engine/client/entity_index")
+local debugging = require("engine/core/debugging")
 
 local function main()
+	local Window = require("engine/client/window")
+	local TextureAtlas = require("engine/client/texture_atlas")
+	local RenderTexture = require("engine/client/render_texture")
+	local Renderer = require("engine/client/renderer")
+	local RenderState = require("engine/client/render_state")
+	local AsciiFont = require("engine/client/ascii_font")
+	local VertexArray = require("engine/client/vertex_array")
+	local EntityIndex = require("engine/client/entity_index")
+
 	local window = Window.new{width = 512, height = 512}
 
 	local atlas = TextureAtlas.new{window = window}
@@ -62,6 +64,7 @@ local function main()
 	local frame = 0
 	while window:step() do
 		frame = frame + 1
+		assert(false)
 
 		local draw_to_game = RenderState.new_ortho_2d{target = game_render_texture}
 		renderer:clear{render_state = draw_to_game, target = game_render_texture, color = {255, 255, 255, 255}}
@@ -82,4 +85,5 @@ local function main()
 	end
 end
 
-main()
+debugging.set_debugger_enabled(true)
+debugging.pcall(main)
