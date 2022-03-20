@@ -60,6 +60,8 @@ world.game.Sys : game.Sys
 	on_stop()  # invokes world.set_status(Status.stopped)
 	_world: World
 
+
+
 client.Context
 	window: Window
 	texture_atlas: odClient.TextureAtlas
@@ -148,12 +150,6 @@ entity.world.Sys : world.Sys
 	_entity_id_lookup_for_tag_to_entities: [{[str]: num}]  # for efficient cleanup of _tag_to_entities
 	_entity_index: EntityIndex
 	_sprite_game: sprite.game.Sys : game.Sys  # for index access to atlas tex coords, which are not in world state
-
-component.world.Sys : world.Sys
-	set(component_name: str, schema: function)
-	schema() function -> bool
-	on_step()  # in debug builds, validates entity array against schema
-	_component_schemas: {[str]: function}
 
 tag.model.Component : schema.Mapping(schema.String, schema.String)
 tag.world.Sys : world.Sys

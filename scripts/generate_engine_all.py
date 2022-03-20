@@ -5,9 +5,7 @@ engine tests
 import pathlib
 
 file_expressions = [
-    "require('{lua_path}')".format(
-        lua_path=path.with_suffix('').as_posix()
-    )
+    "require('{lua_path}')".format(lua_path=path.with_suffix('').as_posix())
     for path in pathlib.Path('engine').glob('**/*.lua')
 ]
 expressions = file_expressions + [
