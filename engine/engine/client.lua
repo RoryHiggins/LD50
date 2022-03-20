@@ -19,7 +19,7 @@ Settings.schema = schema.Object{
 		height = schema.NonNegativeInteger,
 	}
 }
-Settings.default = {
+Settings.defaults = {
 	window = {
 		width = 640,
 		height = 480,
@@ -33,13 +33,16 @@ Context.schema = schema.Object{
 	renderer = WrapperSchema("Renderer"),
 }
 function Context.new(settings)
-	settings = container.deep_copy(Settings.default, settings or {})
+	settings = container.object_set_defaults(settings or {}, Settings.defaults)
 	assert(Settings.schema(settings))
 
 	local context = {}
-	context.window = wrappers.Window{width = 512, height = 512}
-	context.texture_atlas = wrappers.TextureAtlas{window = context.window}
-	context.renderer = wrappers.Renderer{window = context.window}
+	context.window = wrappers.Window.new{width = settings.window.width, height = settings.window.height}
+	context.texture_atlas = wrappers.TextureAtlas.new{window = context.window}
+	context.renderer = wrappers.Renderer.new{window = context.window}
+	setmetatable(context, Context)
+
+	return context
 end
 
 local client = {}

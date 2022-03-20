@@ -9,8 +9,8 @@ local debug_checks_enabled = debugging.debug_checks_enabled
 
 local Status = {
 	new = "new",
-	running = "running",
-	stopped = "stopped",
+	started = "started",
+	finalized = "finalized",
 }
 local StatusSchema = schema.Enum(shim.unpack(container.table_get_keys(Status)))
 
@@ -18,8 +18,11 @@ local Sys = {}
 Sys.__index = Sys
 Sys.schema = schema.PartialObject{
 	sys_name = schema.String,
+	sim = schema.PartialObject{_is_sim_instance = schema.Optional(schema.Const(true))},
+	state = schema.SerializableObject,
+	settings = schema.SerializableObject,
 	_is_sys = schema.Const(true),
-	_is_sys_instance = schema.Const(true)
+	_is_sys_instance = schema.Const(true),
 }
 Sys.metatable_schema = schema.PartialObject{
 	_is_sys = schema.Const(true),
@@ -47,7 +50,6 @@ Sim.schema = schema.PartialObject{
 	state = schema.SerializableObject,
 	settings = schema.SerializableObject,
 	status = StatusSchema,
-	events = schema.Mapping(schema.String, schema.String),
 	step_count = schema.NonNegativeInteger,
 	_is_sim = schema.Const(true),
 	_is_sim_instance = schema.Const(true),
@@ -62,10 +64,6 @@ Sim.metatable_schema = schema.PartialObject{
 Sim.__index = Sim
 Sim._is_sim = true
 Sim.Sys = Sys
-Sim.events = {}
-Sim.events.start = "on_start"
-Sim.events.stop = "on_stop"
-Sim.events.step = "on_step"
 function Sim.new(state, settings, metatable)
 	assert(schema.Optional(schema.SerializableObject)(state))
 	assert(schema.Optional(schema.SerializableObject)(settings))
@@ -94,7 +92,7 @@ function Sim.new(state, settings, metatable)
 end
 function Sim:require(sys_metatable)
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 		assert(self.Sys.metatable_schema(sys_metatable))
 		assert(self.status == Status.new)
 	end
@@ -108,8 +106,11 @@ function Sim:require(sys_metatable)
 
 	logging.debug("building system %s", sys_name)
 	sys = {
+		sys_name = sys_name,
+		sim = self,
+		state = self.state[sys_name] or {},
+		settings = self.settings[sys_name] or {},
 		_is_sys_instance = true,
-		_is_sys_init_complete = false,
 	}
 	setmetatable(sys, sys_metatable)
 
@@ -121,10 +122,8 @@ function Sim:require(sys_metatable)
 		sys:on_require(self)
 	end
 
-	sys._is_sys_init_complete = true
-
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 		assert(self.Sys.schema(sys))
 	end
 
@@ -134,7 +133,7 @@ function Sim:require(sys_metatable)
 end
 function Sim:get(sys_name)
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 		assert(schema.LabelString(sys_name))
 	end
 
@@ -142,7 +141,7 @@ function Sim:get(sys_name)
 end
 function Sim:_cache_systems_for_event(event_name)
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 		assert(schema.LabelString(event_name))
 	end
 
@@ -157,17 +156,17 @@ function Sim:_cache_systems_for_event(event_name)
 	self._systems_by_event_cached[event_name] = event_systems
 
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 	end
 
 	return event_systems
 end
 function Sim:broadcast(event_name, ...)
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 		assert(schema.LabelString(event_name))
 		assert(schema.SerializableArray({...}))
-		assert(self.status == Status.running)
+		assert(self.status == Status.started)
 	end
 
 	local event_systems = self._systems_by_event_cached[event_name]
@@ -180,15 +179,15 @@ function Sim:broadcast(event_name, ...)
 	end
 
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 	end
 end
 function Sim:broadcast_pcall(event_name, ...)
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 		assert(schema.LabelString(event_name))
 		assert(schema.SerializableArray({...}))
-		assert(self.status == Status.running)
+		assert(self.status == Status.started)
 	end
 
 	local event_systems = self._systems_by_event_cached[event_name]
@@ -206,79 +205,43 @@ function Sim:broadcast_pcall(event_name, ...)
 	end
 
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 	end
 	return send_ok
 end
 function Sim:step()
 	if debug_checks_enabled then
-		assert(self.schema(self))
-		assert(self.status == Status.running)
+		assert(Sim.schema(self))
+		assert(self.status == Status.started)
 	end
 
-	self:broadcast(self.events.step)
+	self:broadcast("on_step")
 
 	self.step_count = self.step_count + 1
 
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 	end
 end
 function Sim:set_status(new_status)
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 		assert(StatusSchema(new_status))
 	end
 
-	if (self.status == Status.new) and (new_status == Status.running) then
-		self.status = Status.running
-		self:broadcast(self.events.start)
-	elseif (self.status == Status.running) and (new_status == Status.stopped) then
-		self:broadcast(self.events.stop)
-		self.status = Status.stopped
+	if (self.status == Status.new) and (new_status == Status.started) then
+		self.status = Status.started
+		self:broadcast("on_start")
+	elseif (new_status == Status.finalized) then
+		self:broadcast("on_finalize")
+		self.status = Status.finalized
 	else
 		logging.error("unsupported state transition from %s to %s", self.status, new_status)
 	end
 
 	if debug_checks_enabled then
-		assert(self.schema(self))
+		assert(Sim.schema(self))
 	end
-end
-function Sim:get_sys_state(sys)
-	if debug_checks_enabled then
-		assert(self.schema(self))
-		assert(self.Sys.schema(sys))
-	end
-
-	local state = self.state[sys.sys_name]
-	if state == nil then
-		state = {}
-		self.state[sys.sys_name] = state
-	end
-
-	if debug_checks_enabled then
-		assert(self.schema(self))
-	end
-
-	return state
-end
-function Sim:get_sys_settings(sys)
-	if debug_checks_enabled then
-		assert(self.schema(self))
-		assert(self.Sys.schema(sys))
-	end
-
-	local settings = self.settings[sys.sys_name]
-	if settings == nil then
-		settings = {}
-		self.settings[sys.sys_name] = settings
-	end
-
-	if debug_checks_enabled then
-		assert(self.schema(self))
-	end
-
-	return settings
 end
 
 local tests = testing.add_suite("engine.sim", {
@@ -317,7 +280,7 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.running)
+		sim:set_status(Status.started)
 
 		test_event_patch:assert_not_called()
 		local args = {1, '2', 3.45}
@@ -332,7 +295,7 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.running)
+		sim:set_status(Status.started)
 
 		testing.assert_fails(function()
 			sim:broadcast("on_test_event")
@@ -344,9 +307,9 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.running)
+		sim:set_status(Status.started)
 
-		testing.suppress_log_errors(function()
+		testing.suppress_errors(function()
 			assert(sim:broadcast_pcall("on_test_event") == false)
 		end)
 	end,
@@ -355,7 +318,7 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.running)
+		sim:set_status(Status.started)
 		local step_count = 10
 		for _ = 1, step_count do
 			sim:step()

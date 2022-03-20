@@ -1,19 +1,25 @@
 local client = require("engine/engine/client")
 
-local Window = client.wrappers.Window
-local TextureAtlas = client.wrappers.TextureAtlas
 local RenderTexture = client.wrappers.RenderTexture
-local Renderer = client.wrappers.Renderer
 local RenderState = client.wrappers.RenderState
 local AsciiFont = client.wrappers.AsciiFont
 local VertexArray = client.wrappers.VertexArray
 local EntityIndex = client.wrappers.EntityIndex
 
 local function main()
-	local window = Window.new{width = 512, height = 512}
+	local settings = {
+		window = {
+			width = 512,
+			height = 512,
+		}
+	}
+	local context = client.Context.new(settings)
+	local window = context.window
+	local texture_atlas = context.texture_atlas
+	local renderer = context.renderer
 
-	local atlas = TextureAtlas.new{window = window}
-	local sprites_u, sprites_v = atlas:set_region_png_file{id = 0, filename = './examples/engine_test/data/sprites.png'}
+	local sprites_u, sprites_v = texture_atlas:set_region_png_file{
+		id = 0, filename = './examples/engine_test/data/sprites.png'}
 
 	-- add some entities
 	local entity_index = EntityIndex.new{}
@@ -58,7 +64,6 @@ local function main()
 	window_vertex_array:add_line(0,0,512,512, 255,255,0,255, 0)
 	window_vertex_array:add_triangle(40,0, 0,40, 40,40, 255,255,0,255)
 
-	local renderer = Renderer.new{window = window}
 	local game_render_texture = RenderTexture.new{window = window, width = 128, height = 128}
 
 	local frame = 0
@@ -72,15 +77,15 @@ local function main()
 			target = game_render_texture
 		}
 		renderer:draw_vertex_array{
-			render_state = draw_to_game, src = atlas, target = game_render_texture, vertex_array = vertex_array}
+			render_state = draw_to_game, src = texture_atlas, target = game_render_texture, vertex_array = vertex_array}
 
 		local draw_to_window = RenderState.new_ortho_2d{target = window}
-		renderer:clear{render_state = draw_to_window, src = atlas, color = {255, 255, 255, 255}}
+		renderer:clear{render_state = draw_to_window, src = texture_atlas, color = {255, 255, 255, 255}}
 
 		local copy_game_to_window = RenderState.new{target = window}
 		renderer:draw_texture{render_state = copy_game_to_window, src = game_render_texture}
 		renderer:draw_vertex_array{
-			render_state = draw_to_window, src = atlas, vertex_array = window_vertex_array}
+			render_state = draw_to_window, src = texture_atlas, vertex_array = window_vertex_array}
 	end
 end
 

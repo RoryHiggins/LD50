@@ -8,7 +8,7 @@
 		// },
 		{
 			"name": "DEBUG run lua file with client",
-			"shell_cmd": ".\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test --lua-client $file",
+			"shell_cmd": "start cmd /c \".\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test --lua-client $file && pause || pause\"",
 			"working_dir": "$project_path",
 		},
 		// {
@@ -19,12 +19,12 @@
 
 		{
 			"name": "DEBUG build and run lua engine test",
-			"shell_cmd": "make engine_test LUACHECK=luacheck.bat",
+			"shell_cmd": "start cmd /c \"make engine_test LUACHECK=luacheck.bat && pause || pause\"",
 			"working_dir": "$project_path",
 		},
 		{
 			"name": "DEBUG build and run lua minimal engine test",
-			"shell_cmd": "make engine_test_minimal",
+			"shell_cmd": "start cmd /c \"make engine_test_minimal && pause || pause\"",
 			"working_dir": "$project_path",
 		},
 

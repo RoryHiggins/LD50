@@ -1,11 +1,17 @@
 local shim = require("engine/core/shim")
 local testing = require("engine/core/testing")
+local debugging = require("engine/core/debugging")
+local schema = require("engine/core/schema")
+
+local debug_checks_enabled = debugging.debug_checks_enabled
 
 local container = {}
 container.unpack = unpack or table.unpack  -- luacheck: globals unpack, ignore table
 
 function container.table_get_keys(xs)
-	assert(type(xs) == "table")
+	if debug_checks_enabled then
+		assert(schema.Table(xs))
+	end
 
 	local keys = {}
 	for key, _ in pairs(xs) do
@@ -15,8 +21,10 @@ function container.table_get_keys(xs)
 	return keys
 end
 function container.table_get_equal_for_keys(keys, xs, ys)
-	assert(type(xs) == "table")
-	assert(type(ys) == "table")
+	if debug_checks_enabled then
+		assert(schema.Table(xs))
+		assert(schema.Table(ys))
+	end
 
 	for _, key in ipairs(keys) do
 		if xs[key] ~= ys[key] then
@@ -27,54 +35,85 @@ function container.table_get_equal_for_keys(keys, xs, ys)
 	return true
 end
 function container.object_update(xs, ys)
-	assert(type(xs) == "table")
-	assert(type(ys) == "table")
+	if debug_checks_enabled then
+		assert(schema.AnyObject(xs))
+		assert(schema.AnyObject(ys))
+	end
 
 	for key, y in pairs(ys) do
 		local y_type = type(y)
-		if y_type == "number" or y_type == "string" or y_type == "nil" or y_type == "function" then
+		if y_type == "table" then
+			local x = xs[key]
+			if x == nil then
+				x = {}
+				xs[key] = x
+			end
+
+			container.object_update(x, y)
+		elseif y_type ~= "nil" then
 			xs[key] = y
-		elseif y_type == "table" then
-			container.object_update(xs[key], y)
-		else
-			error("unsupported type "..y_type)
 		end
 	end
+
+	return xs
 end
 function container.object_update_for_keys(keys, xs, ys)
+	if debug_checks_enabled then
+		assert(schema.AnyArray(keys))
+		assert(schema.AnyObject(xs))
+		assert(schema.AnyObject(ys))
+	end
+
 	for _, key in ipairs(keys) do
 		local y = ys[key]
 		local y_type = type(y)
-		if y_type == "number" or y_type == "string" or y_type == "nil" or y_type == "function" then
-			xs[key] = y
-		elseif y_type == "table" then
-			container.object_update(xs[key], y)
-		else
-			error("unsupported type "..y_type)
-		end
-	end
-end
-function container.object_extend(xs, ys)
-	assert(type(xs) == "table")
-	assert(type(ys) == "table")
-	for key, y in pairs(ys) do
-		assert(xs[key] == nil)
+		if y_type == "table" then
+			local x = xs[key]
+			if x == nil then
+				x = {}
+				xs[key] = x
+			end
 
-		local y_type = type(y)
-		if y_type == "number" or y_type == "string" or y_type == "function" then
-			assert(xs[key] == nil)
+			container.object_update(x, y)
+		elseif y_type ~= "nil" then
 			xs[key] = y
-		elseif y_type == "table" then
-			container.object_extend(xs[key], y)
-		else
-			error("unsupported type "..y_type)
 		end
 	end
+
+	return xs
+end
+function container.object_set_defaults(xs, ys)
+	if debug_checks_enabled then
+		assert(schema.AnyObject(xs))
+		assert(schema.AnyObject(ys))
+	end
+
+	for key, y in pairs(ys) do
+		local y_type = type(y)
+		if y_type == "table" then
+			local x = xs[key]
+			if x == nil then
+				x = {}
+				xs[key] = x
+			end
+
+			container.object_set_defaults(x, y)
+		elseif y_type ~= "nil" then
+			if xs[key] == nil then
+				xs[key] = y
+			end
+		end
+	end
+
+	return xs
 end
 function container.array_slice(xs, from, to)
-	if from == nil then
-		from = 1
+	if debug_checks_enabled then
+		assert(schema.AnyArray(xs))
+		assert(schema.BoundedInteger(0, #xs)(from))
+		assert(schema.Optional(schema.BoundedInteger(from, #xs))(from))
 	end
+
 	if to == nil then
 		to = #xs
 	end
@@ -94,7 +133,7 @@ end
 function container.deep_copy(xs)
 	local xs_type = type(xs)
 
-	if xs_type == "number" or xs_type == "string" or xs_type == "nil" or xs_type == "function" then
+	if xs_type == "boolean" or xs_type == "number" or xs_type == "string" or xs_type == "nil" or xs_type == "function" then
 		return xs
 	elseif xs_type == "table" then
 		local result = {}
@@ -103,7 +142,7 @@ function container.deep_copy(xs)
 		end
 		return result
 	else
-		error("unsupported type "..xs_type)
+		error("cannot deep-copy type "..xs_type)
 	end
 end
 function container._get_comparable_strs(xs, out_strs, stack, indentation)
@@ -204,7 +243,143 @@ function container.assert_equal(xs, ys)
 	local ys_str = container.get_comparable_str(ys)
 	assert(xs_str == ys_str, "container.assert_equal failed\n------\nxs=\n"..xs_str.."\nys=\n"..ys_str.."\n------\n")
 end
+function container.assert_not_equal(xs, ys)
+	local xs_str = container.get_comparable_str(xs)
+	local ys_str = container.get_comparable_str(ys)
+	assert(xs_str ~= ys_str, "container.assert_not_equal failed\n------\nxs=\n"..xs_str.."\nys=\n"..ys_str.."\n------\n")
+end
 container.tests = testing.add_suite("core.container", {
+	table_get_keys = function()
+		local test_value_expected_pairs = {
+			{{}, {}},
+			{{5}, {1}},
+			{{a = nil}, {}},
+			{{a = 1}, {"a"}},
+			{{10, 20, a = 30, c = nil, container}, {1, 2, 3, "a"}},
+		}
+		for _, pair in ipairs(test_value_expected_pairs) do
+			local value, expected = pair[1], pair[2]
+			container.assert_equal(container.table_get_keys(value), expected)
+		end
+	end,
+	table_get_equal_for_keys = function()
+		assert(container.table_get_equal_for_keys({1, 2}, {5, 10, 15}, {5, 10, 20}))
+		assert(not container.table_get_equal_for_keys({1, 2, 3}, {5, 10, 15}, {5, 10, 20}))
+	end,
+	object_update = function()
+		local test_values_expected_tuples = {
+			{{}, {}, {}},
+			{{a = 1}, {b = 2}, {a = 1, b = 2}},
+			{{a = 1, b = 1}, {b = 2}, {a = 1, b = 2}},
+			{{}, {b = 2}, {b = 2}},
+			{{a = 1, b = 1, c = {d = 1, e = 1}}, {b = 2, c = {e = 2}}, {a = 1, b = 2, c = {d = 1, e = 2}}},
+		}
+		for _, tuple in ipairs(test_values_expected_tuples) do
+			local defaults, updates, expected = tuple[1], tuple[2], tuple[3]
+			container.assert_equal(container.object_update(defaults, updates), expected)
+		end
+	end,
+	object_update_for_keys = function()
+		local test_keys_values_expected_tuples = {
+			{{}, {}, {}, {}},
+			{{"a"}, {a = 1}, {b = 2}, {a = 1}},
+			{{"a", "b"}, {a = 1, b = 1}, {b = 2}, {a = 1, b = 2}},
+			{{"a", "b", "c"},
+			 {a = 1, b = 1, c = {d = 1, e = 1}},
+			 {b = 2, c = {e = 2}},
+			 {a = 1, b = 2, c = {d = 1, e = 2}}},
+		}
+		for _, tuple in ipairs(test_keys_values_expected_tuples) do
+			local keys, defaults, updates, expected = tuple[1], tuple[2], tuple[3], tuple[4]
+			container.assert_equal(container.object_update_for_keys(keys, defaults, updates), expected)
+		end
+	end,
+	object_set_defaults = function()
+		local test_values_expected_tuples = {
+			{{}, {}, {}},
+			{{a = 1}, {b = 2}, {a = 1, b = 2}},
+			{{a = 1, b = 1}, {b = 2}, {a = 1, b = 1}},
+			{{}, {b = 2}, {b = 2}},
+			{{a = 1, b = 1, c = {d = 1, e = 1}}, {b = 2, c = {e = 2}}, {a = 1, b = 1, c = {d = 1, e = 1}}},
+		}
+		for _, tuple in ipairs(test_values_expected_tuples) do
+			local defaults, updates, expected = tuple[1], tuple[2], tuple[3]
+			container.assert_equal(container.object_set_defaults(defaults, updates), expected)
+		end
+	end,
+	array_slice = function()
+		local test_value_expected_tuples = {
+			{{}, 0, 0, {}},
+			{{5}, 1, 1, {5}},
+			{{1, 2, 3, 4}, 1, 2, {1, 2}},
+			{{1, 2, 3, 4}, 2, 3, {2, 3}},
+			{{1, 2, 3, 4}, 1, 4, {1, 2, 3, 4}},
+		}
+		for _, tuple in ipairs(test_value_expected_tuples) do
+			local value, from, to, expected = tuple[1], tuple[2], tuple[3], tuple[4]
+			container.assert_equal(container.array_slice(value, from, to), expected)
+		end
+	end,
+	string_escape = function()
+		local test_value_expected_pairs = {
+			{"hello", "hello"},
+			{'"hello"', '\\"hello\\"'},
+			{"C:\\", "C:\\\\"},
+			{"hello\n world", "hello\\n world"},
+		}
+		for _, pair in ipairs(test_value_expected_pairs) do
+			local value, expected = pair[1], pair[2]
+			container.assert_equal(container.string_escape(value), expected)
+		end
+	end,
+	deep_copy = function()
+		local test_tables = {
+			{},
+			{5},
+			{a = nil},
+			{a = 1},
+			{"a"},
+			{10, 20, a = 30, c = nil, container},
+			{1, 2, 3, "a"},
+		}
+		for _, value in ipairs(test_tables) do
+			local copy = container.deep_copy(value)
+			container.assert_equal(value, copy)
+
+			value.inequality_test = "inequality"
+			container.assert_not_equal(value, copy)
+			assert(copy.inequality_test == nil)
+		end
+
+		local test_primitives = {
+			0,
+			3.14159,
+			true,
+			false,
+			"",
+			"hello",
+			function() end,
+		}
+		for _, value in ipairs(test_primitives) do
+			local copy = container.deep_copy(value)
+			assert(value == copy)
+		end
+
+		local a = {a = 2, b = 3, c = {d = 4, e = 5}, 1}
+		local b = container.deep_copy(a)
+		container.assert_equal(a, b)
+		a.a = 3
+
+		container.assert_not_equal(a, b)
+		assert(a.a == 3)
+		assert(b.a == 2)
+
+		a.c.d = 5
+		assert(a.c.d == 5)
+		assert(b.c.d == 4)
+
+		assert(container.deep_copy(nil) == nil)
+	end,
 	get_comparable_str = function()
 		local recursive = {1, 2, 3, yes="no", a={1, 2, "ye"}}
 		recursive.recursive = recursive
@@ -237,23 +412,6 @@ container.tests = testing.add_suite("core.container", {
 			container.get_comparable_str(val)
 		end
 	end,
-	table_get_keys = function()
-		local test_value_expected_pairs = {
-			{{}, {}},
-			{{5}, {1}},
-			{{a = nil}, {}},
-			{{a = 1}, {"a"}},
-			{{10, 20, a = 30, c = nil, container}, {1, 2, 3, "a"}},
-		}
-		for _, pair in ipairs(test_value_expected_pairs) do
-			local value, expected = pair[1], pair[2]
-			container.assert_equal(container.table_get_keys(value), expected)
-		end
-	end,
-	table_get_equal_for_keys = function()
-		assert(container.table_get_equal_for_keys({1, 2}, {5, 10, 15}, {5, 10, 20}))
-		assert(not container.table_get_equal_for_keys({1, 2, 3}, {5, 10, 15}, {5, 10, 20}))
-	end
 })
 
 return container

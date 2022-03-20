@@ -31,8 +31,8 @@ local tests = testing.add_suite("engine.game", {
 
 		local TestSys = Sys.new_metatable("game_test")
 		game:require(TestSys)
-		game:set_status(sim.model.Status.running)
-		game:set_status(sim.model.Status.stopped)
+		game:set_status(sim.model.Status.started)
+		game:set_status(sim.model.Status.finalized)
 	end
 })
 

@@ -4,12 +4,22 @@ engine tests
 """
 import pathlib
 
-file_expressions = [
-    "require('{lua_path}')".format(lua_path=path.with_suffix('').as_posix())
+strs = [
+    'require("engine/core/debugging").set_debugger_enabled(true)',
+    "local function main()",
+]
+strs += [
+    "\trequire('{lua_path}')".format(lua_path=path.with_suffix('').as_posix())
     for path in pathlib.Path('engine').glob('**/*.lua')
 ]
-expressions = file_expressions + [
-    'require("engine/core/testing").run_all()'
+strs += [
+    '\trequire("engine/core/testing").run_all()'
 ]
 
-print('\n'.join(expressions))
+strs += [
+    "end",
+    # "main()",
+    'require("engine/core/debugging").pcall(main)'
+]
+
+print('\n'.join(strs))

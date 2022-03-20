@@ -100,12 +100,14 @@ function schema.Mapping(key_condition, value_condition)
 		for key, value in pairs(x) do
 			local result, err = key_condition(key)
 			if not result then
-				return false, schema.error("schema.Mapping(%s): key=%s, error=%s", x, key, err)
+				return false, schema.error(
+					"schema.Mapping(%s): invalid key=%s, value=%s error=%s", x, key, value, err)
 			end
 
 			result, err = value_condition(value)
 			if not result then
-				return false, schema.error("schema.Mapping(%s): value=%s, error=%s", x, value, err)
+				return false, schema.error(
+					"schema.Mapping(%s): invalid value=%s, key=%s, error=%s", x, value, key, err)
 			end
 		end
 		return true
@@ -128,12 +130,12 @@ function schema.Object(condition_map, additional_value_condition)
 		for key, value in pairs(x) do
 			local condition = condition_map[key] or additional_value_condition
 			if not type(key) == "string" then
-				return false, schema.error("schema.Object(%s): non-string key=%s", x, key)
+				return false, schema.error("schema.Object(%s): non-string key=%s, value=%s", x, key, value)
 			end
 
 			local result, err = condition(value)
 			if not result then
-				return false, schema.error("schema.Object(%s): value=%s, error=%s", x, value, err)
+				return false, schema.error("schema.Object(%s): invalid value=%s, key=%s, error=%s", x, value, key, err)
 			end
 		end
 
@@ -142,7 +144,7 @@ function schema.Object(condition_map, additional_value_condition)
 			local value = x[key]
 			local result, err = condition(value)
 			if not result then
-				return false, schema.error("schema.Object(%s): value=%s, error=%s", x, value, err)
+				return false, schema.error("schema.Object(%s): invalid value=%s, key=%s, error=%s", x, value, key, err)
 			end
 		end
 		return true
@@ -252,6 +254,14 @@ function schema.NonNegativeInteger(x)
 	end
 	return false, schema.error("schema.NonNegativeInteger(%s): no match", x)
 end
+function schema.BoundedInteger(min, max)
+	return function(x)
+		if type(x) == "number" and floor(x) == x and x >= min and x <= max then
+			return true
+		end
+		return false, schema.error("schema.BoundedInteger(%s): no match, min=%s, max=%s", x, min, max)
+	end
+end
 local label_regex = "[a-z_][a-z0-9_]*"
 function schema.LabelString(x)
 	if type(x) == "string" and string.match(x, label_regex) == x then
@@ -304,6 +314,8 @@ SerializableArray = schema.Array(schema.Serializable)
 SerializableObject = schema.Mapping(schema.String, schema.Serializable)
 schema.SerializableArray = SerializableArray
 schema.SerializableObject = SerializableObject
+schema.AnyArray = schema.Array(schema.Any)
+schema.AnyObject = schema.Object({}, schema.Any)
 
 schema.tests = testing.add_suite("core.schema", {
 	serialize_deserialize = function()
@@ -326,6 +338,7 @@ schema.tests = testing.add_suite("core.schema", {
 			[schema.NormalizedNumber] = {0, 1, 0.001, 0.999, 0.4},
 			[schema.NonNegativeNumber] = {0, 2, 0.312, 2e5, 0.000001, math.huge, math.pi},
 			[schema.NonNegativeInteger] = {0, 2, 2e5},
+			[schema.BoundedInteger(2, 4)] = {2, 3, 4},
 			[schema.LabelString] = {"hello_world2", "a", "a2", "_az"},
 			[schema.NonEmptyString] = {"y", "hello"},
 			[schema.NonEmptyArray(schema.Number)] = {{1}, {1, 2, 3, 4, 5}},
@@ -363,6 +376,7 @@ schema.tests = testing.add_suite("core.schema", {
 			[schema.NormalizedNumber] = {-1, -2, 3, 400, -2^24, 2^24, -0.01, 1.0001},
 			[schema.NonNegativeNumber] = {-1, -2, -2^24, -math.huge, -math.pi},
 			[schema.NonNegativeInteger] = {0.312, 0.000001, math.huge, math.pi},
+			[schema.BoundedInteger(2, 4)] = {1, 5, 3.5 -1, 2000, 0.312, "", "ye", true, false, function() end, {}, {1, 2}},
 			[schema.LabelString] =
 				{-1, 0, 0.312, "YA", "2a", "2", "yep nope", " ", "yE", true, false, function() end, {}, {1, 2}},
 			[schema.NonEmptyString] = {"", {}, {1}, {a = 1}, {nil}},

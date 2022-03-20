@@ -1,4 +1,5 @@
 local logging = require("engine/core/logging")
+local debugging = require("engine/core/debugging")
 
 local CallWatcher = {}
 CallWatcher.__index = CallWatcher
@@ -50,7 +51,7 @@ Test.__index = Test
 function Test:run()
 	logging.debug("Running test %s.%s", self.suite_name, self.name)
 
-	local ok, err = pcall(self.fn)
+	local ok, err = debugging.pcall(self.fn)
 	if not ok then
 		logging.error("Failed test %s.%s, err=\n%s", self.suite_name, self.name, err)
 		return false
@@ -107,7 +108,15 @@ local testing = {}
 testing.CallWatcher = CallWatcher
 testing.test_suites = {}
 function testing.assert_fails(fn, ...)
-	assert(not pcall(fn, ...), "fn must raise an error")
+	local debugger_enabled = debugging.debugger_enabled
+	if debugger_enabled then
+		debugging.set_debugger_enabled(false)
+	end
+	local result = pcall(fn, ...)
+	if debugger_enabled then
+		debugging.set_debugger_enabled(true)
+	end
+	assert(not result, "fn must raise an error")
 end
 function testing.add_suite(suite_name, test_name_fn_map)
 	assert(type(suite_name) == "string", "suite_name must be a string")
@@ -146,9 +155,18 @@ function testing.run_all()
 	logging.info("Completed %s lua tests", count)
 	return true
 end
-function testing.suppress_log_errors(fn)
+function testing.suppress_errors(fn)
+	local debugger_enabled = debugging.debugger_enabled
+	if debugger_enabled then
+		debugging.set_debugger_enabled(false)
+	end
+
 	logging.push_level(logging.Level.none)
 	fn()
+
+	if debugger_enabled then
+		debugging.set_debugger_enabled(true)
+	end
 
 	assert(logging.pop_level() == true)
 end
