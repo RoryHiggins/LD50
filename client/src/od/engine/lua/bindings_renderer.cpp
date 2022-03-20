@@ -201,14 +201,6 @@ static int odLuaBindings_odRenderer_clear(lua_State* lua) {
 		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_RENDERER);
 	}
 
-	lua_getfield(lua, settings_index, "render_state");
-	const int window_index = lua_gettop(lua);
-	odRenderState* render_state = static_cast<odRenderState*>(odLua_get_userdata_typed(
-		lua, window_index, OD_LUA_BINDINGS_RENDER_STATE));
-	if (!OD_CHECK(render_state != nullptr)) {
-		return luaL_error(lua, "settings.render_state invalid");
-	}
-
 	lua_getfield(lua, settings_index, "color");
 	const int color_index = lua_gettop(lua);
 	if (!OD_CHECK(lua_type(lua, color_index) == LUA_TTABLE)) {
@@ -235,7 +227,7 @@ static int odLuaBindings_odRenderer_clear(lua_State* lua) {
 		color_bytes[i - 1] = static_cast<uint8_t>(lua_tonumber(lua, OD_LUA_STACK_TOP));
 	}
 
-	if (!OD_CHECK(odRenderer_clear(renderer, &color, render_state, opt_render_texture))) {
+	if (!OD_CHECK(odRenderer_clear(renderer, &color, opt_render_texture))) {
 		return luaL_error(lua, "odRenderer_clear() failed");
 	}
 
@@ -258,9 +250,9 @@ static int odLuaBindings_odRenderer_draw_vertex_array(lua_State* lua) {
 	}
 
 	lua_getfield(lua, settings_index, "render_state");
-	const int window_index = lua_gettop(lua);
+	const int render_state_index = lua_gettop(lua);
 	odRenderState* render_state = static_cast<odRenderState*>(odLua_get_userdata_typed(
-		lua, window_index, OD_LUA_BINDINGS_RENDER_STATE));
+		lua, render_state_index, OD_LUA_BINDINGS_RENDER_STATE));
 	if (!OD_CHECK(render_state != nullptr)) {
 		return luaL_error(lua, "settings.render_state invalid");
 	}
@@ -299,9 +291,9 @@ static int odLuaBindings_odRenderer_draw_texture(lua_State* lua) {
 	}
 
 	lua_getfield(lua, settings_index, "render_state");
-	const int window_index = lua_gettop(lua);
+	const int render_state_index = lua_gettop(lua);
 	odRenderState* render_state = static_cast<odRenderState*>(odLua_get_userdata_typed(
-		lua, window_index, OD_LUA_BINDINGS_RENDER_STATE));
+		lua, render_state_index, OD_LUA_BINDINGS_RENDER_STATE));
 	if (!OD_CHECK(render_state != nullptr)) {
 		return luaL_error(lua, "settings.render_state invalid");
 	}

@@ -53,8 +53,8 @@ Sim.schema = schema.PartialObject{
 	step_count = schema.NonNegativeInteger,
 	_is_sim = schema.Const(true),
 	_is_sim_instance = schema.Const(true),
-	_systems = schema.Mapping(schema.String, Sys.schema),
-	_systems_ordered = schema.Array(Sys.schema),
+	_systems_by_name = schema.Mapping(schema.String, Sys.schema),
+	_systems_by_init_order = schema.Array(Sys.schema),
 	_systems_by_event_cached = schema.Mapping(schema.String, schema.Array(Sys.schema)),
 }
 Sim.metatable_schema = schema.PartialObject{
@@ -78,8 +78,8 @@ function Sim.new(state, settings, metatable)
 		status = Status.new,
 		step_count = 0,
 		_is_sim_instance = true,
-		_systems = {},
-		_systems_ordered = {},
+		_systems_by_name = {},
+		_systems_by_init_order = {},
 		_systems_by_event_cached = {},
 	}
 	setmetatable(sim, metatable)
@@ -98,7 +98,7 @@ function Sim:require(sys_metatable)
 	end
 
 	local sys_name = sys_metatable.sys_name
-	local sys = self._systems[sys_name]
+	local sys = self._systems_by_name[sys_name]
 	if sys ~= nil then
 		logging.trace("returning existing system %s", sys_name)
 		return sys
@@ -114,12 +114,12 @@ function Sim:require(sys_metatable)
 	}
 	setmetatable(sys, sys_metatable)
 
-	self._systems[sys_name] = sys
-	self._systems_ordered[#self._systems_ordered + 1] = sys
+	self._systems_by_name[sys_name] = sys
+	self._systems_by_init_order[#self._systems_by_init_order + 1] = sys
 	self._systems_by_event_cached = {}  -- clear event cache
 
-	if sys.on_require ~= nil then
-		sys:on_require(self)
+	if sys.on_init ~= nil then
+		sys:on_init(self)
 	end
 
 	if debug_checks_enabled then
@@ -131,13 +131,15 @@ function Sim:require(sys_metatable)
 
 	return sys
 end
-function Sim:get(sys_name)
+function Sim:get(sys_metatable)
+	local sys_name = sys_metatable.sys_name
 	if debug_checks_enabled then
 		assert(Sim.schema(self))
+		assert(self.Sys.metatable_schema(sys_metatable))
 		assert(schema.LabelString(sys_name))
 	end
 
-	return self._systems[sys_name]
+	return self._systems_by_name[sys_name]
 end
 function Sim:_cache_systems_for_event(event_name)
 	if debug_checks_enabled then
@@ -148,7 +150,7 @@ function Sim:_cache_systems_for_event(event_name)
 	logging.debug("regenerating cache of systems for event_name %s", event_name)
 
 	local event_systems = {}
-	for _, sys in ipairs(self._systems_ordered) do
+	for _, sys in ipairs(self._systems_by_init_order) do
 		if sys[event_name] ~= nil then
 			event_systems[#event_systems + 1] = sys
 		end
@@ -223,31 +225,51 @@ function Sim:step()
 		assert(Sim.schema(self))
 	end
 end
-function Sim:set_status(new_status)
+function Sim:start()
 	if debug_checks_enabled then
 		assert(Sim.schema(self))
-		assert(StatusSchema(new_status))
+		assert(self.status == Status.new)
 	end
 
-	if (self.status == Status.new) and (new_status == Status.started) then
-		self.status = Status.started
-		self:broadcast("on_start")
-	elseif (new_status == Status.finalized) then
+	self.status = Status.started
+	self:broadcast("on_start")
+
+	if debug_checks_enabled then
+		assert(Sim.schema(self))
+	end
+end
+function Sim:finalize()
+	if debug_checks_enabled then
+		assert(Sim.schema(self))
+		assert(self.status ~= Status.finalized)
+	end
+
+	if self.status == Status.started then
 		self:broadcast("on_finalize")
-		self.status = Status.finalized
-	else
-		logging.error("unsupported state transition from %s to %s", self.status, new_status)
 	end
+
+	self.status = Status.finalized
 
 	if debug_checks_enabled then
 		assert(Sim.schema(self))
+	end
+end
+function Sim:run()
+	if debug_checks_enabled then
+		assert(Sim.schema(self))
+		assert(self.status == Status.new)
+	end
+
+	self:start()
+	while self.status == Status.started do
+		self:step()
 	end
 end
 
 local tests = testing.add_suite("engine.sim", {
 	require = function()
 		local TestSys = Sys.new_metatable("test")
-		local init_patch = testing.CallWatcher.patch(TestSys, "on_require")
+		local init_patch = testing.CallWatcher.patch(TestSys, "on_init")
 
 		local sim = Sim.new()
 		sim:require(TestSys)
@@ -256,7 +278,7 @@ local tests = testing.add_suite("engine.sim", {
 	end,
 	require_circular_dependency = function()
 		local TestSys = Sys.new_metatable("test")
-		function TestSys:on_require(sim)
+		function TestSys:on_init(sim)
 			sim:require(TestSys)
 			self.init_reached = true
 		end
@@ -269,10 +291,10 @@ local tests = testing.add_suite("engine.sim", {
 		local TestSys = Sys.new_metatable("test")
 
 		local sim = Sim.new()
-		assert(sim:get("test") == nil)
+		assert(sim:get(TestSys) == nil)
 
 		local sys = sim:require(TestSys)
-		assert(sim:get("test") == sys)
+		assert(sim:get(TestSys) == sys)
 	end,
 	broadcast = function()
 		local TestSys = Sys.new_metatable("test")
@@ -280,7 +302,7 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.started)
+		sim:start()
 
 		test_event_patch:assert_not_called()
 		local args = {1, '2', 3.45}
@@ -295,7 +317,7 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.started)
+		sim:start()
 
 		testing.assert_fails(function()
 			sim:broadcast("on_test_event")
@@ -307,7 +329,7 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.started)
+		sim:start()
 
 		testing.suppress_errors(function()
 			assert(sim:broadcast_pcall("on_test_event") == false)
@@ -318,7 +340,7 @@ local tests = testing.add_suite("engine.sim", {
 
 		local sim = Sim.new()
 		sim:require(TestSys)
-		sim:set_status(Status.started)
+		sim:start()
 		local step_count = 10
 		for _ = 1, step_count do
 			sim:step()

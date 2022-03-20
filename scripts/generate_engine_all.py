@@ -3,23 +3,52 @@ Script to generate an entrypoint for loading all engine code and running
 engine tests
 """
 import pathlib
+import argparse
 
-strs = [
-    'require("engine/core/debugging").set_debugger_enabled(true)',
-    "local function main()",
-]
-strs += [
-    "\trequire('{lua_path}')".format(lua_path=path.with_suffix('').as_posix())
-    for path in pathlib.Path('engine').glob('**/*.lua')
-]
-strs += [
-    '\trequire("engine/core/testing").run_all()'
-]
 
-strs += [
-    "end",
-    # "main()",
-    'require("engine/core/debugging").pcall(main)'
-]
+def to_lua_path(path: pathlib.Path) -> str:
+    """
+    Converts abs or relative filesystem path to lua relative import path
+    """
+    if path.is_absolute():
+        working_dir = pathlib.Path(".").resolve()
+        path = path.relative_to(working_dir)
 
-print('\n'.join(strs))
+    return path.with_suffix('').as_posix()
+
+
+def main():
+    """
+    Generate entrypoint for running engine tests and app from a debugger
+    """
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument(
+        "--entrypoint", type=str, default=None)
+    arg_parser.add_argument(
+        "--debugger", action=argparse.BooleanOptionalAction, default=True)
+
+    args = arg_parser.parse_args()
+
+    run_main = ('require("engine/core/debugging").pcall(main)'
+                if args.debugger else "main()")
+    entrypoint = (f'\trequire("{to_lua_path(pathlib.Path(args.entrypoint))}")'
+                  if args.entrypoint else "")
+
+    paths = pathlib.Path('engine').glob('**/*.lua')
+    requires = '\n\t'.join(f"require('{to_lua_path(path)}')" for path in paths)
+
+    lua_script = (
+f"""local function main()
+    {requires}
+    require("engine/core/testing").run_all()
+    {entrypoint} -- luacheck: ignore
+end
+require("engine/core/debugging").set_debugger_enabled(true)
+{run_main}"""
+    )
+
+    print(lua_script)
+
+
+if __name__ == '__main__':
+    main()

@@ -255,7 +255,7 @@ bool odClient_step(odClient* client) {
 		client->frame.game_vertices.begin(),
 		client->frame.game_vertices.get_count()
 	);
-	if (!OD_CHECK(odRenderer_clear(&client->renderer, odColor_get_white(), &draw_to_game, &client->game_render_texture))) {
+	if (!OD_CHECK(odRenderer_clear(&client->renderer, odColor_get_white(), &client->game_render_texture))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_vertices(
@@ -273,7 +273,7 @@ bool odClient_step(odClient* client) {
 		client->frame.window_vertices.begin(),
 		client->frame.window_vertices.get_count()
 	);
-	if (!OD_CHECK(odRenderer_clear(&client->renderer, odColor_get_white(), &draw_to_window, nullptr))) {
+	if (!OD_CHECK(odRenderer_clear(&client->renderer, odColor_get_white(), nullptr))) {
 		return false;
 	}
 	if (!OD_CHECK(odRenderer_draw_texture(

@@ -312,10 +312,9 @@ bool odRenderer_flush(odRenderer* renderer) {
 
 	return true;
 }
-bool odRenderer_clear(odRenderer* renderer, const odColor* color, const odRenderState* state, odRenderTexture* opt_render_texture) {
+bool odRenderer_clear(odRenderer* renderer, const odColor* color, odRenderTexture* opt_render_texture) {
 	if (!OD_CHECK(odRenderer_check_valid(renderer))
 		|| !OD_CHECK(color != nullptr)
-		|| !OD_CHECK(odRenderState_check_valid(state))
 		|| !OD_CHECK((opt_render_texture == nullptr) || odRenderTexture_check_valid(opt_render_texture))) {
 		return false;
 	}

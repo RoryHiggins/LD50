@@ -242,7 +242,7 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odRenderer, OD_TEST_FILTER_SLOW) {
 
 		local render_state = odClientWrapper.RenderState.new_ortho_2d{target = window}
 
-		renderer:clear{render_state = render_state, color = {255, 255, 255, 255}}
+		renderer:clear{color = {255, 255, 255, 255}}
 		renderer:draw_vertex_array{render_state = render_state, src = texture, vertex_array = vertex_array}
 		renderer:flush()
 

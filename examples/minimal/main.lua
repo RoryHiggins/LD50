@@ -1,22 +1,22 @@
-local Window = require("engine/client/window")
-local TextureAtlas = require("engine/client/texture_atlas")
-local Renderer = require("engine/client/renderer")
-local RenderState = require("engine/client/render_state")
-local VertexArray = require("engine/client/vertex_array")
+local game = require("engine/engine/game")
+local client = require("engine/engine/client")
 
-local window = Window.new{width = 512, height = 512}
-local atlas = TextureAtlas.new{window = window}
-local renderer = Renderer.new{window = window}
-local vertex_array = VertexArray.new{}
-vertex_array:add_triangle(0,0, 0,512, 512,0, 255,0,0,255)
-vertex_array:add_triangle(512,0, 0,512, 512,512, 0,255,0,255)
-
-while window:step() do
-	local draw_to_window = RenderState.new_ortho_2d{target = window}
-
-	local mouse = window:get_mouse_state()
-	draw_to_window:transform_view{translate_x = mouse.x - 256, translate_y = mouse.y - 256}
-
-	renderer:clear{render_state = draw_to_window, color = {255, 255, 255, 255}}
-	renderer:draw_vertex_array{render_state = draw_to_window, src = atlas, vertex_array = vertex_array}
+local MinimalExample = game.Sys.new_metatable("minimal_example")
+function MinimalExample:on_init()
+	self.client = self.sim:require(client.GameSys)
 end
+function MinimalExample:on_step()
+	local context = self.client.context
+
+	context.vertex_array:add_triangle(0,0, 0,512, 512,0, 255,0,0,255)
+	context.vertex_array:add_triangle(512,0, 0,512, 512,512, 0,255,0,255)
+
+	local render_state_mouse_local = context.render_state_ortho_2d:copy():transform_view{
+		translate_x = context.mouse.x - 256, translate_y = context.mouse.y - 256}
+	context.renderer:draw_vertex_array{
+		render_state = render_state_mouse_local, src = context.texture_atlas, vertex_array = context.vertex_array}
+end
+
+local game_sim = game.Game.new()
+game_sim:require(MinimalExample)
+game_sim:run()

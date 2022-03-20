@@ -12,6 +12,7 @@ CLIENT_SRC := ./client
 CLIENT_ARGS :=
 CMAKE_GENERATE_ARGS :=
 CMAKE_BUILD_ARGS :=
+ENGINE_TEST_ENTRYPOINT :=
 
 # Dependencies
 # ---
@@ -35,18 +36,18 @@ $(CLIENT):
 	$(CMAKE) \-S $(CLIENT_SRC) -B $(BUILD) -D CMAKE_BUILD_TYPE=$(TARGET) -G"Ninja" $(CMAKE_GENERATE_ARGS)
 	$(CMAKE) --build $(BUILD) -- $(CMAKE_BUILD_ARGS)
 run: $(CLIENT)
-	$(CLIENT) --lua-client $(LUA_CLIENT) $(CLIENT_ARGS)
+	$(CLIENT) --lua-client "$(LUA_CLIENT)" $(CLIENT_ARGS)
 engine_test: $(CLIENT)
-	$(PYTHON) scripts/generate_engine_all.py > examples/engine_test/all.lua
+	$(PYTHON) scripts/generate_engine_all.py --entrypoint="$(ENGINE_TEST_ENTRYPOINT)" > examples/engine_test/all.lua
 	$(LUACHECK) engine examples
 	$(CLIENT) --test --no-slow-test --lua-client examples/engine_test/all.lua $(CLIENT_ARGS)
 engine_test_minimal:
-	$(PYTHON) scripts/generate_engine_all.py > examples/engine_test/all.lua
+	$(PYTHON) scripts/generate_engine_all.py --entrypoint="$(ENGINE_TEST_ENTRYPOINT)" > examples/engine_test/all.lua
 	$(CLIENT) --lua-client examples/engine_test/all.lua $(CLIENT_ARGS)
 test: $(CLIENT)
 	$(CLIENT) --no-lua-client --test $(CLIENT_ARGS)
 gdb: $(CLIENT)
-	gdb --ex 'break main' --ex "break odDebug_error" --ex "run" --args $(CLIENT) --test --lua-client $(LUA_CLIENT) $(CLIENT_ARGS)
+	gdb --ex 'break main' --ex "break odDebug_error" --ex "run" --args $(CLIENT) --test --lua-client "$(LUA_CLIENT)" $(CLIENT_ARGS)
 profile: gmon.out
 	gprof -b $(CLIENT)* gmon.out > profile.txt && cat profile.txt
 tidy:

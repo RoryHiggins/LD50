@@ -1,1 +1,0 @@
-return odClientWrapper.Renderer  -- luacheck: globals odClientWrapper

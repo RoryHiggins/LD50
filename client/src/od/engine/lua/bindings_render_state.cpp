@@ -131,7 +131,8 @@ static int odLuaBindings_odRenderState_init(lua_State* lua) {
 		return luaL_error(lua, "render state validation failed");
 	}
 
-	return 0;
+	lua_pushvalue(lua, self_index);
+	return 1;
 }
 static int odLuaBindings_odRenderState_init_ortho_2d(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -160,7 +161,8 @@ static int odLuaBindings_odRenderState_init_ortho_2d(lua_State* lua) {
 	render_state->projection = odMatrix{};
 	odMatrix_init_ortho_2d(&render_state->projection, width, height);
 
-	return 0;
+	lua_pushvalue(lua, self_index);
+	return 1;
 }
 static int odLuaBindings_odRenderState_assign(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -189,7 +191,8 @@ static int odLuaBindings_odRenderState_assign(lua_State* lua) {
 
 	*render_state = *other_render_state;
 
-	return 0;
+	lua_pushvalue(lua, self_index);
+	return 1;
 }
 static int odLuaBindings_odRenderState_destroy(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -310,7 +313,8 @@ static int odLuaBindings_odRenderState_transform_view(lua_State* lua) {
 		return luaL_error(lua, "render state validation failed");
 	}
 
-	return 0;
+	lua_pushvalue(lua, self_index);
+	return 1;
 }
 static int odLuaBindings_odRenderState_transform_projection(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -339,7 +343,8 @@ static int odLuaBindings_odRenderState_transform_projection(lua_State* lua) {
 		return luaL_error(lua, "render state validation failed");
 	}
 
-	return 0;
+	lua_pushvalue(lua, self_index);
+	return 1;
 }
 static int odLuaBindings_odRenderState_set_viewport(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -366,7 +371,8 @@ static int odLuaBindings_odRenderState_set_viewport(lua_State* lua) {
 		return luaL_error(lua, "render state validation failed");
 	}
 
-	return 0;
+	lua_pushvalue(lua, self_index);
+	return 1;
 }
 static int odLuaBindings_odRenderState_set_viewport_ortho_2d(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
@@ -406,7 +412,8 @@ static int odLuaBindings_odRenderState_set_viewport_ortho_2d(lua_State* lua) {
 		return luaL_error(lua, "render state validation failed");
 	}
 
-	return 0;
+	lua_pushvalue(lua, self_index);
+	return 1;
 }
 bool odLuaBindings_odRenderState_register(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {

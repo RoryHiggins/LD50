@@ -1,51 +1,21 @@
+local game = require("engine/engine/game")
+local world = require("engine/engine/world")
 local client = require("engine/engine/client")
 
-local RenderTexture = client.wrappers.RenderTexture
-local RenderState = client.wrappers.RenderState
 local AsciiFont = client.wrappers.AsciiFont
-local VertexArray = client.wrappers.VertexArray
 local EntityIndex = client.wrappers.EntityIndex
 
-local function main()
-	local settings = {
-		window = {
-			width = 512,
-			height = 512,
-		}
-	}
-	local context = client.Context.new(settings)
-	local window = context.window
-	local texture_atlas = context.texture_atlas
-	local renderer = context.renderer
-
-	local sprites_u, sprites_v = texture_atlas:set_region_png_file{
-		id = 0, filename = './examples/engine_test/data/sprites.png'}
-
-	-- add some entities
-	local entity_index = EntityIndex.new{}
-	for i = 1, 4 do
-		entity_index:set_collider(i, (8 * i), 8, (8 * i) + 8, 16)
-		entity_index:set_sprite(i, sprites_u + 16, sprites_v + 24, sprites_u + 24, sprites_v + 32)
-	end
-
-	local ascii_font = AsciiFont.new{
-		u1 = sprites_u, v1 = sprites_v + 160,
-		u2 = sprites_u + 64, v2 = sprites_v + 256,
-		char_w = 8, char_h = 8,
-		char_first = ' ', char_last = '~',
-	}
-
-	local vertex_array = VertexArray.new{}
-	vertex_array:add_triangle(0,0, 0,128, 128,0, 255,0,0,255)
-	vertex_array:add_triangle(128,0, 0,128, 128,128, 0,255,0,255)
-	vertex_array:add_line(0,0,128,128, 0,0,0,255, 0)
-	vertex_array:add_line(0,0,0,128, 0,0,0,255, 0)
-	vertex_array:add_line(0,0,128,0, 0,0,0,255, 0)
+-- TODO move into GameSys.on_draw() once that is hooked up
+local function game_draw_vertices(vertex_array, ascii_font, entity_index, width, height)
+	vertex_array:add_triangle(0,0, 0,height, width,0, 255,0,0,255)
+	vertex_array:add_triangle(width,0, 0,height, width,height, 0,255,0,255)
+	vertex_array:add_line(0,0,width,height, 0,0,0,255, 0)
+	vertex_array:add_line(0,0,0,height, 0,0,0,255, 0)
+	vertex_array:add_line(0,0,width,0, 0,0,0,255, 0)
 	vertex_array:add_line(0,0,8,0, 0,0,255,255, 0)
 	vertex_array:add_line(0,0,0,8, 0,0,255,255, 0)
 	vertex_array:add_line(7,0,7,8, 0,0,255,255, 0)
 	vertex_array:add_line(0,7,8,7, 0,0,255,255, 0)
-	vertex_array:add_sprite(8,64,16,72, sprites_u,sprites_v+8,sprites_u+8,sprites_v+16, 255,255,255,255, 1)
 
 	vertex_array:add_rect(22,22,44,44, 0,0,255,255, 0)
 	vertex_array:add_rect_outline(22,22,44,44, 255,255,0,255, 0)
@@ -59,34 +29,69 @@ local function main()
 		x = 16, y = 16, max_w = 32, max_h = 32,
 		color = {0,255,0,255}, depth = 0.0,
 	}
+end
 
-	local window_vertex_array = VertexArray.new{}
-	window_vertex_array:add_line(0,0,512,512, 255,255,0,255, 0)
-	window_vertex_array:add_triangle(40,0, 0,40, 40,40, 255,255,0,255)
+-- TODO move into GameSys.on_draw() once that is hooked up
+local function window_draw_vertices(vertex_array, width, height)
+	vertex_array:add_line(0,0,width,height, 255,255,0,255, 0)
+	vertex_array:add_triangle(40,0, 0,40, 40,40, 255,255,0,255)
+end
 
-	local game_render_texture = RenderTexture.new{window = window, width = 128, height = 128}
+local EngineTestExample = game.Sys.new_metatable("engine_test_example")
+function EngineTestExample:on_init()
+	self.world_game = self.sim:require(world.GameSys)
+	self.context = self.sim:require(client.GameSys).context
 
-	local frame = 0
-	while window:step() do
-		frame = frame + 1
+	self.sprites_u, self.sprites_v = self.context.texture_atlas:set_region_png_file{
+		id = 0, filename = './examples/engine_test/data/sprites.png'}
 
-		local draw_to_game = RenderState.new_ortho_2d{target = game_render_texture}
-		renderer:clear{render_state = draw_to_game, target = game_render_texture, color = {255, 255, 255, 255}}
-		draw_to_game:set_viewport_ortho_2d{
-			viewport = {x = math.floor((frame / 8) % 8), y = math.floor((frame / 8) % 8), width = 128, height = 128},
-			target = game_render_texture
-		}
-		renderer:draw_vertex_array{
-			render_state = draw_to_game, src = texture_atlas, target = game_render_texture, vertex_array = vertex_array}
+	self.ascii_font = AsciiFont.new{
+		u1 = self.sprites_u, v1 = self.sprites_v + 160,
+		u2 = self.sprites_u + 64, v2 = self.sprites_v + 256,
+		char_w = 8, char_h = 8,
+		char_first = ' ', char_last = '~',
+	}
 
-		local draw_to_window = RenderState.new_ortho_2d{target = window}
-		renderer:clear{render_state = draw_to_window, src = texture_atlas, color = {255, 255, 255, 255}}
-
-		local copy_game_to_window = RenderState.new{target = window}
-		renderer:draw_texture{render_state = copy_game_to_window, src = game_render_texture}
-		renderer:draw_vertex_array{
-			render_state = draw_to_window, src = texture_atlas, vertex_array = window_vertex_array}
+	self.entity_index = EntityIndex.new{}
+	for i = 1, 4 do
+		self.entity_index:set_collider(
+			i, (8 * i), 8, (8 * i) + 8, 16)
+		self.entity_index:set_sprite(
+			i, self.sprites_u + 16, self.sprites_v + 24, self.sprites_u + 24, self.sprites_v + 32)
 	end
+end
+function EngineTestExample:on_step()
+	local context = self.context
+	local target = self.world_game.world:get(client.WorldSys).render_target
+
+	game_draw_vertices(
+		target.vertex_array, self.ascii_font, self.entity_index, target.settings.width, target.settings.height)
+	window_draw_vertices(context.vertex_array, context.settings.window.width, context.settings.window.height)
+
+	context.renderer:clear{target = target.render_texture, color = {255, 255, 255, 255}}
+
+	local offset = math.floor((context.step_count / 8) % 8)
+	local offset_render_state = target.render_state_ortho_2d:copy():set_viewport_ortho_2d{
+		viewport = {x = offset, y = offset, width = target.settings.width, height = target.settings.height},
+		target = target.render_texture}
+	context.renderer:draw_vertex_array{
+		render_state = offset_render_state,
+		src = context.texture_atlas,
+		target = target.render_texture,
+		vertex_array = target.vertex_array}
+
+	context.renderer:draw_texture{render_state = context.render_state_passthrough, src = target.render_texture}
+	context.renderer:draw_vertex_array{
+		render_state = context.render_state_ortho_2d,
+		src = context.texture_atlas,
+		vertex_array = context.vertex_array}
+end
+
+
+local function main()
+	local game_sim = game.Game.new()
+	game_sim:require(EngineTestExample)
+	game_sim:run()
 end
 
 main()

@@ -82,12 +82,11 @@ OD_TEST_FILTERED(odTest_odRenderer_clear, OD_TEST_FILTER_SLOW) {
 	OD_ASSERT(odRenderer_init(&renderer, &window));
 	odTexture texture;
 	OD_ASSERT(odTexture_init_blank(&texture, &window));
-	odRenderState state = odTest_odRenderer_create_state();
 
-	OD_ASSERT(odRenderer_clear(&renderer, odColor_get_white(), &state, nullptr));
+	OD_ASSERT(odRenderer_clear(&renderer, odColor_get_white(), nullptr));
 	OD_ASSERT(odRenderer_flush(&renderer));
 
-	OD_ASSERT(odRenderer_clear(&renderer, odColor_get_white(), &state, nullptr));
+	OD_ASSERT(odRenderer_clear(&renderer, odColor_get_white(), nullptr));
 	OD_ASSERT(odRenderer_flush(&renderer));
 }
 OD_TEST_FILTERED(odTest_odRenderer_draw_vertices, OD_TEST_FILTER_SLOW) {

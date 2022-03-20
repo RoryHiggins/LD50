@@ -1,1 +1,0 @@
-return odClientWrapper.Texture  -- luacheck: globals odClientWrapper

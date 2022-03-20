@@ -9,6 +9,7 @@ Sys.schema = schema.AllOf(sim.Sys.schema, schema.PartialObject{_is_game_sys = sc
 Sys.metatable_schema = schema.AllOf(sim.Sys.metatable_schema, schema.PartialObject{_is_game_sys = schema.Const(true)})
 Sys._is_game_sys = true
 function Sys.new_metatable(sys_name, metatable)
+	assert(schema.LabelString(sys_name))
 	assert(schema.Optional(Sys.metatable_schema)(metatable))
 	return sim.Sys.new_metatable(sys_name, metatable or Sys)
 end
@@ -21,6 +22,8 @@ Game.schema = schema.AllOf(sim.Sim.schema, schema.PartialObject{_is_game_sim = s
 Game.metatable_schema = schema.AllOf(sim.Sim.metatable_schema, schema.PartialObject{_is_game_sim = schema.Const(true)})
 Game.Sys = Sys
 function Game.new(state, settings, metatable)
+	assert(schema.Optional(schema.SerializableObject)(state))
+	assert(schema.Optional(schema.SerializableObject)(settings))
 	assert(schema.Optional(Game.metatable_schema)(metatable))
 	return sim.Sim.new(state, settings, metatable or Game)
 end
@@ -29,10 +32,10 @@ local tests = testing.add_suite("engine.game", {
 	new = function()
 		local game = Game.new()
 
-		local TestSys = Sys.new_metatable("game_test")
+		local TestSys = Sys.new_metatable("test")
 		game:require(TestSys)
-		game:set_status(sim.model.Status.started)
-		game:set_status(sim.model.Status.finalized)
+		game:start()
+		game:finalize()
 	end
 })
 

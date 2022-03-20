@@ -59,12 +59,16 @@ function schema.Userdata(x)
 	end
 	return true
 end
-function schema.Array(condition)
+function schema.Array(condition, opt_length)
 	assert(schema.Function(condition))
 
 	return function(x)
 		if type(x) ~= "table" then
 			return false, schema.error("schema.Array(%s): not a table", x)
+		end
+
+		if opt_length ~= nil and #x ~= opt_length then
+			return false, schema.error("schema.Array(%s): unexpected length=%s, expected %s", x, #x, opt_length)
 		end
 
 		local count = 0
@@ -144,7 +148,8 @@ function schema.Object(condition_map, additional_value_condition)
 			local value = x[key]
 			local result, err = condition(value)
 			if not result then
-				return false, schema.error("schema.Object(%s): invalid value=%s, key=%s, error=%s", x, value, key, err)
+				return false, schema.error(
+					"schema.Object(%s): invalid value=%s / missing value for key=%s, error=%s", x, value, key, err)
 			end
 		end
 		return true
@@ -254,6 +259,18 @@ function schema.NonNegativeInteger(x)
 	end
 	return false, schema.error("schema.NonNegativeInteger(%s): no match", x)
 end
+function schema.PositiveNumber(x)
+	if type(x) == "number" and x > 0 then
+		return true
+	end
+	return false, schema.error("schema.PositiveNumber(%s): no match", x)
+end
+function schema.PositiveInteger(x)
+	if type(x) == "number" and floor(x) == x and x > 0 and x <= integer_max then
+		return true
+	end
+	return false, schema.error("schema.PositiveInteger(%s): no match", x)
+end
 function schema.BoundedInteger(min, max)
 	return function(x)
 		if type(x) == "number" and floor(x) == x and x >= min and x <= max then
@@ -275,9 +292,10 @@ function schema.NonEmptyString(x)
 	end
 	return false, schema.error("schema.NonEmptyString(%s): no match", x)
 end
-function schema.NonEmptyArray(condition)
+function schema.NonEmptyArray(condition, opt_length)
 	assert(schema.Function(condition))
-	local array_condition = schema.Array(condition)
+	assert(schema.Optional(schema.PositiveInteger)(opt_length))
+	local array_condition = schema.Array(condition, opt_length)
 
 	return function(x)
 		local result, err = array_condition(x)
@@ -337,7 +355,8 @@ schema.tests = testing.add_suite("core.schema", {
 			[schema.Integer] = {-1, 0, 2, 2e5, 2^24, -2^24},
 			[schema.NormalizedNumber] = {0, 1, 0.001, 0.999, 0.4},
 			[schema.NonNegativeNumber] = {0, 2, 0.312, 2e5, 0.000001, math.huge, math.pi},
-			[schema.NonNegativeInteger] = {0, 2, 2e5},
+			[schema.PositiveNumber] = {0.002, 1, 2, 0.312, 2e5, 0.000001, math.huge, math.pi},
+			[schema.PositiveInteger] = {1, 2, 2e5},
 			[schema.BoundedInteger(2, 4)] = {2, 3, 4},
 			[schema.LabelString] = {"hello_world2", "a", "a2", "_az"},
 			[schema.NonEmptyString] = {"y", "hello"},
@@ -376,6 +395,8 @@ schema.tests = testing.add_suite("core.schema", {
 			[schema.NormalizedNumber] = {-1, -2, 3, 400, -2^24, 2^24, -0.01, 1.0001},
 			[schema.NonNegativeNumber] = {-1, -2, -2^24, -math.huge, -math.pi},
 			[schema.NonNegativeInteger] = {0.312, 0.000001, math.huge, math.pi},
+			[schema.PositiveNumber] = {0, -1, -2, -2^24, -math.huge, -math.pi},
+			[schema.PositiveInteger] = {0, 0.312, 0.000001, math.huge, math.pi},
 			[schema.BoundedInteger(2, 4)] = {1, 5, 3.5 -1, 2000, 0.312, "", "ye", true, false, function() end, {}, {1, 2}},
 			[schema.LabelString] =
 				{-1, 0, 0.312, "YA", "2a", "2", "yep nope", " ", "yE", true, false, function() end, {}, {1, 2}},

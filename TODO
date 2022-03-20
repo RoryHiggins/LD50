@@ -30,7 +30,7 @@ schema
 sim.model.Status : schema.Enum{new, running, stopped}
 sim.Sys : Metatable
 	new_metatable(name: str) : Metatable[sim.Sys]
-	on_require()?, on_init()?, on_start()?, on_step()?, on_stop()?
+	on_init()?, on_init()?, on_start()?, on_step()?, on_stop()?
 	sys_name: str
 sim.Sim
 	new(state: schema.SerializableObject|nil, settings: schema.SerializableObject|nil) : Sim
@@ -58,45 +58,49 @@ world.GameSys : game.Sys
 	on_step()  # invokes world.step()
 	on_stop()  # invokes world.set_status(Status.stopped)
 
-
 client.wrappers
 client.Context
+	step()
 	window: Window
 	texture_atlas: client.wrappers.TextureAtlas
-	renderer: client.wrappers.Renderer	
+	renderer: client.wrappers.Renderer
+	vertex_array: client.wrappers.VertexArray
+client.RenderTarget
+	step()
+client.WorldSys : world.Sys
+	on_start()  # creates render_target
+	on_step()  # render_target.step()
+	render_target: client.RenderTarget
+	_context: Context
 client.GameSys : game.Sys
-	on_start()  # creates and configures resources
-	on_step()  # invokes on_draw(client.wrappers.VertexArray, client.Context), window.step()
+	on_step()  # invokes on_draw(client.wrappers.VertexArray, client.Context), context.step()
+	on_world_new()  # creates client.WorldSys
 	settings
 		window
 			width, height, fps_limit: num
 			vsync: bool
 	context: client.Context
-	_vertices: client.wrappers.VertexArray
 
 
 
-
-view.model.View : schema.SerializableObject
+camera.model.Camera : schema.SerializableObject
 	transform: {translate_x, translate_y, scale_x, scale_y, rotate_z : num|nil}
 	viewport: {x, y, w, h} : num
-view.GameSys : world.Sys
-	set(name: str, view.model.View)
-	find(name: str) : view.model.View|nil
+camera.GameSys : world.Sys
+	set(name: str, camera.model.Camera)
+	find(name: str) : camera.model.Camera|nil
 	on_world_new()
 	on_draw()  # invokes world.on_draw(client.wrappers.VertexArray, client.Context), adds vertices for each view
 	state
-		views : {[str]: view.model.View}
-view.WorldSys : world.Sys
-	set(name: str, view.model.View)
-	find(name: str) : view.model.View|nil
+		views : {[str]: camera.model.Camera}
+camera.WorldSys : world.Sys
+	set(name: str, camera.model.Camera)
+	find(name: str) : camera.model.Camera|nil
 	on_start()  # ensures "default" view exists
 	on_step()  # invokes world.on_draw(client.wrappers.VertexArray)
 	state
-		cameras : {[str]: view.model.View}
-		_render_target: client.wrappers.RenderTexture
-	_vertices: client.wrappers.VertexArray
-	_render_target: client.wrappers.RenderTexture
+		cameras : {[str]: camera.model.Camera}
+	render_target: client.RenderTarget
 
 controller.model.Input : schema.SerializableObject
 	held: bool
@@ -117,6 +121,10 @@ controller.model.Binding : schema.SerializableObject
 	controller_id: num
 	type: controller.model.BindingType
 	keyboard_key: str?
+controller.WorldSys : world.Sys
+	on_input_change()
+	state
+		inputs: input.model.Inputs
 controller.GameSys : game.Sys
 	find_controller(controller_id: num, input_name: str) : controller.model.Input|nil
 	on_step()  # updates inputs from bindings, triggers world.on_input(name, controller_id, held)
@@ -124,10 +132,6 @@ controller.GameSys : game.Sys
 		inputs: controller.model.Inputs
 	settings
 		bindings: [controller.model.Binding]
-controller.WorldSys : world.Sys
-	on_input_change()
-	state
-		inputs: input.model.Inputs
 
 entity.model.Entity : schema.SerializableObject
 	name: str|nil
@@ -181,6 +185,12 @@ sprite.model.Component : schema.SerializableObject
 sprite.model.Allocation
 	atlas_region_id: num
 	u1, v1, u2, v2: num
+sprite.WorldSys : world.Sys
+	set(entity.model.Entity, sprite.model.Component)
+	set_name(entity.model.Entity, sprite_name: str)
+	remove(entity.model.Entity)
+	draw(client.wrappers.VertexArray, sprite.model.Component, x, y: num)
+	on_draw(client.wrappers.VertexArray)  # draw the sprites of entites
 sprite.GameSys : game.Sys
 	add_png(file_name: str, sprites: {[str]: sprite.model.Sprite]})
 	find(sprite_name: str) : sprite.model.Sprite|nil
@@ -190,12 +200,6 @@ sprite.GameSys : game.Sys
 	state
 		sprites: {[str]: sprite.model.Sprite}
 	_sprite_allocations: {[str]: sprite.model.Allocation}
-sprite.WorldSys : world.Sys
-	set(entity.model.Entity, sprite.model.Component)
-	set_name(entity.model.Entity, sprite_name: str)
-	remove(entity.model.Entity)
-	draw(client.wrappers.VertexArray, sprite.model.Component, x, y: num)
-	on_draw(client.wrappers.VertexArray)  # draw the sprites of entites
 
 animation.model.Animation : schema.SerializableObject
 	frames: [str]
@@ -204,13 +208,6 @@ animation.model.Component : schema.SerializableObject
 	pos: num
 	loop: bool
 	ended: bool
-animation.GameSys : game.Sys
-	set(anim_name: str, animation.model.Animation)
-	find(anim_name: str) : animation.model.Animation
-	on_start()
-	state
-		animations: {[str]: animation.model.Animation}
-	# optimization: index frames by anim for fast frame updates
 animation.WorldSys : world.Sys
 	set(entity.model.Entity, animation.model.Component)
 	set_name(entity.model.Entity, anim_name: str)
@@ -219,20 +216,20 @@ animation.WorldSys : world.Sys
 	_animation_game: animation.GameSys : game.Sys
 	_sprite_game: sprite.GameSys : game.Sys
 
+animation.GameSys : game.Sys
+	set(anim_name: str, animation.model.Animation)
+	find(anim_name: str) : animation.model.Animation
+	on_start()
+	state
+		animations: {[str]: animation.model.Animation}
+	# optimization: index frames by anim for fast frame updates
+
 text.model.Font : schema.SerializableObject
 	filename: str
 	type = "ascii"  # only currently supported type
 text.model.Component : schema.SerializableObject
 	font_name: str
 	depth, r, g, b, a, max_width, max_height: num
-text.GameSys : game.Sys
-	set(font_name: str, text.model.Font)
-	find(font_name: str) : text.model.Font|nil
-	draw(client.wrappers.VertexArray, text.model.Component, x, y: num)
-	on_start()
-	state
-		fonts: {[str]: text.model.Font}
-	_ascii_font_assets: {[str]: client.wrappers.AsciiFont}
 text.WorldSys : world.Sys
 	set(entity.model.Entity, text.model.Component)
 	set_text(entity.model.Entity, font_name: str, text: str, max_width, max_height: num|nil)
@@ -241,6 +238,14 @@ text.WorldSys : world.Sys
 	on_draw(client.wrappers.VertexArray)  # draw the text of entites
 	_animation_game: animation.GameSys : game.Sys
 	_sprite_game: sprite.GameSys : game.Sys
+text.GameSys : game.Sys
+	set(font_name: str, text.model.Font)
+	find(font_name: str) : text.model.Font|nil
+	draw(client.wrappers.VertexArray, text.model.Component, x, y: num)
+	on_start()
+	state
+		fonts: {[str]: text.model.Font}
+	_ascii_font_assets: {[str]: client.wrappers.AsciiFont}
 
 audio.model.Audio : schema.SerializableObject
 	filename: str
@@ -272,10 +277,12 @@ camera_target.WorldSys : world.Sys
 
 Client TODOs
 ============
-Refactoring TODOs
-	lua bindings: add get_raw_texture() and get_raw_render_texture() to bindings, remove type branching logic in texture init
-
-Long-term TODOs
+Big TODOs
 	Unicode font loading, unicode text rendering
 	adjustable 2D positions for positional audio playback?
 	streaming audio playback from formats other than wav...?
+
+Refactoring TODOs
+	lua bindings: add get_raw_texture() and get_raw_render_texture() to bindings, remove type branching logic in texture init
+	rename "target" to "dest" in bindings
+
