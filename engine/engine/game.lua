@@ -1,47 +1,49 @@
-local schema = require("engine/core/schema")
-local sim = require("engine/engine/sim")
-local testing = require("engine/core/testing")
-
-local Sys = {}
-setmetatable(Sys, sim.Sys)
-Sys.__index = Sys
-Sys.schema = schema.AllOf(sim.Sys.schema, schema.PartialObject{_is_game_sys = schema.Const(true)})
-Sys.metatable_schema = schema.AllOf(sim.Sys.metatable_schema, schema.PartialObject{_is_game_sys = schema.Const(true)})
-Sys._is_game_sys = true
-function Sys.new_metatable(sys_name, metatable)
-	assert(schema.LabelString(sys_name))
-	assert(schema.Optional(Sys.metatable_schema)(metatable))
-	return sim.Sys.new_metatable(sys_name, metatable or Sys)
-end
+local Schema = require("engine/core/Schema")
+local Testing = require("engine/core/testing")
+local Sim = require("engine/engine/sim")
 
 local Game = {}
-setmetatable(Game, sim.Sim)
-Game.__index = Game
-Game._is_game_sim = true
-Game.schema = schema.AllOf(sim.Sim.schema, schema.PartialObject{_is_game_sim = schema.Const(true)})
-Game.metatable_schema = schema.AllOf(sim.Sim.metatable_schema, schema.PartialObject{_is_game_sim = schema.Const(true)})
-Game.Sys = Sys
-function Game.new(state, settings, metatable)
-	assert(schema.Optional(schema.SerializableObject)(state))
-	assert(schema.Optional(schema.SerializableObject)(settings))
-	assert(schema.Optional(Game.metatable_schema)(metatable))
-	return sim.Sim.new(state, settings, metatable or Game)
+
+Game.Sys = {}
+setmetatable(Game.Sys, Sim.Sys)
+Game.Sys.__index = Game.Sys
+Game.Sys.Schema = Schema.AllOf(
+	Sim.Sys.Schema, Schema.PartialObject{_is_game_sys = Schema.Optional(Schema.Const(true))})
+Game.Sys.metatable_schema = Schema.AllOf(
+	Sim.Sys.metatable_schema, Schema.PartialObject{_is_game_sys = Schema.Optional(Schema.Const(true))})
+Game.Sys._is_game_sys = true
+function Game.Sys.new_metatable(sys_name, metatable)
+	assert(Schema.LabelString(sys_name))
+	assert(Schema.Optional(Game.Sys.metatable_schema)(metatable))
+	return Sim.Sys.new_metatable(sys_name, metatable or Game.Sys)
 end
 
-local tests = testing.add_suite("engine.game", {
-	new = function()
-		local game = Game.new()
+Game.Game = {}
+setmetatable(Game.Game, Sim.Sim)
+Game.Game.__index = Game.Game
+Game.Game._is_game_sim = true
+Game.Game.Schema = Schema.AllOf(
+	Sim.Sim.Schema, Schema.PartialObject{_is_game_sim = Schema.Const(true)})
+Game.Game.metatable_schema = Schema.AllOf(
+	Sim.Sim.metatable_schema, Schema.PartialObject{_is_game_sim = Schema.Const(true)})
+Game.Game.Sys = Game.Sys
+function Game.Game.new(state, settings, metatable)
+	assert(Schema.Optional(Schema.SerializableObject)(state))
+	assert(Schema.Optional(Schema.SerializableObject)(settings))
+	assert(Schema.Optional(Game.Game.metatable_schema)(metatable))
+	return Sim.Sim.new(state, settings, metatable or Game.Game)
+end
 
-		local TestSys = Sys.new_metatable("test")
-		game:require(TestSys)
-		game:start()
-		game:finalize()
+Game.tests = Testing.add_suite("engine.game", {
+	game_loop = function()
+		local game_sim = Game.Game.new()
+
+		local TestSys = Game.Sys.new_metatable("test")
+		game_sim:require(TestSys)
+		game_sim:start()
+		game_sim:step()
+		game_sim:finalize()
 	end
 })
 
-local game = {}
-game.Sys = Sys
-game.Game = Game
-game.tests = tests
-
-return game
+return Game

@@ -1,43 +1,38 @@
-local debugging = require("engine/core/debugging")
-local schema = require("engine/core/schema")
-local container = require("engine/core/container")
-local game = require("engine/engine/game")
-local world = require("engine/engine/world")
+local Debugging = require("engine/core/debugging")
+local Schema = require("engine/core/Schema")
+local Container = require("engine/core/container")
+local Testing = require("engine/core/testing")
+local Game = require("engine/engine/game")
+local World = require("engine/engine/world")
 
-local debug_checks_enabled = debugging.debug_checks_enabled
+local debug_checks_enabled = Debugging.debug_checks_enabled
 
-local wrappers = odClientWrapper  -- luacheck: globals odClientWrapper
-function wrappers.Schema(name)
-	return schema.AllOf(schema.Userdata, schema.Check(function(x)
+local Client = {}
+
+Client.wrappers = odClientWrapper  -- luacheck: globals odClientWrapper
+function Client.wrappers.Schema(name)
+	return Schema.AllOf(Schema.Userdata, Schema.Check(function(x)
 		if x._metatable_name == name then
 			return true
 		end
-		return false, schema.error(
-			"client.wrappers.Schema(%s): metatable %s, expected %s", x, x._metatable_name, name)
+		return false, Schema.error(
+			"Client.wrappers.Schema(%s): metatable %s, expected %s", x, x._metatable_name, name)
 	end))
 end
 
-local Context = {}
-Context.__index = Context
-Context.Settings = {}
-Context.Settings.mouse_schema = schema.Object{
-	x = schema.Integer,
-	y = schema.Integer,
-	left = schema.Boolean,
-	middle = schema.Boolean,
-	right = schema.Boolean,
+Client.Context = {}
+Client.Context.__index = Client.Context
+Client.Context.Settings = {}
+Client.Context.Settings.Schema = Schema.Object{
+	window = Schema.Optional(Schema.Object{
+		caption = Schema.Optional(Schema.String),
+		width = Schema.Optional(Schema.PositiveInteger),
+		height = Schema.Optional(Schema.PositiveInteger),
+		vsync = Schema.Optional(Schema.Boolean),
+		visible = Schema.Optional(Schema.Boolean),
+	})
 }
-Context.Settings.schema = schema.Object{
-	window = schema.Object{
-		caption = schema.String,
-		width = schema.PositiveInteger,
-		height = schema.PositiveInteger,
-		fps_limit = schema.Optional(schema.PositiveInteger),
-		vsync = schema.Boolean,
-		visible = schema.Boolean,
-	}
-}
-Context.Settings.defaults = {
+Client.Context.Settings.defaults = {
 	window = {
 		caption = "",
 		width = 512,
@@ -46,45 +41,51 @@ Context.Settings.defaults = {
 		visible = true,
 	}
 }
-Context.schema = schema.Object{
-	settings = Context.Settings.schema,
-	window = wrappers.Schema("Window"),
-	texture_atlas = wrappers.Schema("TextureAtlas"),
-	renderer = wrappers.Schema("Renderer"),
-	vertex_array = wrappers.Schema("VertexArray"),
-	render_state_ortho_2d = wrappers.Schema("RenderState"),
-	render_state_passthrough = wrappers.Schema("RenderState"),
-	mouse = Context.Settings.mouse_schema,
-	step_count = schema.NonNegativeInteger,
+Client.Context.Schema = Schema.Object{
+	settings = Client.Context.Settings.Schema,
+	window = Client.wrappers.Schema("Window"),
+	texture_atlas = Client.wrappers.Schema("TextureAtlas"),
+	renderer = Client.wrappers.Schema("Renderer"),
+	vertex_array = Client.wrappers.Schema("VertexArray"),
+	render_state_ortho_2d = Client.wrappers.Schema("RenderState"),
+	render_state_passthrough = Client.wrappers.Schema("RenderState"),
+	mouse = Schema.Object{
+		x = Schema.Integer,
+		y = Schema.Integer,
+		left = Schema.Boolean,
+		middle = Schema.Boolean,
+		right = Schema.Boolean,
+	},
+	step_count = Schema.NonNegativeInteger,
 }
-function Context.new(settings)
-	settings = container.object_set_defaults(container.deep_copy(settings or {}), Context.Settings.defaults)
+function Client.Context.new(settings)
+	settings = Container.set_defaults({}, settings or {}, Client.Context.Settings.defaults)
 
 	if debug_checks_enabled then
-		assert(Context.Settings.schema(settings))
+		assert(Client.Context.Settings.Schema(settings))
 	end
 
 	local context = {}
 	context.settings = settings
-	context.window = wrappers.Window.new(settings.window)
-	context.texture_atlas = wrappers.TextureAtlas.new{window = context.window}
-	context.renderer = wrappers.Renderer.new{window = context.window}
-	context.vertex_array = wrappers.VertexArray.new{}
-	context.render_state_ortho_2d = wrappers.RenderState.new_ortho_2d{target = context.window}
-	context.render_state_passthrough = wrappers.RenderState.new{target = context.window}
+	context.window = Client.wrappers.Window.new(settings.window)
+	context.texture_atlas = Client.wrappers.TextureAtlas.new{window = context.window}
+	context.renderer = Client.wrappers.Renderer.new{window = context.window}
+	context.vertex_array = Client.wrappers.VertexArray.new{}
+	context.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = context.window}
+	context.render_state_passthrough = Client.wrappers.RenderState.new{target = context.window}
 	context.mouse = context.window:get_mouse_state()
 	context.step_count = 0
-	setmetatable(context, Context)
+	setmetatable(context, Client.Context)
 
 	if debug_checks_enabled then
-		assert(Context.schema(context))
+		assert(Client.Context.Schema(context))
 	end
 
 	return context
 end
-function Context:step()
+function Client.Context:step()
 	if debug_checks_enabled then
-		assert(Context.schema(self))
+		assert(Client.Context.Schema(self))
 	end
 
 	local running = self.window:step()
@@ -101,61 +102,61 @@ function Context:step()
 
 	self.mouse = self.window:get_mouse_state()
 
-	container.object_update(self.settings.window, self.window:get_settings())
+	Container.update(self.settings.window, self.window:get_settings())
 
 	if debug_checks_enabled then
-		assert(Context.schema(self))
+		assert(Client.Context.Schema(self))
 	end
 
 	return true
 end
 
-local RenderTarget = {}
-RenderTarget.__index = RenderTarget
-RenderTarget.Settings = {}
-RenderTarget.Settings.schema = schema.Object{
-	width = schema.PositiveInteger,
-	height = schema.PositiveInteger,
+Client.RenderTarget = {}
+Client.RenderTarget.__index = Client.RenderTarget
+Client.RenderTarget.Settings = {}
+Client.RenderTarget.Settings.Schema = Schema.Object{
+	width = Schema.PositiveInteger,
+	height = Schema.PositiveInteger,
 }
-RenderTarget.Settings.defaults = {
+Client.RenderTarget.Settings.defaults = {
 	width = 256,
 	height = 192,
 }
-RenderTarget.schema = schema.Object{
-	settings = RenderTarget.Settings.schema,
-	context = Context.schema,
-	render_texture = wrappers.Schema("RenderTexture"),
-	vertex_array = wrappers.Schema("VertexArray"),
-	render_state_ortho_2d = wrappers.Schema("RenderState"),
-	render_state_passthrough = wrappers.Schema("RenderState"),
+Client.RenderTarget.Schema = Schema.Object{
+	settings = Client.RenderTarget.Settings.Schema,
+	context = Client.Context.Schema,
+	render_texture = Client.wrappers.Schema("RenderTexture"),
+	vertex_array = Client.wrappers.Schema("VertexArray"),
+	render_state_ortho_2d = Client.wrappers.Schema("RenderState"),
+	render_state_passthrough = Client.wrappers.Schema("RenderState"),
 }
-function RenderTarget.new(context, settings)
-	settings = container.object_set_defaults(container.deep_copy(settings or {}), RenderTarget.Settings.defaults)
+function Client.RenderTarget.new(context, settings)
+	settings = Container.update({}, Client.RenderTarget.Settings.defaults, settings or {})
 
 	if debug_checks_enabled then
-		assert(Context.schema(context))
-		assert(RenderTarget.Settings.schema(settings))
+		assert(Client.Context.Schema(context))
+		assert(Client.RenderTarget.Settings.Schema(settings))
 	end
 
 	local render_target = {}
 	render_target.settings = settings
 	render_target.context = context
-	render_target.render_texture = wrappers.RenderTexture.new{
+	render_target.render_texture = Client.wrappers.RenderTexture.new{
 		window = context.window, width = settings.width, height = settings.height}
-	render_target.vertex_array = wrappers.VertexArray.new{}
-	render_target.render_state_ortho_2d = wrappers.RenderState.new_ortho_2d{target = render_target.render_texture}
-	render_target.render_state_passthrough = wrappers.RenderState.new{target = render_target.render_texture}
-	setmetatable(render_target, RenderTarget)
+	render_target.vertex_array = Client.wrappers.VertexArray.new{}
+	render_target.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = render_target.render_texture}
+	render_target.render_state_passthrough = Client.wrappers.RenderState.new{target = render_target.render_texture}
+	setmetatable(render_target, Client.RenderTarget)
 
 	if debug_checks_enabled then
-		assert(RenderTarget.schema(render_target))
+		assert(Client.RenderTarget.Schema(render_target))
 	end
 
 	return render_target
 end
-function RenderTarget:step()
+function Client.RenderTarget:step()
 	if debug_checks_enabled then
-		assert(RenderTarget.schema(self))
+		assert(Client.RenderTarget.Schema(self))
 	end
 
 	self.vertex_array:init{}
@@ -164,47 +165,79 @@ function RenderTarget:step()
 	self.context.renderer:clear{target = self.render_texture, color = {255, 255, 255, 255}}
 end
 
-local WorldSys = world.Sys.new_metatable("client")
-function WorldSys:on_start()
-	self.render_target = RenderTarget.new(self._game_client.context, self.settings)
+Client.WorldSys = World.Sys.new_metatable("client")
+Client.WorldSys.Settings = {}
+Client.WorldSys.Settings.Schema = Schema.Object{
+	render_target = Client.RenderTarget.Settings.Schema,
+}
+Client.WorldSys.Settings.defaults = {
+	render_target = Client.RenderTarget.Settings.defaults,
+}
+function Client.WorldSys:on_start()
+	if self._game_client.state.headless then
+		return
+	end
+
+	self.render_target = Client.RenderTarget.new(self._game_client.context, self.settings)
 end
-function WorldSys:on_step()
+function Client.WorldSys:on_step()
+	if self._game_client.state.headless then
+		return
+	end
+
 	self.render_target:step()
 end
 
-local GameSys = game.Sys.new_metatable("client")
-function GameSys:on_init()
-	if debug_checks_enabled then
-		assert(GameSys.schema(self))
+Client.GameSys = Game.Sys.new_metatable("client")
+Client.GameSys.Settings = {}
+Client.GameSys.Settings.Schema = Schema.Object{
+	headless = Schema.Optional(Schema.Boolean),
+	context = Schema.Optional(Client.Context.Settings.Schema),
+}
+Client.GameSys.Settings.defaults = {
+	headless = false,
+	context = Client.Context.Settings.defaults,
+}
+Client.GameSys.State = Client.GameSys.Settings
+function Client.GameSys:on_init()
+	Container.set_defaults(self.settings, Client.GameSys.Settings.defaults)
+	Container.set_defaults(self.state, Client.GameSys.State.defaults)
+
+	if not self.settings.headless then
+		self.context = Client.Context.new(self.settings.context)
 	end
 
-	self.settings = container.object_set_defaults(container.deep_copy(self.settings or {}), Context.Settings.defaults)
-	self.context = Context.new(self.settings)
+	Container.update(self.state, self.settings)
 
 	if debug_checks_enabled then
-		assert(Context.schema(self.context))
-		assert(Context.Settings.schema(self.settings))
+		assert(Client.GameSys.Settings.Schema(self.settings))
+		assert(Client.GameSys.State.Schema(self.state))
+		assert(Schema.Optional(Client.Context.Schema)(self.context))
 	end
-
-	self._world_game = self.sim:require(world.GameSys)
 end
-function GameSys:on_step()
+function Client.GameSys:on_step()
+	if self.state.headless then
+		return
+	end
+
 	if not self.context:step() then
-		self.sim.finalize()
+		self.sim.enqueue_finalize()
 	end
 
-	container.object_update(self.settings, self.context.settings)
+	Container.update(self.state.context, self.context.settings)
 end
-function GameSys:on_world_init()
-	local world_client = self._world_game.world:require(WorldSys)
-	world_client._game_client = self
+function Client.GameSys:on_world_init()
+	self.sim:get(World.GameSys).world:require(Client.WorldSys)._game_client = self
 end
 
-local client = {}
-client.wrappers = wrappers
-client.Context = Context
-client.RenderTarget = RenderTarget
-client.WorldSys = WorldSys
-client.GameSys = GameSys
+Client.tests = Testing.add_suite("engine.client", {
+	run_headless = function()
+		local game_sim = Game.Game.new({}, {client = {headless = true}})
+		game_sim:require(Client.GameSys)
+		game_sim:start()
+		game_sim:step()
+		game_sim:finalize()
+	end
+})
 
-return client
+return Client

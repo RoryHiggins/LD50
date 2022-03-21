@@ -1,5 +1,5 @@
-local logging = {}
-logging.Level = {
+local Logging = {}
+Logging.Level = {
 	none = 0,
 	error = 2,
 	warn = 3,
@@ -7,15 +7,15 @@ logging.Level = {
 	debug = 5,
 	trace = 6,
 }
-logging.level = logging.Level.info
-logging.error_count = 0
-logging._level_stack = {}
-logging.error_handlers = {}
-function logging.add_error_handler(handler)
-	logging.error_handlers[#logging.error_handlers + 1] = handler
+Logging.level = Logging.Level.info
+Logging.error_count = 0
+Logging._level_stack = {}
+Logging.error_handlers = {}
+function Logging.add_error_handler(handler)
+	Logging.error_handlers[#Logging.error_handlers + 1] = handler
 end
-function logging._log_impl(level, prefix, format, ...)
-	if logging.level < level then
+function Logging._log_impl(level, prefix, format, ...)
+	if Logging.level < level then
 		return
 	end
 
@@ -27,50 +27,50 @@ function logging._log_impl(level, prefix, format, ...)
 		...
 	))
 
-	if level <= logging.Level.warn then
+	if level <= Logging.Level.warn then
 		print(debug.traceback("", 3))
-		if level <= logging.Level.error then
-			logging.error_count = logging.error_count + 1
+		if level <= Logging.Level.error then
+			Logging.error_count = Logging.error_count + 1
 		end
 
 		io.flush()
 
-		for _, handler in ipairs(logging.error_handlers) do
+		for _, handler in ipairs(Logging.error_handlers) do
 			handler()
 		end
 	end
 
 	io.flush()
 end
-function logging.error(format, ...)
-	logging._log_impl(logging.Level.error, "[ERROR %s:%d] %s() ", format, ...)
+function Logging.error(format, ...)
+	Logging._log_impl(Logging.Level.error, "[ERROR %s:%d] %s() ", format, ...)
 end
-function logging.warn(format, ...)
-	logging._log_impl(logging.Level.warn, "[WARN  %s:%d] %s() ", format, ...)
+function Logging.warn(format, ...)
+	Logging._log_impl(Logging.Level.warn, "[WARN  %s:%d] %s() ", format, ...)
 end
-function logging.info(format, ...)
-	logging._log_impl(logging.Level.info, "[info  %s:%d] %s() ", format, ...)
+function Logging.info(format, ...)
+	Logging._log_impl(Logging.Level.info, "[info  %s:%d] %s() ", format, ...)
 end
-function logging.debug(format, ...)
-	logging._log_impl(logging.Level.debug, "[debug %s:%d] %s() ", format, ...)
+function Logging.debug(format, ...)
+	Logging._log_impl(Logging.Level.debug, "[debug %s:%d] %s() ", format, ...)
 end
-function logging.trace(format, ...)
-	logging._log_impl(logging.Level.trace, "[trace %s:%d] %s() ", format, ...)
+function Logging.trace(format, ...)
+	Logging._log_impl(Logging.Level.trace, "[trace %s:%d] %s() ", format, ...)
 end
-function logging.push_level(new_level)
-	logging._level_stack[#logging._level_stack + 1] = logging.level
-	logging.level = new_level
+function Logging.push_level(new_level)
+	Logging._level_stack[#Logging._level_stack + 1] = Logging.level
+	Logging.level = new_level
 end
-function logging.pop_level()
-	if #logging._level_stack == 0 then
-		print("logging.pop_level failed, log level may not be valid")
-		logging.level = logging.Level.info
+function Logging.pop_level()
+	if #Logging._level_stack == 0 then
+		print("Logging.pop_level failed, log level may not be valid")
+		Logging.level = Logging.Level.info
 		return false
 	end
 
-	logging.level = logging._level_stack[#logging._level_stack]
-	logging._level_stack[#logging._level_stack] = nil
+	Logging.level = Logging._level_stack[#Logging._level_stack]
+	Logging._level_stack[#Logging._level_stack] = nil
 	return true
 end
 
-return logging
+return Logging

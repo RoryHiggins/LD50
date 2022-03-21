@@ -1,40 +1,40 @@
-local shim = require("engine/core/shim")
-local logging = require("engine/core/logging")
+local Shim = require("engine/core/shim")
+local Logging = require("engine/core/logging")
 
 local debugger_lib = nil
 
-local debugging = {}
-debugging.debugger_enabled = false
-debugging.debug_checks_enabled = true
-function debugging.set_debugger_enabled(enabled)
-	debugging.debugger_enabled = enabled
+local Debugging = {}
+Debugging.debugger_enabled = false
+Debugging.debug_checks_enabled = true
+function Debugging.set_debugger_enabled(enabled)
+	Debugging.debugger_enabled = enabled
 
-	if debugging.debugger_enabled and debugger_lib == nil then
+	if Debugging.debugger_enabled and debugger_lib == nil then
 		debugger_lib = require("engine/lib/debugger/debugger")
 	end
 
-	return debugging
+	return Debugging
 end
-function debugging.breakpoint()
-	if not debugging.debugger_enabled then
+function Debugging.breakpoint()
+	if not Debugging.debugger_enabled then
 		return
 	end
 
 	debugger_lib()
 end
-function debugging.pcall(fn, ...)
+function Debugging.pcall(fn, ...)
 	local args = {...}
 
-	if not debugging.debugger_enabled then
+	if not Debugging.debugger_enabled then
 		local function fn_wrapped()
-			fn(shim.unpack(args))
+			fn(Shim.unpack(args))
 		end
 
 		return pcall(fn_wrapped)
 	end
 
-	return debugger_lib.call(fn, shim.unpack(args))
+	return debugger_lib.call(fn, Shim.unpack(args))
 end
-logging.add_error_handler(debugging.breakpoint)
+Logging.add_error_handler(Debugging.breakpoint)
 
-return debugging
+return Debugging

@@ -31,20 +31,20 @@ def main():
 
     run_main = ('require("engine/core/debugging").pcall(main)'
                 if args.debugger else "main()")
-    entrypoint = (f'\trequire("{to_lua_path(pathlib.Path(args.entrypoint))}")'
+    entrypoint = (f'require("{to_lua_path(pathlib.Path(args.entrypoint))}")'
                   if args.entrypoint else "")
 
     paths = pathlib.Path('engine').glob('**/*.lua')
     requires = '\n\t'.join(f"require('{to_lua_path(path)}')" for path in paths)
 
     lua_script = (
-f"""local function main()
-    {requires}
-    require("engine/core/testing").run_all()
-    {entrypoint} -- luacheck: ignore
-end
-require("engine/core/debugging").set_debugger_enabled(true)
-{run_main}"""
+        f"local function main()\n"
+        f'\t{requires}\n'
+        f'\trequire("engine/core/testing").run_all()\n'
+        f"\t{entrypoint}\n"
+        f"end\n"
+        f'require("engine/core/debugging").set_debugger_enabled(true)\n'
+        f"{run_main}"
     )
 
     print(lua_script)

@@ -1,9 +1,9 @@
-local game = require("engine/engine/game")
-local world = require("engine/engine/world")
-local client = require("engine/engine/client")
+local Game = require("engine/engine/game")
+local World = require("engine/engine/world")
+local Client = require("engine/engine/client")
 
-local AsciiFont = client.wrappers.AsciiFont
-local EntityIndex = client.wrappers.EntityIndex
+local AsciiFont = Client.wrappers.AsciiFont
+local EntityIndex = Client.wrappers.EntityIndex
 
 -- TODO move into GameSys.on_draw() once that is hooked up
 local function game_draw_vertices(vertex_array, ascii_font, entity_index, width, height)
@@ -25,7 +25,7 @@ local function game_draw_vertices(vertex_array, ascii_font, entity_index, width,
 
 	ascii_font:add_text_to_vertex_array{
 		vertex_array = vertex_array,
-		str = "hello world!",
+		str = "hello World!",
 		x = 16, y = 16, max_w = 32, max_h = 32,
 		color = {0,255,0,255}, depth = 0.0,
 	}
@@ -37,10 +37,10 @@ local function window_draw_vertices(vertex_array, width, height)
 	vertex_array:add_triangle(40,0, 0,40, 40,40, 255,255,0,255)
 end
 
-local EngineTestExample = game.Sys.new_metatable("engine_test_example")
+local EngineTestExample = Game.Sys.new_metatable("engine_test_example")
 function EngineTestExample:on_init()
-	self.world_game = self.sim:require(world.GameSys)
-	self.context = self.sim:require(client.GameSys).context
+	self.world_game = self.sim:require(World.GameSys)
+	self.context = self.sim:require(Client.GameSys).context
 
 	self.sprites_u, self.sprites_v = self.context.texture_atlas:set_region_png_file{
 		id = 0, filename = './examples/engine_test/data/sprites.png'}
@@ -48,8 +48,7 @@ function EngineTestExample:on_init()
 	self.ascii_font = AsciiFont.new{
 		u1 = self.sprites_u, v1 = self.sprites_v + 160,
 		u2 = self.sprites_u + 64, v2 = self.sprites_v + 256,
-		char_w = 8, char_h = 8,
-		char_first = ' ', char_last = '~',
+		char_w = 8, char_h = 8, char_first = ' ', char_last = '~',
 	}
 
 	self.entity_index = EntityIndex.new{}
@@ -62,7 +61,7 @@ function EngineTestExample:on_init()
 end
 function EngineTestExample:on_step()
 	local context = self.context
-	local target = self.world_game.world:get(client.WorldSys).render_target
+	local target = self.world_game.world:get(Client.WorldSys).render_target
 
 	game_draw_vertices(
 		target.vertex_array, self.ascii_font, self.entity_index, target.settings.width, target.settings.height)
@@ -89,7 +88,7 @@ end
 
 
 local function main()
-	local game_sim = game.Game.new()
+	local game_sim = Game.Game.new()
 	game_sim:require(EngineTestExample)
 	game_sim:run()
 end

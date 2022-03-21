@@ -1,18 +1,18 @@
-local container = require("engine/core/container")
-local testing = require("engine/core/testing")
+local Container = require("engine/core/container")
+local Testing = require("engine/core/testing")
 
-local json = {}
-function json._get_strs(xs, out_strs)
+local Json = {}
+function Json._get_strs(xs, out_strs)
 	local xs_type = type(xs)
 
 	if xs_type == "string" then
 		out_strs[#out_strs + 1] = "\""
-		out_strs[#out_strs + 1] = container.string_escape(xs)
+		out_strs[#out_strs + 1] = Container.string_escape(xs)
 		out_strs[#out_strs + 1] = "\""
 	elseif xs_type == "number" or xs_type == "boolean" then
 		out_strs[#out_strs + 1] = tostring(xs)
 	elseif xs_type == "table" then
-		local keys = container.table_get_keys(xs)
+		local keys = Container.get_keys(xs)
 
 		local added_first_key = false
 		local has_number_keys = (#xs > 0)
@@ -51,11 +51,11 @@ function json._get_strs(xs, out_strs)
 
 			if has_string_keys then
 				out_strs[#out_strs + 1] = "\""
-				out_strs[#out_strs + 1] = container.string_escape(key)
+				out_strs[#out_strs + 1] = Container.string_escape(key)
 				out_strs[#out_strs + 1] = "\":"
 			end
 
-			json._get_strs(x, out_strs)
+			Json._get_strs(x, out_strs)
 		end
 
 		if has_string_keys then
@@ -70,10 +70,10 @@ function json._get_strs(xs, out_strs)
 	end
 	return out_strs
 end
-function json.encode(xs)
-	return table.concat(json._get_strs(xs, {}))
+function Json.encode(xs)
+	return table.concat(Json._get_strs(xs, {}))
 end
-json.tests =  testing.add_suite("core.json", {
+Json.tests =  Testing.add_suite("core.Json", {
 	encode = function()
 		local test_values = {
 			0,
@@ -95,7 +95,7 @@ json.tests =  testing.add_suite("core.json", {
 			{a = {b = {c = {d = {e = {"f", "g", "h"}}}}}},
 		}
 		for _, val in ipairs(test_values) do
-			json.encode(val)
+			Json.encode(val)
 		end
 	end,
 	encode_invalid_fails = function()
@@ -109,11 +109,11 @@ json.tests =  testing.add_suite("core.json", {
 			recursive,
 		}
 		for _, val in ipairs(test_values) do
-			testing.assert_fails(function()
-				json.encode(val)
+			Testing.assert_fails(function()
+				Json.encode(val)
 			end)
 		end
 	end,
 })
 
-return json
+return Json

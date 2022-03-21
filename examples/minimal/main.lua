@@ -1,9 +1,9 @@
-local game = require("engine/engine/game")
-local client = require("engine/engine/client")
+local Game = require("engine/engine/game")
+local Client = require("engine/engine/client")
 
-local MinimalExample = game.Sys.new_metatable("minimal_example")
+local MinimalExample = Game.Sys.new_metatable("minimal_example")
 function MinimalExample:on_init()
-	self.client = self.sim:require(client.GameSys)
+	self.client = self.sim:require(Client.GameSys)
 end
 function MinimalExample:on_step()
 	local context = self.client.context
@@ -17,6 +17,6 @@ function MinimalExample:on_step()
 		render_state = render_state_mouse_local, src = context.texture_atlas, vertex_array = context.vertex_array}
 end
 
-local game_sim = game.Game.new()
+local game_sim = Game.Game.new()
 game_sim:require(MinimalExample)
 game_sim:run()

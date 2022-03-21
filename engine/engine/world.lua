@@ -1,131 +1,130 @@
-local debugging = require("engine/core/debugging")
-local schema = require("engine/core/schema")
-local container = require("engine/core/container")
-local testing = require("engine/core/testing")
-local sim = require("engine/engine/sim")
-local game = require("engine/engine/game")
+local Debugging = require("engine/core/debugging")
+local Schema = require("engine/core/Schema")
+local Container = require("engine/core/container")
+local Testing = require("engine/core/testing")
+local Sim = require("engine/engine/sim")
+local Game = require("engine/engine/game")
 
-local debug_checks_enabled = debugging.debug_checks_enabled
-
-local Sys = {}
-setmetatable(Sys, sim.Sys)
-Sys.__index = Sys
-Sys.schema = schema.AllOf(sim.Sys.schema, schema.PartialObject{_is_world_sys = schema.Const(true)})
-Sys.metatable_schema =
-	schema.AllOf(sim.Sys.metatable_schema, schema.PartialObject{_is_world_sys = schema.Const(true)})
-Sys._is_world_sys = true
-function Sys.new_metatable(sys_name, metatable)
-	assert(schema.LabelString(sys_name))
-	assert(schema.Optional(Sys.metatable_schema)(metatable))
-	return sim.Sys.new_metatable(sys_name, metatable or Sys)
-end
+local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local World = {}
-setmetatable(World, sim.Sim)
-World.__index = World
-World._is_world_sim = true
-World.schema = schema.AllOf(sim.Sim.schema, schema.PartialObject{_is_world_sim = schema.Const(true)})
-World.metatable_schema =
-	schema.AllOf(sim.Sim.metatable_schema, schema.PartialObject{_is_world_sim = schema.Const(true)})
-World.Sys = Sys
-function World.new(state, settings, metatable)
-	assert(schema.Optional(schema.SerializableObject)(state))
-	assert(schema.Optional(schema.SerializableObject)(settings))
-	assert(schema.Optional(World.metatable_schema)(metatable))
-	return sim.Sim.new(state, settings, metatable or World)
+
+World.Sys = {}
+setmetatable(World.Sys, Sim.Sys)
+World.Sys.__index = World.Sys
+World.Sys.Schema = Schema.AllOf(
+	Sim.Sys.Schema, Schema.PartialObject{_is_world_sys = Schema.Optional(Schema.Const(true))})
+World.Sys.metatable_schema = Schema.AllOf(
+	Sim.Sys.metatable_schema, Schema.PartialObject{_is_world_sys = Schema.Optional(Schema.Const(true))})
+World.Sys._is_world_sys = true
+function World.Sys.new_metatable(sys_name, metatable)
+	assert(Schema.LabelString(sys_name))
+	assert(Schema.Optional(World.Sys.metatable_schema)(metatable))
+	return Sim.Sys.new_metatable(sys_name, metatable or World.Sys)
 end
 
-local GameSys = game.Sys.new_metatable("world")
-function GameSys:on_start()
+World.World = {}
+setmetatable(World.World, Sim.Sim)
+World.World.__index = World.World
+World.World._is_world_sim = true
+World.World.Schema = Schema.AllOf(Sim.Sim.Schema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
+World.World.metatable_schema =
+	Schema.AllOf(Sim.Sim.metatable_schema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
+World.World.Sys = World.Sys
+function World.World.new(state, settings, metatable)
+	assert(Schema.Optional(Schema.SerializableObject)(state))
+	assert(Schema.Optional(Schema.SerializableObject)(settings))
+	assert(Schema.Optional(World.World.metatable_schema)(metatable))
+	return Sim.Sim.new(state, settings, metatable or World.World)
+end
+
+World.GameSys = Game.Sys.new_metatable("world")
+function World.GameSys:on_start()
 	if debug_checks_enabled then
-		assert(GameSys.schema(self))
-		assert(self.sim.status == sim.model.Status.started)
+		assert(World.GameSys.Schema(self))
+		assert(self.sim.status == Sim.Model.Status.started)
 	end
 
-	container.object_set_defaults(self.state, {
+	Container.set_defaults(self.state, {
 		initial_world = {},
 	})
 	self:set(self:new_world(self.state.initial_world))
 end
-function GameSys:new_world(state, settings)
+function World.GameSys:new_world(state, settings)
 	if debug_checks_enabled then
-		assert(GameSys.schema(self))
-		assert(self.sim.status == sim.model.Status.started)
+		assert(World.GameSys.Schema(self))
+		assert(self.sim.status == Sim.Model.Status.started)
 	end
 
 	state = state or {}
 	settings = settings or self.settings
-	assert(schema.SerializableObject(state))
-	assert(schema.SerializableObject(settings))
+	assert(Schema.SerializableObject(state))
+	assert(Schema.SerializableObject(settings))
 
-	local world = World.new(state, settings)
+	local world_sim = World.World.new(state, settings)
 
-	return world
+	return world_sim
 end
-function GameSys:reset()
+function World.GameSys:reset()
 	if debug_checks_enabled then
-		assert(GameSys.schema(self))
-		assert(self.sim.status == sim.model.Status.started)
+		assert(World.GameSys.Schema(self))
+		assert(self.sim.status == Sim.Model.Status.started)
 	end
 
 	if self.world == nil then
 		return
 	end
 
-	-- if this is new, we likely have an infinite loop of world creation
-	assert(self.world.status ~= sim.model.Status.new)
+	-- if this is new, we likely have an infinite loop of World creation
+	assert(self.world.status ~= Sim.Model.Status.new)
 
 	self.sim:broadcast("on_world_finalize", self.world)
 	self.world:finalize()
 	self.world = nil
 
 	if debug_checks_enabled then
-		assert(GameSys.schema(self))
+		assert(World.GameSys.Schema(self))
 	end
 end
-function GameSys:set(world)
+function World.GameSys:set(world_)
 	if debug_checks_enabled then
-		assert(GameSys.schema(self))
-		assert(World.schema(world))
-		assert(self.sim.status == sim.model.Status.started)
-		assert(world.status == sim.model.Status.new)
+		assert(World.GameSys.Schema(self))
+		assert(World.World.Schema(world_))
+		assert(self.sim.status == Sim.Model.Status.started)
+		assert(world_.status == Sim.Model.Status.new)
 	end
 
 	self:reset()
 
-	self.world = world
+	self.world = world_
 	self.sim:broadcast("on_world_init")
 
 	self.world:start()
 	self.sim:broadcast("on_world_start")
 
 	if debug_checks_enabled then
-		assert(GameSys.schema(self))
+		assert(World.GameSys.Schema(self))
 	end
 end
 
-local tests = testing.add_suite("engine.world", {
+World.tests = Testing.add_suite("engine.world", {
 	run_world = function()
-		local TestSys = Sys.new_metatable("test")
-		local world = World.new()
-		world:require(TestSys)
-		world:start()
-		world:finalize()
+		local TestSys = World.Sys.new_metatable("test")
+		local world_sim = World.World.new()
+		world_sim:require(TestSys)
+		world_sim:start()
+		world_sim:step()
+		world_sim:finalize()
 	end,
 	run_game = function()
-		local game_ = game.Game.new()
-
-		local world_game = game_:require(GameSys)
-		game_:start()
+		local game_sim = Game.Game.new()
+		local world_game = game_sim:require(World.GameSys)
+		game_sim:start()
+		game_sim:step()
 		world_game:set(world_game:new_world())
-		game_:finalize()
+		game_sim:step()
+		game_sim:finalize()
 	end
 })
 
-local world = {}
-world.Sys = Sys
-world.World = World
-world.GameSys = GameSys
-world.tests = tests
-
-return world
+return World

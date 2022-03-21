@@ -1,22 +1,23 @@
-local logging = require("engine/core/logging")
-local debugging = require("engine/core/debugging")
+local Logging = require("engine/core/logging")
+local Debugging = require("engine/core/debugging")
 
-local CallWatcher = {}
-CallWatcher.__index = CallWatcher
+local Testing = {}
 
-function CallWatcher:reset()
+Testing.CallWatcher = {}
+Testing.CallWatcher.__index = Testing.CallWatcher
+function Testing.CallWatcher:reset()
 	self.calls = {}
 end
-function CallWatcher:assert_not_called()
+function Testing.CallWatcher:assert_not_called()
 	assert(#self.calls == 0, "must not be called")
 end
-function CallWatcher:assert_called()
+function Testing.CallWatcher:assert_called()
 	assert(#self.calls > 0, "must be called at least once")
 end
-function CallWatcher:assert_called_once()
+function Testing.CallWatcher:assert_called_once()
 	assert(#self.calls == 1, "must be called exactly once")
 end
-function CallWatcher.create(fn)
+function Testing.CallWatcher.create(fn)
 	assert(
 		type(fn) == "function" or type(fn) == "nil",
 		"fn must be a function or nil")
@@ -27,7 +28,7 @@ function CallWatcher.create(fn)
 	local watcher = {
 		calls = {},
 	}
-	setmetatable(watcher, CallWatcher)
+	setmetatable(watcher, Testing.CallWatcher)
 	function watcher.call (...)
 		watcher.calls[#watcher.calls + 1] = {...}
 		return fn(...)
@@ -35,32 +36,32 @@ function CallWatcher.create(fn)
 
 	return watcher
 end
-function CallWatcher.patch(xs, key, fn)
+function Testing.CallWatcher.patch(xs, key, fn)
 	assert(type(xs) == "table", "xs must be a table")
 
 	if fn == nil then
 		fn = xs[key]
 	end
-	local watcher = CallWatcher.create(fn)
+	local watcher = Testing.CallWatcher.create(fn)
 	xs[key] = watcher.call
 	return watcher
 end
 
-local Test = {}
-Test.__index = Test
-function Test:run()
-	logging.debug("Running test %s.%s", self.suite_name, self.name)
+Testing.Test = {}
+Testing.Test.__index = Testing.Test
+function Testing.Test:run()
+	Logging.debug("Running test %s.%s", self.suite_name, self.name)
 
-	local ok, err = debugging.pcall(self.fn)
+	local ok, err = Debugging.pcall(self.fn)
 	if not ok then
-		logging.error("Failed test %s.%s, err=\n%s", self.suite_name, self.name, err)
+		Logging.error("Failed test %s.%s, err=\n%s", self.suite_name, self.name, err)
 		return false
 	end
 
-	logging.debug("Completed test %s.%s", self.suite_name, self.name)
+	Logging.debug("Completed test %s.%s", self.suite_name, self.name)
 	return true
 end
-function Test.create(suite_name, name, fn)
+function Testing.Test.create(suite_name, name, fn)
 	assert(type(suite_name) == "string", "suite_name must be a string")
 	assert(type(name) == "string", "name must be a string")
 	assert(type(fn) == "function", "fn must be a function")
@@ -71,18 +72,18 @@ function Test.create(suite_name, name, fn)
 		name = name,
 		fn = fn,
 	}
-	setmetatable(test, Test)
+	setmetatable(test, Testing.Test)
 	return test
 end
 
-local TestSuite = {}
-TestSuite.__index = TestSuite
-function TestSuite:add(test)
+Testing.TestSuite = {}
+Testing.TestSuite.__index = Testing.TestSuite
+function Testing.TestSuite:add(test)
 	assert(test._is_test_instance, "test must be a test")
 
 	self.tests[#self.tests + 1] = test
 end
-function TestSuite.create(name)
+function Testing.TestSuite.create(name)
 	assert(type(name) == "string", "name must be a string")
 
 	local suite = {
@@ -90,10 +91,10 @@ function TestSuite.create(name)
 		name = name,
 		tests = {},
 	}
-	setmetatable(suite, TestSuite)
+	setmetatable(suite, Testing.TestSuite)
 	return suite
 end
-function TestSuite:run()
+function Testing.TestSuite:run()
 	local ok = true
 	for _, test in ipairs(self.tests) do
 		if not test:run() then
@@ -104,25 +105,23 @@ function TestSuite:run()
 	return ok
 end
 
-local testing = {}
-testing.CallWatcher = CallWatcher
-testing.test_suites = {}
-function testing.assert_fails(fn, ...)
-	local debugger_enabled = debugging.debugger_enabled
+Testing.test_suites = {}
+function Testing.assert_fails(fn, ...)
+	local debugger_enabled = Debugging.debugger_enabled
 	if debugger_enabled then
-		debugging.set_debugger_enabled(false)
+		Debugging.set_debugger_enabled(false)
 	end
 	local result = pcall(fn, ...)
 	if debugger_enabled then
-		debugging.set_debugger_enabled(true)
+		Debugging.set_debugger_enabled(true)
 	end
 	assert(not result, "fn must raise an error")
 end
-function testing.add_suite(suite_name, test_name_fn_map)
+function Testing.add_suite(suite_name, test_name_fn_map)
 	assert(type(suite_name) == "string", "suite_name must be a string")
 	assert(type(test_name_fn_map) == "table", "test_name_fn_map must be a table")
 
-	local test_suite = TestSuite.create(suite_name)
+	local test_suite = Testing.TestSuite.create(suite_name)
 	for test_name, test_fn in pairs(test_name_fn_map) do
 		assert(
 			type(test_name) == "string",
@@ -131,16 +130,16 @@ function testing.add_suite(suite_name, test_name_fn_map)
 			type(test_fn) == "function",
 			"test_name_fn_map must be a string: function mapping")
 
-		test_suite:add(Test.create(suite_name, test_name, test_fn))
+		test_suite:add(Testing.Test.create(suite_name, test_name, test_fn))
 	end
-	testing.test_suites[#testing.test_suites + 1] = test_suite
+	Testing.test_suites[#Testing.test_suites + 1] = test_suite
 	return test_suite
 end
-function testing.run_all()
-	logging.info("Running all lua tests")
+function Testing.run_all()
+	Logging.info("Running all lua tests")
 	local count = 0
 	local ok = true
-	for _, test_suite in ipairs(testing.test_suites) do
+	for _, test_suite in ipairs(Testing.test_suites) do
 		if not test_suite:run() then
 			ok = false
 		end
@@ -148,27 +147,27 @@ function testing.run_all()
 	end
 
 	if not ok then
-		logging.info("Not all lua tests completed successfully")
+		Logging.info("Not all lua tests completed successfully")
 		return false
 	end
 
-	logging.info("Completed %s lua tests", count)
+	Logging.info("Completed %s lua tests", count)
 	return true
 end
-function testing.suppress_errors(fn)
-	local debugger_enabled = debugging.debugger_enabled
+function Testing.suppress_errors(fn)
+	local debugger_enabled = Debugging.debugger_enabled
 	if debugger_enabled then
-		debugging.set_debugger_enabled(false)
+		Debugging.set_debugger_enabled(false)
 	end
 
-	logging.push_level(logging.Level.none)
+	Logging.push_level(Logging.Level.none)
 	fn()
 
 	if debugger_enabled then
-		debugging.set_debugger_enabled(true)
+		Debugging.set_debugger_enabled(true)
 	end
 
-	assert(logging.pop_level() == true)
+	assert(Logging.pop_level() == true)
 end
 
-return testing
+return Testing

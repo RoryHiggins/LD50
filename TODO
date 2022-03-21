@@ -58,6 +58,18 @@ world.GameSys : game.Sys
 	on_step()  # invokes world.step()
 	on_stop()  # invokes world.set_status(Status.stopped)
 
+
+# TODO 
+camera.model.Camera : schema.SerializableObject
+	transform: {translate_x, translate_y, scale_x, scale_y, rotate_z : num|nil}
+	viewport: {x, y, width, height} : num
+camera.Sys : sim.Sys
+	set(name: str, camera.model.Camera)
+	find(name: str) : camera.model.Camera|nil
+	on_start()
+	state
+		cameras : {[str]: camera.model.Camera}
+
 client.wrappers
 client.Context
 	step()
@@ -73,7 +85,7 @@ client.WorldSys : world.Sys
 	render_target: client.RenderTarget
 	_context: Context
 client.GameSys : game.Sys
-	on_step()  # invokes on_draw(client.wrappers.VertexArray, client.Context), context.step()
+	on_step()  # invokes context.step(), {client,world}.on_draw(client.wrappers.VertexArray), 
 	on_world_new()  # creates client.WorldSys
 	settings
 		window
@@ -82,25 +94,6 @@ client.GameSys : game.Sys
 	context: client.Context
 
 
-
-camera.model.Camera : schema.SerializableObject
-	transform: {translate_x, translate_y, scale_x, scale_y, rotate_z : num|nil}
-	viewport: {x, y, w, h} : num
-camera.GameSys : world.Sys
-	set(name: str, camera.model.Camera)
-	find(name: str) : camera.model.Camera|nil
-	on_world_new()
-	on_draw()  # invokes world.on_draw(client.wrappers.VertexArray, client.Context), adds vertices for each view
-	state
-		views : {[str]: camera.model.Camera}
-camera.WorldSys : world.Sys
-	set(name: str, camera.model.Camera)
-	find(name: str) : camera.model.Camera|nil
-	on_start()  # ensures "default" view exists
-	on_step()  # invokes world.on_draw(client.wrappers.VertexArray)
-	state
-		cameras : {[str]: camera.model.Camera}
-	render_target: client.RenderTarget
 
 controller.model.Input : schema.SerializableObject
 	held: bool
@@ -166,12 +159,12 @@ tag.WorldSys : world.Sys
 	_entity_world: entity.WorldSys
 
 bounds.model.Component : schema.SerializableObject
-	x, y, w, h: num
+	x, y, width, height: num
 bounds.WorldSys
-	find_in(x, y, w, h: num, entity.model.Entity, ...tags: [str]) : entity.model.Entity|nil
-	find_all_in(x, y, w, h: num, entity.model.Entity, ...tags: [str]) : [entity.model.Entity]
+	find_in(x, y, width, height: num, entity.model.Entity, ...tags: [str]) : entity.model.Entity|nil
+	find_all_in(x, y, width, height: num, entity.model.Entity, ...tags: [str]) : [entity.model.Entity]
 	get(entity.model.Entity) : num, num, num, num
-	set(entity.model.Entity, x, y: num, w, h: num|nil)
+	set(entity.model.Entity, x, y: num, width, height: num|nil)
 	move(entity.model.Entity, offset_x, offset_y: num)
 	_entity_world: entity.WorldSys
 
@@ -181,7 +174,7 @@ sprite.model.Sprite : schema.SerializableObject
 sprite.model.Component : schema.SerializableObject
 	new(sprite_name: str) : sprite.model.Component
 	sprite_name: str
-	depth, r, g, b, a, scale_x, scale_y, translate_x, translate_y, rotate: num
+	z, r, g, b, a, scale_x, scale_y, translate_x, translate_y, rotate: num
 sprite.model.Allocation
 	atlas_region_id: num
 	u1, v1, u2, v2: num
@@ -229,7 +222,7 @@ text.model.Font : schema.SerializableObject
 	type = "ascii"  # only currently supported type
 text.model.Component : schema.SerializableObject
 	font_name: str
-	depth, r, g, b, a, max_width, max_height: num
+	z, r, g, b, a, max_width, max_height: num
 text.WorldSys : world.Sys
 	set(entity.model.Entity, text.model.Component)
 	set_text(entity.model.Entity, font_name: str, text: str, max_width, max_height: num|nil)
