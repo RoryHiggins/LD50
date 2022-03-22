@@ -9,7 +9,7 @@ local Schema = {}
 Schema.integer_min = integer_min
 Schema.integer_max = integer_max
 function Schema.error(format, ...)
-	return string.format("Schema error:\n%s\n"..format, debug.traceback(), ...)
+	return string.format("Schema error:\n"..format, ...)
 end
 function Schema.Any()
 	return true
@@ -149,7 +149,7 @@ function Schema.Object(condition_map, additional_value_condition)
 			local result, err = condition(value)
 			if not result then
 				return false, Schema.error(
-					"Schema.Object(%s): invalid value=%s / missing value for key=%s, error=%s", x, value, key, err)
+					"Schema.Object(%s): invalid value=%s, key=%s, error=%s", x, value, key, err)
 			end
 		end
 		return true
@@ -183,8 +183,9 @@ function Schema.AllOf(...)
 
 	return function(x)
 		for _, condition in ipairs(conditions) do
-			if not condition(x) then
-				return false, Schema.error("Schema.AllOf(%s): no match", x)
+			local result, err = condition(x)
+			if not result then
+				return false, Schema.error("Schema.AllOf(%s): no match, err=%s", x, err)
 			end
 		end
 		return true

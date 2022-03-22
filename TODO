@@ -66,6 +66,7 @@ camera.model.Camera : schema.SerializableObject
 camera.Sys : sim.Sys
 	set(name: str, camera.model.Camera)
 	find(name: str) : camera.model.Camera|nil
+	all() : {[str]: camera.model.Camera}
 	on_start()
 	state
 		cameras : {[str]: camera.model.Camera}
@@ -85,7 +86,7 @@ client.WorldSys : world.Sys
 	render_target: client.RenderTarget
 	_context: Context
 client.GameSys : game.Sys
-	on_step()  # invokes context.step(), {client,world}.on_draw(client.wrappers.VertexArray), 
+	on_step()  # invokes context.step(), {game,world}.on_draw(), 
 	on_world_new()  # creates client.WorldSys
 	settings
 		window
@@ -133,7 +134,7 @@ entity.WorldSys : world.Sys
 	set(entity.model.Entity, src: schema.SerializableObject|nil)
 	update(entity.model.Entity, src: schema.SerializableObject)
 	destroy(entity.model.Entity)
-	iterate() : [entity.model.Entity]
+	all() : [entity.model.Entity]
 	find(name: str) : entity.model.Entity|nil
 	set_name(entity.model.Entity, name: str) : str
 	require_name(entity.model.Entity) : str
@@ -155,7 +156,7 @@ tag.WorldSys : world.Sys
 	set(entity.model.Entity, ...tags: [str])  # invokes on_entity_tag_set
 	add(entity.model.Entity, ...tags: [str])
 	remove(entity.model.Entity, ...tags: [str])
-	iterate(tag: str) : [entity.model.Entity]
+	all(tag: str) : [entity.model.Entity]
 	_entity_world: entity.WorldSys
 
 bounds.model.Component : schema.SerializableObject
@@ -183,7 +184,7 @@ sprite.WorldSys : world.Sys
 	set_name(entity.model.Entity, sprite_name: str)
 	remove(entity.model.Entity)
 	draw(client.wrappers.VertexArray, sprite.model.Component, x, y: num)
-	on_draw(client.wrappers.VertexArray)  # draw the sprites of entites
+	on_draw()  # draw the sprites of entites
 sprite.GameSys : game.Sys
 	add_png(file_name: str, sprites: {[str]: sprite.model.Sprite]})
 	find(sprite_name: str) : sprite.model.Sprite|nil
@@ -228,7 +229,7 @@ text.WorldSys : world.Sys
 	set_text(entity.model.Entity, font_name: str, text: str, max_width, max_height: num|nil)
 	remove(entity.model.Entity)
 	draw(client.wrappers.VertexArray, text.model.Component, x, y: num)
-	on_draw(client.wrappers.VertexArray)  # draw the text of entites
+	on_draw()  # draw the text of entites
 	_animation_game: animation.GameSys : game.Sys
 	_sprite_game: sprite.GameSys : game.Sys
 text.GameSys : game.Sys

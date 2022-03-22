@@ -23,6 +23,11 @@ Sim.Sys.Schema = Schema.PartialObject{
 	sim = Schema.PartialObject{_is_sim_instance = Schema.Optional(Schema.Const(true))},
 	state = Schema.SerializableObject,
 	settings = Schema.SerializableObject,
+	draw = Schema.Optional(Schema.Function),
+	on_init = Schema.Optional(Schema.Function),
+	on_start = Schema.Optional(Schema.Function),
+	on_step = Schema.Optional(Schema.Function),
+	on_stop = Schema.Optional(Schema.Function),
 	_is_sys = Schema.Const(true),
 	_is_sys_instance = Schema.Const(true),
 }
@@ -214,6 +219,9 @@ function Sim.Sim:broadcast_pcall(event_name, ...)
 		assert(Sim.Sim.Schema(self))
 	end
 	return send_ok
+end
+function Sim.Sim:all()
+	return self._systems_by_init_order
 end
 function Sim.Sim:step()
 	if debug_checks_enabled then

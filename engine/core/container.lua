@@ -18,6 +18,18 @@ function Container.get_keys(xs)
 
 	return keys
 end
+function Container.get_values(xs)
+	if debug_checks_enabled then
+		assert(Schema.Table(xs))
+	end
+
+	local values = {}
+	for _, value in pairs(xs) do
+		values[#values + 1] = value
+	end
+
+	return values
+end
 function Container.get_equal_for_keys(keys, xs, ys)
 	if debug_checks_enabled then
 		assert(Schema.Table(xs))
@@ -139,6 +151,13 @@ function Container.array_slice(xs, from, to)
 	end
 
 	return {Shim.unpack(xs, from, to)}
+end
+function Container.array_try_find(xs, key)
+	for i, x in ipairs(xs) do
+		if x == key then
+			return i
+		end
+	end
 end
 function Container.string_escape(str)
 	return (
@@ -267,6 +286,21 @@ Container.tests = Testing.add_suite("core.Container", {
 			Container.assert_equal(Container.get_keys(value), expected)
 		end
 	end,
+	table_get_values = function()
+		local test_value_expected_pairs = {
+			{{}, {}},
+			{{1}, {1}},
+			{{a = 1, 2, 3}, {1, 2, 3}},
+			{{a = 1}, {2}},
+		}
+		for _, pair in ipairs(test_value_expected_pairs) do
+			local value, expected = pair[1], pair[2]
+			Container.assert_equal(
+				table.sort(Container.get_values(value)),
+				table.sort(expected)
+			)
+		end
+	end,
 	table_get_equal_for_keys = function()
 		assert(Container.get_equal_for_keys({1, 2}, {5, 10, 15}, {5, 10, 20}))
 		assert(not Container.get_equal_for_keys({1, 2, 3}, {5, 10, 15}, {5, 10, 20}))
@@ -324,6 +358,13 @@ Container.tests = Testing.add_suite("core.Container", {
 			local value, from, to, expected = tuple[1], tuple[2], tuple[3], tuple[4]
 			Container.assert_equal(Container.array_slice(value, from, to), expected)
 		end
+	end,
+	array_try_find = function()
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 1) == 1)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 4) == 4)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, "5") == 5)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 0) == nil)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 5) == nil)
 	end,
 	string_escape = function()
 		local test_value_expected_pairs = {

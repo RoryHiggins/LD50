@@ -7,11 +7,16 @@ local Game = {}
 Game.Sys = {}
 setmetatable(Game.Sys, Sim.Sys)
 Game.Sys.__index = Game.Sys
-Game.Sys.Schema = Schema.AllOf(
-	Sim.Sys.Schema, Schema.PartialObject{_is_game_sys = Schema.Optional(Schema.Const(true))})
-Game.Sys.metatable_schema = Schema.AllOf(
-	Sim.Sys.metatable_schema, Schema.PartialObject{_is_game_sys = Schema.Optional(Schema.Const(true))})
+Game.Sys.Schema = Schema.AllOf(Sim.Sys.Schema, Schema.PartialObject{
+	_is_game_sys = Schema.Optional(Schema.Const(true)),
+	_is_world_sys = Schema.Optional(Schema.Const(false)),
+})
+Game.Sys.metatable_schema = Schema.AllOf(Sim.Sys.metatable_schema, Schema.PartialObject{
+	_is_game_sys = Schema.Optional(Schema.Const(true)),
+	_is_world_sys = Schema.Optional(Schema.Const(false)),
+})
 Game.Sys._is_game_sys = true
+Game.Sys._is_world_sys = false
 function Game.Sys.new_metatable(sys_name, metatable)
 	assert(Schema.LabelString(sys_name))
 	assert(Schema.Optional(Game.Sys.metatable_schema)(metatable))

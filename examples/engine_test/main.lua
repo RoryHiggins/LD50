@@ -6,7 +6,7 @@ local AsciiFont = Client.wrappers.AsciiFont
 local EntityIndex = Client.wrappers.EntityIndex
 
 -- TODO move into GameSys.on_draw() once that is hooked up
-local function game_draw_vertices(vertex_array, ascii_font, entity_index, width, height)
+local function world_draw_vertices(vertex_array, ascii_font, entity_index, width, height)
 	vertex_array:add_triangle(0,0, 0,height, width,0, 255,0,0,255)
 	vertex_array:add_triangle(width,0, 0,height, width,height, 0,255,0,255)
 	vertex_array:add_line(0,0,width,height, 0,0,0,255, 0)
@@ -37,12 +37,12 @@ local function window_draw_vertices(vertex_array, width, height)
 	vertex_array:add_triangle(40,0, 0,40, 40,40, 255,255,0,255)
 end
 
-local EngineTestExample = Game.Sys.new_metatable("engine_test_example")
-function EngineTestExample:on_init()
-	self.world_game = self.sim:require(World.GameSys)
-	self.context = self.sim:require(Client.GameSys).context
+local ExampleGameSys = Game.Sys.new_metatable("engine_test_example")
+function ExampleGameSys:on_init()
+	self._world_game = self.sim:require(World.GameSys)
+	self._client = self.sim:require(Client.GameSys)
 
-	self.sprites_u, self.sprites_v = self.context.texture_atlas:set_region_png_file{
+	self.sprites_u, self.sprites_v = self._client.context.texture_atlas:set_region_png_file{
 		id = 0, filename = './examples/engine_test/data/sprites.png'}
 
 	self.ascii_font = AsciiFont.new{
@@ -59,13 +59,14 @@ function EngineTestExample:on_init()
 			i, self.sprites_u + 16, self.sprites_v + 24, self.sprites_u + 24, self.sprites_v + 32)
 	end
 end
-function EngineTestExample:on_step()
-	local context = self.context
-	local target = self.world_game.world:get(Client.WorldSys).render_target
+function ExampleGameSys:on_step()
+	local context = self._client.context
+	local client_world = self._world_game.world:get(Client.WorldSys)
+	local target = client_world._render_target
 
-	game_draw_vertices(
-		target.vertex_array, self.ascii_font, self.entity_index, target.settings.width, target.settings.height)
-	window_draw_vertices(context.vertex_array, context.settings.window.width, context.settings.window.height)
+	world_draw_vertices(
+		client_world:get_vertex_array(), self.ascii_font, self.entity_index, target.settings.width, target.settings.height)
+	window_draw_vertices(self._client:get_vertex_array(), context.settings.window.width, context.settings.window.height)
 
 	context.renderer:clear{target = target.render_texture, color = {255, 255, 255, 255}}
 
@@ -77,19 +78,19 @@ function EngineTestExample:on_step()
 		render_state = offset_render_state,
 		src = context.texture_atlas,
 		target = target.render_texture,
-		vertex_array = target.vertex_array}
+		vertex_array = client_world:get_vertex_array()}
 
 	context.renderer:draw_texture{render_state = context.render_state_passthrough, src = target.render_texture}
 	context.renderer:draw_vertex_array{
 		render_state = context.render_state_ortho_2d,
 		src = context.texture_atlas,
-		vertex_array = context.vertex_array}
+		vertex_array = self._client:get_vertex_array()}
 end
 
 
 local function main()
 	local game_sim = Game.Game.new()
-	game_sim:require(EngineTestExample)
+	game_sim:require(ExampleGameSys)
 	game_sim:run()
 end
 

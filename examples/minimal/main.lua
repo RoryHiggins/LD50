@@ -1,22 +1,51 @@
 local Game = require("engine/engine/game")
+local World = require("engine/engine/world")
 local Client = require("engine/engine/client")
+local Camera = require("engine/engine/camera")
 
-local MinimalExample = Game.Sys.new_metatable("minimal_example")
+local MinimalExample = World.Sys.new_metatable("minimal_example")
 function MinimalExample:on_init()
-	self.client = self.sim:require(Client.GameSys)
+	self._client_world = self.sim:require(Client.WorldSys)
+	self._camera_world = self.sim:require(Camera.WorldSys)
+end
+function MinimalExample:on_draw()
+	local vertex_array = self._client_world:get_vertex_array()
+	vertex_array:add_triangle(0,0, 0,64, 64,0, 255,0,0,255)
+	vertex_array:add_triangle(64,0, 0,64, 64,64, 0,255,0,255)
 end
 function MinimalExample:on_step()
-	local context = self.client.context
-
-	context.vertex_array:add_triangle(0,0, 0,512, 512,0, 255,0,0,255)
-	context.vertex_array:add_triangle(512,0, 0,512, 512,512, 0,255,0,255)
-
-	local render_state_mouse_local = context.render_state_ortho_2d:copy():transform_view{
-		translate_x = context.mouse.x - 256, translate_y = context.mouse.y - 256}
-	context.renderer:draw_vertex_array{
-		render_state = render_state_mouse_local, src = context.texture_atlas, vertex_array = context.vertex_array}
+	local mouse_x, mouse_y = self._client_world:_get_mouse_pos()
+	local width, height = self._client_world:get_size()
+	self._camera_world:set_pos(
+		self._camera_world.default_name,
+		mouse_x - (width / 2),
+		mouse_y - (height / 2)
+	)
 end
 
-local game_sim = Game.Game.new()
-game_sim:require(MinimalExample)
-game_sim:run()
+local state = {}
+local settings = {
+	client = {
+		context = {
+			window = {
+				width = 640,
+				height = 640,
+			}
+		}
+	},
+	world = {
+		initial_world = {
+			client = {
+				render_target = {
+					width = 64,
+					height = 64,
+				}
+			}
+		}
+	}
+}
+local game = Game.Game.new(state, settings)
+game:require(Client.GameSys)
+game:require(World.GameSys):require_world_sys(MinimalExample)
+-- require("engine/core/debugging").breakpoint()
+game:run()

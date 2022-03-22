@@ -4,6 +4,7 @@ local Container = require("engine/core/container")
 local Testing = require("engine/core/testing")
 local Game = require("engine/engine/game")
 local World = require("engine/engine/world")
+local Camera = require("engine/engine/camera")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
 
@@ -24,13 +25,13 @@ Client.Context = {}
 Client.Context.__index = Client.Context
 Client.Context.Settings = {}
 Client.Context.Settings.Schema = Schema.Object{
-	window = Schema.Optional(Schema.Object{
+	window = Schema.Object{
+		width = Schema.PositiveInteger,
+		height = Schema.PositiveInteger,
 		caption = Schema.Optional(Schema.String),
-		width = Schema.Optional(Schema.PositiveInteger),
-		height = Schema.Optional(Schema.PositiveInteger),
 		vsync = Schema.Optional(Schema.Boolean),
 		visible = Schema.Optional(Schema.Boolean),
-	})
+	}
 }
 Client.Context.Settings.defaults = {
 	window = {
@@ -46,7 +47,6 @@ Client.Context.Schema = Schema.Object{
 	window = Client.wrappers.Schema("Window"),
 	texture_atlas = Client.wrappers.Schema("TextureAtlas"),
 	renderer = Client.wrappers.Schema("Renderer"),
-	vertex_array = Client.wrappers.Schema("VertexArray"),
 	render_state_ortho_2d = Client.wrappers.Schema("RenderState"),
 	render_state_passthrough = Client.wrappers.Schema("RenderState"),
 	mouse = Schema.Object{
@@ -70,7 +70,6 @@ function Client.Context.new(settings)
 	context.window = Client.wrappers.Window.new(settings.window)
 	context.texture_atlas = Client.wrappers.TextureAtlas.new{window = context.window}
 	context.renderer = Client.wrappers.Renderer.new{window = context.window}
-	context.vertex_array = Client.wrappers.VertexArray.new{}
 	context.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = context.window}
 	context.render_state_passthrough = Client.wrappers.RenderState.new{target = context.window}
 	context.mouse = context.window:get_mouse_state()
@@ -93,7 +92,6 @@ function Client.Context:step()
 		return false
 	end
 
-	self.vertex_array:init{}
 	self.render_state_ortho_2d:init_ortho_2d{target = self.window}
 	self.render_state_passthrough:init{target = self.window}
 	self.renderer:clear{color = {255, 255, 255, 255}}
@@ -126,7 +124,6 @@ Client.RenderTarget.Schema = Schema.Object{
 	settings = Client.RenderTarget.Settings.Schema,
 	context = Client.Context.Schema,
 	render_texture = Client.wrappers.Schema("RenderTexture"),
-	vertex_array = Client.wrappers.Schema("VertexArray"),
 	render_state_ortho_2d = Client.wrappers.Schema("RenderState"),
 	render_state_passthrough = Client.wrappers.Schema("RenderState"),
 }
@@ -143,7 +140,6 @@ function Client.RenderTarget.new(context, settings)
 	render_target.context = context
 	render_target.render_texture = Client.wrappers.RenderTexture.new{
 		window = context.window, width = settings.width, height = settings.height}
-	render_target.vertex_array = Client.wrappers.VertexArray.new{}
 	render_target.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = render_target.render_texture}
 	render_target.render_state_passthrough = Client.wrappers.RenderState.new{target = render_target.render_texture}
 	setmetatable(render_target, Client.RenderTarget)
@@ -159,7 +155,6 @@ function Client.RenderTarget:step()
 		assert(Client.RenderTarget.Schema(self))
 	end
 
-	self.vertex_array:init{}
 	self.render_state_ortho_2d:init_ortho_2d{target = self.render_texture}
 	self.render_state_passthrough:init{target = self.render_texture}
 	self.context.renderer:clear{target = self.render_texture, color = {255, 255, 255, 255}}
@@ -173,19 +168,77 @@ Client.WorldSys.Settings.Schema = Schema.Object{
 Client.WorldSys.Settings.defaults = {
 	render_target = Client.RenderTarget.Settings.defaults,
 }
+function Client.WorldSys:draw()
+	local world_vertex_array = self._vertex_array
+	world_vertex_array:init{}
+
+	self.sim:broadcast("on_draw")
+
+	if self._game_client.state.headless then
+		return
+	end
+
+	self._render_target:step()
+
+	local context = self._game_client.context
+	for _, camera in ipairs(self._camera_sys:all_depth_ordered()) do
+		local camera_render_state = self._render_target.render_state_ortho_2d:copy()
+		if camera.transform ~= nil then
+			camera_render_state:transform_view(camera.transform)
+		end
+		if camera.viewport ~= nil then
+			camera_render_state:set_viewport_ortho_2d(camera.viewport)
+		end
+
+		context.renderer:clear{
+			target = self._render_target.render_texture,
+			color = {255, 255, 255, 255},
+		}
+		context.renderer:draw_vertex_array{
+			render_state = camera_render_state,
+			src = context.texture_atlas,
+			target = self._render_target.render_texture,
+			vertex_array = self._vertex_array
+		}
+	end
+
+	context.renderer:draw_texture{
+		render_state = context.render_state_passthrough,
+		src = self._render_target.render_texture,
+	}
+end
+function Client.WorldSys:get_vertex_array()
+	return self._vertex_array
+end
+function Client.WorldSys:get_size()
+	if self._game_client.state.headless then
+		return 0, 0
+	end
+
+	return self._render_target.settings.width, self._render_target.settings.height
+end
+function Client.WorldSys:_get_mouse_pos()
+	if self._game_client.state.headless then
+		return 0, 0
+	end
+
+	local mouse_x, mouse_y = self._game_client:get_mouse_pos()
+	local width, height = self:get_size()
+	local game_width, game_height = self._game_client:get_size()
+	return ((mouse_x / game_width) * width), ((mouse_y / game_height) * height)
+end
+function Client.WorldSys:on_init()
+	Container.set_defaults(self.settings, Client.WorldSys.Settings.defaults)
+
+	self._vertex_array = Client.wrappers.VertexArray.new{}
+	self._camera_sys = self.sim:require(Camera.WorldSys)
+end
 function Client.WorldSys:on_start()
 	if self._game_client.state.headless then
 		return
 	end
 
-	self.render_target = Client.RenderTarget.new(self._game_client.context, self.settings)
-end
-function Client.WorldSys:on_step()
-	if self._game_client.state.headless then
-		return
-	end
-
-	self.render_target:step()
+	self._render_target = Client.RenderTarget.new(self._game_client.context, self.settings.render_target)
 end
 
 Client.GameSys = Game.Sys.new_metatable("client")
@@ -199,9 +252,58 @@ Client.GameSys.Settings.defaults = {
 	context = Client.Context.Settings.defaults,
 }
 Client.GameSys.State = Client.GameSys.Settings
+
+function Client.GameSys:get_size()
+	local context_state = self.state.context
+	if context_state == nil then
+		return 0, 0
+	end
+
+	return context_state.window.width, context_state.window.height
+end
+function Client.GameSys:get_mouse_pos()
+	if self.context == nil then
+		return 0, 0
+	end
+
+	return self.context.mouse.x, self.context.mouse.y
+end
+function Client.GameSys:get_vertex_array()
+	return self._vertex_array
+end
+function Client.GameSys:draw()
+	self._vertex_array:init{}
+
+	self.sim:broadcast("on_draw")
+
+	if not self.state.headless then
+		self.context.renderer:clear{
+			color = {255, 255, 255, 255},
+		}
+	end
+
+	local world = self._world_sys.world
+	if world ~= nil then
+		world:get(Client.WorldSys):draw()
+	end
+
+	if self.state.headless then
+		return
+	end
+
+	self.context.renderer:draw_vertex_array{
+		render_state = self.context.render_state_ortho_2d,
+		src = self.context.texture_atlas,
+		vertex_array = self._vertex_array
+	}
+end
 function Client.GameSys:on_init()
 	Container.set_defaults(self.settings, Client.GameSys.Settings.defaults)
 	Container.set_defaults(self.state, Client.GameSys.State.defaults)
+
+	self._vertex_array = Client.wrappers.VertexArray.new{}
+	self._world_sys = self.sim:require(World.GameSys)
+	self._world_sys:require_world_sys(Client.WorldSys)
 
 	if not self.settings.headless then
 		self.context = Client.Context.new(self.settings.context)
@@ -221,13 +323,16 @@ function Client.GameSys:on_step()
 	end
 
 	if not self.context:step() then
-		self.sim.enqueue_finalize()
+		self.sim:enqueue_finalize()
+		return
 	end
+
+	self:draw()
 
 	Container.update(self.state.context, self.context.settings)
 end
 function Client.GameSys:on_world_init()
-	self.sim:get(World.GameSys).world:require(Client.WorldSys)._game_client = self
+	self._world_sys.world:get(Client.WorldSys)._game_client = self
 end
 
 Client.tests = Testing.add_suite("engine.client", {
