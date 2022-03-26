@@ -58,8 +58,6 @@ world.GameSys : game.Sys
 	on_step()  # invokes world.step()
 	on_stop()  # invokes world.set_status(Status.stopped)
 
-
-# TODO 
 camera.model.Camera : schema.SerializableObject
 	transform: {translate_x, translate_y, scale_x, scale_y, rotate_z : num|nil}
 	viewport: {x, y, width, height} : num
@@ -94,7 +92,8 @@ client.GameSys : game.Sys
 			vsync: bool
 	context: client.Context
 
-
+# ^ DONE
+# v TODO
 
 controller.model.Input : schema.SerializableObject
 	held: bool

@@ -61,7 +61,7 @@ Sim.Sim.Schema = Schema.PartialObject{
 	finalize_enqueued = Schema.Boolean,
 	_is_sim = Schema.Const(true),
 	_is_sim_instance = Schema.Const(true),
-	_systems_by_name = Schema.Mapping(Schema.String, Sim.Sys.Schema),
+	_systems = Schema.Mapping(Schema.String, Sim.Sys.Schema),
 	_systems_by_init_order = Schema.Array(Sim.Sys.Schema),
 	_systems_by_event_cached = Schema.Mapping(Schema.String, Schema.Array(Sim.Sys.Schema)),
 }
@@ -87,7 +87,7 @@ function Sim.Sim.new(state, settings, metatable)
 		step_count = 0,
 		finalize_enqueued = false,
 		_is_sim_instance = true,
-		_systems_by_name = {},
+		_systems = {},
 		_systems_by_init_order = {},
 		_systems_by_event_cached = {},
 	}
@@ -107,7 +107,7 @@ function Sim.Sim:require(sys_metatable)
 	end
 
 	local sys_name = sys_metatable.sys_name
-	local sys = self._systems_by_name[sys_name]
+	local sys = self._systems[sys_name]
 	if sys ~= nil then
 		Logging.trace("returning existing system %s", sys_name)
 		return sys
@@ -123,13 +123,18 @@ function Sim.Sim:require(sys_metatable)
 	}
 	setmetatable(sys, sys_metatable)
 
-	self._systems_by_name[sys_name] = sys
-	self._systems_by_init_order[#self._systems_by_init_order + 1] = sys
-	self._systems_by_event_cached = {}  -- clear event cache
+	-- register name _before_ init, to tolerate circular dependencies
+	self._systems[sys_name] = sys
 
 	if sys.on_init ~= nil then
 		sys:on_init(self)
 	end
+
+	-- register order _after_ init, so dependencies receive messages first
+	self._systems_by_init_order[#self._systems_by_init_order + 1] = sys
+
+	-- clear event cache
+	self._systems_by_event_cached = {}
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -148,29 +153,10 @@ function Sim.Sim:get(sys_metatable)
 		assert(Schema.LabelString(sys_name))
 	end
 
-	return self._systems_by_name[sys_name]
+	return self._systems[sys_name]
 end
-function Sim.Sim:_cache_systems_for_event(event_name)
-	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-		assert(Schema.LabelString(event_name))
-	end
-
-	Logging.debug("regenerating cache of systems for event_name %s", event_name)
-
-	local event_systems = {}
-	for _, sys in ipairs(self._systems_by_init_order) do
-		if sys[event_name] ~= nil then
-			event_systems[#event_systems + 1] = sys
-		end
-	end
-	self._systems_by_event_cached[event_name] = event_systems
-
-	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-	end
-
-	return event_systems
+function Sim.Sim:get_all()
+	return self._systems_by_init_order
 end
 function Sim.Sim:broadcast(event_name, ...)
 	if debug_checks_enabled then
@@ -220,8 +206,18 @@ function Sim.Sim:broadcast_pcall(event_name, ...)
 	end
 	return send_ok
 end
-function Sim.Sim:all()
-	return self._systems_by_init_order
+function Sim.Sim:start()
+	if debug_checks_enabled then
+		assert(Sim.Sim.Schema(self))
+		assert(self.status == Sim.Model.Status.new)
+	end
+
+	self.status = Sim.Model.Status.started
+	self:broadcast("on_start")
+
+	if debug_checks_enabled then
+		assert(Sim.Sim.Schema(self))
+	end
 end
 function Sim.Sim:step()
 	if debug_checks_enabled then
@@ -236,19 +232,6 @@ function Sim.Sim:step()
 	if self.finalize_enqueued then
 		self:finalize()
 	end
-
-	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-	end
-end
-function Sim.Sim:start()
-	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-		assert(self.status == Sim.Model.Status.new)
-	end
-
-	self.status = Sim.Model.Status.started
-	self:broadcast("on_start")
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -288,6 +271,28 @@ function Sim.Sim:run()
 	while self.status == Sim.Model.Status.started do
 		self:step()
 	end
+end
+function Sim.Sim:_cache_systems_for_event(event_name)
+	if debug_checks_enabled then
+		assert(Sim.Sim.Schema(self))
+		assert(Schema.LabelString(event_name))
+	end
+
+	Logging.debug("regenerating cache of systems for event_name %s", event_name)
+
+	local event_systems = {}
+	for _, sys in ipairs(self._systems_by_init_order) do
+		if sys[event_name] ~= nil then
+			event_systems[#event_systems + 1] = sys
+		end
+	end
+	self._systems_by_event_cached[event_name] = event_systems
+
+	if debug_checks_enabled then
+		assert(Sim.Sim.Schema(self))
+	end
+
+	return event_systems
 end
 
 Sim.tests = Testing.add_suite("engine.sim", {

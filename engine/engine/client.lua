@@ -168,19 +168,21 @@ Client.WorldSys.Settings.Schema = Schema.Object{
 Client.WorldSys.Settings.defaults = {
 	render_target = Client.RenderTarget.Settings.defaults,
 }
+Client.WorldSys.State = {}
+Client.WorldSys.State.Schema = Client.WorldSys.Settings.Schema
+Client.WorldSys.State.defaults = Client.WorldSys.Settings.defaults
 function Client.WorldSys:draw()
 	local world_vertex_array = self._vertex_array
 	world_vertex_array:init{}
 
 	self.sim:broadcast("on_draw")
 
-	if self._game_client.state.headless then
+	if self._context == nil then
 		return
 	end
 
 	self._render_target:step()
 
-	local context = self._game_client.context
 	for _, camera in ipairs(self._camera_sys:all_depth_ordered()) do
 		local camera_render_state = self._render_target.render_state_ortho_2d:copy()
 		if camera.transform ~= nil then
@@ -190,20 +192,20 @@ function Client.WorldSys:draw()
 			camera_render_state:set_viewport_ortho_2d(camera.viewport)
 		end
 
-		context.renderer:clear{
+		self._context.renderer:clear{
 			target = self._render_target.render_texture,
 			color = {255, 255, 255, 255},
 		}
-		context.renderer:draw_vertex_array{
+		self._context.renderer:draw_vertex_array{
 			render_state = camera_render_state,
-			src = context.texture_atlas,
+			src = self._context.texture_atlas,
 			target = self._render_target.render_texture,
 			vertex_array = self._vertex_array
 		}
 	end
 
-	context.renderer:draw_texture{
-		render_state = context.render_state_passthrough,
+	self._context.renderer:draw_texture{
+		render_state = self._context.render_state_passthrough,
 		src = self._render_target.render_texture,
 	}
 end
@@ -211,34 +213,48 @@ function Client.WorldSys:get_vertex_array()
 	return self._vertex_array
 end
 function Client.WorldSys:get_size()
-	if self._game_client.state.headless then
-		return 0, 0
-	end
-
-	return self._render_target.settings.width, self._render_target.settings.height
+	return self.state.render_target.width, self.state.render_target.height
 end
 function Client.WorldSys:_get_mouse_pos()
-	if self._game_client.state.headless then
+	if self._context == nil then
 		return 0, 0
 	end
 
-	local mouse_x, mouse_y = self._game_client:get_mouse_pos()
+	local mouse_x, mouse_y = self._context.mouse.x, self._context.mouse.y
 	local width, height = self:get_size()
-	local game_width, game_height = self._game_client:get_size()
+	local game_width, game_height = self._context.settings.window.width, self._context.settings.window.height
 	return ((mouse_x / game_width) * width), ((mouse_y / game_height) * height)
+end
+function Client.WorldSys:set_size(width, height)
+	if debug_checks_enabled then
+		assert(Schema.PositiveInteger(width))
+		assert(Schema.PositiveInteger(height))
+	end
+
+	self.state.render_target.width = width
+	self.state.render_target.height = height
+	if self._context ~= nil then
+		self._render_target = Client.RenderTarget.new(self._context, self.state.render_target)
+	end
 end
 function Client.WorldSys:on_init()
 	Container.set_defaults(self.settings, Client.WorldSys.Settings.defaults)
+	Container.set_defaults(self.state, Client.WorldSys.State.defaults)
 
-	self._vertex_array = Client.wrappers.VertexArray.new{}
 	self._camera_sys = self.sim:require(Camera.WorldSys)
-end
-function Client.WorldSys:on_start()
-	if self._game_client.state.headless then
-		return
+	self._vertex_array = Client.wrappers.VertexArray.new{}
+	self._context = self.sim._game._context
+
+	Container.update(self.state, self.settings)
+	if self._context ~= nil then
+		self._render_target = Client.RenderTarget.new(self._context, self.state.render_target)
 	end
 
-	self._render_target = Client.RenderTarget.new(self._game_client.context, self.settings.render_target)
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Settings.Schema(self.settings))
+		assert(Client.WorldSys.State.Schema(self.state))
+		assert(Schema.Optional(Client.Context.Schema)(self._context))
+	end
 end
 
 Client.GameSys = Game.Sys.new_metatable("client")
@@ -274,9 +290,7 @@ end
 function Client.GameSys:draw()
 	self._vertex_array:init{}
 
-	self.sim:broadcast("on_draw")
-
-	if not self.state.headless then
+	if self.context ~= nil then
 		self.context.renderer:clear{
 			color = {255, 255, 255, 255},
 		}
@@ -287,7 +301,9 @@ function Client.GameSys:draw()
 		world:get(Client.WorldSys):draw()
 	end
 
-	if self.state.headless then
+	self.sim:broadcast("on_draw")
+
+	if self.context == nil then
 		return
 	end
 
@@ -305,8 +321,9 @@ function Client.GameSys:on_init()
 	self._world_sys = self.sim:require(World.GameSys)
 	self._world_sys:require_world_sys(Client.WorldSys)
 
-	if not self.settings.headless then
+	if self.settings.headless ~= true then
 		self.context = Client.Context.new(self.settings.context)
+		self.sim._context = self.context
 	end
 
 	Container.update(self.state, self.settings)
@@ -318,7 +335,7 @@ function Client.GameSys:on_init()
 	end
 end
 function Client.GameSys:on_step()
-	if self.state.headless then
+	if self.context == nil then
 		return
 	end
 
@@ -331,17 +348,42 @@ function Client.GameSys:on_step()
 
 	Container.update(self.state.context, self.context.settings)
 end
-function Client.GameSys:on_world_init()
-	self._world_sys.world:get(Client.WorldSys)._game_client = self
-end
 
 Client.tests = Testing.add_suite("engine.client", {
 	run_headless = function()
-		local game_sim = Game.Game.new({}, {client = {headless = true}})
-		game_sim:require(Client.GameSys)
-		game_sim:start()
-		game_sim:step()
-		game_sim:finalize()
+		local game = Game.Game.new({}, {client = {headless = true}})
+		local client_game = game:require(Client.GameSys)
+		local world_sys = game:require(World.GameSys)
+
+		game:start()
+		local width, height = client_game:get_size()
+		local mouse_x, mouse_y = client_game:get_mouse_pos()
+		game:step()
+		client_game:draw()
+		assert(Schema.PositiveInteger(width))
+		assert(Schema.PositiveInteger(height))
+		assert(Schema.NonNegativeInteger(mouse_x))
+		assert(Schema.NonNegativeInteger(mouse_y))
+
+		local world = world_sys.world
+		local client_world = world:get(Client.WorldSys)
+		assert(type(client_world:get_vertex_array()) == "userdata")
+		width, height = client_world:get_size()
+		mouse_x, mouse_y = client_world:_get_mouse_pos()
+		assert(Schema.PositiveInteger(width))
+		assert(Schema.PositiveInteger(height))
+		assert(Schema.NonNegativeInteger(mouse_x))
+		assert(Schema.NonNegativeInteger(mouse_y))
+
+		client_world:set_size(32, 32)
+		width, height = client_world:get_size()
+		world:step()
+		client_world:draw()
+		assert(width == 32)
+		assert(height == 32)
+
+		world:finalize()
+		game:finalize()
 	end
 })
 

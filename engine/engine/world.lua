@@ -56,6 +56,7 @@ function World.GameSys:new_world(state, settings)
 	assert(Schema.SerializableObject(settings))
 
 	local world = World.World.new(state, settings)
+	world._game = self.sim
 	for _, sys_metatable in ipairs(self._world_systems) do
 		world:require(sys_metatable)
 	end
@@ -65,7 +66,6 @@ end
 function World.GameSys:reset()
 	if debug_checks_enabled then
 		assert(World.GameSys.Schema(self))
-		assert(self.sim.status == Sim.Model.Status.started)
 	end
 
 	if self.world == nil then
@@ -75,8 +75,11 @@ function World.GameSys:reset()
 	-- if this is new, we likely have an infinite loop of World creation
 	assert(self.world.status ~= Sim.Model.Status.new)
 
-	self.sim:broadcast("on_world_finalize")
-	self.world:finalize()
+	if self.world.status ~= Sim.Model.Status.finalized then
+		self.sim:broadcast("on_world_finalize")
+		self.world:finalize()
+	end
+
 	self.world = nil
 
 	if debug_checks_enabled then
@@ -95,7 +98,6 @@ function World.GameSys:set(world)
 
 	self.world = world
 	self.sim._world = world
-	self.world._game = self.sim
 	self.sim:broadcast("on_world_init")
 
 	self.world:start()
@@ -116,6 +118,10 @@ function World.GameSys:require_world_sys(sys_metatable)
 end
 function World.GameSys:on_init()
 	self._world_systems = {}
+
+	Container.set_defaults(self.state, {
+		initial_world = {},
+	})
 end
 function World.GameSys:on_step()
 	if self.world ~= nil then
@@ -123,15 +129,10 @@ function World.GameSys:on_step()
 	end
 end
 function World.GameSys:on_start()
-	if debug_checks_enabled then
-		assert(World.GameSys.Schema(self))
-		assert(self.sim.status == Sim.Model.Status.started)
-	end
-
-	Container.set_defaults(self.state, {
-		initial_world = {},
-	})
 	self:set(self:new_world(self.state.initial_world, self.settings.initial_world))
+end
+function World.GameSys:on_finalize()
+	self:reset()
 end
 
 World.tests = Testing.add_suite("engine.world", {
