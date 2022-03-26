@@ -36,10 +36,14 @@ World.World.Schema = Schema.AllOf(Sim.Sim.Schema, Schema.PartialObject{_is_world
 World.World.metatable_schema =
 	Schema.AllOf(Sim.Sim.metatable_schema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
 World.World.Sys = World.Sys
-function World.World.new(state, metatable)
+function World.World.new(game, state, metatable)
 	assert(Schema.Optional(Schema.SerializableObject)(state))
 	assert(Schema.Optional(World.World.metatable_schema)(metatable))
-	return Sim.Sim.new(state, metatable or World.World)
+
+	local world = Sim.Sim.new(state, metatable or World.World)
+	world._game = game
+
+	return world
 end
 
 World.GameSys = Game.Sys.new_metatable("world")
@@ -55,8 +59,7 @@ function World.GameSys:new_world(state)
 	state = state or {}
 	assert(Schema.SerializableObject(state))
 
-	local world = World.World.new(state)
-	world._game = self.sim
+	local world = World.World.new(self.sim, state)
 	for _, sys_metatable in ipairs(self._world_systems) do
 		world:require(sys_metatable)
 	end
@@ -139,8 +142,10 @@ end
 
 World.tests = Testing.add_suite("engine.world", {
 	run_world = function()
+		local game = Game.Game.new()
+
 		local TestSys = World.Sys.new_metatable("test")
-		local world = World.World.new()
+		local world = World.World.new(game)
 		world:require(TestSys)
 		world:start()
 		world:step()

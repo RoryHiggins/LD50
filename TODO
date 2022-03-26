@@ -86,7 +86,7 @@ client.WorldSys : world.Sys
 client.GameSys : game.Sys
 	on_step()  # invokes context.step(), {game,world}.on_draw(), 
 	on_world_new()  # creates client.WorldSys
-	settings
+	state
 		window
 			width, height, fps_limit: num
 			vsync: bool
@@ -126,8 +126,6 @@ controller.GameSys : game.Sys
 	set_bindings([controller.Binding])
 	state
 		controllers: [input.Controller]
-		bindings: [controller.Binding]
-	settings
 		bindings: [controller.Binding]
 
 entity.Entity : schema.SerializableObject
@@ -174,96 +172,100 @@ bounds.WorldSys
 
 sprite.Sprite : schema.SerializableObject
 	file_name: str
+	file_type = "png"
 	u1, v1, u2, v2: num
 sprite.Component : schema.SerializableObject
-	new(sprite_name: str) : sprite.Component
 	sprite_name: str
-	z, r, g, b, a, scale_x, scale_y, translate_x, translate_y, rotate: num
-sprite.Allocation
+	z, r, g, b, a, scale_x, scale_y, translate_x, translate_y, rotate: num?
+sprite.AtlasRegion
 	atlas_region_id: num
 	u1, v1, u2, v2: num
 sprite.WorldSys : world.Sys
+	add_sprite(sprite.Sprite)
+	find_sprite(sprite_name: str) : sprite.Sprite
+	draw_sprite(client.wrappers.VertexArray, sprite.Component)
 	set(entity.Entity, sprite.Component)
 	set_name(entity.Entity, sprite_name: str)
 	remove(entity.Entity)
-	draw(client.wrappers.VertexArray, sprite.Component, x, y: num)
 	on_draw()  # draw the sprites of entites
-sprite.GameSys : game.Sys
-	add_png(file_name: str, sprites: {[str]: sprite.Sprite]})
-	find(sprite_name: str) : sprite.Sprite|nil
-	draw(client.wrappers.VertexArray, sprite.Component, x, y: num)
-	get_atlas_coords(sprite_name: str) : num, num, num, num
-	on_start()
 	state
-		sprites: {[str]: sprite.Sprite}
-	_sprite_allocations: {[str]: sprite.Allocation}
+		spritesheets: {[str]: sprite.Spritesheet}
+sprite.GameSys : game.Sys
+	load_png(file_name: str)
+	unload(file_name: str)
+	_sprite_cache: {[str]: sprite.Allocation}
+	_atlas_region_by_filename: {[str]: sprite.AtlasRegion}
 
 animation.Animation : schema.SerializableObject
-	frames: [str]
+	frames: [str]  # sprite names
 animation.Component : schema.SerializableObject
 	anim_name: str
-	pos: num
+	frame_id: num
 	loop: bool
-	ended: bool
 animation.WorldSys : world.Sys
+	add_animation(anim_name: str, animation.Animation)
+	find_animation(anim_name: str) : animation.Animation|nil
 	set(entity.Entity, animation.Component)
 	set_name(entity.Entity, anim_name: str)
+	set_frame_id(entity.Entity, frame_id: num)
+	get_ended(entity.Entity) : bool  # frame_id == #frames
 	remove(entity.Entity)
 	on_step()  # progress the animation of entities
 	_animation_game: animation.GameSys : game.Sys
 	_sprite_game: sprite.GameSys : game.Sys
-
-animation.GameSys : game.Sys
-	set(anim_name: str, animation.Animation)
-	find(anim_name: str) : animation.Animation
-	on_start()
-	state
-		animations: {[str]: animation.Animation}
-	# optimization: index frames by anim for fast frame updates
 
 text.Font : schema.SerializableObject
 	filename: str
 	type = "ascii"  # only currently supported type
 text.Component : schema.SerializableObject
 	font_name: str
-	z, r, g, b, a, max_width, max_height: num
+	z, r, g, b, a, translate_x, translate_y, max_width, max_height: num?
 text.WorldSys : world.Sys
+	add_font(font_name: str, text.Font)
+	find_font(font_name: str) : text.Font|nil
+	draw_text(client.wrappers.VertexArray, text.Component)
 	set(entity.Entity, text.Component)
-	set_text(entity.Entity, font_name: str, text: str, max_width, max_height: num|nil)
+	set_text(entity.Entity, text: str)
 	remove(entity.Entity)
-	draw(client.wrappers.VertexArray, text.Component, x, y: num)
-	on_draw()  # draw the text of entites
-	_animation_game: animation.GameSys : game.Sys
-	_sprite_game: sprite.GameSys : game.Sys
-text.GameSys : game.Sys
-	set(font_name: str, text.Font)
-	find(font_name: str) : text.Font|nil
-	draw(client.wrappers.VertexArray, text.Component, x, y: num)
-	on_start()
+	on_draw()  # draw entity text components
 	state
-		fonts: {[str]: text.Font}
-	_ascii_font_assets: {[str]: client.wrappers.AsciiFont}
+		fonts: 
+	_game_text: text.GameSys
+text.GameSys : game.Sys
+	load(text.Font)
+	unload(text.Font)
+	_ascii_font_by_filename: {[str]: client.wrappers.AsciiFont}
+	_texture_atlas: client.wrappers.TextureAtlas
 
 audio.Audio : schema.SerializableObject
 	filename: str
 	volume: num  # 0..1
-audio.PlaybackSettings : schema.SerializableObject
 audio.PlaybackId : schema.Number
+audio.Playback : schema.SerializableObject
+	audio_name: str
 	loop_count, cutoff_time, fadein_time, volume : num
 	loop_forever : bool
-audio.GameSys : game.Sys
+audio.WorldSys : world.Sys
 	add(audio_name: str, audio.Audio)
 	find(audio_name: str) : audio.Audio|nil
-	play(audio.Audio, audio.PlaybackSettings|nil) : audio.PlaybackId
-	playing(audio.PlaybackId) : bool
+	play(audio.Playback) : audio.PlaybackId
 	stop(audio.PlaybackId)
 	stop_all()
+	_game_audio: audio.GameSys
+audio.GameSys : game.Sys
+	load(audio.Audio)
+	unload(audio.Audio)
+	_audio_by_filename: {[str]: client.wrappers.Audio}
+
+music.WorldSys
+	play(audio_name: str)
+	stop()
+	get_name() : str|nil
 	state
-		audio: [audio.Audio]
-	_assets: {[str]: client.wrappers.Audio}
+		audio_name: str
 
 camera_target.Component : schema.SerializableObject
-	entity_name: str
+	camera_name: str
 	speed: num?
 	margin: num?
 camera_target.WorldSys : world.Sys
@@ -274,6 +276,9 @@ camera_target.WorldSys : world.Sys
 
 Client TODOs
 ============
+Small important TODOs
+	Allocate 1x1 white pixel at topleft of texture atlas
+
 Big TODOs
 	Unicode font loading, unicode text rendering
 	adjustable 2D positions for positional audio playback?
