@@ -27,7 +27,7 @@ schema
 	SerializableObject: function(x) -> bool
 	SerializableArray: function(x) -> bool
 
-sim.model.Status : schema.Enum{new, running, stopped}
+sim.Status : schema.Enum{new, running, stopped}
 sim.Sys : Metatable
 	new_metatable(name: str) : Metatable[sim.Sys]
 	on_init()?, on_init()?, on_start()?, on_step()?, on_stop()?
@@ -39,7 +39,7 @@ sim.Sim
 	broadcast(event_name: str, ...args: [schema.SerializableObject])
 	state: schema.SerializableObject
 	settings: schema.SerializableObject
-	status: sim.model.Status
+	status: sim.Status
 	current_step: num
 	_systems: {[str]: sim.Sys}
 	_systems_ordered: [sim.Sys]
@@ -58,16 +58,16 @@ world.GameSys : game.Sys
 	on_step()  # invokes world.step()
 	on_stop()  # invokes world.set_status(Status.stopped)
 
-camera.model.Camera : schema.SerializableObject
+camera.Camera : schema.SerializableObject
 	transform: {translate_x, translate_y, scale_x, scale_y, rotate_z : num|nil}
 	viewport: {x, y, width, height} : num
 camera.Sys : sim.Sys
-	set(name: str, camera.model.Camera)
-	find(name: str) : camera.model.Camera|nil
-	all() : {[str]: camera.model.Camera}
+	set(name: str, camera.Camera)
+	find(name: str) : camera.Camera|nil
+	all() : {[str]: camera.Camera}
 	on_start()
 	state
-		cameras : {[str]: camera.model.Camera}
+		cameras : {[str]: camera.Camera}
 
 client.wrappers
 client.Context
@@ -95,176 +95,180 @@ client.GameSys : game.Sys
 # ^ DONE
 # v TODO
 
-controller.model.Input : schema.SerializableObject
+controller.Input : schema.SerializableObject
 	held: bool
 	steps_in_state: num  # for tap detection
 	steps_in_last_state: num  # for double-tap detection
-controller.model.ControllerInputs : schema.SerializableObject
-	inputs: {[str]: controller.model.Input}  # by input name
+controller.Controller : schema.SerializableObject
+	inputs: {[str]: controller.Input}  # by input name
 	get_held(name: str) : bool
-	tapped(name: str) : bool
-	double_tapped(name: str, max_released_steps: num = 5) : bool
-	binding_find(name: str) : controller.model.Binding
-	binding_set(name: str, controller.model.Binding)
-controller.model.Inputs : schema.SerializableObject
-	controllers: [controller.model.ControllerInputs]  # by controller id -> input name
-controller.model.BindingType : enum str {"keyboard"}
-controller.model.Binding : schema.SerializableObject
-	input_name: str
+	get_released(name: str) : bool
+	get_double_tapped(name: str, max_released_steps: num = 5) : bool
+controller.Inputs : schema.SerializableObject
+	controllers: [controller.Controller]  # by controller id -> input name
+controller.BindingType : enum str {"keyboard"}
+controller.Binding : schema.SerializableObject
 	controller_id: num
-	type: controller.model.BindingType
+	input_name: str
+	type: controller.BindingType
 	keyboard_key: str?
 controller.WorldSys : world.Sys
-	on_input_change()
+	find(controller_id: num) : controller.Controller|nil
+	get_default() : controller.Controller
+	on_input_change(controller_id: num, )
 	state
-		inputs: input.model.Inputs
+		controllers: [input.Controller]
 controller.GameSys : game.Sys
-	find_controller(controller_id: num, input_name: str) : controller.model.Input|nil
+	find(controller_id: num) : controller.Controller|nil
+	get_default() : controller.Controller
 	on_step()  # updates inputs from bindings, triggers world.on_input(name, controller_id, held)
+	get_bindings() : [controller.Binding]
+	set_bindings([controller.Binding])
 	state
-		inputs: controller.model.Inputs
+		controllers: [input.Controller]
+		bindings: [controller.Binding]
 	settings
-		bindings: [controller.model.Binding]
+		bindings: [controller.Binding]
 
-entity.model.Entity : schema.SerializableObject
+entity.Entity : schema.SerializableObject
 	name: str|nil
 entity.WorldSys : world.Sys
-	add(src: schema.SerializableObject|nil) : entity.model.Entity
-	set(entity.model.Entity, src: schema.SerializableObject|nil)
-	update(entity.model.Entity, src: schema.SerializableObject)
-	destroy(entity.model.Entity)
-	all() : [entity.model.Entity]
-	find(name: str) : entity.model.Entity|nil
-	set_name(entity.model.Entity, name: str) : str
-	require_name(entity.model.Entity) : str
+	add(src: schema.SerializableObject|nil) : entity.Entity
+	set(entity.Entity, src: schema.SerializableObject|nil)
+	update(entity.Entity, src: schema.SerializableObject)
+	destroy(entity.Entity)
+	all() : [entity.Entity]
+	find(name: str) : entity.Entity|nil
+	set_name(entity.Entity, name: str) : str
+	require_name(entity.Entity) : str
 	on_start()
 	state
-		entities: [entity.model.Entity]
+		entities: [entity.Entity]
 	_tag_id_to_tag: [str]
 	_tag_to_tag_id: {[str]: num}
-	_entity_to_entity_id: {[entity.model.Entity]: num}
-	_entity_name_to_entity: {[str]: entity.model.Entity}
-	_tag_to_entities: {[str]: [entity.model.Entity]}
+	_entity_to_entity_id: {[entity.Entity]: num}
+	_entity_name_to_entity: {[str]: entity.Entity}
+	_tag_to_entities: {[str]: [entity.Entity]}
 	_entity_id_lookup_for_tag_to_entities: [{[str]: num}]  # for efficient cleanup of _tag_to_entities
 	_entity_index: EntityIndex
 	_sprite_game: sprite.GameSys : game.Sys  # for index access to atlas tex coords, which are not in world state
 
-tag.model.Component : schema.Mapping(schema.String, schema.String)
+tag.Component : schema.Mapping(schema.String, schema.String)
 tag.WorldSys : world.Sys
-	is_set(entity.model.Entity, ...tags: [str]) : bool
-	set(entity.model.Entity, ...tags: [str])  # invokes on_entity_tag_set
-	add(entity.model.Entity, ...tags: [str])
-	remove(entity.model.Entity, ...tags: [str])
-	all(tag: str) : [entity.model.Entity]
+	is_set(entity.Entity, ...tags: [str]) : bool
+	set(entity.Entity, ...tags: [str])  # invokes on_entity_tag_set
+	add(entity.Entity, ...tags: [str])
+	remove(entity.Entity, ...tags: [str])
+	all(tag: str) : [entity.Entity]
 	_entity_world: entity.WorldSys
 
-bounds.model.Component : schema.SerializableObject
+bounds.Component : schema.SerializableObject
 	x, y, width, height: num
 bounds.WorldSys
-	find_in(x, y, width, height: num, entity.model.Entity, ...tags: [str]) : entity.model.Entity|nil
-	find_all_in(x, y, width, height: num, entity.model.Entity, ...tags: [str]) : [entity.model.Entity]
-	get(entity.model.Entity) : num, num, num, num
-	set(entity.model.Entity, x, y: num, width, height: num|nil)
-	move(entity.model.Entity, offset_x, offset_y: num)
+	find_in(x, y, width, height: num, entity.Entity, ...tags: [str]) : entity.Entity|nil
+	find_all_in(x, y, width, height: num, entity.Entity, ...tags: [str]) : [entity.Entity]
+	get(entity.Entity) : num, num, num, num
+	set(entity.Entity, x, y: num, width, height: num|nil)
+	move(entity.Entity, offset_x, offset_y: num)
 	_entity_world: entity.WorldSys
 
-sprite.model.Sprite : schema.SerializableObject
+sprite.Sprite : schema.SerializableObject
 	file_name: str
 	u1, v1, u2, v2: num
-sprite.model.Component : schema.SerializableObject
-	new(sprite_name: str) : sprite.model.Component
+sprite.Component : schema.SerializableObject
+	new(sprite_name: str) : sprite.Component
 	sprite_name: str
 	z, r, g, b, a, scale_x, scale_y, translate_x, translate_y, rotate: num
-sprite.model.Allocation
+sprite.Allocation
 	atlas_region_id: num
 	u1, v1, u2, v2: num
 sprite.WorldSys : world.Sys
-	set(entity.model.Entity, sprite.model.Component)
-	set_name(entity.model.Entity, sprite_name: str)
-	remove(entity.model.Entity)
-	draw(client.wrappers.VertexArray, sprite.model.Component, x, y: num)
+	set(entity.Entity, sprite.Component)
+	set_name(entity.Entity, sprite_name: str)
+	remove(entity.Entity)
+	draw(client.wrappers.VertexArray, sprite.Component, x, y: num)
 	on_draw()  # draw the sprites of entites
 sprite.GameSys : game.Sys
-	add_png(file_name: str, sprites: {[str]: sprite.model.Sprite]})
-	find(sprite_name: str) : sprite.model.Sprite|nil
-	draw(client.wrappers.VertexArray, sprite.model.Component, x, y: num)
+	add_png(file_name: str, sprites: {[str]: sprite.Sprite]})
+	find(sprite_name: str) : sprite.Sprite|nil
+	draw(client.wrappers.VertexArray, sprite.Component, x, y: num)
 	get_atlas_coords(sprite_name: str) : num, num, num, num
 	on_start()
 	state
-		sprites: {[str]: sprite.model.Sprite}
-	_sprite_allocations: {[str]: sprite.model.Allocation}
+		sprites: {[str]: sprite.Sprite}
+	_sprite_allocations: {[str]: sprite.Allocation}
 
-animation.model.Animation : schema.SerializableObject
+animation.Animation : schema.SerializableObject
 	frames: [str]
-animation.model.Component : schema.SerializableObject
+animation.Component : schema.SerializableObject
 	anim_name: str
 	pos: num
 	loop: bool
 	ended: bool
 animation.WorldSys : world.Sys
-	set(entity.model.Entity, animation.model.Component)
-	set_name(entity.model.Entity, anim_name: str)
-	remove(entity.model.Entity)
+	set(entity.Entity, animation.Component)
+	set_name(entity.Entity, anim_name: str)
+	remove(entity.Entity)
 	on_step()  # progress the animation of entities
 	_animation_game: animation.GameSys : game.Sys
 	_sprite_game: sprite.GameSys : game.Sys
 
 animation.GameSys : game.Sys
-	set(anim_name: str, animation.model.Animation)
-	find(anim_name: str) : animation.model.Animation
+	set(anim_name: str, animation.Animation)
+	find(anim_name: str) : animation.Animation
 	on_start()
 	state
-		animations: {[str]: animation.model.Animation}
+		animations: {[str]: animation.Animation}
 	# optimization: index frames by anim for fast frame updates
 
-text.model.Font : schema.SerializableObject
+text.Font : schema.SerializableObject
 	filename: str
 	type = "ascii"  # only currently supported type
-text.model.Component : schema.SerializableObject
+text.Component : schema.SerializableObject
 	font_name: str
 	z, r, g, b, a, max_width, max_height: num
 text.WorldSys : world.Sys
-	set(entity.model.Entity, text.model.Component)
-	set_text(entity.model.Entity, font_name: str, text: str, max_width, max_height: num|nil)
-	remove(entity.model.Entity)
-	draw(client.wrappers.VertexArray, text.model.Component, x, y: num)
+	set(entity.Entity, text.Component)
+	set_text(entity.Entity, font_name: str, text: str, max_width, max_height: num|nil)
+	remove(entity.Entity)
+	draw(client.wrappers.VertexArray, text.Component, x, y: num)
 	on_draw()  # draw the text of entites
 	_animation_game: animation.GameSys : game.Sys
 	_sprite_game: sprite.GameSys : game.Sys
 text.GameSys : game.Sys
-	set(font_name: str, text.model.Font)
-	find(font_name: str) : text.model.Font|nil
-	draw(client.wrappers.VertexArray, text.model.Component, x, y: num)
+	set(font_name: str, text.Font)
+	find(font_name: str) : text.Font|nil
+	draw(client.wrappers.VertexArray, text.Component, x, y: num)
 	on_start()
 	state
-		fonts: {[str]: text.model.Font}
+		fonts: {[str]: text.Font}
 	_ascii_font_assets: {[str]: client.wrappers.AsciiFont}
 
-audio.model.Audio : schema.SerializableObject
+audio.Audio : schema.SerializableObject
 	filename: str
 	volume: num  # 0..1
-audio.model.PlaybackSettings : schema.SerializableObject
-audio.model.PlaybackId : schema.Number
+audio.PlaybackSettings : schema.SerializableObject
+audio.PlaybackId : schema.Number
 	loop_count, cutoff_time, fadein_time, volume : num
 	loop_forever : bool
 audio.GameSys : game.Sys
-	add(audio_name: str, audio.model.Audio)
-	find(audio_name: str) : audio.model.Audio|nil
-	play(audio.model.Audio, audio.model.PlaybackSettings|nil) : audio.model.PlaybackId
-	playing(audio.model.PlaybackId) : bool
-	stop(audio.model.PlaybackId)
+	add(audio_name: str, audio.Audio)
+	find(audio_name: str) : audio.Audio|nil
+	play(audio.Audio, audio.PlaybackSettings|nil) : audio.PlaybackId
+	playing(audio.PlaybackId) : bool
+	stop(audio.PlaybackId)
 	stop_all()
 	state
-		audio: [audio.model.Audio]
+		audio: [audio.Audio]
 	_assets: {[str]: client.wrappers.Audio}
 
-camera_target.model.Component : schema.SerializableObject
+camera_target.Component : schema.SerializableObject
 	entity_name: str
 	speed: num?
 	margin: num?
 camera_target.WorldSys : world.Sys
-	set(entity.model.Entity, camera_target.model.Component)
-	remove(entity.model.Entity)
+	set(entity.Entity, camera_target.Component)
+	remove(entity.Entity)
 	on_step()
 	on_entity_destroy()  # remove if named view removed
 

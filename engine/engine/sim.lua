@@ -8,9 +8,8 @@ local Schema = require("engine/core/Schema")
 local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Sim = {}
-Sim.Model = {}
 
-Sim.Model.Status = {
+Sim.Status = {
 	new = "new",
 	started = "started",
 	finalized = "finalized",
@@ -56,7 +55,7 @@ Sim.Sim = {}
 Sim.Sim.Schema = Schema.PartialObject{
 	state = Schema.SerializableObject,
 	settings = Schema.SerializableObject,
-	status = Schema.Enum(Shim.unpack(Container.get_keys(Sim.Model.Status))),
+	status = Schema.Enum(Shim.unpack(Container.get_keys(Sim.Status))),
 	step_count = Schema.NonNegativeInteger,
 	finalize_enqueued = Schema.Boolean,
 	_is_sim = Schema.Const(true),
@@ -83,7 +82,7 @@ function Sim.Sim.new(state, settings, metatable)
 	local sim_instance = {
 		state = state,
 		settings = settings,
-		status = Sim.Model.Status.new,
+		status = Sim.Status.new,
 		step_count = 0,
 		finalize_enqueued = false,
 		_is_sim_instance = true,
@@ -103,7 +102,7 @@ function Sim.Sim:require(sys_metatable)
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(self.Sys.metatable_schema(sys_metatable))
-		assert(self.status == Sim.Model.Status.new)
+		assert(self.status == Sim.Status.new)
 	end
 
 	local sys_name = sys_metatable.sys_name
@@ -163,7 +162,7 @@ function Sim.Sim:broadcast(event_name, ...)
 		assert(Sim.Sim.Schema(self))
 		assert(Schema.LabelString(event_name))
 		assert(Schema.SerializableArray({...}))
-		assert(self.status == Sim.Model.Status.started)
+		assert(self.status == Sim.Status.started)
 	end
 
 	local event_systems = self._systems_by_event_cached[event_name]
@@ -184,7 +183,7 @@ function Sim.Sim:broadcast_pcall(event_name, ...)
 		assert(Sim.Sim.Schema(self))
 		assert(Schema.LabelString(event_name))
 		assert(Schema.SerializableArray({...}))
-		assert(self.status == Sim.Model.Status.started)
+		assert(self.status == Sim.Status.started)
 	end
 
 	local event_systems = self._systems_by_event_cached[event_name]
@@ -209,10 +208,10 @@ end
 function Sim.Sim:start()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.status == Sim.Model.Status.new)
+		assert(self.status == Sim.Status.new)
 	end
 
-	self.status = Sim.Model.Status.started
+	self.status = Sim.Status.started
 	self:broadcast("on_start")
 
 	if debug_checks_enabled then
@@ -222,7 +221,7 @@ end
 function Sim.Sim:step()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.status == Sim.Model.Status.started)
+		assert(self.status == Sim.Status.started)
 	end
 
 	self:broadcast("on_step")
@@ -240,7 +239,7 @@ end
 function Sim.Sim:enqueue_finalize()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.status == Sim.Model.Status.started)
+		assert(self.status == Sim.Status.started)
 	end
 
 	self.finalize_enqueued = true
@@ -248,14 +247,14 @@ end
 function Sim.Sim:finalize()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.status ~= Sim.Model.Status.finalized)
+		assert(self.status ~= Sim.Status.finalized)
 	end
 
-	if self.status == Sim.Model.Status.started then
+	if self.status == Sim.Status.started then
 		self:broadcast("on_finalize")
 	end
 
-	self.status = Sim.Model.Status.finalized
+	self.status = Sim.Status.finalized
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -264,11 +263,11 @@ end
 function Sim.Sim:run()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.status == Sim.Model.Status.new)
+		assert(self.status == Sim.Status.new)
 	end
 
 	self:start()
-	while self.status == Sim.Model.Status.started do
+	while self.status == Sim.Status.started do
 		self:step()
 	end
 end
@@ -378,7 +377,7 @@ Sim.tests = Testing.add_suite("engine.sim", {
 
 		sim_instance:enqueue_finalize()
 		sim_instance:step()
-		assert(sim_instance.status == Sim.Model.Status.finalized)
+		assert(sim_instance.status == Sim.Status.finalized)
 	end,
 })
 

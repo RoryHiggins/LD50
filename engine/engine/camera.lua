@@ -8,9 +8,8 @@ local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Camera = {}
 
-Camera.Model = {}
-Camera.Model.Camera = {}
-Camera.Model.Camera.Schema = Schema.Object{
+Camera.Camera = {}
+Camera.Camera.Schema = Schema.Object{
 	transform = Schema.Object{
 		translate_x = Schema.Number,
 		translate_y = Schema.Number,
@@ -27,21 +26,21 @@ Camera.Model.Camera.Schema = Schema.Object{
 		height = Schema.PositiveNumber,
 	}),
 }
-Camera.Model.Camera.defaults = {
+Camera.Camera.defaults = {
 	transform = {
 		translate_x = 0,
 		translate_y = 0,
 		translate_z = 0,
 	},
 }
-function Camera.Model.Camera.new_ortho_2d(x, y, z)
+function Camera.Camera.new_ortho_2d(x, y, z)
 	if debug_checks_enabled then
 		assert(Schema.Optional(Schema.Number)(x))
 		assert(Schema.Optional(Schema.Number)(y))
 		assert(Schema.Optional(Schema.Number)(z))
 	end
 
-	return Container.update({}, Camera.Model.Camera.defaults, {
+	return Container.update({}, Camera.Camera.defaults, {
 		transform = {
 			translate_x = x,
 			translate_y = y,
@@ -54,11 +53,11 @@ Camera.WorldSys = World.Sys.new_metatable("camera")
 Camera.WorldSys.default_name = "default"
 Camera.WorldSys.State = {}
 Camera.WorldSys.State.Schema = Schema.Object{
-	cameras = Schema.Mapping(Schema.LabelString, Camera.Model.Camera.Schema),
+	cameras = Schema.Mapping(Schema.LabelString, Camera.Camera.Schema),
 }
 Camera.WorldSys.State.defaults = {
 	cameras = {
-		[Camera.WorldSys.default_name] = Camera.Model.Camera.defaults,
+		[Camera.WorldSys.default_name] = Camera.Camera.defaults,
 	},
 }
 function Camera.WorldSys:on_init()
@@ -87,7 +86,7 @@ function Camera.WorldSys:set_pos(name, x, y, z)
 		assert(Schema.Optional(Schema.Number)(z))
 	end
 
-	self:set(name, Camera.Model.Camera.new_ortho_2d(x, y, z))
+	self:set(name, Camera.Camera.new_ortho_2d(x, y, z))
 end
 function Camera.WorldSys:find(name)
 	if debug_checks_enabled then
@@ -116,11 +115,11 @@ Camera.tests = Testing.add_suite("engine.Camera", {
 		local camera_sys = world_sim:require(Camera.WorldSys)
 		world_sim:start()
 
-		camera_sys:set("blah", Camera.Model.Camera.defaults)
-		camera_sys:set("blah2", Camera.Model.Camera.new_ortho_2d(1, 2, 3))
+		camera_sys:set("blah", Camera.Camera.defaults)
+		camera_sys:set("blah2", Camera.Camera.new_ortho_2d(1, 2, 3))
 		assert(camera_sys:find("blah2").transform.translate_y == 2)
 
-		assert(Camera.Model.Camera.Schema(camera_sys:find("blah2")))
+		assert(Camera.Camera.Schema(camera_sys:find("blah2")))
 
 		world_sim:step()
 		world_sim:finalize()

@@ -44,10 +44,17 @@ function World.World.new(state, settings, metatable)
 end
 
 World.GameSys = Game.Sys.new_metatable("world")
+World.GameSys.State = {}
+World.GameSys.State.Schema = Schema.Object{
+	initial_world = Schema.SerializableObject,
+}
+World.GameSys.State.defaults = {
+	initial_world = {}
+}
 function World.GameSys:new_world(state, settings)
 	if debug_checks_enabled then
 		assert(World.GameSys.Schema(self))
-		assert(self.sim.status == Sim.Model.Status.started)
+		assert(self.sim.status == Sim.Status.started)
 	end
 
 	state = state or {}
@@ -73,9 +80,9 @@ function World.GameSys:reset()
 	end
 
 	-- if this is new, we likely have an infinite loop of World creation
-	assert(self.world.status ~= Sim.Model.Status.new)
+	assert(self.world.status ~= Sim.Status.new)
 
-	if self.world.status ~= Sim.Model.Status.finalized then
+	if self.world.status ~= Sim.Status.finalized then
 		self.sim:broadcast("on_world_finalize")
 		self.world:finalize()
 	end
@@ -90,8 +97,8 @@ function World.GameSys:set(world)
 	if debug_checks_enabled then
 		assert(World.GameSys.Schema(self))
 		assert(World.World.Schema(world))
-		assert(self.sim.status == Sim.Model.Status.started)
-		assert(world.status == Sim.Model.Status.new)
+		assert(self.sim.status == Sim.Status.started)
+		assert(world.status == Sim.Status.new)
 	end
 
 	self:reset()
@@ -110,18 +117,20 @@ end
 function World.GameSys:require_world_sys(sys_metatable)
 	if debug_checks_enabled then
 		assert(World.Sys.metatable_schema(sys_metatable))
-		assert(self.sim.status == Sim.Model.Status.new)
+		assert(self.sim.status == Sim.Status.new)
 		assert(Container.array_try_find(self._world_systems, sys_metatable) == nil)
 	end
 
 	self._world_systems[#self._world_systems + 1] = sys_metatable
 end
 function World.GameSys:on_init()
+	Container.set_defaults(self.state, World.GameSys.State.defaults)
+
 	self._world_systems = {}
 
-	Container.set_defaults(self.state, {
-		initial_world = {},
-	})
+	if debug_checks_enabled then
+		assert(World.GameSys.State.Schema(self.state))
+	end
 end
 function World.GameSys:on_step()
 	if self.world ~= nil then
