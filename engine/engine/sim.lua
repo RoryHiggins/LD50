@@ -21,7 +21,6 @@ Sim.Sys.Schema = Schema.PartialObject{
 	sys_name = Schema.String,
 	sim = Schema.PartialObject{_is_sim_instance = Schema.Optional(Schema.Const(true))},
 	state = Schema.SerializableObject,
-	settings = Schema.SerializableObject,
 	draw = Schema.Optional(Schema.Function),
 	on_init = Schema.Optional(Schema.Function),
 	on_start = Schema.Optional(Schema.Function),
@@ -54,7 +53,6 @@ end
 Sim.Sim = {}
 Sim.Sim.Schema = Schema.PartialObject{
 	state = Schema.SerializableObject,
-	settings = Schema.SerializableObject,
 	status = Schema.Enum(Shim.unpack(Container.get_keys(Sim.Status))),
 	step_count = Schema.NonNegativeInteger,
 	finalize_enqueued = Schema.Boolean,
@@ -71,17 +69,14 @@ Sim.Sim.metatable_schema = Schema.PartialObject{
 Sim.Sim.__index = Sim.Sim
 Sim.Sim._is_sim = true
 Sim.Sim.Sys = Sim.Sys
-function Sim.Sim.new(state, settings, metatable)
+function Sim.Sim.new(state, metatable)
 	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(Schema.SerializableObject)(settings))
 	assert(Schema.Optional(Sim.Sim.metatable_schema)(metatable))
 	state = state or {}
-	settings = settings or {}
 	metatable = metatable or Sim.Sim
 
 	local sim_instance = {
 		state = state,
-		settings = settings,
 		status = Sim.Status.new,
 		step_count = 0,
 		finalize_enqueued = false,
@@ -117,7 +112,6 @@ function Sim.Sim:require(sys_metatable)
 		sys_name = sys_name,
 		sim = self,
 		state = self.state[sys_name] or {},
-		settings = self.settings[sys_name] or {},
 		_is_sys_instance = true,
 	}
 	setmetatable(sys, sys_metatable)

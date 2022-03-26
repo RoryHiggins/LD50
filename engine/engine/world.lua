@@ -36,33 +36,26 @@ World.World.Schema = Schema.AllOf(Sim.Sim.Schema, Schema.PartialObject{_is_world
 World.World.metatable_schema =
 	Schema.AllOf(Sim.Sim.metatable_schema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
 World.World.Sys = World.Sys
-function World.World.new(state, settings, metatable)
+function World.World.new(state, metatable)
 	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(Schema.SerializableObject)(settings))
 	assert(Schema.Optional(World.World.metatable_schema)(metatable))
-	return Sim.Sim.new(state, settings, metatable or World.World)
+	return Sim.Sim.new(state, metatable or World.World)
 end
 
 World.GameSys = Game.Sys.new_metatable("world")
 World.GameSys.State = {}
-World.GameSys.State.Schema = Schema.Object{
-	initial_world = Schema.SerializableObject,
-}
-World.GameSys.State.defaults = {
-	initial_world = {}
-}
-function World.GameSys:new_world(state, settings)
+World.GameSys.State.Schema = Schema.SerializableObject
+World.GameSys.State.defaults = {}
+function World.GameSys:new_world(state)
 	if debug_checks_enabled then
 		assert(World.GameSys.Schema(self))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
 	state = state or {}
-	settings = settings or self.settings
 	assert(Schema.SerializableObject(state))
-	assert(Schema.SerializableObject(settings))
 
-	local world = World.World.new(state, settings)
+	local world = World.World.new(state)
 	world._game = self.sim
 	for _, sys_metatable in ipairs(self._world_systems) do
 		world:require(sys_metatable)
@@ -138,7 +131,7 @@ function World.GameSys:on_step()
 	end
 end
 function World.GameSys:on_start()
-	self:set(self:new_world(self.state.initial_world, self.settings.initial_world))
+	self:set(self:new_world(self.state))
 end
 function World.GameSys:on_finalize()
 	self:reset()

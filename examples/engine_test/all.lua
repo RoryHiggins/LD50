@@ -16,7 +16,7 @@ local function main()
 	require('engine/lib/debugger/debugger')
 	require('engine/lib/json/json')
 	require("engine/core/testing").run_all()
-	require("engine/engine/client")
+	require("examples/engine_test/main")
 end
 require("engine/core/debugging").set_debugger_enabled(true)
 require("engine/core/debugging").pcall(main)

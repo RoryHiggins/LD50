@@ -32,11 +32,10 @@ Game.Game.Schema = Schema.AllOf(
 Game.Game.metatable_schema = Schema.AllOf(
 	Sim.Sim.metatable_schema, Schema.PartialObject{_is_game_sim = Schema.Const(true)})
 Game.Game.Sys = Game.Sys
-function Game.Game.new(state, settings, metatable)
+function Game.Game.new(state, metatable)
 	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(Schema.SerializableObject)(settings))
 	assert(Schema.Optional(Game.Game.metatable_schema)(metatable))
-	return Sim.Sim.new(state, settings, metatable or Game.Game)
+	return Sim.Sim.new(state, metatable or Game.Game)
 end
 
 Game.tests = Testing.add_suite("engine.game", {

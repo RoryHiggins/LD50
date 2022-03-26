@@ -23,27 +23,23 @@ end
 
 Client.Context = {}
 Client.Context.__index = Client.Context
-Client.Context.Settings = {}
-Client.Context.Settings.Schema = Schema.Object{
-	window = Schema.Object{
-		width = Schema.PositiveInteger,
-		height = Schema.PositiveInteger,
-		caption = Schema.Optional(Schema.String),
-		vsync = Schema.Optional(Schema.Boolean),
-		visible = Schema.Optional(Schema.Boolean),
-	}
+Client.Context.State = {}
+Client.Context.State.Schema = Schema.Object{
+	width = Schema.PositiveInteger,
+	height = Schema.PositiveInteger,
+	caption = Schema.Optional(Schema.String),
+	vsync = Schema.Optional(Schema.Boolean),
+	visible = Schema.Optional(Schema.Boolean),
 }
-Client.Context.Settings.defaults = {
-	window = {
-		caption = "",
-		width = 512,
-		height = 384,
-		vsync = true,
-		visible = true,
-	}
+Client.Context.State.defaults = {
+	caption = "",
+	width = 1024,
+	height = 768,
+	vsync = true,
+	visible = true,
 }
 Client.Context.Schema = Schema.Object{
-	settings = Client.Context.Settings.Schema,
+	state = Client.Context.State.Schema,
 	window = Client.wrappers.Schema("Window"),
 	texture_atlas = Client.wrappers.Schema("TextureAtlas"),
 	renderer = Client.wrappers.Schema("Renderer"),
@@ -58,16 +54,16 @@ Client.Context.Schema = Schema.Object{
 	},
 	step_count = Schema.NonNegativeInteger,
 }
-function Client.Context.new(settings)
-	settings = Container.set_defaults({}, settings or {}, Client.Context.Settings.defaults)
+function Client.Context.new(state)
+	state = Container.set_defaults({}, state or {}, Client.Context.State.defaults)
 
 	if debug_checks_enabled then
-		assert(Client.Context.Settings.Schema(settings))
+		assert(Client.Context.State.Schema(state))
 	end
 
 	local context = {}
-	context.settings = settings
-	context.window = Client.wrappers.Window.new(settings.window)
+	context.state = state
+	context.window = Client.wrappers.Window.new(state)
 	context.texture_atlas = Client.wrappers.TextureAtlas.new{window = context.window}
 	context.renderer = Client.wrappers.Renderer.new{window = context.window}
 	context.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = context.window}
@@ -100,7 +96,7 @@ function Client.Context:step()
 
 	self.mouse = self.window:get_mouse_state()
 
-	Container.update(self.settings.window, self.window:get_settings())
+	Container.update(self.state, self.window:get_settings())
 
 	if debug_checks_enabled then
 		assert(Client.Context.Schema(self))
@@ -111,35 +107,23 @@ end
 
 Client.RenderTarget = {}
 Client.RenderTarget.__index = Client.RenderTarget
-Client.RenderTarget.Settings = {}
-Client.RenderTarget.Settings.Schema = Schema.Object{
-	width = Schema.PositiveInteger,
-	height = Schema.PositiveInteger,
-}
-Client.RenderTarget.Settings.defaults = {
-	width = 256,
-	height = 192,
-}
 Client.RenderTarget.Schema = Schema.Object{
-	settings = Client.RenderTarget.Settings.Schema,
 	context = Client.Context.Schema,
 	render_texture = Client.wrappers.Schema("RenderTexture"),
 	render_state_ortho_2d = Client.wrappers.Schema("RenderState"),
 	render_state_passthrough = Client.wrappers.Schema("RenderState"),
 }
-function Client.RenderTarget.new(context, settings)
-	settings = Container.update({}, Client.RenderTarget.Settings.defaults, settings or {})
-
+function Client.RenderTarget.new(context, width, height)
 	if debug_checks_enabled then
 		assert(Client.Context.Schema(context))
-		assert(Client.RenderTarget.Settings.Schema(settings))
+		assert(Schema.PositiveInteger(width))
+		assert(Schema.PositiveInteger(height))
 	end
 
 	local render_target = {}
-	render_target.settings = settings
 	render_target.context = context
 	render_target.render_texture = Client.wrappers.RenderTexture.new{
-		window = context.window, width = settings.width, height = settings.height}
+		window = context.window, width = width, height = height}
 	render_target.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = render_target.render_texture}
 	render_target.render_state_passthrough = Client.wrappers.RenderState.new{target = render_target.render_texture}
 	setmetatable(render_target, Client.RenderTarget)
@@ -161,16 +145,15 @@ function Client.RenderTarget:step()
 end
 
 Client.WorldSys = World.Sys.new_metatable("client")
-Client.WorldSys.Settings = {}
-Client.WorldSys.Settings.Schema = Schema.Object{
-	render_target = Client.RenderTarget.Settings.Schema,
-}
-Client.WorldSys.Settings.defaults = {
-	render_target = Client.RenderTarget.Settings.defaults,
-}
 Client.WorldSys.State = {}
-Client.WorldSys.State.Schema = Client.WorldSys.Settings.Schema
-Client.WorldSys.State.defaults = Client.WorldSys.Settings.defaults
+Client.WorldSys.State.Schema = Schema.Object{
+	width = Schema.PositiveInteger,
+	height = Schema.PositiveInteger,
+}
+Client.WorldSys.State.defaults = {
+	width = 256,
+	height = 192,
+}
 function Client.WorldSys:draw()
 	local world_vertex_array = self._vertex_array
 	world_vertex_array:init{}
@@ -213,16 +196,18 @@ function Client.WorldSys:get_vertex_array()
 	return self._vertex_array
 end
 function Client.WorldSys:get_size()
-	return self.state.render_target.width, self.state.render_target.height
+	return self.state.width, self.state.height
 end
 function Client.WorldSys:_get_mouse_pos()
+	-- NOTE: for debug drawing only; not intended to be exposed to world
+
 	if self._context == nil then
 		return 0, 0
 	end
 
 	local mouse_x, mouse_y = self._context.mouse.x, self._context.mouse.y
 	local width, height = self:get_size()
-	local game_width, game_height = self._context.settings.window.width, self._context.settings.window.height
+	local game_width, game_height = self._context.state.width, self._context.state.height
 	return ((mouse_x / game_width) * width), ((mouse_y / game_height) * height)
 end
 function Client.WorldSys:set_size(width, height)
@@ -231,51 +216,40 @@ function Client.WorldSys:set_size(width, height)
 		assert(Schema.PositiveInteger(height))
 	end
 
-	self.state.render_target.width = width
-	self.state.render_target.height = height
+	self.state.width = width
+	self.state.height = height
+
 	if self._context ~= nil then
-		self._render_target = Client.RenderTarget.new(self._context, self.state.render_target)
+		self._render_target = Client.RenderTarget.new(
+			self._context, self.state.width, self.state.height
+		)
 	end
 end
 function Client.WorldSys:on_init()
-	Container.set_defaults(self.settings, Client.WorldSys.Settings.defaults)
 	Container.set_defaults(self.state, Client.WorldSys.State.defaults)
 
 	self._camera_sys = self.sim:require(Camera.WorldSys)
 	self._vertex_array = Client.wrappers.VertexArray.new{}
 	self._context = self.sim._game._context
 
-	Container.update(self.state, self.settings)
 	if self._context ~= nil then
-		self._render_target = Client.RenderTarget.new(self._context, self.state.render_target)
+		self._render_target = Client.RenderTarget.new(
+			self._context, self.state.width, self.state.height
+		)
 	end
 
 	if debug_checks_enabled then
-		assert(Client.WorldSys.Settings.Schema(self.settings))
 		assert(Client.WorldSys.State.Schema(self.state))
 		assert(Schema.Optional(Client.Context.Schema)(self._context))
 	end
 end
 
 Client.GameSys = Game.Sys.new_metatable("client")
-Client.GameSys.Settings = {}
-Client.GameSys.Settings.Schema = Schema.Object{
-	headless = Schema.Optional(Schema.Boolean),
-	context = Schema.Optional(Client.Context.Settings.Schema),
-}
-Client.GameSys.Settings.defaults = {
-	headless = false,
-	context = Client.Context.Settings.defaults,
-}
-Client.GameSys.State = Client.GameSys.Settings
-
+Client.GameSys.State = {}
+Client.GameSys.State.Schema = Client.Context.State.Schema
+Client.GameSys.State.defaults = Client.Context.State.defaults
 function Client.GameSys:get_size()
-	local context_state = self.state.context
-	if context_state == nil then
-		return 0, 0
-	end
-
-	return context_state.window.width, context_state.window.height
+	return self.state.width, self.state.height
 end
 function Client.GameSys:get_mouse_pos()
 	if self.context == nil then
@@ -314,22 +288,18 @@ function Client.GameSys:draw()
 	}
 end
 function Client.GameSys:on_init()
-	Container.set_defaults(self.settings, Client.GameSys.Settings.defaults)
 	Container.set_defaults(self.state, Client.GameSys.State.defaults)
 
 	self._vertex_array = Client.wrappers.VertexArray.new{}
 	self._world_sys = self.sim:require(World.GameSys)
 	self._world_sys:require_world_sys(Client.WorldSys)
 
-	if self.settings.headless ~= true then
-		self.context = Client.Context.new(self.settings.context)
+	if self.state.visible then
+		self.context = Client.Context.new({})
 		self.sim._context = self.context
 	end
 
-	Container.update(self.state, self.settings)
-
 	if debug_checks_enabled then
-		assert(Client.GameSys.Settings.Schema(self.settings))
 		assert(Client.GameSys.State.Schema(self.state))
 		assert(Schema.Optional(Client.Context.Schema)(self.context))
 	end
@@ -346,12 +316,12 @@ function Client.GameSys:on_step()
 
 	self:draw()
 
-	Container.update(self.state.context, self.context.settings)
+	Container.update(self.state, self.context.state)
 end
 
 Client.tests = Testing.add_suite("engine.client", {
 	run_headless = function()
-		local game = Game.Game.new({}, {client = {headless = true}})
+		local game = Game.Game.new({client = {visible = false}})
 		local client_game = game:require(Client.GameSys)
 		local world_sys = game:require(World.GameSys)
 

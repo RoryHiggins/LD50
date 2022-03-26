@@ -82,16 +82,11 @@ end
 
 
 local function main()
-	local state = {}
-	local settings = {
-		client = {context = {window = {
-		width = 640,
-		height = 640,}}},
-	world = {initial_world = {client = {render_target = {
-		width = 64,
-		height = 64}}}}
+	local state = {
+		client = {width = 640, height = 640},
+		world = {client = {width = 64, height = 64}},
 	}
-	local game_sim = Game.Game.new(state, settings)
+	local game_sim = Game.Game.new(state)
 	game_sim:require(ExampleGame)
 	game_sim:run()
 end

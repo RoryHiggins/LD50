@@ -7,8 +7,6 @@ local ExampleWorld = World.Sys.new_metatable("minimal_example")
 function ExampleWorld:on_init()
 	self._client_world = self.sim:require(Client.WorldSys)
 	self._camera_world = self.sim:require(Camera.WorldSys)
-
-	self._client_world:set_size(64, 64)
 end
 function ExampleWorld:on_step()
 	local mouse_x, mouse_y = self._client_world:_get_mouse_pos()
@@ -25,16 +23,11 @@ function ExampleWorld:on_draw()
 	vertex_array:add_triangle(64,0, 0,64, 64,64, 0,255,0,255)
 end
 
-local state = {}
-local settings = {
-	client = {context = {window = {
-		width = 640,
-		height = 640}}},
-	world = {initial_world = {client = {render_target = {
-		--[[width = 64,
-		height = 64--]]}}}}
+local state = {
+	client = {width = 640, height = 640},
+	world = {client = {width = 64, height = 64}},
 }
-local game = Game.Game.new(state, settings)
+local game = Game.Game.new(state)
 game:require(Client.GameSys)
 game:require(World.GameSys):require_world_sys(ExampleWorld)
 game:run()
