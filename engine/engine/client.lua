@@ -52,7 +52,7 @@ Client.Context.Schema = Schema.Object{
 		middle = Schema.Boolean,
 		right = Schema.Boolean,
 	},
-	step_count = Schema.NonNegativeInteger,
+	step_id = Schema.PositiveInteger,
 }
 function Client.Context.new(state)
 	state = Container.set_defaults({}, state or {}, Client.Context.State.defaults)
@@ -69,7 +69,7 @@ function Client.Context.new(state)
 	context.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = context.window}
 	context.render_state_passthrough = Client.wrappers.RenderState.new{target = context.window}
 	context.mouse = context.window:get_mouse_state()
-	context.step_count = 0
+	context.step_id = 1
 	setmetatable(context, Client.Context)
 
 	if debug_checks_enabled then
@@ -92,7 +92,7 @@ function Client.Context:step()
 	self.render_state_passthrough:init{target = self.window}
 	self.renderer:clear{color = {255, 255, 255, 255}}
 
-	self.step_count = self.step_count + 1
+	self.step_id = self.step_id + 1
 
 	self.mouse = self.window:get_mouse_state()
 
@@ -230,7 +230,10 @@ function Client.WorldSys:on_init()
 
 	self._camera_sys = self.sim:require(Camera.WorldSys)
 	self._vertex_array = Client.wrappers.VertexArray.new{}
-	self._context = self.sim._game._context
+
+	if self.sim._game then
+		self._context = self.sim._game._context
+	end
 
 	if self._context ~= nil then
 		self._render_target = Client.RenderTarget.new(
@@ -310,7 +313,7 @@ function Client.GameSys:on_step()
 	end
 
 	if not self.context:step() then
-		self.sim:enqueue_finalize()
+		self.sim:stop()
 		return
 	end
 

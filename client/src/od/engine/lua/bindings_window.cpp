@@ -8,6 +8,235 @@
 #include <od/engine/lua/includes.h>
 #include <od/engine/lua/wrappers.h>
 
+// https://github.com/libsdl-org/SDL-historical-archive/blob/40dce8c788cb42a05d4569cd8df7e92d4ebb8976/src/events/SDL_keyboard.c#L287
+static const char *odLuaBindings_odWindow_key_names[] = {
+	"#",
+	"'",
+	",",
+	"-",
+	".",
+	"/",
+	"0",
+	"1",
+	"2",
+	"3",
+	"4",
+	"5",
+	"6",
+	"7",
+	"8",
+	"9",
+	";",
+	"=",
+	"[",
+	"\\",
+	"]",
+	"`",
+	"a",
+	"ac back",
+	"ac bookmarks",
+	"ac forward",
+	"ac home",
+	"ac refresh",
+	"ac search",
+	"ac stop",
+	"again",
+	"alterase",
+	"app1",
+	"app2",
+	"application",
+	"audiofastforward",
+	"audiomute",
+	"audionext",
+	"audioplay",
+	"audioprev",
+	"audiorewind",
+	"audiostop",
+	"b",
+	"backspace",
+	"brightnessdown",
+	"brightnessup",
+	"c",
+	"calculator",
+	"cancel",
+	"capslock",
+	"clear / again",
+	"clear",
+	"computer",
+	"copy",
+	"crsel",
+	"currencysubunit",
+	"currencyunit",
+	"cut",
+	"d",
+	"decimalseparator",
+	"delete",
+	"displayswitch",
+	"down",
+	"e",
+	"eject",
+	"end",
+	"escape",
+	"execute",
+	"exsel",
+	"f",
+	"f1",
+	"f10",
+	"f11",
+	"f12",
+	"f13",
+	"f14",
+	"f15",
+	"f16",
+	"f17",
+	"f18",
+	"f19",
+	"f2",
+	"f20",
+	"f21",
+	"f22",
+	"f23",
+	"f24",
+	"f3",
+	"f4",
+	"f5",
+	"f6",
+	"f7",
+	"f8",
+	"f9",
+	"find",
+	"g",
+	"h",
+	"help",
+	"home",
+	"i",
+	"insert",
+	"j",
+	"k",
+	"kbdillumdown",
+	"kbdillumtoggle",
+	"kbdillumup",
+	"keypad !",
+	"keypad #",
+	"keypad %",
+	"keypad &",
+	"keypad &&",
+	"keypad (",
+	"keypad )",
+	"keypad *",
+	"keypad +",
+	"keypad +/-",
+	"keypad ,",
+	"keypad -",
+	"keypad .",
+	"keypad /",
+	"keypad 0",
+	"keypad 00",
+	"keypad 000",
+	"keypad 1",
+	"keypad 2",
+	"keypad 3",
+	"keypad 4",
+	"keypad 5",
+	"keypad 6",
+	"keypad 7",
+	"keypad 8",
+	"keypad 9",
+	"keypad :",
+	"keypad <",
+	"keypad = (as400)",
+	"keypad =",
+	"keypad >",
+	"keypad @",
+	"keypad ^",
+	"keypad a",
+	"keypad b",
+	"keypad backspace",
+	"keypad binary",
+	"keypad c",
+	"keypad clear",
+	"keypad clearentry",
+	"keypad d",
+	"keypad decimal",
+	"keypad e",
+	"keypad enter",
+	"keypad f",
+	"keypad hexadecimal",
+	"keypad memadd",
+	"keypad memclear",
+	"keypad memdivide",
+	"keypad memmultiply",
+	"keypad memrecall",
+	"keypad memstore",
+	"keypad memsubtract",
+	"keypad octal",
+	"keypad space",
+	"keypad tab",
+	"keypad xor",
+	"keypad {",
+	"keypad |",
+	"keypad ||",
+	"keypad }",
+	"l",
+	"left alt",
+	"left ctrl",
+	"left gui",
+	"left shift",
+	"left",
+	"m",
+	"mail",
+	"mediaselect",
+	"menu",
+	"modeswitch",
+	"mute",
+	"n",
+	"numlock",
+	"o",
+	"oper",
+	"out",
+	"p",
+	"pagedown",
+	"pageup",
+	"paste",
+	"pause",
+	"power",
+	"printscreen",
+	"prior",
+	"q",
+	"r",
+	"return",
+	"right alt",
+	"right ctrl",
+	"right gui",
+	"right shift",
+	"right",
+	"s",
+	"scrolllock",
+	"select",
+	"separator",
+	"sleep",
+	"space",
+	"stop",
+	"sysreq",
+	"t",
+	"tab",
+	"thousandsseparator",
+	"u",
+	"undo",
+	"up",
+	"v",
+	"volumedown",
+	"volumeup",
+	"w",
+	"www",
+	"x",
+	"y",
+	"z",
+};
+static const int32_t odLuaBindings_odWindow_key_name_count = (
+	sizeof(odLuaBindings_odWindow_key_names) / sizeof(odLuaBindings_odWindow_key_names[0])
+);
+
 static bool odLuaBindings_odWindow_get_settings_impl(lua_State* lua, odWindowSettings* settings, int32_t settings_index) {
 	if (!OD_CHECK(lua != nullptr)
 		|| !OD_CHECK(settings != nullptr)
@@ -208,20 +437,20 @@ static int odLuaBindings_odWindow_get_mouse_state(lua_State* lua) {
 	odWindow_get_mouse_state(window, &state);
 
 	lua_newtable(lua);
-	const int settings_index = lua_gettop(lua);
+	const int state_index = lua_gettop(lua);
 
 	lua_pushnumber(lua, static_cast<lua_Number>(state.x));
-	lua_setfield(lua, settings_index, "x");
+	lua_setfield(lua, state_index, "x");
 	lua_pushnumber(lua, static_cast<lua_Number>(state.y));
-	lua_setfield(lua, settings_index, "y");
+	lua_setfield(lua, state_index, "y");
 	lua_pushboolean(lua, state.is_left_down);
-	lua_setfield(lua, settings_index, "left");
+	lua_setfield(lua, state_index, "left");
 	lua_pushboolean(lua, state.is_middle_down);
-	lua_setfield(lua, settings_index, "middle");
+	lua_setfield(lua, state_index, "middle");
 	lua_pushboolean(lua, state.is_right_down);
-	lua_setfield(lua, settings_index, "right");
+	lua_setfield(lua, state_index, "right");
 
-	lua_pushvalue(lua, settings_index);
+	lua_pushvalue(lua, state_index);
 	return 1;
 }
 static int odLuaBindings_odWindow_get_key_state(lua_State* lua) {
@@ -243,6 +472,22 @@ static int odLuaBindings_odWindow_get_key_state(lua_State* lua) {
 	const char* key_name = luaL_checkstring(lua, key_name_index);
 
 	lua_pushboolean(lua, odWindow_get_key_state(window, key_name));
+	return 1;
+}
+static int odLuaBindings_odWindow_get_key_names(lua_State* lua) {
+	if (!OD_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	lua_newtable(lua);
+	const int key_names_index = lua_gettop(lua);
+
+	for (int32_t i = 0; i < odLuaBindings_odWindow_key_name_count; i++) {
+		lua_pushstring(lua, odLuaBindings_odWindow_key_names[i]);
+		lua_rawseti(lua, key_names_index, i + 1);
+	}
+
+	lua_pushvalue(lua, key_names_index);
 	return 1;
 }
 static int odLuaBindings_odWindow_step(lua_State* lua) {
@@ -285,7 +530,8 @@ bool odLuaBindings_odWindow_register(lua_State* lua) {
 		|| !OD_CHECK(add_method("set_settings", odLuaBindings_odWindow_set_settings))
 		|| !OD_CHECK(add_method("get_settings", odLuaBindings_odWindow_get_settings))
 		|| !OD_CHECK(add_method("get_mouse_state", odLuaBindings_odWindow_get_mouse_state))
-		|| !OD_CHECK(add_method("get_key_state", odLuaBindings_odWindow_get_key_state))) {
+		|| !OD_CHECK(add_method("get_key_state", odLuaBindings_odWindow_get_key_state))
+		|| !OD_CHECK(add_method("get_key_names", odLuaBindings_odWindow_get_key_names))) {
 		return false;
 	}
 

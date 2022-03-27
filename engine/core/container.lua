@@ -6,6 +6,21 @@ local Schema = require("engine/core/Schema")
 local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Container = {}
+function Container.deep_copy(xs)
+	local xs_type = type(xs)
+
+	if xs_type == "boolean" or xs_type == "number" or xs_type == "string" or xs_type == "nil" or xs_type == "function" then
+		return xs
+	elseif xs_type == "table" then
+		local result = {}
+		for key, x in pairs(xs) do
+			result[key] = Container.deep_copy(x)
+		end
+		return result
+	else
+		error("cannot deep-copy type "..xs_type)
+	end
+end
 function Container.get_keys(xs)
 	if debug_checks_enabled then
 		assert(Schema.Table(xs))
@@ -30,66 +45,33 @@ function Container.get_values(xs)
 
 	return values
 end
-function Container.get_equal_for_keys(keys, xs, ys)
-	if debug_checks_enabled then
-		assert(Schema.Table(xs))
-		assert(Schema.Table(ys))
-	end
-
-	for _, key in ipairs(keys) do
-		if xs[key] ~= ys[key] then
-			return false
-		end
-	end
-
-	return true
-end
 function Container.update(xs, ...)
 	local ys_srcs = {...}
 	if debug_checks_enabled then
-		assert(Schema.AnyObject(xs))
-		assert(Schema.NonEmptyArray(Schema.AnyObject)(ys_srcs))
+		assert(Schema.Table(xs))
+		assert(Schema.NonEmptyArray(Schema.Table)(ys_srcs))
 	end
 
 	for _,ys in ipairs(ys_srcs) do
-		for key, y in pairs(ys) do
+		local is_array = #xs > 0 or #ys > 0
+		local iter, iter_invariant, iter_var
+		if is_array then
+			iter, iter_invariant, iter_var = ipairs(ys)
+		else
+			iter, iter_invariant, iter_var = pairs(ys)
+		end
+
+		for key, y in iter, iter_invariant, iter_var do
 			local y_type = type(y)
 			if y_type == "table" then
 				local x = xs[key]
-				if x == nil then
+				if type(x) ~= "table" then
 					x = {}
-					xs[key] = x
 				end
-
-				Container.update(x, y)
-			elseif y_type ~= "nil" then
+				xs[key] = Container.update(x, y)
+			else
 				xs[key] = y
 			end
-		end
-	end
-
-	return xs
-end
-function Container.update_for_keys(keys, xs, ys)
-	if debug_checks_enabled then
-		assert(Schema.AnyArray(keys))
-		assert(Schema.AnyObject(xs))
-		assert(Schema.AnyObject(ys))
-	end
-
-	for _, key in ipairs(keys) do
-		local y = ys[key]
-		local y_type = type(y)
-		if y_type == "table" then
-			local x = xs[key]
-			if x == nil then
-				x = {}
-				xs[key] = x
-			end
-
-			Container.update(x, y)
-		elseif y_type ~= "nil" then
-			xs[key] = y
 		end
 	end
 
@@ -99,21 +81,27 @@ function Container.set_defaults(xs, ...)
 	local ys_srcs = {...}
 
 	if debug_checks_enabled then
-		assert(Schema.AnyObject(xs))
-		assert(Schema.NonEmptyArray(Schema.AnyObject)(ys_srcs))
+		assert(Schema.Table(xs))
+		assert(Schema.NonEmptyArray(Schema.Table)(ys_srcs))
 	end
 
 	for _,ys in ipairs(ys_srcs) do
-		for key, y in pairs(ys) do
+		local is_array = #xs > 0 or #ys > 0
+		local iter, iter_invariant, iter_var
+		if is_array then
+			iter, iter_invariant, iter_var = ipairs(ys)
+		else
+			iter, iter_invariant, iter_var = pairs(ys)
+		end
+
+		for key, y in iter, iter_invariant, iter_var do
 			local y_type = type(y)
 			if y_type == "table" then
 				local x = xs[key]
-				if x == nil then
+				if type(x) ~= "table" then
 					x = {}
-					xs[key] = x
 				end
-
-				Container.set_defaults(x, y)
+				xs[key] = Container.set_defaults(x, y)
 			elseif y_type ~= "nil" then
 				if xs[key] == nil then
 					xs[key] = y
@@ -123,21 +111,6 @@ function Container.set_defaults(xs, ...)
 	end
 
 	return xs
-end
-function Container.deep_copy(xs)
-	local xs_type = type(xs)
-
-	if xs_type == "boolean" or xs_type == "number" or xs_type == "string" or xs_type == "nil" or xs_type == "function" then
-		return xs
-	elseif xs_type == "table" then
-		local result = {}
-		for key, x in pairs(xs) do
-			result[key] = Container.deep_copy(x)
-		end
-		return result
-	else
-		error("cannot deep-copy type "..xs_type)
-	end
 end
 function Container.array_slice(xs, from, to)
 	if debug_checks_enabled then
@@ -273,111 +246,6 @@ function Container.assert_not_equal(xs, ys)
 	assert(xs_str ~= ys_str, "Container.assert_not_equal failed\n------\nxs=\n"..xs_str.."\nys=\n"..ys_str.."\n------\n")
 end
 Container.tests = Testing.add_suite("core.Container", {
-	table_get_keys = function()
-		local test_value_expected_pairs = {
-			{{}, {}},
-			{{5}, {1}},
-			{{a = nil}, {}},
-			{{a = 1}, {"a"}},
-			{{10, 20, a = 30, c = nil, Container}, {1, 2, 3, "a"}},
-		}
-		for _, pair in ipairs(test_value_expected_pairs) do
-			local value, expected = pair[1], pair[2]
-			Container.assert_equal(Container.get_keys(value), expected)
-		end
-	end,
-	table_get_values = function()
-		local test_value_expected_pairs = {
-			{{}, {}},
-			{{1}, {1}},
-			{{a = 1, 2, 3}, {1, 2, 3}},
-			{{a = 1}, {2}},
-		}
-		for _, pair in ipairs(test_value_expected_pairs) do
-			local value, expected = pair[1], pair[2]
-			Container.assert_equal(
-				table.sort(Container.get_values(value)),
-				table.sort(expected)
-			)
-		end
-	end,
-	table_get_equal_for_keys = function()
-		assert(Container.get_equal_for_keys({1, 2}, {5, 10, 15}, {5, 10, 20}))
-		assert(not Container.get_equal_for_keys({1, 2, 3}, {5, 10, 15}, {5, 10, 20}))
-	end,
-	object_update = function()
-		local test_values_expected_tuples = {
-			{{}, {}, {}},
-			{{a = 1}, {b = 2}, {a = 1, b = 2}},
-			{{a = 1, b = 1}, {b = 2}, {a = 1, b = 2}},
-			{{}, {b = 2}, {b = 2}},
-			{{a = 1, b = 1, c = {d = 1, e = 1}}, {b = 2, c = {e = 2}}, {a = 1, b = 2, c = {d = 1, e = 2}}},
-		}
-		for _, tuple in ipairs(test_values_expected_tuples) do
-			local defaults, updates, expected = tuple[1], tuple[2], tuple[3]
-			Container.assert_equal(Container.update(defaults, updates), expected)
-		end
-	end,
-	object_update_for_keys = function()
-		local test_keys_values_expected_tuples = {
-			{{}, {}, {}, {}},
-			{{"a"}, {a = 1}, {b = 2}, {a = 1}},
-			{{"a", "b"}, {a = 1, b = 1}, {b = 2}, {a = 1, b = 2}},
-			{{"a", "b", "c"},
-			 {a = 1, b = 1, c = {d = 1, e = 1}},
-			 {b = 2, c = {e = 2}},
-			 {a = 1, b = 2, c = {d = 1, e = 2}}},
-		}
-		for _, tuple in ipairs(test_keys_values_expected_tuples) do
-			local keys, defaults, updates, expected = tuple[1], tuple[2], tuple[3], tuple[4]
-			Container.assert_equal(Container.update_for_keys(keys, defaults, updates), expected)
-		end
-	end,
-	object_set_defaults = function()
-		local test_values_expected_tuples = {
-			{{}, {}, {}},
-			{{a = 1}, {b = 2}, {a = 1, b = 2}},
-			{{a = 1, b = 1}, {b = 2}, {a = 1, b = 1}},
-			{{}, {b = 2}, {b = 2}},
-			{{a = 1, b = 1, c = {d = 1, e = 1}}, {b = 2, c = {e = 2}}, {a = 1, b = 1, c = {d = 1, e = 1}}},
-		}
-		for _, tuple in ipairs(test_values_expected_tuples) do
-			local defaults, updates, expected = tuple[1], tuple[2], tuple[3]
-			Container.assert_equal(Container.set_defaults(defaults, updates), expected)
-		end
-	end,
-	array_slice = function()
-		local test_value_expected_tuples = {
-			{{}, 0, 0, {}},
-			{{5}, 1, 1, {5}},
-			{{1, 2, 3, 4}, 1, 2, {1, 2}},
-			{{1, 2, 3, 4}, 2, 3, {2, 3}},
-			{{1, 2, 3, 4}, 1, 4, {1, 2, 3, 4}},
-		}
-		for _, tuple in ipairs(test_value_expected_tuples) do
-			local value, from, to, expected = tuple[1], tuple[2], tuple[3], tuple[4]
-			Container.assert_equal(Container.array_slice(value, from, to), expected)
-		end
-	end,
-	array_try_find = function()
-		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 1) == 1)
-		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 4) == 4)
-		assert(Container.array_try_find({1, 2, 3, 4, "5"}, "5") == 5)
-		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 0) == nil)
-		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 5) == nil)
-	end,
-	string_escape = function()
-		local test_value_expected_pairs = {
-			{"hello", "hello"},
-			{'"hello"', '\\"hello\\"'},
-			{"C:\\", "C:\\\\"},
-			{"hello\n World", "hello\\n World"},
-		}
-		for _, pair in ipairs(test_value_expected_pairs) do
-			local value, expected = pair[1], pair[2]
-			Container.assert_equal(Container.string_escape(value), expected)
-		end
-	end,
 	deep_copy = function()
 		local test_tables = {
 			{},
@@ -425,6 +293,95 @@ Container.tests = Testing.add_suite("core.Container", {
 		assert(b.c.d == 4)
 
 		assert(Container.deep_copy(nil) == nil)
+	end,
+	get_keys = function()
+		local test_value_expected_pairs = {
+			{{}, {}},
+			{{5}, {1}},
+			{{a = nil}, {}},
+			{{a = 1}, {"a"}},
+			{{10, 20, a = 30, c = nil, Container}, {1, 2, 3, "a"}},
+		}
+		for _, pair in ipairs(test_value_expected_pairs) do
+			local value, expected = pair[1], pair[2]
+			Container.assert_equal(Container.get_keys(value), expected)
+		end
+	end,
+	get_values = function()
+		local test_value_expected_pairs = {
+			{{}, {}},
+			{{1}, {1}},
+			{{a = 1, 2, 3}, {1, 2, 3}},
+			{{a = 1}, {2}},
+		}
+		for _, pair in ipairs(test_value_expected_pairs) do
+			local value, expected = pair[1], pair[2]
+			Container.assert_equal(
+				table.sort(Container.get_values(value)),
+				table.sort(expected)
+			)
+		end
+	end,
+	update = function()
+		local test_values_expected_tuples = {
+			{{}, {}, {}},
+			{{a = 1}, {b = 2}, {a = 1, b = 2}},
+			{{a = 1, b = 1}, {b = 2}, {a = 1, b = 2}},
+			{{}, {b = 2}, {b = 2}},
+			{{a = 1, b = 1, c = {d = 1, e = 1}}, {b = 2, c = {e = 2}}, {a = 1, b = 2, c = {d = 1, e = 2}}},
+			{{1, 2, 3, {4, 5}}, {}, {1, 2, 3, {4, 5}}},
+			{{1, 2, 3, {4, 5}}, {1, 2, 3, {4, 5, 6}, 7}, {1, 2, 3, {4, 5, 6}, 7}},
+			{{1, {a = 2}}, {2, {b = 3}}, {2, {a = 2, b = 3}}},
+		}
+		for _, tuple in ipairs(test_values_expected_tuples) do
+			local defaults, updates, expected = tuple[1], tuple[2], tuple[3]
+			Container.assert_equal(Container.update(defaults, updates), expected)
+		end
+	end,
+	set_defaults = function()
+		local test_values_expected_tuples = {
+			{{}, {}, {}},
+			{{a = 1}, {b = 2}, {a = 1, b = 2}},
+			{{a = 1, b = 1}, {b = 2}, {a = 1, b = 1}},
+			{{}, {b = 2}, {b = 2}},
+			{{a = 1, b = 1, c = {d = 1, e = 1}}, {b = 2, c = {e = 2}}, {a = 1, b = 1, c = {d = 1, e = 1}}},
+		}
+		for _, tuple in ipairs(test_values_expected_tuples) do
+			local defaults, updates, expected = tuple[1], tuple[2], tuple[3]
+			Container.assert_equal(Container.set_defaults(defaults, updates), expected)
+		end
+	end,
+	array_slice = function()
+		local test_value_expected_tuples = {
+			{{}, 0, 0, {}},
+			{{5}, 1, 1, {5}},
+			{{1, 2, 3, 4}, 1, 2, {1, 2}},
+			{{1, 2, 3, 4}, 2, 3, {2, 3}},
+			{{1, 2, 3, 4}, 1, 4, {1, 2, 3, 4}},
+		}
+		for _, tuple in ipairs(test_value_expected_tuples) do
+			local value, from, to, expected = tuple[1], tuple[2], tuple[3], tuple[4]
+			Container.assert_equal(Container.array_slice(value, from, to), expected)
+		end
+	end,
+	array_try_find = function()
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 1) == 1)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 4) == 4)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, "5") == 5)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 0) == nil)
+		assert(Container.array_try_find({1, 2, 3, 4, "5"}, 5) == nil)
+	end,
+	string_escape = function()
+		local test_value_expected_pairs = {
+			{"hello", "hello"},
+			{'"hello"', '\\"hello\\"'},
+			{"C:\\", "C:\\\\"},
+			{"hello\n World", "hello\\n World"},
+		}
+		for _, pair in ipairs(test_value_expected_pairs) do
+			local value, expected = pair[1], pair[2]
+			Container.assert_equal(Container.string_escape(value), expected)
+		end
 	end,
 	get_comparable_str = function()
 		local recursive = {1, 2, 3, yes="no", a={1, 2, "ye"}}

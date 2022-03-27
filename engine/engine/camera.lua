@@ -106,21 +106,30 @@ function Camera.WorldSys:all_depth_ordered()
 	return cameras
 end
 function Camera.WorldSys:get_default()
-	return self:find(Camera.WorldSys.default_name)
+	return self:find(self.default_name)
 end
 
-Camera.tests = Testing.add_suite("engine.Camera", {
+Camera.tests = Testing.add_suite("engine.camera", {
 	run = function()
 		local world_sim = World.World.new()
-		local camera_sys = world_sim:require(Camera.WorldSys)
+		local camera_world = world_sim:require(Camera.WorldSys)
+
+		camera_world:set("blah", Camera.Camera.defaults)
+		camera_world:set("blah", Camera.Camera.new_ortho_2d(1, 2, 3))
+		assert(camera_world:find("blah").transform.translate_x == 1)
+		assert(camera_world:find("blah").transform.translate_y == 2)
+		assert(camera_world:find("blah").transform.translate_z == 3)
+		assert(Camera.Camera.Schema(camera_world:find("blah")))
+
+		camera_world:set_pos("blah2", 4, 5, 6)
+		assert(camera_world:find("blah2").transform.translate_x == 4)
+		assert(camera_world:find("blah2").transform.translate_y == 5)
+		assert(camera_world:find("blah2").transform.translate_z == 6)
+		assert(Camera.Camera.Schema(camera_world:find("blah2")))
+
+		assert(Camera.Camera.Schema(camera_world:get_default(camera_world.default_id)))
+
 		world_sim:start()
-
-		camera_sys:set("blah", Camera.Camera.defaults)
-		camera_sys:set("blah2", Camera.Camera.new_ortho_2d(1, 2, 3))
-		assert(camera_sys:find("blah2").transform.translate_y == 2)
-
-		assert(Camera.Camera.Schema(camera_sys:find("blah2")))
-
 		world_sim:step()
 		world_sim:finalize()
 	end

@@ -2,18 +2,15 @@ local Debugging = require("engine/core/debugging")
 local Logging = require("engine/core/logging")
 local Testing = require("engine/core/testing")
 local Shim = require("engine/core/shim")
-local Container = require("engine/core/container")
 local Schema = require("engine/core/Schema")
+local Container = require("engine/core/container")
+local Model = require("engine/core/model")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Sim = {}
 
-Sim.Status = {
-	new = "new",
-	started = "started",
-	finalized = "finalized",
-}
+Sim.Status = Model.Enum("new","started", "finalized")
 
 Sim.Sys = {}
 Sim.Sys.__index = Sim.Sys
@@ -53,14 +50,16 @@ end
 Sim.Sim = {}
 Sim.Sim.Schema = Schema.PartialObject{
 	state = Schema.SerializableObject,
-	status = Schema.Enum(Shim.unpack(Container.get_keys(Sim.Status))),
-	step_count = Schema.NonNegativeInteger,
-	finalize_enqueued = Schema.Boolean,
+	status = Sim.Status.Schema,
+	step_id = Schema.PositiveInteger,
+	stopping = Schema.Boolean,
+	_initial_state = Schema.SerializableObject,
+	_message_history = Schema.Array(Schema.SerializableArray),
 	_is_sim = Schema.Const(true),
 	_is_sim_instance = Schema.Const(true),
 	_systems = Schema.Mapping(Schema.String, Sim.Sys.Schema),
-	_systems_by_init_order = Schema.Array(Sim.Sys.Schema),
-	_systems_by_event_cached = Schema.Mapping(Schema.String, Schema.Array(Sim.Sys.Schema)),
+	_event_listeners_ordered = Schema.Array(Schema.AnyObject),
+	_event_listeners_cached = Schema.Mapping(Schema.String, Schema.Array(Schema.AnyObject)),
 }
 Sim.Sim.metatable_schema = Schema.PartialObject{
 	_is_sim = Schema.Const(true),
@@ -78,14 +77,18 @@ function Sim.Sim.new(state, metatable)
 	local sim_instance = {
 		state = state,
 		status = Sim.Status.new,
-		step_count = 0,
-		finalize_enqueued = false,
+		step_id = 1,
+		stopping = false,
+		_initial_state = state,
+		-- TODO write to _message_history
+		_message_history = {},
 		_is_sim_instance = true,
 		_systems = {},
-		_systems_by_init_order = {},
-		_systems_by_event_cached = {},
+		_event_listeners_ordered = {},
+		_event_listeners_cached = {},
 	}
 	setmetatable(sim_instance, metatable)
+	sim_instance._event_listeners_ordered[1] = sim_instance
 
 	if debug_checks_enabled then
 		assert(metatable.Schema(sim_instance))
@@ -124,10 +127,10 @@ function Sim.Sim:require(sys_metatable)
 	end
 
 	-- register order _after_ init, so dependencies receive messages first
-	self._systems_by_init_order[#self._systems_by_init_order + 1] = sys
+	self._event_listeners_ordered[#self._event_listeners_ordered + 1] = sys
 
 	-- clear event cache
-	self._systems_by_event_cached = {}
+	self._event_listeners_cached = {}
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -149,7 +152,7 @@ function Sim.Sim:get(sys_metatable)
 	return self._systems[sys_name]
 end
 function Sim.Sim:get_all()
-	return self._systems_by_init_order
+	return self._event_listeners_ordered
 end
 function Sim.Sim:broadcast(event_name, ...)
 	if debug_checks_enabled then
@@ -159,7 +162,7 @@ function Sim.Sim:broadcast(event_name, ...)
 		assert(self.status == Sim.Status.started)
 	end
 
-	local event_systems = self._systems_by_event_cached[event_name]
+	local event_systems = self._event_listeners_cached[event_name]
 	if event_systems == nil then
 		event_systems = self:_cache_systems_for_event(event_name)
 	end
@@ -180,7 +183,7 @@ function Sim.Sim:broadcast_pcall(event_name, ...)
 		assert(self.status == Sim.Status.started)
 	end
 
-	local event_systems = self._systems_by_event_cached[event_name]
+	local event_systems = self._event_listeners_cached[event_name]
 	if event_systems == nil then
 		event_systems = self:_cache_systems_for_event(event_name)
 	end
@@ -202,11 +205,16 @@ end
 function Sim.Sim:start()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.status == Sim.Status.new)
+		assert(self.status ~= Sim.Status.finalized)
 	end
 
+	local old_status = self.status
+
 	self.status = Sim.Status.started
-	self:broadcast("on_start")
+
+	if old_status == Sim.Status.new then
+		self:broadcast("on_start")
+	end
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -216,36 +224,30 @@ function Sim.Sim:step()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(self.status == Sim.Status.started)
+		assert(not self.stopping)
 	end
 
-	self:broadcast("on_step")
-
-	self.step_count = self.step_count + 1
-
-	if self.finalize_enqueued then
-		self:finalize()
-	end
+	self:broadcast_pcall("on_step")
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
 end
-function Sim.Sim:enqueue_finalize()
-	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-		assert(self.status == Sim.Status.started)
-	end
-
-	self.finalize_enqueued = true
-end
-function Sim.Sim:finalize()
+function Sim.Sim:stop()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(self.status ~= Sim.Status.finalized)
 	end
 
+	self.stopping = true
+end
+function Sim.Sim:finalize()
+	if debug_checks_enabled then
+		assert(Sim.Sim.Schema(self))
+	end
+
 	if self.status == Sim.Status.started then
-		self:broadcast("on_finalize")
+		self:broadcast_pcall("on_finalize")
 	end
 
 	self.status = Sim.Status.finalized
@@ -254,6 +256,9 @@ function Sim.Sim:finalize()
 		assert(Sim.Sim.Schema(self))
 	end
 end
+function Sim.Sim:running()
+	return self.status == Sim.Status.started and not self.stopping
+end
 function Sim.Sim:run()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -261,9 +266,13 @@ function Sim.Sim:run()
 	end
 
 	self:start()
-	while self.status == Sim.Status.started do
+	while self:running() do
 		self:step()
 	end
+	self:finalize()
+end
+function Sim.Sim:on_step()
+	self.step_id = self.step_id + 1
 end
 function Sim.Sim:_cache_systems_for_event(event_name)
 	if debug_checks_enabled then
@@ -274,12 +283,13 @@ function Sim.Sim:_cache_systems_for_event(event_name)
 	Logging.debug("regenerating cache of systems for event_name %s", event_name)
 
 	local event_systems = {}
-	for _, sys in ipairs(self._systems_by_init_order) do
+
+	for _, sys in ipairs(self._event_listeners_ordered) do
 		if sys[event_name] ~= nil then
 			event_systems[#event_systems + 1] = sys
 		end
 	end
-	self._systems_by_event_cached[event_name] = event_systems
+	self._event_listeners_cached[event_name] = event_systems
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -361,17 +371,45 @@ Sim.tests = Testing.add_suite("engine.sim", {
 		local TestSys = Sim.Sys.new_metatable("test")
 
 		local sim_instance = Sim.Sim.new()
+
+		Testing.assert_fails(function()
+			sim_instance:step()
+		end)
+
 		sim_instance:require(TestSys)
 		sim_instance:start()
-		local step_count = 10
-		for _ = 1, step_count do
+		sim_instance:start()  -- ensure idempotent
+		for step_id = 1, 10 do
+			assert(sim_instance.step_id == step_id)
 			sim_instance:step()
 		end
-		assert(sim_instance.step_count == step_count)
 
-		sim_instance:enqueue_finalize()
-		sim_instance:step()
-		assert(sim_instance.status == Sim.Status.finalized)
+		sim_instance:stop()
+		sim_instance:stop()  -- ensure idempotent
+
+		Testing.assert_fails(function()
+			sim_instance:step()
+		end)
+
+		assert(sim_instance:running() == false)
+		sim_instance:finalize()
+		sim_instance:finalize()  -- ensure idempotent
+
+		Testing.assert_fails(function()
+			sim_instance:step()
+		end)
+
+		Testing.assert_fails(function()
+			sim_instance:start()
+		end)
+
+		sim_instance = Sim.Sim.new()
+		sim_instance:stop()
+		sim_instance:finalize()
+		sim_instance:finalize()  -- ensure idempotent
+		Testing.assert_fails(function()
+			sim_instance:stop()
+		end)
 	end,
 })
 

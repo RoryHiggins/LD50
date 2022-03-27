@@ -96,36 +96,29 @@ client.GameSys : game.Sys
 # v TODO
 
 controller.Input : schema.SerializableObject
-	held: bool
-	steps_in_state: num  # for tap detection
-	steps_in_last_state: num  # for double-tap detection
+	down: bool
+	step_id: num
 controller.Controller : schema.SerializableObject
 	inputs: {[str]: controller.Input}  # by input name
-	get_held(name: str) : bool
-	get_released(name: str) : bool
-	get_double_tapped(name: str, max_released_steps: num = 5) : bool
-controller.Inputs : schema.SerializableObject
-	controllers: [controller.Controller]  # by controller id -> input name
 controller.BindingType : enum str {"keyboard"}
 controller.Binding : schema.SerializableObject
 	controller_id: num
 	input_name: str
-	type: controller.BindingType
-	keyboard_key: str?
+	binding_type: controller.BindingType
+	binding_keyboard_key: str?
 controller.WorldSys : world.Sys
 	find(controller_id: num) : controller.Controller|nil
 	get_default() : controller.Controller
-	on_input_change(controller_id: num, )
+	get_down(controller_id: num, input_name: str) : bool
+	get_toggled(controller_id: num, input_name: str) : bool
+	on_input_set(controller_id: num, input_name: str, down: bool)
 	state
 		controllers: [input.Controller]
 controller.GameSys : game.Sys
-	find(controller_id: num) : controller.Controller|nil
-	get_default() : controller.Controller
-	on_step()  # updates inputs from bindings, triggers world.on_input(name, controller_id, held)
+	on_start(), on_step()  # updates inputs, triggers world.on_input_set()
 	get_bindings() : [controller.Binding]
 	set_bindings([controller.Binding])
 	state
-		controllers: [input.Controller]
 		bindings: [controller.Binding]
 
 entity.Entity : schema.SerializableObject

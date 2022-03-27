@@ -95,6 +95,9 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odWindow, OD_TEST_FILTER_SLOW) {
 		assert(settings.height == 6)
 		assert(settings.visible == false)
 
+		local key_names = odClientWrapper.Window.get_key_names()
+		assert(#key_names > 0)
+
 		local frames = 0
 		while window:step() do
 			frames = frames + 1

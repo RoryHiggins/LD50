@@ -175,6 +175,30 @@ function Schema.AnyOf(...)
 		return false, Schema.error("Schema.AnyOf(%s): no match, match failures=\n%s", x, failures_str)
 	end
 end
+function Schema.OneOf(...)
+	local conditions = {...}
+	for _, condition in ipairs(conditions) do
+		assert(Schema.Function(condition))
+	end
+
+	return function(x)
+		local found = false
+		local failures = {}
+		for _, condition in ipairs(conditions) do
+			local result, err = condition(x)
+			if result then
+				if found then
+					return false, Schema.error("Schema.OneOf(%s): multiple matches", x)
+				end
+				found = true
+			end
+			failures[#failures + 1] = err
+		end
+
+		local failures_str = table.concat(failures, "\n")
+		return false, Schema.error("Schema.OneOf(%s): no match, match failures=\n%s", x, failures_str)
+	end
+end
 function Schema.AllOf(...)
 	local conditions = {...}
 	for _, condition in ipairs(conditions) do
@@ -194,11 +218,15 @@ end
 function Schema.Enum(...)
 	local values = {...}
 	local values_str = table.concat(values, ", ")
+
+	local values_lookup = {}
+	for _, value in ipairs(values) do
+		values_lookup[value] = true
+	end
+
 	return function(x)
-		for _, value in ipairs(values) do
-			if x == value then
-				return true
-			end
+		if values_lookup[x] == true then
+			return true
 		end
 		return false, Schema.error("Schema.Enum(%s): no match, values={%s}", x, values_str)
 	end
@@ -309,6 +337,30 @@ function Schema.NonEmptyArray(condition, opt_length)
 		return true
 	end
 end
+function Schema.BoundedArray(condition, min_length, max_length)
+	assert(Schema.Function(condition))
+	assert(Schema.NonNegativeInteger(min_length))
+	assert(Schema.PositiveInteger(max_length))
+	assert(min_length <= max_length)
+	local array_condition = Schema.Array(condition)
+
+	return function(x)
+		local result, err = array_condition(x)
+		if not result then
+			return false, Schema.error(
+				"Schema.NonEmptyArray(%s): no match, err=%s", x, err)
+		end
+		if #x < min_length then
+			return false, Schema.error(
+				"Schema.BoundedArray(%s): below min length=%s", x, min_length)
+		end
+		if #x > max_length then
+			return false, Schema.error(
+				"Schema.BoundedArray(%s): above max length=%s", x, max_length)
+		end
+		return true
+	end
+end
 function Schema.PartialObject(condition_map)
 	return Schema.Object(condition_map, Schema.Any)
 end
@@ -362,6 +414,7 @@ Schema.tests = Testing.add_suite("core.Schema", {
 			[Schema.LabelString] = {"hello_world2", "a", "a2", "_az"},
 			[Schema.NonEmptyString] = {"y", "hello"},
 			[Schema.NonEmptyArray(Schema.Number)] = {{1}, {1, 2, 3, 4, 5}},
+			[Schema.BoundedArray(Schema.Number, 2, 3)] = {{1, 2}, {1, 2, 3}},
 			[Schema.PartialObject{}] = {{}, {a=2}, {b=3}, {c=2, d={3, "4", {"5"}}}},
 		}
 		for value_schema, values in pairs(test_schema_values) do
@@ -403,6 +456,7 @@ Schema.tests = Testing.add_suite("core.Schema", {
 				{-1, 0, 0.312, "YA", "2a", "2", "yep nope", " ", "yE", true, false, function() end, {}, {1, 2}},
 			[Schema.NonEmptyString] = {"", {}, {1}, {a = 1}, {nil}},
 			[Schema.NonEmptyArray(Schema.Number)] = {"", "a", {}, {a = 1, 2}, {nil}, {"ye"}},
+			[Schema.BoundedArray(Schema.Number, 2, 3)] = {{1}, {1, 2, 3, 4}, {"a", "b"}},
 			[Schema.PartialObject{}] = {-1, "", {1, 2}, {a=2, 3}},
 		}
 		for value_schema, failure_values in pairs(test_schema_failure_values) do

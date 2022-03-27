@@ -39,6 +39,7 @@ World.World.Sys = World.Sys
 function World.World.new(game, state, metatable)
 	assert(Schema.Optional(Schema.SerializableObject)(state))
 	assert(Schema.Optional(World.World.metatable_schema)(metatable))
+	assert(Schema.Optional(Game.Game.Schema)(game))
 
 	local world = Sim.Sim.new(state, metatable or World.World)
 	world._game = game
