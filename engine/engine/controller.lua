@@ -38,7 +38,7 @@ end
 Controller.Controller.default_id = 1
 Controller.Controller.max_id = 4
 
-Controller.KeyboardKey = Model.AnyEnum(Shim.unpack(Client.wrappers.Window.get_key_names()))
+Controller.KeyboardKey = Model.AnyEnum(Shim.unpack(Client.Wrappers.Window.get_key_names()))
 
 Controller.BindingType = Model.Enum("virtual", "keyboard")
 
@@ -105,18 +105,27 @@ Controller.WorldSys.State.defaults = {
 for i = 1, Controller.Controller.max_id do
 	Controller.WorldSys.State.defaults.controllers[i] = Controller.Controller.defaults
 end
+Controller.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
+	state = Controller.WorldSys.State.Schema,
+})
 function Controller.WorldSys:find(controller_id)
 	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
 	end
 
 	return self.state.controllers[controller_id]
 end
 function Controller.WorldSys:get_default()
+	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
+	end
+
 	return self:find(self.default_id)
 end
 function Controller.WorldSys:get_held(controller_id, input_name)
 	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
 		assert(Controller.InputName.Schema(input_name))
 	end
@@ -125,6 +134,7 @@ function Controller.WorldSys:get_held(controller_id, input_name)
 end
 function Controller.WorldSys:get_dir_x(controller_id)
 	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
 	end
 
@@ -140,6 +150,7 @@ function Controller.WorldSys:get_dir_x(controller_id)
 end
 function Controller.WorldSys:get_dir_y(controller_id)
 	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
 	end
 
@@ -155,6 +166,7 @@ function Controller.WorldSys:get_dir_y(controller_id)
 end
 function Controller.WorldSys:get_dirs(controller_id)
 	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
 	end
 
@@ -162,6 +174,7 @@ function Controller.WorldSys:get_dirs(controller_id)
 end
 function Controller.WorldSys:get_toggled(controller_id, input_name)
 	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
 		assert(Controller.InputName.Schema(input_name))
 	end
@@ -169,19 +182,33 @@ function Controller.WorldSys:get_toggled(controller_id, input_name)
 	return self.sim.step_id == self.state.controllers[controller_id].inputs[input_name].step_id
 end
 function Controller.WorldSys:get_pressed(controller_id, input_name)
+	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
+		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
+		assert(Controller.InputName.Schema(input_name))
+	end
+
 	return self:get_held(controller_id, input_name) and self:get_toggled(controller_id, input_name)
 end
 function Controller.WorldSys:get_released(controller_id, input_name)
+	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
+		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
+		assert(Controller.InputName.Schema(input_name))
+	end
+
 	return not self:get_held(controller_id, input_name) and self:get_toggled(controller_id, input_name)
 end
 function Controller.WorldSys:on_init()
 	Container.set_defaults(self.state, Controller.WorldSys.State.defaults)
+
 	if debug_checks_enabled then
-		assert(Controller.WorldSys.State.Schema(self.state))
+		assert(Controller.WorldSys.Schema(self))
 	end
 end
 function Controller.WorldSys:on_input_set(controller_id, input_name, held)
 	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
 		assert(Controller.InputName.Schema(input_name))
 		assert(Schema.Boolean(held))
@@ -213,16 +240,24 @@ end
 Controller.GameSys.State.defaults.bindings.controllers[Controller.Controller.default_id] = (
 	Controller.ControllerBindings.defaults_default_controller
 )
+Controller.GameSys.Schema = Schema.AllOf(Game.Sys.Schema, Schema.PartialObject{
+	state = Controller.GameSys.State.Schema,
+	_world_game = Schema.Optional(World.GameSys.Schema),
+})
 function Controller.GameSys:on_init()
 	Container.set_defaults(self.state, Controller.GameSys.State.defaults)
-	if debug_checks_enabled then
-		assert(Controller.GameSys.State.Schema(self.state))
-	end
 
 	self._world_game = self.sim:require(World.GameSys)
 	self._world_game:require_world_sys(Controller.WorldSys)
+
+	if debug_checks_enabled then
+		assert(Controller.GameSys.Schema(self))
+	end
 end
 function Controller.GameSys:handle_input_changes()
+	if debug_checks_enabled then
+		assert(Controller.GameSys.Schema(self))
+	end
 
 	local world = self._world_game.world
 	if world == nil then
@@ -257,9 +292,17 @@ function Controller.GameSys:handle_input_changes()
 	end
 end
 function Controller.GameSys:on_world_set()
+	if debug_checks_enabled then
+		assert(Controller.GameSys.Schema(self))
+	end
+
 	self:handle_input_changes()
 end
 function Controller.GameSys:on_step()
+	if debug_checks_enabled then
+		assert(Controller.GameSys.Schema(self))
+	end
+
 	self:handle_input_changes()
 end
 

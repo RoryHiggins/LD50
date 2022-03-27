@@ -6,6 +6,7 @@
 #include <od/core/type.hpp>
 #include <od/core/vertex.h>
 #include <od/core/array.hpp>
+#include <od/engine/tagset.h>
 #include <od/engine/entity_index.hpp>
 #include <od/engine/lua/includes.h>
 #include <od/engine/lua/wrappers.h>
@@ -899,6 +900,14 @@ static int odLuaBindings_odEntityIndex_count(lua_State* lua) {
 	lua_pushnumber(lua, static_cast<lua_Number>(result_count));
 	return 1;
 }
+static int odLuaBindings_odEntityIndex_get_max_tag_id(lua_State* lua) {
+	if (!OD_DEBUG_CHECK(lua != nullptr)) {
+		return 0;
+	}
+
+	lua_pushnumber(lua, static_cast<lua_Number>(OD_TAG_ID_COUNT));
+	return 1;
+}
 bool odLuaBindings_odEntityIndex_register(lua_State* lua) {
 	if (!OD_CHECK(lua != nullptr)) {
 		return false;
@@ -927,7 +936,8 @@ bool odLuaBindings_odEntityIndex_register(lua_State* lua) {
 		|| !OD_CHECK(add_method("get_sprite", odLuaBindings_odEntityIndex_get_sprite))
 		|| !OD_CHECK(add_method("first", odLuaBindings_odEntityIndex_first))
 		|| !OD_CHECK(add_method("all", odLuaBindings_odEntityIndex_all))
-		|| !OD_CHECK(add_method("count", odLuaBindings_odEntityIndex_count))) {
+		|| !OD_CHECK(add_method("count", odLuaBindings_odEntityIndex_count))
+		|| !OD_CHECK(add_method("get_max_tag_id", odLuaBindings_odEntityIndex_get_max_tag_id))) {
 		return false;
 	}
 

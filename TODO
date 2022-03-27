@@ -2,29 +2,37 @@
 Lua TODO
 --------------
 entity.Entity : schema.SerializableObject
-	name: str|nil
-entity.WorldSys : world.Sys
-	add(src: schema.SerializableObject|nil) : entity.Entity
-	set(entity.Entity, src: schema.SerializableObject|nil)
-	update(entity.Entity, src: schema.SerializableObject)
-	destroy(entity.Entity)
-	all() : [entity.Entity]
-	find(name: str) : entity.Entity|nil
-	set_name(entity.Entity, name: str) : str
-	require_name(entity.Entity) : str
-	on_start()
-	state
-		entities: [entity.Entity]
+entity.EntityIndex
+	_entity_index: EntityIndex
 	_tag_id_to_tag: [str]
 	_tag_to_tag_id: {[str]: num}
-	_entity_to_entity_id: {[entity.Entity]: num}
-	_entity_name_to_entity: {[str]: entity.Entity}
 	_tag_to_entities: {[str]: [entity.Entity]}
-	_entity_id_lookup_for_tag_to_entities: [{[str]: num}]  # for efficient cleanup of _tag_to_entities
+	_entity_id_to_tag_to_entities: [{[str]: num}]  # for efficient cleanup of _tag_to_entities
+entity.WorldSys : world.Sys
+	add(src: schema.SerializableObject|nil) : entity.Entity
+	set(entity.Entity, src: schema.SerializableObject)
+	destroy(entity.Entity)
+	reindex(entity.Entity)
+	reindex_all()
+	get_all() : [entity.Entity]
+	on_init()
+	state
+		entities: [entity.Entity]
+	_entity_to_entity_id: {[entity.Entity]: num}
 	_entity_index: EntityIndex
 	_sprite_game: sprite.GameSys : game.Sys  # for index access to atlas tex coords, which are not in world state
 
-tag.Component : schema.Mapping(schema.String, schema.String)
+name.Entity : entity.Entity
+	name: str
+name.WorldSys : world.Sys
+	find(name: str) : name.Entity|nil
+	set(entity.Entity, name: str) : str
+	require(entity.Entity) : str
+	on_entity_set(entity: entity.Entity)
+	_entity_name_to_entity: {[str]: entity.Entity}
+
+tag.Entity extends entity.Entity
+	tags: schema.Mapping(schema.String, schema.Boolean)
 tag.WorldSys : world.Sys
 	is_set(entity.Entity, ...tags: [str]) : bool
 	set(entity.Entity, ...tags: [str])  # invokes on_entity_tag_set
@@ -33,7 +41,7 @@ tag.WorldSys : world.Sys
 	all(tag: str) : [entity.Entity]
 	_entity_world: entity.WorldSys
 
-bounds.Component : schema.SerializableObject
+bounds.Entity extends entity.Entity
 	x, y, width, height: num
 bounds.WorldSys
 	find_in(x, y, width, height: num, entity.Entity, ...tags: [str]) : entity.Entity|nil
@@ -47,7 +55,7 @@ sprite.Sprite : schema.SerializableObject
 	file_name: str
 	file_type = "png"
 	u1, v1, u2, v2: num
-sprite.Component : schema.SerializableObject
+sprite.Entity extends bounds.Entity
 	sprite_name: str
 	r, g, b, a, z, scale_x, scale_y, translate_x, translate_y, rotate: num?
 sprite.AtlasRegion
@@ -73,8 +81,8 @@ animation.Animation : schema.SerializableObject
 	frames: [str]  # sprite names
 animation.Component : schema.SerializableObject
 	anim_name: str
-	frame_id: num
-	loop: bool
+	anim_frame_id: num
+	anim_is_looping: bool
 animation.WorldSys : world.Sys
 	add_animation(anim_name: str, animation.Animation)
 	find_animation(anim_name: str) : animation.Animation|nil

@@ -465,6 +465,8 @@ OD_TEST(odTest_odLuaBindings_odEntityIndex) {
 		assert(entity_index:count(nil, 0,0,1,1, 2) == 1)
 		assert(entity_index:count(2, 0,0,1,1, 2) == 0)
 
+		assert(entity_index.get_max_tag_id() > 0)
+
 		entity_index:destroy()
 		entity_index:destroy()  -- re-destroy
 	)";

@@ -7,7 +7,6 @@
 #include <od/platform/texture.hpp>
 #include <od/engine/atlas.hpp>
 
-
 bool odTextureAtlas_init(odTextureAtlas* atlas, odWindow* window) {
 	if (!OD_CHECK(atlas != nullptr)
 		|| !OD_CHECK(odWindow_check_valid(window))) {
@@ -16,6 +15,7 @@ bool odTextureAtlas_init(odTextureAtlas* atlas, odWindow* window) {
 
 	odTextureAtlas_destroy(atlas);
 
+	// start with a 1x1 px white texture for untextured primitives
 	odColor white = *odColor_get_white();
 	if (!OD_CHECK(odTexture_init(&atlas->texture, window, &white, 1, 1))) {
 		return false;

@@ -310,7 +310,7 @@ function Schema.BoundedInteger(min, max)
 end
 local label_regex = "[a-z_][a-z0-9_]*"
 function Schema.LabelString(x)
-	if type(x) == "string" and string.match(x, label_regex) == x then
+	if type(x) == "string" and string.match(x, label_regex) == x and #x > 0 and #x < 64 then
 		return true
 	end
 	return false, Schema.error("Schema.LabelString(%s): no match, regex=%s", x, label_regex)

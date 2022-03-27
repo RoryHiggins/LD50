@@ -4,8 +4,8 @@ local Client = require("engine/engine/client")
 local Camera = require("engine/engine/camera")
 local Controller = require("engine/engine/controller")
 
-local AsciiFont = Client.wrappers.AsciiFont
-local EntityIndex = Client.wrappers.EntityIndex
+local AsciiFont = Client.Wrappers.AsciiFont
+local EntityIndex = Client.Wrappers.EntityIndex
 
 -- TODO move into GameSys.on_draw() once that is hooked up
 local ExampleWorld = World.Sys.new_metatable("engine_test_example")
@@ -76,7 +76,7 @@ function ExampleGame:on_init()
 
 	self._world_game:require_world_sys(ExampleWorld)
 
-	self._music = Client.wrappers.Music.new_file{
+	self._music = Client.Wrappers.Music.new_file{
 		filename = 'examples/engine_test/data/100ms_sine_440hz_22050hz_s16.ogg'
 	}
 	self._music:play{volume = 0.02, loop_forever = true}

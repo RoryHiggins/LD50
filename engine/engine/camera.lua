@@ -60,26 +60,32 @@ Camera.WorldSys.State.defaults = {
 		[Camera.WorldSys.default_name] = Camera.Camera.defaults,
 	},
 }
+Camera.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
+	state = Camera.WorldSys.State.Schema,
+})
 function Camera.WorldSys:on_init()
 	Container.set_defaults(self.state, Camera.WorldSys.State.defaults)
 
 	if debug_checks_enabled then
-		assert(Camera.WorldSys.State.Schema(self.state))
+		assert(Camera.WorldSys.Schema(self))
 	end
 end
 function Camera.WorldSys:set(name, camera)
 	if debug_checks_enabled then
+		assert(Camera.WorldSys.Schema(self))
 		assert(Schema.LabelString(name))
+		assert(Camera.Camera.Schema(camera))
 	end
 
 	self.state.cameras[name] = camera
 
 	if debug_checks_enabled then
-		assert(Camera.WorldSys.State.Schema(self.state))
+		assert(Camera.WorldSys.Schema(self))
 	end
 end
 function Camera.WorldSys:set_pos(name, x, y, z)
 	if debug_checks_enabled then
+		assert(Camera.WorldSys.Schema(self))
 		assert(Schema.LabelString(name))
 		assert(Schema.Optional(Schema.Number)(x))
 		assert(Schema.Optional(Schema.Number)(y))
@@ -90,8 +96,9 @@ function Camera.WorldSys:set_pos(name, x, y, z)
 end
 function Camera.WorldSys:find(name)
 	if debug_checks_enabled then
+		assert(Camera.WorldSys.Schema(self))
 		assert(Schema.LabelString(name))
-		assert(self.state.cameras[name] ~= nil)
+		assert(Camera.Camera.Schema(self.state.cameras[name]))
 	end
 
 	return self.state.cameras[name]
@@ -101,11 +108,19 @@ local function order_camera_depth_sorted(a, b)
 	return a.transform.translate_z > b.transform.translate_z
 end
 function Camera.WorldSys:all_depth_ordered()
+	if debug_checks_enabled then
+		assert(Camera.WorldSys.Schema(self))
+	end
+
 	local cameras = Container.get_values(self.state.cameras)
 	table.sort(cameras, order_camera_depth_sorted)
 	return cameras
 end
 function Camera.WorldSys:get_default()
+	if debug_checks_enabled then
+		assert(Camera.WorldSys.Schema(self))
+	end
+
 	return self:find(self.default_name)
 end
 

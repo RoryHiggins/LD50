@@ -10,14 +10,14 @@ local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Client = {}
 
-Client.wrappers = odClientWrapper
-function Client.wrappers.Schema(name)
+Client.Wrappers = odClientWrapper
+function Client.Wrappers.Schema(name)
 	return Schema.AllOf(Schema.Userdata, Schema.Check(function(x)
 		if x._metatable_name == name then
 			return true
 		end
 		return false, Schema.error(
-			"Client.wrappers.Schema(%s): metatable %s, expected %s", x, x._metatable_name, name)
+			"Client.Wrappers.Schema(%s): metatable %s, expected %s", x, x._metatable_name, name)
 	end))
 end
 
@@ -40,11 +40,11 @@ Client.Context.State.defaults = {
 }
 Client.Context.Schema = Schema.Object{
 	state = Client.Context.State.Schema,
-	window = Client.wrappers.Schema("Window"),
-	texture_atlas = Client.wrappers.Schema("TextureAtlas"),
-	renderer = Client.wrappers.Schema("Renderer"),
-	render_state_ortho_2d = Client.wrappers.Schema("RenderState"),
-	render_state_passthrough = Client.wrappers.Schema("RenderState"),
+	window = Client.Wrappers.Schema("Window"),
+	texture_atlas = Client.Wrappers.Schema("TextureAtlas"),
+	renderer = Client.Wrappers.Schema("Renderer"),
+	render_state_ortho_2d = Client.Wrappers.Schema("RenderState"),
+	render_state_passthrough = Client.Wrappers.Schema("RenderState"),
 	mouse = Schema.Object{
 		x = Schema.Integer,
 		y = Schema.Integer,
@@ -52,7 +52,6 @@ Client.Context.Schema = Schema.Object{
 		middle = Schema.Boolean,
 		right = Schema.Boolean,
 	},
-	step_id = Schema.PositiveInteger,
 }
 function Client.Context.new(state)
 	state = Container.set_defaults({}, state or {}, Client.Context.State.defaults)
@@ -63,13 +62,12 @@ function Client.Context.new(state)
 
 	local context = {}
 	context.state = state
-	context.window = Client.wrappers.Window.new(state)
-	context.texture_atlas = Client.wrappers.TextureAtlas.new{window = context.window}
-	context.renderer = Client.wrappers.Renderer.new{window = context.window}
-	context.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = context.window}
-	context.render_state_passthrough = Client.wrappers.RenderState.new{target = context.window}
+	context.window = Client.Wrappers.Window.new(state)
+	context.texture_atlas = Client.Wrappers.TextureAtlas.new{window = context.window}
+	context.renderer = Client.Wrappers.Renderer.new{window = context.window}
+	context.render_state_ortho_2d = Client.Wrappers.RenderState.new_ortho_2d{target = context.window}
+	context.render_state_passthrough = Client.Wrappers.RenderState.new{target = context.window}
 	context.mouse = context.window:get_mouse_state()
-	context.step_id = 1
 	setmetatable(context, Client.Context)
 
 	if debug_checks_enabled then
@@ -92,8 +90,6 @@ function Client.Context:step()
 	self.render_state_passthrough:init{target = self.window}
 	self.renderer:clear{color = {255, 255, 255, 255}}
 
-	self.step_id = self.step_id + 1
-
 	self.mouse = self.window:get_mouse_state()
 
 	Container.update(self.state, self.window:get_settings())
@@ -109,9 +105,9 @@ Client.RenderTarget = {}
 Client.RenderTarget.__index = Client.RenderTarget
 Client.RenderTarget.Schema = Schema.Object{
 	context = Client.Context.Schema,
-	render_texture = Client.wrappers.Schema("RenderTexture"),
-	render_state_ortho_2d = Client.wrappers.Schema("RenderState"),
-	render_state_passthrough = Client.wrappers.Schema("RenderState"),
+	render_texture = Client.Wrappers.Schema("RenderTexture"),
+	render_state_ortho_2d = Client.Wrappers.Schema("RenderState"),
+	render_state_passthrough = Client.Wrappers.Schema("RenderState"),
 }
 function Client.RenderTarget.new(context, width, height)
 	if debug_checks_enabled then
@@ -122,10 +118,10 @@ function Client.RenderTarget.new(context, width, height)
 
 	local render_target = {}
 	render_target.context = context
-	render_target.render_texture = Client.wrappers.RenderTexture.new{
+	render_target.render_texture = Client.Wrappers.RenderTexture.new{
 		window = context.window, width = width, height = height}
-	render_target.render_state_ortho_2d = Client.wrappers.RenderState.new_ortho_2d{target = render_target.render_texture}
-	render_target.render_state_passthrough = Client.wrappers.RenderState.new{target = render_target.render_texture}
+	render_target.render_state_ortho_2d = Client.Wrappers.RenderState.new_ortho_2d{target = render_target.render_texture}
+	render_target.render_state_passthrough = Client.Wrappers.RenderState.new{target = render_target.render_texture}
 	setmetatable(render_target, Client.RenderTarget)
 
 	if debug_checks_enabled then
@@ -154,7 +150,18 @@ Client.WorldSys.State.defaults = {
 	width = 256,
 	height = 192,
 }
+Client.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
+	state = Client.WorldSys.State.Schema,
+	_camera_world = Camera.WorldSys.Schema,
+	_vertex_array = Client.Wrappers.Schema("VertexArray"),
+	_context = Schema.Optional(Client.Context.Schema),
+	_render_target = Schema.Optional(Client.RenderTarget.Schema),
+})
 function Client.WorldSys:draw()
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+	end
+
 	local world_vertex_array = self._vertex_array
 	world_vertex_array:init{}
 
@@ -193,12 +200,24 @@ function Client.WorldSys:draw()
 	}
 end
 function Client.WorldSys:get_vertex_array()
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+	end
+
 	return self._vertex_array
 end
 function Client.WorldSys:get_size()
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+	end
+
 	return self.state.width, self.state.height
 end
 function Client.WorldSys:_get_mouse_pos()
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+	end
+
 	-- NOTE: for debug drawing only; not intended to be used in world behaviours
 
 	if self._context == nil then
@@ -212,6 +231,7 @@ function Client.WorldSys:_get_mouse_pos()
 end
 function Client.WorldSys:set_size(width, height)
 	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
 		assert(Schema.PositiveInteger(width))
 		assert(Schema.PositiveInteger(height))
 	end
@@ -229,7 +249,7 @@ function Client.WorldSys:on_init()
 	Container.set_defaults(self.state, Client.WorldSys.State.defaults)
 
 	self._camera_world = self.sim:require(Camera.WorldSys)
-	self._vertex_array = Client.wrappers.VertexArray.new{}
+	self._vertex_array = Client.Wrappers.VertexArray.new{}
 
 	if self.sim._game then
 		self._context = self.sim._game._context
@@ -242,8 +262,7 @@ function Client.WorldSys:on_init()
 	end
 
 	if debug_checks_enabled then
-		assert(Client.WorldSys.State.Schema(self.state))
-		assert(Schema.Optional(Client.Context.Schema)(self._context))
+		assert(Client.WorldSys.Schema(self))
 	end
 end
 
@@ -251,10 +270,24 @@ Client.GameSys = Game.Sys.new_metatable("client")
 Client.GameSys.State = {}
 Client.GameSys.State.Schema = Client.Context.State.Schema
 Client.GameSys.State.defaults = Client.Context.State.defaults
+Client.GameSys.Schema = Schema.AllOf(Game.Sys.Schema, Schema.PartialObject{
+	state = Client.GameSys.State.Schema,
+	context = Schema.Optional(Client.Context.Schema),
+	_vertex_array = Client.Wrappers.Schema("VertexArray"),
+	_world_game = World.GameSys.Schema,
+})
 function Client.GameSys:get_size()
+	if debug_checks_enabled then
+		assert(Client.GameSys.Schema(self))
+	end
+
 	return self.state.width, self.state.height
 end
 function Client.GameSys:get_mouse_pos()
+	if debug_checks_enabled then
+		assert(Client.GameSys.Schema(self))
+	end
+
 	if self.context == nil then
 		return 0, 0
 	end
@@ -262,9 +295,17 @@ function Client.GameSys:get_mouse_pos()
 	return self.context.mouse.x, self.context.mouse.y
 end
 function Client.GameSys:get_vertex_array()
+	if debug_checks_enabled then
+		assert(Client.GameSys.Schema(self))
+	end
+
 	return self._vertex_array
 end
 function Client.GameSys:draw()
+	if debug_checks_enabled then
+		assert(Client.GameSys.Schema(self))
+	end
+
 	self._vertex_array:init{}
 
 	if self.context ~= nil then
@@ -293,7 +334,7 @@ end
 function Client.GameSys:on_init()
 	Container.set_defaults(self.state, Client.GameSys.State.defaults)
 
-	self._vertex_array = Client.wrappers.VertexArray.new{}
+	self._vertex_array = Client.Wrappers.VertexArray.new{}
 	self._world_game = self.sim:require(World.GameSys)
 	self._world_game:require_world_sys(Client.WorldSys)
 
@@ -303,11 +344,14 @@ function Client.GameSys:on_init()
 	end
 
 	if debug_checks_enabled then
-		assert(Client.GameSys.State.Schema(self.state))
-		assert(Schema.Optional(Client.Context.Schema)(self.context))
+		assert(Client.GameSys.Schema(self))
 	end
 end
 function Client.GameSys:on_step()
+	if debug_checks_enabled then
+		assert(Client.GameSys.Schema(self))
+	end
+
 	if self.context == nil then
 		return
 	end

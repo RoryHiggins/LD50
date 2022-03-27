@@ -26,14 +26,14 @@ Sim.Sys.Schema = Schema.PartialObject{
 	_is_sys = Schema.Const(true),
 	_is_sys_instance = Schema.Const(true),
 }
-Sim.Sys.metatable_schema = Schema.PartialObject{
+Sim.Sys.MetatableSchema = Schema.PartialObject{
 	_is_sys = Schema.Const(true),
 	_is_sys_instance = Schema.Optional(Schema.Const(false)),
 }
 Sim.Sys._is_sys = true
 function Sim.Sys.new_metatable(sys_name, metatable)
 	assert(Schema.LabelString(sys_name))
-	assert(Schema.Optional(Sim.Sys.metatable_schema)(metatable))
+	assert(Schema.Optional(Sim.Sys.MetatableSchema)(metatable))
 	metatable = metatable or Sim.Sys
 
 	local sys_metatable = {
@@ -42,7 +42,7 @@ function Sim.Sys.new_metatable(sys_name, metatable)
 	}
 	sys_metatable.__index = sys_metatable
 	setmetatable(sys_metatable, metatable)
-	assert(metatable.metatable_schema(sys_metatable))
+	assert(metatable.MetatableSchema(sys_metatable))
 
 	return sys_metatable
 end
@@ -61,7 +61,7 @@ Sim.Sim.Schema = Schema.PartialObject{
 	_event_listeners_ordered = Schema.Array(Schema.AnyObject),
 	_event_listeners_cached = Schema.Mapping(Schema.String, Schema.Array(Schema.AnyObject)),
 }
-Sim.Sim.metatable_schema = Schema.PartialObject{
+Sim.Sim.MetatableSchema = Schema.PartialObject{
 	_is_sim = Schema.Const(true),
 	_is_sim_instance = Schema.Optional(Schema.Const(false)),
 }
@@ -70,7 +70,7 @@ Sim.Sim._is_sim = true
 Sim.Sim.Sys = Sim.Sys
 function Sim.Sim.new(state, metatable)
 	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(Sim.Sim.metatable_schema)(metatable))
+	assert(Schema.Optional(Sim.Sim.MetatableSchema)(metatable))
 	state = state or {}
 	metatable = metatable or Sim.Sim
 
@@ -98,7 +98,7 @@ end
 function Sim.Sim:require(sys_metatable)
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.Sys.metatable_schema(sys_metatable))
+		assert(self.Sys.MetatableSchema(sys_metatable))
 		assert(self.status == Sim.Status.new)
 	end
 
@@ -144,7 +144,7 @@ function Sim.Sim:get(sys_metatable)
 	local sys_name = sys_metatable.sys_name
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(self.Sys.metatable_schema(sys_metatable))
+		assert(self.Sys.MetatableSchema(sys_metatable))
 		assert(Schema.LabelString(sys_name))
 	end
 

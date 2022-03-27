@@ -16,7 +16,7 @@ World.Sys.Schema = Schema.AllOf(Sim.Sys.Schema, Schema.PartialObject{
 	_is_world_sys = Schema.Optional(Schema.Const(true)),
 	_is_game_sys = Schema.Optional(Schema.Const(false)),
 })
-World.Sys.metatable_schema = Schema.AllOf(Sim.Sys.metatable_schema, Schema.PartialObject{
+World.Sys.MetatableSchema = Schema.AllOf(Sim.Sys.MetatableSchema, Schema.PartialObject{
 	_is_world_sys = Schema.Optional(Schema.Const(true)),
 	_is_game_sys = Schema.Optional(Schema.Const(false)),
 })
@@ -24,7 +24,7 @@ World.Sys._is_world_sys = true
 World.Sys._is_game_sys = false
 function World.Sys.new_metatable(sys_name, metatable)
 	assert(Schema.LabelString(sys_name))
-	assert(Schema.Optional(World.Sys.metatable_schema)(metatable))
+	assert(Schema.Optional(World.Sys.MetatableSchema)(metatable))
 	return Sim.Sys.new_metatable(sys_name, metatable or World.Sys)
 end
 
@@ -32,13 +32,15 @@ World.World = {}
 setmetatable(World.World, Sim.Sim)
 World.World.__index = World.World
 World.World._is_world_sim = true
-World.World.Schema = Schema.AllOf(Sim.Sim.Schema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
-World.World.metatable_schema =
-	Schema.AllOf(Sim.Sim.metatable_schema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
+World.World.Schema = Schema.AllOf(Sim.Sim.Schema, Schema.PartialObject{
+	_is_world_sim = Schema.Const(true)
+})
+World.World.MetatableSchema =
+	Schema.AllOf(Sim.Sim.MetatableSchema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
 World.World.Sys = World.Sys
 function World.World.new(game, state, metatable)
 	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(World.World.metatable_schema)(metatable))
+	assert(Schema.Optional(World.World.MetatableSchema)(metatable))
 	assert(Schema.Optional(Game.Game.Schema)(game))
 
 	local world = Sim.Sim.new(state, metatable or World.World)
@@ -51,6 +53,10 @@ World.GameSys = Game.Sys.new_metatable("world")
 World.GameSys.State = {}
 World.GameSys.State.Schema = Schema.SerializableObject
 World.GameSys.State.defaults = {}
+World.GameSys.Schema = Schema.AllOf(Game.Sys.Schema, Schema.PartialObject{
+	state = World.GameSys.State.Schema,
+	_world_systems = Schema.Array(World.Sys.MetatableSchema),
+})
 function World.GameSys:new_world(state)
 	if debug_checks_enabled then
 		assert(World.GameSys.Schema(self))
@@ -113,7 +119,7 @@ function World.GameSys:set(world)
 end
 function World.GameSys:require_world_sys(sys_metatable)
 	if debug_checks_enabled then
-		assert(World.Sys.metatable_schema(sys_metatable))
+		assert(World.Sys.MetatableSchema(sys_metatable))
 		assert(self.sim.status == Sim.Status.new)
 		assert(Container.array_try_find(self._world_systems, sys_metatable) == nil)
 	end
