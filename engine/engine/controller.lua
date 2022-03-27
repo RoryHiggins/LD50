@@ -123,6 +123,43 @@ function Controller.WorldSys:get_held(controller_id, input_name)
 
 	return self.state.controllers[controller_id].inputs[input_name].held
 end
+function Controller.WorldSys:get_dir_x(controller_id)
+	if debug_checks_enabled then
+		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
+	end
+
+	local dir_x = 0
+	if self:get_held(1, Controller.InputName.left) then
+		dir_x = dir_x - 1
+	end
+	if self:get_held(1, Controller.InputName.right) then
+		dir_x = dir_x + 1
+	end
+
+	return dir_x
+end
+function Controller.WorldSys:get_dir_y(controller_id)
+	if debug_checks_enabled then
+		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
+	end
+
+	local dir_y = 0
+	if self:get_held(1, Controller.InputName.up) then
+		dir_y = dir_y - 1
+	end
+	if self:get_held(1, Controller.InputName.down) then
+		dir_y = dir_y + 1
+	end
+
+	return dir_y
+end
+function Controller.WorldSys:get_dirs(controller_id)
+	if debug_checks_enabled then
+		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
+	end
+
+	return self:get_dir_x(controller_id), self:get_dir_y(controller_id)
+end
 function Controller.WorldSys:get_toggled(controller_id, input_name)
 	if debug_checks_enabled then
 		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
@@ -227,43 +264,55 @@ function Controller.GameSys:on_step()
 end
 
 Controller.tests = Testing.add_suite("engine.controller", {
-	-- run_world = function()
-	-- 	local world = World.World.new()
-	-- 	local controller_world = world:require(Controller.WorldSys)
-	-- 	world:start()
-	-- 	assert(Controller.Controller.Schema(controller_world:find(controller_world.default_id)))
-	-- 	assert(Controller.Controller.Schema(controller_world:get_default()))
-	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+	run_world = function()
+		local world = World.World.new()
+		local controller_world = world:require(Controller.WorldSys)
+		world:start()
+		assert(Controller.Controller.Schema(controller_world:find(controller_world.default_id)))
+		assert(Controller.Controller.Schema(controller_world:get_default()))
+		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_dir_x(controller_world.default_id) == 0)
+		assert(controller_world:get_dir_y(controller_world.default_id) == 0)
 
-	-- 	world:step()
-	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+		world:step()
+		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_dir_x(controller_world.default_id) == 0)
+		assert(controller_world:get_dir_y(controller_world.default_id) == 0)
 
-	-- 	controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, true)
-	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
-	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
-	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == true)
-	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+		controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, true)
+		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
+		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
+		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == true)
+		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_dir_x(controller_world.default_id) == 0)
+		assert(controller_world:get_dir_y(controller_world.default_id) == -1)
 
-	-- 	world:step()
-	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
-	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+		world:step()
+		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
+		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_dir_x(controller_world.default_id) == 0)
+		assert(controller_world:get_dir_y(controller_world.default_id) == -1)
 
-	-- 	controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, false)
-	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
-	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
-	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == true)
+		controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, false)
+		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
+		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == true)
+		assert(controller_world:get_dir_x(controller_world.default_id) == 0)
+		assert(controller_world:get_dir_y(controller_world.default_id) == 0)
 
-	-- 	world:finalize()
-	-- end,
+		controller_world:get_dirs(controller_world.default_id)
+
+		world:finalize()
+	end,
 	run_game = function()
 		local game = Game.Game.new()
 		local controller_game = game:require(Controller.GameSys)

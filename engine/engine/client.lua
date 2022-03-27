@@ -199,7 +199,7 @@ function Client.WorldSys:get_size()
 	return self.state.width, self.state.height
 end
 function Client.WorldSys:_get_mouse_pos()
-	-- NOTE: for debug drawing only; not intended to be exposed to world
+	-- NOTE: for debug drawing only; not intended to be used in world behaviours
 
 	if self._context == nil then
 		return 0, 0
@@ -298,7 +298,7 @@ function Client.GameSys:on_init()
 	self._world_game:require_world_sys(Client.WorldSys)
 
 	if self.state.visible then
-		self.context = Client.Context.new({})
+		self.context = Client.Context.new(self.state)
 		self.sim._context = self.context
 	end
 

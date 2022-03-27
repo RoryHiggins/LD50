@@ -2,6 +2,7 @@ local Game = require("engine/engine/game")
 local World = require("engine/engine/world")
 local Client = require("engine/engine/client")
 local Camera = require("engine/engine/camera")
+local Controller = require("engine/engine/controller")
 
 local AsciiFont = Client.wrappers.AsciiFont
 local EntityIndex = Client.wrappers.EntityIndex
@@ -11,6 +12,7 @@ local ExampleWorld = World.Sys.new_metatable("engine_test_example")
 function ExampleWorld:on_init()
 	self._client_world = self.sim:require(Client.WorldSys)
 	self._camera_world = self.sim:require(Camera.WorldSys)
+	self._controller_world = self.sim:require(Controller.WorldSys)
 
 	-- TODO use Sprite.GameSys to allocate once hooked up
 	self.sprites_u, self.sprites_v = self._client_world._context.texture_atlas:set_region_png_file{
@@ -32,12 +34,12 @@ function ExampleWorld:on_init()
 	end
 end
 function ExampleWorld:on_step()
-	local mouse_x, mouse_y = self._client_world:_get_mouse_pos()
-	local width, height = self._client_world:get_size()
+	local camera = self._camera_world:get_default()
+	local move_x, move_y = self._controller_world:get_dirs(self._controller_world.default_id)
 	self._camera_world:set_pos(
 		self._camera_world.default_name,
-		math.floor(mouse_x - (width / 2)),
-		math.floor(mouse_y - (height / 2))
+		math.floor(camera.transform.translate_x + move_x),
+		math.floor(camera.transform.translate_y + move_y)
 	)
 end
 function ExampleWorld:on_draw()
@@ -70,6 +72,7 @@ local ExampleGame = Game.Sys.new_metatable("engine_test_example")
 function ExampleGame:on_init()
 	self._world_game = self.sim:require(World.GameSys)
 	self._client_game = self.sim:require(Client.GameSys)
+	self.sim:require(Controller.GameSys)
 
 	self._world_game:require_world_sys(ExampleWorld)
 
