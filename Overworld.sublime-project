@@ -45,7 +45,7 @@
 		// },
 		{
 			"name": "DEBUG build client and run tests by name",
-			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --test-name-filter odTest_odLuaBindings",
+			"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --test-name-filter odTest_odLuaBindings_odMusic",
 			"working_dir": "$project_path",
 		},
 		{

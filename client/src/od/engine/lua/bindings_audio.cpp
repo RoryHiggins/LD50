@@ -62,7 +62,7 @@ static int odLuaBindings_odAudio_init_wav_file(lua_State* lua) {
 	}
 
 	if (!OD_CHECK(odAudio_init_wav_file(audio, filename))) {
-		return luaL_error(lua, "odAudio_init() failed, filename=%s", filename);
+		return luaL_error(lua, "odAudio_init_wav_file(%s) failed", filename);
 	}
 
 	return 0;

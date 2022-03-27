@@ -18,6 +18,7 @@ bool odLuaBindings_register(lua_State* lua) {
 		|| !OD_CHECK(odLuaBindings_odRenderState_register(lua))
 		|| !OD_CHECK(odLuaBindings_odRenderer_register(lua))
 		|| !OD_CHECK(odLuaBindings_odAudio_register(lua))
+		|| !OD_CHECK(odLuaBindings_odMusic_register(lua))
 		|| !OD_CHECK(odLuaBindings_odTextureAtlas_register(lua))
 		|| !OD_CHECK(odLuaBindings_odEntityIndex_register(lua))) {
 		return false;

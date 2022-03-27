@@ -5,6 +5,7 @@
 
 #include <od/core/debug.h>
 #include <od/core/math.h>
+#include <od/core/allocation.hpp>
 #include <od/platform/sdl.h>
 #include <od/platform/file.h>
 
@@ -14,10 +15,6 @@
 
 struct odAudioMixer;
 
-static OD_NO_DISCARD bool
-odAudioMixer_check_valid(const odAudioMixer* mixer);
-static odAudioMixer*
-odAudioMixer_get_singleton();
 static void
 odAudioMixer_stop_audio_ptr(const odAudio* audio);
 
@@ -90,6 +87,8 @@ bool odAudio_init(odAudio* audio) {
 		|| !OD_CHECK(odAudioMixer_check_valid(odAudioMixer_get_singleton()))) {
 		return false;
 	}
+
+	odAudio_destroy(audio);
 
 	const uint8_t wav_one_sample_22050hz_s16[] = {
 		0x52, 0x49, 0x46, 0x46, 0x26, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45,

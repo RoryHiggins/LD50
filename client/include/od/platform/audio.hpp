@@ -2,8 +2,6 @@
 
 #include <od/platform/audio.h>
 
-#include <od/core/array.hpp>
-
 struct odAudio {
 	void* audio_native;
 

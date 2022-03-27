@@ -306,6 +306,50 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odAudio, OD_TEST_FILTER_SLOW) {
 
 	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
 }
+OD_TEST_FILTERED(odTest_odLuaBindings_odMusic, OD_TEST_FILTER_SLOW) {
+	odLuaClient lua;
+	OD_ASSERT(odLuaClient_init(&lua));
+
+	const char test_script[] = R"(
+		local music = odClientWrapper.Music.new{}
+		music:init{}
+		music:init{} -- re-init
+
+		music:init_file{filename = 'examples/engine_test/data/100ms_sine_440hz_22050hz_s16.ogg'}
+
+		music:play{
+			loop_count = 0, fadein_time = 0.001, volume = 0, loop_forever = false}
+		assert(music.is_playing())
+
+		local window = odClientWrapper.Window.new{visible = false}
+		local frames = 0
+		while window:step() do
+			frames = frames + 1
+			if frames > 20 then
+				window:destroy()
+				window:destroy() -- re-destroy
+			end
+		end
+
+		assert(not music.is_playing())
+
+		music:play{volume = 0, loop_forever = false}
+		assert(music.is_playing())
+
+		music.stop()
+		assert(not music.is_playing())
+
+		music:play{volume = 0, loop_forever = false}
+		assert(music.is_playing())
+		music:destroy()
+		assert(not music.is_playing())
+
+		music:destroy()
+		music:destroy() -- re-destroy
+	)";
+
+	OD_ASSERT(odLua_run_string(lua.lua, test_script, nullptr, 0));
+}
 OD_TEST(odTest_odLuaBindings_odEntityIndex) {
 	odLuaClient lua;
 	OD_ASSERT(odLuaClient_init(&lua));
@@ -454,6 +498,7 @@ OD_TEST_SUITE(
 	odTest_odLuaBindings_odRenderState,
 	odTest_odLuaBindings_odRenderer,
 	odTest_odLuaBindings_odAudio,
+	odTest_odLuaBindings_odMusic,
 	odTest_odLuaBindings_odEntityIndex,
 	odTest_odLuaBindings_odEntityIndex_odVertexArray_integration
 )

@@ -7,13 +7,13 @@
 #include <od/test/test.hpp>
 
 static OD_NO_DISCARD bool
-odTest_odAudio_loop_until_playback_complete(odAudioPlaybackId playback_id, float max_time_sec);
+odTest_odAudio_wait_until_complete(odAudioPlaybackId playback_id, float max_time_sec);
 static OD_NO_DISCARD bool
 odTest_odAudio_init_sine(odAudio* audio);
 static const odAudioPlaybackSettings*
-odTest_odAudioAudioPlaybackSettings_get_defaults();
+odTest_odAudioPlaybackSettings_get_defaults();
 
-bool odTest_odAudio_loop_until_playback_complete(odAudioPlaybackId playback_id, float max_time_sec) {
+bool odTest_odAudio_wait_until_complete(odAudioPlaybackId playback_id, float max_time_sec) {
 	odTimer timer;
 	odTimer_start(&timer);
 
@@ -46,7 +46,7 @@ bool odTest_odAudio_init_sine(odAudio* audio) {
 	const int32_t wav_size = sizeof(wav_sine_22050hz_s16);
 	return OD_CHECK(odAudio_init_wav(audio, wav_sine_22050hz_s16, wav_size));
 }
-const odAudioPlaybackSettings* odTest_odAudioAudioPlaybackSettings_get_defaults() {
+const odAudioPlaybackSettings* odTest_odAudioPlaybackSettings_get_defaults() {
 	static const odAudioPlaybackSettings settings{
 		/*loop_count*/ 0,
 		/*cutoff_time_ms*/ 10,
@@ -100,10 +100,10 @@ OD_TEST_FILTERED(odTest_odAudio_play, OD_TEST_FILTER_SLOW) {
 	odAudio audio;
 	OD_ASSERT(odTest_odAudio_init_sine(&audio));
 
-	odAudioPlaybackId playback_id = odAudio_play(&audio, odTest_odAudioAudioPlaybackSettings_get_defaults());
+	odAudioPlaybackId playback_id = odAudio_play(&audio, odTest_odAudioPlaybackSettings_get_defaults());
 	OD_ASSERT(odAudioPlaybackId_check_valid(playback_id));
 
-	OD_ASSERT(odTest_odAudio_loop_until_playback_complete(playback_id, 1.0f));
+	OD_ASSERT(odTest_odAudio_wait_until_complete(playback_id, 1.0f));
 
 	OD_ASSERT(odAudio_stop_all());
 }
@@ -114,14 +114,14 @@ OD_TEST_FILTERED(odTest_odAudio_play_simultaneous, OD_TEST_FILTER_SLOW) {
 	const int32_t playback_ids_count = OD_AUDIO_MIXER_CHANNELS;
 	odAudioPlaybackId playback_ids[playback_ids_count] = {};
 	for (int32_t i = 0; i < playback_ids_count; i++) {
-		playback_ids[i] = odAudio_play(&audio, odTest_odAudioAudioPlaybackSettings_get_defaults());
+		playback_ids[i] = odAudio_play(&audio, odTest_odAudioPlaybackSettings_get_defaults());
 		OD_ASSERT(odAudioPlaybackId_check_valid(playback_ids[i]));
 		OD_ASSERT(odAudio_is_playing(playback_ids[i]));
 	}
 
-	OD_ASSERT(odTest_odAudio_loop_until_playback_complete(playback_ids[playback_ids_count - 1], 1.0f));
+	OD_ASSERT(odTest_odAudio_wait_until_complete(playback_ids[playback_ids_count - 1], 1.0f));
 	for (int32_t i = 0; i < playback_ids_count; i++) {
-		OD_ASSERT(odTest_odAudio_loop_until_playback_complete(playback_ids[i], 0.1f));
+		OD_ASSERT(odTest_odAudio_wait_until_complete(playback_ids[i], 0.1f));
 		OD_ASSERT(!odAudio_is_playing(playback_ids[i]));
 	}
 
@@ -134,7 +134,7 @@ OD_TEST_FILTERED(odTest_odAudio_play_simultaneous_above_max_fails, OD_TEST_FILTE
 	const int32_t playback_ids_count = OD_AUDIO_MIXER_CHANNELS;
 	odAudioPlaybackId playback_ids[playback_ids_count] = {};
 	for (int32_t i = 0; i < playback_ids_count; i++) {
-		playback_ids[i] = odAudio_play(&audio, odTest_odAudioAudioPlaybackSettings_get_defaults());
+		playback_ids[i] = odAudio_play(&audio, odTest_odAudioPlaybackSettings_get_defaults());
 		OD_ASSERT(odAudioPlaybackId_check_valid(playback_ids[i]));
 		OD_ASSERT(odAudio_is_playing(playback_ids[i]));
 	}
@@ -143,7 +143,7 @@ OD_TEST_FILTERED(odTest_odAudio_play_simultaneous_above_max_fails, OD_TEST_FILTE
 	{
 		odLogLevelScoped suppress_errors{OD_LOG_LEVEL_FATAL};
 		odAudioPlaybackId no_channels_playback_id = odAudio_play(
-			&audio, odTest_odAudioAudioPlaybackSettings_get_defaults());
+			&audio, odTest_odAudioPlaybackSettings_get_defaults());
 		OD_ASSERT(!odAudioPlaybackId_check_valid(no_channels_playback_id));
 		OD_ASSERT(no_channels_playback_id = OD_AUDIO_PLAYBACK_ID_NO_CHANNELS);
 	}
@@ -154,7 +154,7 @@ OD_TEST_FILTERED(odTest_odAudio_play_destroy, OD_TEST_FILTER_SLOW) {
 	odAudio audio;
 	OD_ASSERT(odTest_odAudio_init_sine(&audio));
 
-	odAudioPlaybackId playback_id = odAudio_play(&audio, odTest_odAudioAudioPlaybackSettings_get_defaults());
+	odAudioPlaybackId playback_id = odAudio_play(&audio, odTest_odAudioPlaybackSettings_get_defaults());
 	OD_ASSERT(odAudioPlaybackId_check_valid(playback_id));
 	OD_ASSERT(odAudio_is_playing(playback_id));
 
@@ -168,7 +168,7 @@ OD_TEST_FILTERED(odTest_odAudio_play_stop, OD_TEST_FILTER_SLOW) {
 	odAudio audio;
 	OD_ASSERT(odTest_odAudio_init_sine(&audio));
 
-	odAudioPlaybackId playback_id = odAudio_play(&audio, odTest_odAudioAudioPlaybackSettings_get_defaults());
+	odAudioPlaybackId playback_id = odAudio_play(&audio, odTest_odAudioPlaybackSettings_get_defaults());
 	OD_ASSERT(odAudioPlaybackId_check_valid(playback_id));
 
 	OD_ASSERT(odAudio_stop(playback_id));
@@ -179,7 +179,6 @@ OD_TEST_FILTERED(odTest_odAudio_play_stop, OD_TEST_FILTER_SLOW) {
 
 	OD_ASSERT(odAudio_stop_all());
 }
-// TODO test odAudio_destroy during playback
 OD_TEST_SUITE(
 	odTestSuite_odAudio,
 	odTest_odAudio_init_destroy,

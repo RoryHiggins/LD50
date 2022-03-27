@@ -7,6 +7,7 @@
 
 typedef int32_t odAudioPlaybackId;
 
+struct odAudioMixer;
 struct odAudio;
 
 struct odAudioPlaybackSettings {
@@ -21,6 +22,11 @@ struct odAudioPlaybackSettings {
 
 OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
 odAudioPlaybackId_check_valid(odAudioPlaybackId playback_id);
+
+OD_API_C OD_PLATFORM_MODULE OD_NO_DISCARD bool
+odAudioMixer_check_valid(const struct odAudioMixer* mixer);
+OD_API_C OD_PLATFORM_MODULE struct odAudioMixer*
+odAudioMixer_get_singleton(void);
 
 OD_API_C OD_PLATFORM_MODULE const struct odAudioPlaybackSettings*
 odAudioPlaybackSettings_get_defaults(void);

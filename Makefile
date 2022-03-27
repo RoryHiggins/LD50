@@ -8,7 +8,7 @@ TARGET := DEBUG
 # key for output build
 KEY := ANY
 # client input arguments
-LUA_CLIENT := ./examples/minimal/main.lua
+LUA_CLIENT :=
 CLIENT_SRC := ./client
 CLIENT_ARGS :=
 CMAKE_GENERATE_ARGS :=
@@ -26,7 +26,6 @@ PYTHON := python
 BUILD_ROOT := build
 BUILD := $(BUILD_ROOT)/$(TARGET)_$(KEY)
 CLIENT := $(BUILD)/od_client
-LUA_CLIENT := examples/minimal/main.lua
 
 # Commands
 # ---
