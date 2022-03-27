@@ -7,8 +7,6 @@ coverage.txt
 *.exe
 *.a
 *.o
-*.so
-*.dll
 *.gcov
 *.gcda
 *.sublime-workspace

@@ -42,6 +42,7 @@ static odRenderTexture* odLuaBindings_odRenderer_get_render_texture_impl(lua_Sta
 			if (!OD_DEBUG_CHECK(window == renderer->window)) {
 				luaL_error(lua, "settings.target is a window that doesn't match renderer.window");    // NOTE: does not return
 			}
+			OD_MAYBE_UNUSED(window);
 		}
 	} else if (strcmp(target_type, OD_LUA_BINDINGS_RENDER_TEXTURE) == 0) {
 		opt_render_texture = static_cast<odRenderTexture*>(odLua_get_userdata_typed(
@@ -52,6 +53,8 @@ static odRenderTexture* odLuaBindings_odRenderer_get_render_texture_impl(lua_Sta
 	} else {
 		luaL_error(lua, "invalid settings.target.%s=%s", OD_LUA_METATABLE_NAME_KEY, target_type);    // NOTE: does not return
 	}
+
+	OD_MAYBE_UNUSED(renderer);
 
 	return opt_render_texture;
 }

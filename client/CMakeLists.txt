@@ -25,6 +25,9 @@ else()
 endif()
 
 
+set(OD_BUILD_LUA_CLIENT "" CACHE STRING
+	"Build with specified default lua client")
+
 set(OD_BUILD_LOGS ${OD_BUILD_LOGS_DEFAULT} CACHE BOOL
 	"Build with logging enabled")
 set(OD_BUILD_DEBUG ${OD_BUILD_DEBUG_DEFAULT} CACHE BOOL
@@ -60,6 +63,8 @@ endif()
 message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 message("BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
 message("CMAKE_UNITY_BUILD=${CMAKE_UNITY_BUILD}")
+
+message("OD_BUILD_LUA_CLIENT=${OD_BUILD_LUA_CLIENT}")
 
 message("OD_BUILD_LOGS=${OD_BUILD_LOGS}")
 message("OD_BUILD_DEBUG=${OD_BUILD_DEBUG}")
@@ -110,6 +115,7 @@ foreach(od_target ${od_targets})
 
 	target_compile_definitions(
 		${od_target} PUBLIC
+		OD_BUILD_LUA_CLIENT="${OD_BUILD_LUA_CLIENT}"
 		OD_BUILD_LOGS=${OD_BUILD_LOGS}
 		OD_BUILD_DEBUG=${OD_BUILD_DEBUG}
 		OD_BUILD_TESTS=${OD_BUILD_TESTS}
@@ -288,7 +294,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
 		if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE")
 			target_compile_options(${od_target} PUBLIC -ffast-math -flto -Os)
-			target_link_options(${od_target} PUBLIC -flto -fwhole-program -Os)
+			target_link_options(${od_target} PUBLIC -flto -fwhole-program -static-libstdc++ -static-libgcc -Os)
 
 			if(NOT("${OD_BUILD_PROFILE}" EQUAL 1))
 				target_compile_options(${od_target} PUBLIC -s)

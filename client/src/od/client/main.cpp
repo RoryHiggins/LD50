@@ -29,6 +29,11 @@ int main(int argc, char** argv) {
 	char const* test_name_filter = nullptr;
 	char const* lua_client_path = nullptr;
 
+	if (strcmp(OD_BUILD_LUA_CLIENT, "") != 0) {
+		lua_client_path = OD_BUILD_LUA_CLIENT;
+		run_lua_client = true;
+	}
+
 	odDebug_set_backtrace_enabled(false);
 
 	OD_TRACE("argc=%d", argc);

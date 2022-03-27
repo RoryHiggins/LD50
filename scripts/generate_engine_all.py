@@ -43,7 +43,9 @@ def main():
         f'\trequire("engine/core/testing").run_all()\n'
         f"\t{entrypoint}\n"
         f"end\n"
-        f'require("engine/core/debugging").set_debugger_enabled(true)\n'
+        f'local Debugging = require("engine/core/debugging")\n'
+        f'Debugging.debug_checks_enabled = true\n'
+        f'Debugging.set_debugger_enabled(true)\n'
         f"{run_main}"
     )
 

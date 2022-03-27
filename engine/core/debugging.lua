@@ -11,7 +11,7 @@ breakpoint = noop
 
 local Debugging = {}
 Debugging.debugger_enabled = false
-Debugging.debug_checks_enabled = true
+Debugging.debug_checks_enabled = false
 Debugging.breakpoint = breakpoint
 function Debugging.set_debugger_enabled(enabled)
 	Debugging.debugger_enabled = enabled

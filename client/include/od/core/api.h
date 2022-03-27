@@ -6,6 +6,10 @@
 #include <stdint.h>
 
 // Build settings
+#if !defined(OD_BUILD_LUA_CLIENT)
+#define OD_BUILD_LUA_CLIENT ""
+#endif
+
 #if !defined(OD_BUILD_LOGS)
 #define OD_BUILD_LOGS 1
 #endif
