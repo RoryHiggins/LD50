@@ -53,8 +53,8 @@ Sim.Sim.Schema = Schema.PartialObject{
 	status = Sim.Status.Schema,
 	step_id = Schema.PositiveInteger,
 	stopping = Schema.Boolean,
-	_initial_state = Schema.SerializableObject,
-	_message_history = Schema.Array(Schema.SerializableArray),
+	initial_state = Schema.SerializableObject,
+	messages = Schema.Array(Schema.SerializableArray),
 	_is_sim = Schema.Const(true),
 	_is_sim_instance = Schema.Const(true),
 	_systems = Schema.Mapping(Schema.String, Sim.Sys.Schema),
@@ -79,9 +79,8 @@ function Sim.Sim.new(state, metatable)
 		status = Sim.Status.new,
 		step_id = 1,
 		stopping = false,
-		_initial_state = state,
-		-- TODO write to _message_history
-		_message_history = {},
+		initial_state = state,
+		messages = {},
 		_is_sim_instance = true,
 		_systems = {},
 		_event_listeners_ordered = {},
@@ -155,10 +154,12 @@ function Sim.Sim:get_all()
 	return self._event_listeners_ordered
 end
 function Sim.Sim:broadcast(event_name, ...)
+	local message = {event_name, ...}
+
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(Schema.LabelString(event_name))
-		assert(Schema.SerializableArray({...}))
+		assert(Schema.SerializableArray(message))
 		assert(self.status == Sim.Status.started)
 	end
 
@@ -171,15 +172,19 @@ function Sim.Sim:broadcast(event_name, ...)
 		sys[event_name](sys, ...)
 	end
 
+	self.messages[#self.messages + 1] = message
+
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
 end
 function Sim.Sim:broadcast_pcall(event_name, ...)
+	local message = {event_name, ...}
+
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(Schema.LabelString(event_name))
-		assert(Schema.SerializableArray({...}))
+		assert(Schema.SerializableArray(message))
 		assert(self.status == Sim.Status.started)
 	end
 
@@ -196,6 +201,8 @@ function Sim.Sim:broadcast_pcall(event_name, ...)
 			send_ok = false
 		end
 	end
+
+	self.messages[#self.messages + 1] = message
 
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))

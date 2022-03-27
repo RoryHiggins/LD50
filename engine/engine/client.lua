@@ -10,7 +10,7 @@ local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Client = {}
 
-Client.wrappers = odClientWrapper  -- luacheck: globals odClientWrapper
+Client.wrappers = odClientWrapper
 function Client.wrappers.Schema(name)
 	return Schema.AllOf(Schema.Userdata, Schema.Check(function(x)
 		if x._metatable_name == name then
@@ -166,7 +166,7 @@ function Client.WorldSys:draw()
 
 	self._render_target:step()
 
-	for _, camera in ipairs(self._camera_sys:all_depth_ordered()) do
+	for _, camera in ipairs(self._camera_world:all_depth_ordered()) do
 		local camera_render_state = self._render_target.render_state_ortho_2d:copy()
 		if camera.transform ~= nil then
 			camera_render_state:transform_view(camera.transform)
@@ -228,7 +228,7 @@ end
 function Client.WorldSys:on_init()
 	Container.set_defaults(self.state, Client.WorldSys.State.defaults)
 
-	self._camera_sys = self.sim:require(Camera.WorldSys)
+	self._camera_world = self.sim:require(Camera.WorldSys)
 	self._vertex_array = Client.wrappers.VertexArray.new{}
 
 	if self.sim._game then
@@ -273,7 +273,7 @@ function Client.GameSys:draw()
 		}
 	end
 
-	local world = self._world_sys.world
+	local world = self._world_game.world
 	if world ~= nil then
 		world:get(Client.WorldSys):draw()
 	end
@@ -294,8 +294,8 @@ function Client.GameSys:on_init()
 	Container.set_defaults(self.state, Client.GameSys.State.defaults)
 
 	self._vertex_array = Client.wrappers.VertexArray.new{}
-	self._world_sys = self.sim:require(World.GameSys)
-	self._world_sys:require_world_sys(Client.WorldSys)
+	self._world_game = self.sim:require(World.GameSys)
+	self._world_game:require_world_sys(Client.WorldSys)
 
 	if self.state.visible then
 		self.context = Client.Context.new({})
@@ -326,7 +326,7 @@ Client.tests = Testing.add_suite("engine.client", {
 	run_headless = function()
 		local game = Game.Game.new({client = {visible = false}})
 		local client_game = game:require(Client.GameSys)
-		local world_sys = game:require(World.GameSys)
+		local world_game = game:require(World.GameSys)
 
 		game:start()
 		local width, height = client_game:get_size()
@@ -338,7 +338,7 @@ Client.tests = Testing.add_suite("engine.client", {
 		assert(Schema.NonNegativeInteger(mouse_x))
 		assert(Schema.NonNegativeInteger(mouse_y))
 
-		local world = world_sys.world
+		local world = world_game.world
 		local client_world = world:get(Client.WorldSys)
 		assert(type(client_world:get_vertex_array()) == "userdata")
 		width, height = client_world:get_size()

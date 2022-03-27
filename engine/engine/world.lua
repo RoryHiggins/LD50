@@ -102,7 +102,7 @@ function World.GameSys:set(world)
 
 	self.world = world
 	self.sim._world = world
-	self.sim:broadcast("on_world_init")
+	self.sim:broadcast("on_world_set")
 
 	self.world:start()
 	self.sim:broadcast("on_world_start")

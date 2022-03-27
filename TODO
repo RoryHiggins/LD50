@@ -1,126 +1,6 @@
 
-Lua Approach
+Lua TODO
 --------------
-schema
-	Any: function() -> bool
-	Null: function(x) -> bool
-	Boolean: function(x) -> bool
-	String: function(x) -> bool
-	Number: function(x) -> bool
-	Integer: function(x) -> bool
-	Array(t): function(x) -> bool
-	Mapping(k, v): function(x) -> bool
-	Object(xs, additional_values=false): function(x) -> bool
-	AnyOf(...): function(x) -> bool
-	AllOf(...): function(x) -> bool
-	Enum(...): function(x) -> bool
-	Const(c): function(x) -> bool
-	Optional(t): function(x) -> bool
-	Check(fn): function(x) -> bool
-	NormalizedNumber: function(x) -> bool
-	NonNegativeNumber: function(x) -> bool
-	NonNegativeInteger: function(x) -> bool
-	NonEmptyString: function(x) -> bool
-	NonEmptyArray(t): function(x) -> bool
-	NameString: function(x) -> bool
-	Serializable: function(x) -> bool
-	SerializableObject: function(x) -> bool
-	SerializableArray: function(x) -> bool
-
-sim.Status : schema.Enum{new, running, stopped}
-sim.Sys : Metatable
-	new_metatable(name: str) : Metatable[sim.Sys]
-	on_init()?, on_init()?, on_start()?, on_step()?, on_stop()?
-	sys_name: str
-sim.Sim
-	new(state: schema.SerializableObject|nil, settings: schema.SerializableObject|nil) : Sim
-	require(sys_metatable: Metatable[sim.Sys]) : sim.Sys
-	find_by_name(sys_name: str) : sim.Sys|nil
-	broadcast(event_name: str, ...args: [schema.SerializableObject])
-	state: schema.SerializableObject
-	settings: schema.SerializableObject
-	status: sim.Status
-	current_step: num
-	_systems: {[str]: sim.Sys}
-	_systems_ordered: [sim.Sys]
-	_systems_by_event: {[str]: [sim.Sys]}
-
-game.Game = sim.Sim
-game.Sys = sim.Sys
-
-world.World = sim.Sim
-world.Sys = sim.Sys
-world.GameSys : game.Sys
-	current_world: World
-	new_world(state, settings) : World
-	set(state: schema.SerializableObject|nil)  # stops running world, sends on_world_new, starts new world
-	on_start()  # invokes world.set_status(Status.running)
-	on_step()  # invokes world.step()
-	on_stop()  # invokes world.set_status(Status.stopped)
-
-camera.Camera : schema.SerializableObject
-	transform: {translate_x, translate_y, scale_x, scale_y, rotate_z : num|nil}
-	viewport: {x, y, width, height} : num
-camera.Sys : sim.Sys
-	set(name: str, camera.Camera)
-	find(name: str) : camera.Camera|nil
-	all() : {[str]: camera.Camera}
-	on_start()
-	state
-		cameras : {[str]: camera.Camera}
-
-client.wrappers
-client.Context
-	step()
-	window: Window
-	texture_atlas: client.wrappers.TextureAtlas
-	renderer: client.wrappers.Renderer
-	vertex_array: client.wrappers.VertexArray
-client.RenderTarget
-	step()
-client.WorldSys : world.Sys
-	on_start()  # creates render_target
-	on_step()  # render_target.step()
-	render_target: client.RenderTarget
-	_context: Context
-client.GameSys : game.Sys
-	on_step()  # invokes context.step(), {game,world}.on_draw(), 
-	on_world_new()  # creates client.WorldSys
-	state
-		window
-			width, height, fps_limit: num
-			vsync: bool
-	context: client.Context
-
-# ^ DONE
-# v TODO
-
-controller.Input : schema.SerializableObject
-	down: bool
-	step_id: num
-controller.Controller : schema.SerializableObject
-	inputs: {[str]: controller.Input}  # by input name
-controller.BindingType : enum str {"keyboard"}
-controller.Binding : schema.SerializableObject
-	controller_id: num
-	input_name: str
-	binding_type: controller.BindingType
-	binding_keyboard_key: str?
-controller.WorldSys : world.Sys
-	find(controller_id: num) : controller.Controller|nil
-	get_default() : controller.Controller
-	get_down(controller_id: num, input_name: str) : bool
-	get_toggled(controller_id: num, input_name: str) : bool
-	on_input_set(controller_id: num, input_name: str, down: bool)
-	state
-		controllers: [input.Controller]
-controller.GameSys : game.Sys
-	on_start(), on_step()  # updates inputs, triggers world.on_input_set()
-	get_bindings() : [controller.Binding]
-	set_bindings([controller.Binding])
-	state
-		bindings: [controller.Binding]
-
 entity.Entity : schema.SerializableObject
 	name: str|nil
 entity.WorldSys : world.Sys
@@ -169,7 +49,7 @@ sprite.Sprite : schema.SerializableObject
 	u1, v1, u2, v2: num
 sprite.Component : schema.SerializableObject
 	sprite_name: str
-	z, r, g, b, a, scale_x, scale_y, translate_x, translate_y, rotate: num?
+	r, g, b, a, z, scale_x, scale_y, translate_x, translate_y, rotate: num?
 sprite.AtlasRegion
 	atlas_region_id: num
 	u1, v1, u2, v2: num
@@ -212,7 +92,7 @@ text.Font : schema.SerializableObject
 	type = "ascii"  # only currently supported type
 text.Component : schema.SerializableObject
 	font_name: str
-	z, r, g, b, a, translate_x, translate_y, max_width, max_height: num?
+	r, g, b, a, z, translate_x, translate_y, max_width, max_height: num?
 text.WorldSys : world.Sys
 	add_font(font_name: str, text.Font)
 	find_font(font_name: str) : text.Font|nil
@@ -229,6 +109,13 @@ text.GameSys : game.Sys
 	unload(text.Font)
 	_ascii_font_by_filename: {[str]: client.wrappers.AsciiFont}
 	_texture_atlas: client.wrappers.TextureAtlas
+
+primitive.WorldSys
+	draw_triangle(x1, y1, x2, y2, x3, y3: num, r, g, b, a, z: num|nil)
+	draw_rect(x1, y1, x2, y2: num, r, g, b, a, z: num|nil)
+	draw_rect_outline(x1, y1, x2, y2: num, r, g, b, a, z: num|nil)
+	draw_line(x1, y1, x2, y2: num, r, g, b, a, z: num|nil)
+	draw_point(x1, y1: num, r, g, b, a, z: num|nil)
 
 audio.Audio : schema.SerializableObject
 	filename: str

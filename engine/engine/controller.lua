@@ -1,19 +1,20 @@
 local Shim = require("engine/core/shim")
 local Debugging = require("engine/core/debugging")
 local Testing = require("engine/core/testing")
-local Logging = require("engine/core/logging")
 local Schema = require("engine/core/Schema")
 local Container = require("engine/core/container")
 local Model = require("engine/core/model")
 local Client = require("engine/engine/client")
 local World = require("engine/engine/world")
+local Game = require("engine/engine/game")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Controller = {}
 Controller.InputName = Model.Enum(
-	"up", "held", "left", "right", "a", "b", "x", "y", "start"
+	"up", "down", "left", "right", "a", "b"
 )
+
 Controller.Input = {}
 Controller.Input.Schema = Schema.Object{
 	held = Schema.Boolean,
@@ -23,6 +24,7 @@ Controller.Input.defaults = {
 	held = false,
 	step_id = 0,
 }
+
 Controller.Controller = {}
 Controller.Controller.Schema = Schema.Object{
 	inputs =  Schema.Mapping(Controller.InputName.Schema, Controller.Input.Schema),
@@ -33,23 +35,69 @@ Controller.Controller.defaults = {
 for _, input_name in ipairs(Controller.InputName.enum_values) do
 	Controller.Controller.defaults.inputs[input_name] = Controller.Input.defaults
 end
+Controller.Controller.default_id = 1
 Controller.Controller.max_id = 4
 
-Controller.KeyboardKeys = Model.AnyEnum(Shim.unpack(Client.wrappers.Window.get_key_names()))
-Controller.BindingType = Model.Enum("keyboard")
+Controller.KeyboardKey = Model.AnyEnum(Shim.unpack(Client.wrappers.Window.get_key_names()))
+
+Controller.BindingType = Model.Enum("virtual", "keyboard")
+
 Controller.Binding = {}
 Controller.Binding.Schema = Schema.Object{
-	controller_id = Schema.BoundedInteger(1, Controller.Controller.max_id),
-	input_name = Controller.InputName.Schema,
-	binding_type = Controller.BindingType.Schema,
-	binding_keyboard_key = Schema.Optional(Controller.KeyboardKeys.Schema),
+	type = Controller.BindingType.Schema,
+	keyboard_key = Schema.Optional(Controller.KeyboardKey.Schema),
+	virtual_value = Schema.Optional(Schema.Boolean),
 }
 
+Controller.InputBindings = {}
+Controller.InputBindings.Schema = Schema.Object{
+	bindings = Schema.Array(Controller.Binding.Schema),
+}
+Controller.InputBindings.defaults = {
+	bindings = {}
+}
+
+Controller.ControllerBindings = {}
+Controller.ControllerBindings.Schema = Schema.Object{
+	inputs = Schema.Mapping(Controller.InputName.Schema, Controller.InputBindings.Schema),
+}
+Controller.ControllerBindings.defaults = {
+	inputs = {},
+}
+for _, input_name in ipairs(Controller.InputName.enum_values) do
+	Controller.ControllerBindings.defaults.inputs[input_name] = Controller.InputBindings.defaults
+end
+Controller.ControllerBindings.defaults_default_controller = Container.deep_copy(Controller.ControllerBindings.defaults)
+Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.up] = {bindings = {
+	{type = "keyboard", keyboard_key = "up"},
+	{type = "keyboard", keyboard_key = "w"},
+}}
+Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.left] = {bindings = {
+	{type = "keyboard", keyboard_key = "left"},
+	{type = "keyboard", keyboard_key = "a"},
+}}
+Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.down] = {bindings = {
+	{type = "keyboard", keyboard_key = "down"},
+	{type = "keyboard", keyboard_key = "s"},
+}}
+Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.right] = {bindings = {
+	{type = "keyboard", keyboard_key = "right"},
+	{type = "keyboard", keyboard_key = "d"},
+}}
+Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.a] = {bindings = {
+	{type = "keyboard", keyboard_key = "z"},
+	{type = "keyboard", keyboard_key = "return"},
+}}
+Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.b] = {bindings = {
+	{type = "keyboard", keyboard_key = "x"},
+	{type = "keyboard", keyboard_key = "backspace"},
+}}
+
 Controller.WorldSys = World.Sys.new_metatable("controller")
-Controller.WorldSys.default_id = 1
+Controller.WorldSys.default_id = Controller.Controller.default_id
 Controller.WorldSys.State = {}
 Controller.WorldSys.State.Schema = Schema.Object{
-	controllers = Schema.Array(Controller.Controller.Schema, Controller.Controller.max_id),
+	controllers = Schema.BoundedArray(Controller.Controller.Schema, 1, Controller.Controller.max_id),
 }
 Controller.WorldSys.State.defaults = {
 	controllers = {}
@@ -107,42 +155,150 @@ function Controller.WorldSys:on_input_set(controller_id, input_name, held)
 	input.step_id = self.sim.step_id
 end
 
+Controller.GameSys = Game.Sys.new_metatable("controller")
+Controller.GameSys.default_id = Controller.Controller.default_id
+Controller.GameSys.State = {}
+Controller.GameSys.State.Schema = Schema.Object{
+	bindings = Schema.Object{
+		controllers = Schema.BoundedArray(Controller.ControllerBindings.Schema, 1, Controller.Controller.max_id),
+	},
+}
+Controller.GameSys.State.defaults = {
+	bindings = {
+		controllers = {},
+	}
+}
+for controller_id = 1, Controller.Controller.max_id do
+	Controller.GameSys.State.defaults.bindings.controllers[controller_id] = (
+		Controller.ControllerBindings.defaults
+	)
+end
+Controller.GameSys.State.defaults.bindings.controllers[Controller.Controller.default_id] = (
+	Controller.ControllerBindings.defaults_default_controller
+)
+function Controller.GameSys:on_init()
+	Container.set_defaults(self.state, Controller.GameSys.State.defaults)
+	if debug_checks_enabled then
+		assert(Controller.GameSys.State.Schema(self.state))
+	end
+
+	self._world_game = self.sim:require(World.GameSys)
+	self._world_game:require_world_sys(Controller.WorldSys)
+end
+function Controller.GameSys:handle_input_changes()
+
+	local world = self._world_game.world
+	if world == nil then
+		return
+	end
+
+	local context = self.sim._context
+	local controller_world = world:get(Controller.WorldSys)
+
+	local controllers = controller_world.state.controllers
+	for controller_id, controller in ipairs(controllers) do
+		for input_name, input in pairs(controller.inputs) do
+			local bindings = self.state.bindings.controllers[controller_id].inputs[input_name].bindings
+
+			local held = false
+			for _, binding in ipairs(bindings) do
+				if binding.type == Controller.BindingType.keyboard then
+					held = context ~= nil and context.window:get_key_state(binding.keyboard_key)
+				elseif binding.type == Controller.BindingType.virtual then
+					held = binding.virtual_value == true
+				end
+
+				if held then
+					break
+				end
+			end
+
+			if held ~= input.held then
+				world:broadcast_pcall("on_input_set", controller_id, input_name, held)
+			end
+		end
+	end
+end
+function Controller.GameSys:on_world_set()
+	self:handle_input_changes()
+end
+function Controller.GameSys:on_step()
+	self:handle_input_changes()
+end
+
 Controller.tests = Testing.add_suite("engine.controller", {
-	run_world = function()
-		local world_sim = World.World.new()
-		local controller_world = world_sim:require(Controller.WorldSys)
-		world_sim:start()
-		assert(Controller.Controller.Schema(controller_world:find(controller_world.default_id)))
-		assert(Controller.Controller.Schema(controller_world:get_default()))
-		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
-		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
-		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
-		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
-		world_sim:step()
+	-- run_world = function()
+	-- 	local world = World.World.new()
+	-- 	local controller_world = world:require(Controller.WorldSys)
+	-- 	world:start()
+	-- 	assert(Controller.Controller.Schema(controller_world:find(controller_world.default_id)))
+	-- 	assert(Controller.Controller.Schema(controller_world:get_default()))
+	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+
+	-- 	world:step()
+	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+
+	-- 	controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, true)
+	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
+	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
+	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == true)
+	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+
+	-- 	world:step()
+	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
+	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
+
+	-- 	controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, false)
+	-- 	assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
+	-- 	assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
+	-- 	assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == true)
+
+	-- 	world:finalize()
+	-- end,
+	run_game = function()
+		local game = Game.Game.new()
+		local controller_game = game:require(Controller.GameSys)
+		local world_game = game:require(World.GameSys)
+		game:start()
+
+		local world = world_game.world
+		local controller_world = world:get(Controller.WorldSys)
+
 		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
 		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
 		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
 		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
 
-		controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, true)
+		game:step()
+
+		local controllers = controller_game.state.bindings.controllers
+		local controller = controllers[Controller.Controller.default_id]
+		local up_bindings = controller.inputs[Controller.InputName.up].bindings
+		up_bindings[#up_bindings + 1] = {type = "virtual", virtual_value = true}
+
+		game:step()
 		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
 		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
 		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == true)
 		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
 
-		world_sim:step()
+		game:step()
 		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
 		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == false)
 		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
 		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == false)
 
-		controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, false)
-		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
-		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
-		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)
-		assert(controller_world:get_released(controller_world.default_id, Controller.InputName.up) == true)
-
-		world_sim:finalize()
+		game:stop()
+		game:finalize()
 	end
 })
 

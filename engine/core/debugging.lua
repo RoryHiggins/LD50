@@ -5,14 +5,18 @@ local debugger_lib = nil
 
 local function noop()
 end
-print(noop)
+
+-- set global breakpoint function for throaway debug breakpoints
+breakpoint = noop
+
 local Debugging = {}
 Debugging.debugger_enabled = false
 Debugging.debug_checks_enabled = true
-Debugging.breakpoint = noop
+Debugging.breakpoint = breakpoint
 function Debugging.set_debugger_enabled(enabled)
 	Debugging.debugger_enabled = enabled
 
+	breakpoint = noop
 	Debugging.breakpoint = noop
 
 	if Debugging.debugger_enabled then
@@ -20,6 +24,7 @@ function Debugging.set_debugger_enabled(enabled)
 			debugger_lib = require("engine/lib/debugger/debugger")
 		end
 
+		breakpoint = debugger_lib
 		Debugging.breakpoint = debugger_lib
 	end
 
@@ -39,5 +44,6 @@ function Debugging.pcall(fn, ...)
 	return debugger_lib.call(fn, Shim.unpack(args))
 end
 Logging.add_error_handler(Debugging.breakpoint)
+
 
 return Debugging
