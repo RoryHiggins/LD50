@@ -1,8 +1,9 @@
 local Testing = require("engine/core/testing")
 local Logging = require("engine/core/logging")
+local Math = require("engine/core/math")
 
-local integer_min = -2^24
-local integer_max = 2^24
+local integer_min = Math.integer_min
+local integer_max = Math.integer_max
 local floor = math.floor
 
 local Schema = {}
@@ -17,9 +18,9 @@ end
 function Schema.None(x)
 	return false, Schema.error("Schema.None(%s)", x)
 end
-function Schema.Null(x)
+function Schema.Nil(x)
 	if x ~= nil then
-		return false, Schema.error("Schema.Null(%s): not nil", x)
+		return false, Schema.error("Schema.Nil(%s): not nil", x)
 	end
 	return true
 end
@@ -96,9 +97,6 @@ function Schema.Mapping(key_condition, value_condition)
 	return function(x)
 		if type(x) ~= "table" then
 			return false, Schema.error("Schema.Mapping(%s): not a table", x)
-		end
-		if #x > 0 then
-			return false, Schema.error("Schema.Mapping(%s): has positional elements", x)
 		end
 
 		for key, value in pairs(x) do
@@ -193,6 +191,10 @@ function Schema.OneOf(...)
 				found = true
 			end
 			failures[#failures + 1] = err
+		end
+
+		if found then
+			return true
 		end
 
 		local failures_str = table.concat(failures, "\n")
@@ -299,6 +301,14 @@ function Schema.PositiveInteger(x)
 		return true
 	end
 	return false, Schema.error("Schema.PositiveInteger(%s): no match", x)
+end
+function Schema.BoundedNumber(min, max)
+	return function(x)
+		if type(x) == "number" and x >= min and x <= max then
+			return true
+		end
+		return false, Schema.error("Schema.BoundedNumber(%s): no match, min=%s, max=%s", x, min, max)
+	end
 end
 function Schema.BoundedInteger(min, max)
 	return function(x)
@@ -430,7 +440,7 @@ Schema.tests = Testing.add_suite("core.Schema", {
 
 		local test_schema_failure_values = {
 			[Schema.None] = {-1, 0, 2, 0.312, "", "ye", true, false, function() end, {}, {1, 2}, {a=2, 3}},
-			[Schema.Null] = {-1, 0, 2, 0.312, "", "ye", true, false, function() end, {}, {1, 2}, {a=2, 3}},
+			[Schema.Nil] = {-1, 0, 2, 0.312, "", "ye", true, false, function() end, {}, {1, 2}, {a=2, 3}},
 			[Schema.Boolean] = {-1, 0, 2, 0.312, "", "ye", function() end, {}, {1, 2}, {a=2, 3}},
 			[Schema.String] = {-1, 0, 2, 0.312, true, false, function() end, {}, {1, 2}, {a=2, 3}},
 			[Schema.Number] = {"", "ye", true, false, function() end, {}, {1, 2}, {a=2, 3}},
@@ -470,7 +480,7 @@ Schema.tests = Testing.add_suite("core.Schema", {
 		-- extra cases for nil and none which can't be captured as array elements:
 		assert(Schema.Any())
 		assert(Schema.Any(nil))
-		assert(Schema.Null(nil))
+		assert(Schema.Nil(nil))
 		assert(Schema.Optional(Schema.Number)(nil))
 		assert(not Schema.None())
 		assert(not Schema.None(nil))

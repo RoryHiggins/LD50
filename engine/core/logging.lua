@@ -45,7 +45,7 @@ end
 function Logging.error(format, ...)
 	Logging._log_impl(Logging.Level.error, "[ERROR %s:%d] %s() ", format, ...)
 end
-function Logging.warn(format, ...)
+function Logging.warning(format, ...)
 	Logging._log_impl(Logging.Level.warn, "[WARN  %s:%d] %s() ", format, ...)
 end
 function Logging.info(format, ...)

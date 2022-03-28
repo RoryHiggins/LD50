@@ -45,6 +45,7 @@ def main():
         f"end\n"
         f'local Debugging = require("engine/core/debugging")\n'
         f'Debugging.debug_checks_enabled = true\n'
+        f'Debugging.expensive_debug_checks_enabled = true\n'
         f'Debugging.set_debugger_enabled(true)\n'
         f"{run_main}"
     )

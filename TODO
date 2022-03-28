@@ -1,36 +1,5 @@
-
 Lua TODO
 --------------
-entity.Entity : schema.SerializableObject
-entity.EntityIndex
-	_entity_index: EntityIndex
-	_tag_id_to_tag: [str]
-	_tag_to_tag_id: {[str]: num}
-	_tag_to_entities: {[str]: [entity.Entity]}
-	_entity_id_to_tag_to_entities: [{[str]: num}]  # for efficient cleanup of _tag_to_entities
-entity.WorldSys : world.Sys
-	add(src: schema.SerializableObject|nil) : entity.Entity
-	set(entity.Entity, src: schema.SerializableObject)
-	destroy(entity.Entity)
-	reindex(entity.Entity)
-	reindex_all()
-	get_all() : [entity.Entity]
-	on_init()
-	state
-		entities: [entity.Entity]
-	_entity_to_entity_id: {[entity.Entity]: num}
-	_entity_index: EntityIndex
-	_sprite_game: sprite.GameSys : game.Sys  # for index access to atlas tex coords, which are not in world state
-
-name.Entity : entity.Entity
-	name: str
-name.WorldSys : world.Sys
-	find(name: str) : name.Entity|nil
-	set(entity.Entity, name: str) : str
-	require(entity.Entity) : str
-	on_entity_set(entity: entity.Entity)
-	_entity_name_to_entity: {[str]: entity.Entity}
-
 tag.Entity extends entity.Entity
 	tags: schema.Mapping(schema.String, schema.Boolean)
 tag.WorldSys : world.Sys
@@ -38,7 +7,6 @@ tag.WorldSys : world.Sys
 	set(entity.Entity, ...tags: [str])  # invokes on_entity_tag_set
 	add(entity.Entity, ...tags: [str])
 	remove(entity.Entity, ...tags: [str])
-	all(tag: str) : [entity.Entity]
 	_entity_world: entity.WorldSys
 
 bounds.Entity extends entity.Entity
@@ -161,6 +129,14 @@ camera_target.WorldSys : world.Sys
 	remove(entity.Entity)
 	on_step()
 	on_entity_destroy()  # remove if named view removed
+
+
+better history:
+	- sim:broadcast() -> sim:_broadcast(), does not add to history
+	- add sys:broadcast() which calls sim:_broadcast()
+	- sim:send() for external users; adds to history
+	- history RLE compression: history defined in terms of (repeats, name, ...)
+
 
 Client TODOs
 ============

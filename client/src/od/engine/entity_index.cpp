@@ -179,15 +179,22 @@ odEntityChunkIterator::odEntityChunkIterator(const odBounds& bounds)
 	y1{y_start},
 	x2{odChunkCoord_init(bounds.x2 + (1 << OD_ENTITY_CHUNK_COORD_DISCARD_BITS) - 1)},
 	y2{odChunkCoord_init(bounds.y2 + (1 << OD_ENTITY_CHUNK_COORD_DISCARD_BITS) - 1)} {
-		// in edge-case where width/height is big enough to exceed wrap-around, cover the full range
-		const odEntityChunkCoord coord_bitmask =
-			static_cast<odEntityChunkCoord>((1 << OD_ENTITY_CHUNK_COORD_MASK_BITS) - 1);
-		if ((bounds.x2 - bounds.x1) >= (1 << OD_ENTITY_CHUNK_COORD_BITS)) {
-			x2 = static_cast<odEntityChunkCoord>((x1 - 1) & coord_bitmask);
-		}
-		if ((bounds.y2 - bounds.y1) >= (1 << OD_ENTITY_CHUNK_COORD_BITS)) {
-			y2 = static_cast<odEntityChunkCoord>((y1 - 1) & coord_bitmask);
-		}
+	const odEntityChunkCoord coord_bitmask =
+		static_cast<odEntityChunkCoord>((1 << OD_ENTITY_CHUNK_COORD_MASK_BITS) - 1);
+
+	// in edge-case where width/height is big enough to exceed wrap-around, cover the full range
+	if ((bounds.x2 - bounds.x1) >= (1 << OD_ENTITY_CHUNK_COORD_BITS)) {
+		x2 = static_cast<odEntityChunkCoord>((x1 - 1) & coord_bitmask);
+	}
+	if ((bounds.y2 - bounds.y1) >= (1 << OD_ENTITY_CHUNK_COORD_BITS)) {
+		y2 = static_cast<odEntityChunkCoord>((y1 - 1) & coord_bitmask);
+	}
+
+	// in edge-case where bounds are empty, set empty chunk bounds
+	if ((bounds.x2 == bounds.x1) || (bounds.y2 == bounds.y1)) {
+		x2 = x1;
+		y2 = y1;
+	}
 }
 
 odEntityChunkCoord odChunkCoord_init(float value) {
