@@ -1,14 +1,9 @@
 Lua TODO
 --------------
-bounds.Entity extends entity.Entity
-	x, y, width, height: num
-bounds.WorldSys
-	find_in(x, y, width, height: num, entity.Entity, ...tags: [str]) : entity.Entity|nil
-	find_all_in(x, y, width, height: num, entity.Entity, ...tags: [str]) : [entity.Entity]
-	get(entity.Entity) : num, num, num, num
-	set(entity.Entity, x, y: num, width, height: num|nil)
+entity.WorldSys
+	bounds_find(x, y, width, height: num, entity.Entity, ...tags: [str]) : entity.Entity|nil
+	bounds_find_all(x, y, width, height: num, entity.Entity, ...tags: [str]) : [entity.Entity]
 	move(entity.Entity, offset_x, offset_y: num)
-	_entity_world: entity.WorldSys
 
 sprite.Sprite : schema.SerializableObject
 	file_name: str

@@ -104,8 +104,6 @@ function Entity.WorldSys:set(entity_id, state, entity)
 	if expensive_debug_checks_enabled then
 		assert(Entity.Entity.Schema(entity))
 	end
-
-	return entity_id, entity
 end
 function Entity.WorldSys:destroy(entity_id, entity)
 	if expensive_debug_checks_enabled then
@@ -180,11 +178,9 @@ function Entity.WorldSys:index(entity_id, entity)
 		self:tag(entity_id, added_tags, entity)
 	end
 
-	-- local old_x1, old_y1, old_x2, old_y2 = self._entity_index:get_bounds(entity_id)
-	-- TODO broadcast on bounds change
-
 	local x1, y1 = entity.x or 0, entity.y or 0
 	local x2, y2 = x1 + (entity.width or 0), y1 + (entity.height or 0)
+
 	self._entity_index:set(
 		entity_id,
 		-- bounds
@@ -202,17 +198,12 @@ function Entity.WorldSys:index(entity_id, entity)
 		Shim.unpack(bounds_indexed_tag_ids)
 	)
 
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Entity.Entity.Schema(entity))
-	end
-
-	self.sim:broadcast("on_entity_index", entity_id, entity)
-
 	if entity.destroyed then
 		entity_to_entity_id[entity] = nil
 		entity_id_to_tag_indices[entity_id] = nil
 	end
+
+	self.sim:broadcast("on_entity_index", entity_id, entity)
 
 	if expensive_debug_checks_enabled then
 		assert(Entity.Entity.Schema(entity))
@@ -278,6 +269,7 @@ function Entity.WorldSys:tag(entity_id, tags, entity)
 		assert(Entity.WorldSys.Schema(self))
 		assert(Schema.PositiveInteger(entity_id))
 		assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+		assert(Schema.Optional(Entity.Entity.Schema)(entity))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -332,6 +324,7 @@ function Entity.WorldSys:untag(entity_id, tags, entity)
 		assert(Entity.WorldSys.Schema(self))
 		assert(Schema.PositiveInteger(entity_id))
 		assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+		assert(Schema.Optional(Entity.Entity.Schema)(entity))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -406,6 +399,42 @@ function Entity.WorldSys:tag_get_all(tag)
 	tag_to_entities[tag] = tag_entities
 
 	return tag_entities
+end
+function Entity.WorldSys:bounds_get(entity_id, entity)
+	if expensive_debug_checks_enabled then
+		assert(Entity.WorldSys.Schema(self))
+		assert(Schema.PositiveInteger(entity_id))
+		assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	entity = entity or self:find(entity_id)
+
+	return entity.x or 0, entity.y or 0, entity.width or 0, entity.height or 0
+end
+function Entity.WorldSys:bounds_set(entity_id, x, y, width, height, entity)
+	if expensive_debug_checks_enabled then
+		assert(Entity.WorldSys.Schema(self))
+		assert(Schema.PositiveInteger(entity_id))
+		assert(Schema.Integer(x))
+		assert(Schema.Integer(y))
+		assert(Schema.Integer(width))
+		assert(Schema.Integer(height))
+		assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	entity = entity or self:find(entity_id)
+
+	entity.x = x
+	entity.y = y
+	entity.width = width
+	entity.height = height
+
+	local x1, y1 = x, y
+	local x2, y2 = x1 + (width), y1 + (height)
+
+	self._entity_index:set_bounds(entity_id, x1, y1, x2, y2)
 end
 function Entity.WorldSys:bounds_index_tag(tag, allow_failure)
 	if debug_checks_enabled then
@@ -649,6 +678,28 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		Container.assert_equal(entity_world:tag_get_all("yes"), {})
 		Container.assert_equal(entity_world:tag_get_all("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
+	end,
+	bounds_set_get = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+		world:start()
+		local entity_id, entity = entity_world:add{}
+		Container.assert_equal({entity_world:bounds_get(entity_id, entity)}, {0, 0, 0, 0})
+
+		local bounds_to_test = {
+			{0, 0, 0, 0},
+			{0, 0, 0, 1},
+			{0, 0, 1, 0},
+			{0, 0, 1, 1},
+			{-1, -1, 0, 0},
+			{0, 0, 32, 32},
+			{-16, 32, 32, 64},
+			{2^16, -2^16, 2^16 + 1, 2^16 + 1},
+		}
+		for _, bounds in ipairs(bounds_to_test) do
+			entity_world:bounds_set(entity_id, Shim.unpack(bounds))
+			Container.assert_equal({entity_world:bounds_get(entity_id)}, bounds)
+		end
 	end,
 	run_world = function()
 		local world = World.World.new()
