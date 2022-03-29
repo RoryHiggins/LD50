@@ -10,7 +10,7 @@ local debug_checks_enabled = Debugging.debug_checks_enabled
 
 local Sim = {}
 
-Sim.Status = Model.Enum("new","started", "finalized")
+Sim.Status = Model.Enum("new", "started", "finalized")
 
 Sim.Sys = {}
 Sim.Sys.__index = Sim.Sys
@@ -54,7 +54,6 @@ Sim.Sim.Schema = Schema.PartialObject{
 	step_id = Schema.PositiveInteger,
 	stopping = Schema.Boolean,
 	initial_state = Schema.SerializableObject,
-	messages = Schema.Array(Schema.SerializableArray),
 	_is_sim = Schema.Const(true),
 	_is_sim_instance = Schema.Const(true),
 	_systems = Schema.Mapping(Schema.String, Sim.Sys.Schema),
@@ -74,26 +73,25 @@ function Sim.Sim.new(state, metatable)
 	state = state or {}
 	metatable = metatable or Sim.Sim
 
-	local sim_instance = {
+	local sim = {
 		state = state,
 		status = Sim.Status.new,
 		step_id = 1,
 		stopping = false,
 		initial_state = state,
-		messages = {},
 		_is_sim_instance = true,
 		_systems = {},
 		_event_listeners_ordered = {},
 		_event_listeners_cached = {},
 	}
-	setmetatable(sim_instance, metatable)
-	sim_instance._event_listeners_ordered[1] = sim_instance
+	setmetatable(sim, metatable)
+	sim._event_listeners_ordered[1] = sim
 
 	if debug_checks_enabled then
-		assert(metatable.Schema(sim_instance))
+		assert(metatable.Schema(sim))
 	end
 
-	return sim_instance
+	return sim
 end
 function Sim.Sim:require(sys_metatable)
 	if debug_checks_enabled then
@@ -172,8 +170,6 @@ function Sim.Sim:broadcast(event_name, ...)
 		sys[event_name](sys, ...)
 	end
 
-	self.messages[#self.messages + 1] = message
-
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
@@ -202,8 +198,6 @@ function Sim.Sim:broadcast_pcall(event_name, ...)
 		end
 	end
 
-	self.messages[#self.messages + 1] = message
-
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
@@ -213,6 +207,7 @@ function Sim.Sim:start()
 	if debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(self.status ~= Sim.Status.finalized)
+		assert(self.stopping == false)
 	end
 
 	local old_status = self.status
@@ -310,42 +305,42 @@ Sim.tests = Testing.add_suite("engine.sim", {
 		local TestSys = Sim.Sys.new_metatable("test")
 		local init_patch = Testing.CallWatcher.patch(TestSys, "on_init")
 
-		local sim_instance = Sim.Sim.new()
-		sim_instance:require(TestSys)
+		local sim = Sim.Sim.new()
+		sim:require(TestSys)
 
 		init_patch:assert_called_once()
 	end,
 	require_circular_dependency = function()
 		local TestSys = Sim.Sys.new_metatable("test")
-		function TestSys:on_init(sim_instance)
-			sim_instance:require(TestSys)
+		function TestSys:on_init(sim)
+			sim:require(TestSys)
 			self.init_reached = true
 		end
 
-		local sim_instance = Sim.Sim.new()
-		local sys = sim_instance:require(TestSys)
+		local sim = Sim.Sim.new()
+		local sys = sim:require(TestSys)
 		assert(sys.init_reached)
 	end,
 	get = function()
 		local TestSys = Sim.Sys.new_metatable("test")
 
-		local sim_instance = Sim.Sim.new()
-		assert(sim_instance:get(TestSys) == nil)
+		local sim = Sim.Sim.new()
+		assert(sim:get(TestSys) == nil)
 
-		local sys = sim_instance:require(TestSys)
-		assert(sim_instance:get(TestSys) == sys)
+		local sys = sim:require(TestSys)
+		assert(sim:get(TestSys) == sys)
 	end,
 	broadcast = function()
 		local TestSys = Sim.Sys.new_metatable("test")
 		local test_event_patch = Testing.CallWatcher.patch(TestSys, "on_test_event")
 
-		local sim_instance = Sim.Sim.new()
-		sim_instance:require(TestSys)
-		sim_instance:start()
+		local sim = Sim.Sim.new()
+		sim:require(TestSys)
+		sim:start()
 
 		test_event_patch:assert_not_called()
 		local args = {1, '2', 3.45}
-		sim_instance:broadcast("on_test_event", Shim.unpack(args))
+		sim:broadcast("on_test_event", Shim.unpack(args))
 
 		test_event_patch:assert_called_once()
 		Container.assert_equal(Container.array_slice(test_event_patch.calls[1], 2), args)
@@ -354,68 +349,68 @@ Sim.tests = Testing.add_suite("engine.sim", {
 		local TestSys = Sim.Sys.new_metatable("test")
 		TestSys.on_test_event = function() error() end
 
-		local sim_instance = Sim.Sim.new()
-		sim_instance:require(TestSys)
-		sim_instance:start()
+		local sim = Sim.Sim.new()
+		sim:require(TestSys)
+		sim:start()
 
 		Testing.assert_fails(function()
-			sim_instance:broadcast("on_test_event")
+			sim:broadcast("on_test_event")
 		end)
 	end,
 	broadcast_pcall = function()
 		local TestSys = Sim.Sys.new_metatable("test")
 		TestSys.on_test_event = function() error() end
 
-		local sim_instance = Sim.Sim.new()
-		sim_instance:require(TestSys)
-		sim_instance:start()
+		local sim = Sim.Sim.new()
+		sim:require(TestSys)
+		sim:start()
 
 		Testing.suppress_errors(function()
-			assert(sim_instance:broadcast_pcall("on_test_event") == false)
+			assert(sim:broadcast_pcall("on_test_event") == false)
 		end)
 	end,
 	step = function()
 		local TestSys = Sim.Sys.new_metatable("test")
 
-		local sim_instance = Sim.Sim.new()
+		local sim = Sim.Sim.new()
 
 		Testing.assert_fails(function()
-			sim_instance:step()
+			sim:step()
 		end)
 
-		sim_instance:require(TestSys)
-		sim_instance:start()
-		sim_instance:start()  -- ensure idempotent
+		sim:require(TestSys)
+		sim:start()
+		sim:start()  -- ensure idempotent
 		for step_id = 1, 10 do
-			assert(sim_instance.step_id == step_id)
-			sim_instance:step()
+			assert(sim.step_id == step_id)
+			sim:step()
 		end
 
-		sim_instance:stop()
-		sim_instance:stop()  -- ensure idempotent
+		sim:stop()
+		sim:stop()  -- ensure idempotent
 
 		Testing.assert_fails(function()
-			sim_instance:step()
+			sim:step()
 		end)
 
-		assert(sim_instance:running() == false)
-		sim_instance:finalize()
-		sim_instance:finalize()  -- ensure idempotent
+		assert(sim:running() == false)
+		sim:finalize()
+		sim:finalize()  -- ensure idempotent
 
 		Testing.assert_fails(function()
-			sim_instance:step()
+			sim:step()
 		end)
 
 		Testing.assert_fails(function()
-			sim_instance:start()
+			sim:start()
 		end)
 
-		sim_instance = Sim.Sim.new()
-		sim_instance:stop()
-		sim_instance:finalize()
-		sim_instance:finalize()  -- ensure idempotent
+		sim = Sim.Sim.new()
+		sim:stop()
+		sim:finalize()
+		sim:finalize()  -- ensure idempotent
 		Testing.assert_fails(function()
-			sim_instance:stop()
+			sim:stop()
 		end)
 	end,
 })

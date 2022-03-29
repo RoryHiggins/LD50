@@ -1,14 +1,5 @@
 Lua TODO
 --------------
-tag.Entity extends entity.Entity
-	tags: schema.Mapping(schema.String, schema.Boolean)
-tag.WorldSys : world.Sys
-	is_set(entity.Entity, ...tags: [str]) : bool
-	set(entity.Entity, ...tags: [str])  # invokes on_entity_tag_set
-	add(entity.Entity, ...tags: [str])
-	remove(entity.Entity, ...tags: [str])
-	_entity_world: entity.WorldSys
-
 bounds.Entity extends entity.Entity
 	x, y, width, height: num
 bounds.WorldSys
@@ -36,7 +27,7 @@ sprite.WorldSys : world.Sys
 	set(entity.Entity, sprite.Component)
 	set_name(entity.Entity, sprite_name: str)
 	remove(entity.Entity)
-	on_draw()  # draw the sprites of entites
+	on_draw()  # draw the sprites of entities
 	state
 		spritesheets: {[str]: sprite.Spritesheet}
 sprite.GameSys : game.Sys
