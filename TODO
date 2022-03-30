@@ -1,38 +1,21 @@
 Lua TODO
 --------------
-entity.WorldSys
-	bounds_find(x, y, width, height: num, entity.Entity, ...tags: [str]) : entity.Entity|nil
-	bounds_find_all(x, y, width, height: num, entity.Entity, ...tags: [str]) : [entity.Entity]
-	move(entity.Entity, offset_x, offset_y: num)
-
-sprite.Sprite : schema.SerializableObject
-	file_name: str
-	file_type = "png"
-	u1, v1, u2, v2: num
-sprite.Entity extends bounds.Entity
+image.Component
 	sprite_name: str
-	r, g, b, a, z, scale_x, scale_y, translate_x, translate_y, rotate: num?
-sprite.AtlasRegion
-	atlas_region_id: num
-	u1, v1, u2, v2: num
-sprite.WorldSys : world.Sys
-	add_sprite(sprite.Sprite)
-	find_sprite(sprite_name: str) : sprite.Sprite
-	draw_sprite(client.wrappers.VertexArray, sprite.Component)
-	set(entity.Entity, sprite.Component)
-	set_name(entity.Entity, sprite_name: str)
+	x, y, width, height, z, r, g, b, a, translate_x, translate_y, scale_x, scale_y : num?
+image.WorldSys : world.Sys
+	add_image(image_name: str, image.Image)
+	find_image(image_name: str) : image.Image
+	draw_image(client.wrappers.VertexArray, image.Component)
+	set(entity.Entity, image.Component)
+	set_name(entity.Entity, image_name: str)
 	remove(entity.Entity)
-	on_draw()  # draw the sprites of entities
+	on_draw()  # draw the images of entities
 	state
-		spritesheets: {[str]: sprite.Spritesheet}
-sprite.GameSys : game.Sys
-	load_png(file_name: str)
-	unload(file_name: str)
-	_sprite_cache: {[str]: sprite.Allocation}
-	_atlas_region_by_filename: {[str]: sprite.AtlasRegion}
+		images: {[str]: [image.Image]}
 
 animation.Animation : schema.SerializableObject
-	frames: [str]  # sprite names
+	frames: [str]  # image names
 animation.Component : schema.SerializableObject
 	anim_name: str
 	anim_frame_id: num
@@ -47,7 +30,7 @@ animation.WorldSys : world.Sys
 	remove(entity.Entity)
 	on_step()  # progress the animation of entities
 	_animation_game: animation.GameSys : game.Sys
-	_sprite_game: sprite.GameSys : game.Sys
+	_image_game: image.GameSys : game.Sys
 
 text.Font : schema.SerializableObject
 	filename: str

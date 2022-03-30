@@ -16,7 +16,7 @@ function ExampleWorld:on_init()
 
 	-- TODO use Sprite.GameSys to allocate once hooked up
 	self.sprites_u, self.sprites_v = self._client_world._context.texture_atlas:set_region_png_file{
-		id = 0, filename = './examples/engine_test/data/sprites.png'}
+		id = 0, filename = "./examples/engine_test/data/sprites.png"}
 
 	-- TODO use Text.GameSys to allocate and Text.WorldSys to draw once hooked up
 	self.ascii_font = AsciiFont.new{

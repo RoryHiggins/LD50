@@ -20,7 +20,6 @@ Entity.Entity.DestroyedSchema = Schema.Object{
 }
 Entity.Entity.ExistsSchema = Schema.AllOf(Schema.SerializableObject, Schema.PartialObject{
 	destroyed = Schema.Nil,
-	name = Schema.Optional(Schema.LabelString),
 	tags = Schema.Optional(Schema.Mapping(Schema.LabelString, Schema.Const(true))),
 	x = Schema.Optional(Schema.Integer),
 	y = Schema.Optional(Schema.Integer),
@@ -1020,15 +1019,15 @@ Entity.tests = Testing.add_suite("engine.entity", {
 	end,
 	run_world_initial_state = function()
 		local state = {entity = {entities = {
-			{name = "hello", x = 0, y = 0, width = 8, height = 8, tags = {yes = true}},
-			{name = "world"},
+			{blah = "hello", x = 0, y = 0, width = 8, height = 8, tags = {yes = true}},
+			{blah = "world"},
 		}}}
 		local world = World.World.new(nil, state)
 		local entity_world = world:require(Entity.WorldSys)
 		world:start()
 
-		assert(entity_world:find(1).name == "hello")
-		assert(entity_world:find(2).name == "world")
+		assert(entity_world:find(1).blah == "hello")
+		assert(entity_world:find(2).blah == "world")
 		assert(entity_world:find(3) == nil)
 
 		world:step()
