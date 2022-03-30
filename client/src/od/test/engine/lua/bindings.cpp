@@ -418,21 +418,21 @@ OD_TEST(odTest_odLuaBindings_odEntityIndex) {
 		local empty_bounds_no_match = entity_index:first(nil, 0,0,0,0)
 		assert(empty_bounds_no_match == nil)
 
-		local all = {entity_index:all(nil, 0,0,8,8)}
+		local all = entity_index:all(nil, 0,0,8,8)
 		assert(#all == 1)
 		assert(all[1] == 1)
 
-		local all_exclude_self_no_match = {entity_index:all(1, 0,0,8,8)}
+		local all_exclude_self_no_match = entity_index:all(1, 0,0,8,8)
 		assert(#all_exclude_self_no_match == 0)
 
-		local all_empty_bounds_no_match = {entity_index:all(1, 0,0,0,0)}
+		local all_empty_bounds_no_match = entity_index:all(1, 0,0,0,0)
 		assert(#all_empty_bounds_no_match == 0)
 
 		entity_index:set_bounds(2, 0,0,1,1)
 		entity_index:set_bounds(3, 0,0,1,1)
 		entity_index:set_bounds(4, 0,0,1,1)
 		assert(entity_index:count(nil, 0,0,1,1) == 4)
-		local all = {entity_index:all(nil, 0,0,1,1)}
+		local all = entity_index:all(nil, 0,0,1,1)
 		assert(#all == 4)
 		for i = 1, 4 do
 			local found_i = false
@@ -444,10 +444,10 @@ OD_TEST(odTest_odLuaBindings_odEntityIndex) {
 			assert(found_i)
 		end
 
-		local all_exclude_self = {entity_index:all(1, 0,0,1,1)}
+		local all_exclude_self = entity_index:all(1, 0,0,1,1)
 		assert(#all_exclude_self == 3)
 
-		local all_empty_bounds_no_match = {entity_index:all(1, 0,0,0,0)}
+		local all_empty_bounds_no_match = entity_index:all(1, 0,0,0,0)
 		assert(#all_empty_bounds_no_match == 0)
 
 		entity_index:destroy()

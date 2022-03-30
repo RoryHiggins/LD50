@@ -777,6 +777,12 @@ static int odLuaBindings_odEntityIndex_all(lua_State* lua) {
 
 	static odTrivialArrayT<odEntityId> results{};
 	int32_t entity_count = odEntityIndex_get_count(entity_index);
+
+	if (entity_count == 0) {
+		lua_newtable(lua);
+		return 1;
+	}
+
 	if (!OD_CHECK(results.ensure_count(entity_count))) {
 		return luaL_error(lua, "results.ensure_count(%d) failed", entity_count);
 	}
@@ -821,11 +827,14 @@ static int odLuaBindings_odEntityIndex_all(lua_State* lua) {
 	}
 
 	int result_count = odEntityIndex_search(entity_index, &search);
+
+	lua_createtable(lua, result_count, /*nrec*/ 0);
 	for (int32_t i = 0; i < result_count; i++) {
 		lua_pushnumber(lua, static_cast<lua_Number>(results_raw[i]));
+		lua_rawseti(lua, OD_LUA_STACK_TOP - 1, static_cast<int>(i + 1));
 	}
 
-	return result_count;
+	return 1;
 }
 static int odLuaBindings_odEntityIndex_count(lua_State* lua) {
 	if (!OD_DEBUG_CHECK(lua != nullptr)) {

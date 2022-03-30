@@ -1,6 +1,10 @@
+local Debugging = require("engine/core/debugging")
 local Schema = require("engine/core/Schema")
 local Testing = require("engine/core/testing")
 local Sim = require("engine/engine/sim")
+
+local debug_checks_enabled = Debugging.debug_checks_enabled
+local expensive_debug_checks_enabled = Debugging.expensive_debug_checks_enabled
 
 local Game = {}
 
@@ -18,8 +22,13 @@ Game.Sys.MetatableSchema = Schema.AllOf(Sim.Sys.MetatableSchema, Schema.PartialO
 Game.Sys._is_game_sys = true
 Game.Sys._is_world_sys = false
 function Game.Sys.new_metatable(sys_name, metatable)
-	assert(Schema.LabelString(sys_name))
-	assert(Schema.Optional(Game.Sys.MetatableSchema)(metatable))
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Schema.Optional(Game.Sys.MetatableSchema)(metatable))
+		end
+		assert(Schema.LabelString(sys_name))
+	end
+
 	return Sim.Sys.new_metatable(sys_name, metatable or Game.Sys)
 end
 
@@ -34,8 +43,11 @@ Game.Game.MetatableSchema = Schema.AllOf(
 	Sim.Sim.MetatableSchema, Schema.PartialObject{_is_game_sim = Schema.Const(true)})
 Game.Game.Sys = Game.Sys
 function Game.Game.new(state, metatable)
-	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(Game.Game.MetatableSchema)(metatable))
+	if expensive_debug_checks_enabled then
+		assert(Schema.Optional(Schema.SerializableObject)(state))
+		assert(Schema.Optional(Game.Game.MetatableSchema)(metatable))
+	end
+
 	return Sim.Sim.new(state, metatable or Game.Game)
 end
 

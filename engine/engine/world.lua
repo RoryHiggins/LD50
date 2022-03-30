@@ -6,6 +6,7 @@ local Sim = require("engine/engine/sim")
 local Game = require("engine/engine/game")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
+local expensive_debug_checks_enabled = Debugging.expensive_debug_checks_enabled
 
 local World = {}
 
@@ -23,8 +24,12 @@ World.Sys.MetatableSchema = Schema.AllOf(Sim.Sys.MetatableSchema, Schema.Partial
 World.Sys._is_world_sys = true
 World.Sys._is_game_sys = false
 function World.Sys.new_metatable(sys_name, metatable)
-	assert(Schema.LabelString(sys_name))
-	assert(Schema.Optional(World.Sys.MetatableSchema)(metatable))
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Schema.Optional(World.Sys.MetatableSchema)(metatable))
+		end
+		assert(Schema.LabelString(sys_name))
+	end
 	return Sim.Sys.new_metatable(sys_name, metatable or World.Sys)
 end
 
@@ -39,9 +44,11 @@ World.World.MetatableSchema =
 	Schema.AllOf(Sim.Sim.MetatableSchema, Schema.PartialObject{_is_world_sim = Schema.Const(true)})
 World.World.Sys = World.Sys
 function World.World.new(game, state, metatable)
-	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(World.World.MetatableSchema)(metatable))
-	assert(Schema.Optional(Game.Game.Schema)(game))
+	if expensive_debug_checks_enabled then
+		assert(Schema.Optional(Schema.SerializableObject)(state))
+		assert(Schema.Optional(World.World.MetatableSchema)(metatable))
+		assert(Schema.Optional(Game.Game.Schema)(game))
+	end
 
 	local world = Sim.Sim.new(state, metatable or World.World)
 	world._game = game
@@ -59,12 +66,14 @@ World.GameSys.Schema = Schema.AllOf(Game.Sys.Schema, Schema.PartialObject{
 })
 function World.GameSys:new_world(state)
 	if debug_checks_enabled then
-		assert(World.GameSys.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(World.GameSys.Schema(self))
+			assert(Schema.Optional(Schema.SerializableObject)(state))
+		end
 		assert(self.sim.status == Sim.Status.started)
 	end
 
 	state = state or {}
-	assert(Schema.SerializableObject(state))
 
 	local world = World.World.new(self.sim, state)
 	for _, sys_metatable in ipairs(self._world_systems) do
@@ -75,15 +84,17 @@ function World.GameSys:new_world(state)
 end
 function World.GameSys:reset()
 	if debug_checks_enabled then
-		assert(World.GameSys.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(World.GameSys.Schema(self))
+		end
+
+		-- if this is new, we likely have an infinite loop of World creation
+		assert(self.world == nil or self.world.status ~= Sim.Status.new)
 	end
 
 	if self.world == nil then
 		return
 	end
-
-	-- if this is new, we likely have an infinite loop of World creation
-	assert(self.world.status ~= Sim.Status.new)
 
 	if self.world.status ~= Sim.Status.finalized then
 		self.sim:broadcast("on_world_finalize")
@@ -92,14 +103,17 @@ function World.GameSys:reset()
 
 	self.world = nil
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(World.GameSys.Schema(self))
 	end
 end
 function World.GameSys:set(world)
 	if debug_checks_enabled then
-		assert(World.GameSys.Schema(self))
-		assert(World.World.Schema(world))
+		if expensive_debug_checks_enabled then
+			assert(World.GameSys.Schema(self))
+			assert(World.World.Schema(world))
+		end
+
 		assert(self.sim.status == Sim.Status.started)
 		assert(world.status == Sim.Status.new)
 	end
@@ -113,13 +127,17 @@ function World.GameSys:set(world)
 	self.world:start()
 	self.sim:broadcast("on_world_start")
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(World.GameSys.Schema(self))
+		assert(World.World.Schema(world))
 	end
 end
 function World.GameSys:require_world_sys(sys_metatable)
 	if debug_checks_enabled then
-		assert(World.Sys.MetatableSchema(sys_metatable))
+		if expensive_debug_checks_enabled then
+			assert(World.Sys.MetatableSchema(sys_metatable))
+		end
+
 		assert(self.sim.status == Sim.Status.new)
 		assert(Container.array_try_find(self._world_systems, sys_metatable) == nil)
 	end
@@ -131,7 +149,7 @@ function World.GameSys:on_init()
 
 	self._world_systems = {}
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(World.GameSys.State.Schema(self.state))
 	end
 end

@@ -7,6 +7,7 @@ local Container = require("engine/core/container")
 local Model = require("engine/core/model")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
+local expensive_debug_checks_enabled = Debugging.expensive_debug_checks_enabled
 
 local Sim = {}
 
@@ -32,8 +33,14 @@ Sim.Sys.MetatableSchema = Schema.PartialObject{
 }
 Sim.Sys._is_sys = true
 function Sim.Sys.new_metatable(sys_name, metatable)
-	assert(Schema.LabelString(sys_name))
-	assert(Schema.Optional(Sim.Sys.MetatableSchema)(metatable))
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Schema.Optional(Sim.Sys.MetatableSchema)(metatable))
+		end
+
+		assert(Schema.LabelString(sys_name))
+	end
+
 	metatable = metatable or Sim.Sys
 
 	local sys_metatable = {
@@ -42,7 +49,10 @@ function Sim.Sys.new_metatable(sys_name, metatable)
 	}
 	sys_metatable.__index = sys_metatable
 	setmetatable(sys_metatable, metatable)
-	assert(metatable.MetatableSchema(sys_metatable))
+
+	if expensive_debug_checks_enabled then
+		assert(metatable.MetatableSchema(sys_metatable))
+	end
 
 	return sys_metatable
 end
@@ -68,8 +78,11 @@ Sim.Sim.__index = Sim.Sim
 Sim.Sim._is_sim = true
 Sim.Sim.Sys = Sim.Sys
 function Sim.Sim.new(state, metatable)
-	assert(Schema.Optional(Schema.SerializableObject)(state))
-	assert(Schema.Optional(Sim.Sim.MetatableSchema)(metatable))
+	if expensive_debug_checks_enabled then
+		assert(Schema.Optional(Schema.SerializableObject)(state))
+		assert(Schema.Optional(Sim.Sim.MetatableSchema)(metatable))
+	end
+
 	state = state or {}
 	metatable = metatable or Sim.Sim
 
@@ -87,7 +100,7 @@ function Sim.Sim.new(state, metatable)
 	setmetatable(sim, metatable)
 	sim._event_listeners_ordered[1] = sim
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(metatable.Schema(sim))
 	end
 
@@ -95,7 +108,10 @@ function Sim.Sim.new(state, metatable)
 end
 function Sim.Sim:require(sys_metatable)
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+		end
+
 		assert(self.Sys.MetatableSchema(sys_metatable))
 		assert(self.status == Sim.Status.new)
 	end
@@ -129,7 +145,7 @@ function Sim.Sim:require(sys_metatable)
 	-- clear event cache
 	self._event_listeners_cached = {}
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(self.Sys.Schema(sys))
 	end
@@ -141,8 +157,11 @@ end
 function Sim.Sim:get(sys_metatable)
 	local sys_name = sys_metatable.sys_name
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-		assert(self.Sys.MetatableSchema(sys_metatable))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+			assert(self.Sys.MetatableSchema(sys_metatable))
+		end
+
 		assert(Schema.LabelString(sys_name))
 	end
 
@@ -154,10 +173,14 @@ end
 function Sim.Sim:broadcast(event_name, ...)
 	local message = {event_name, ...}
 
+	local message_debug_copy
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-		assert(Schema.LabelString(event_name))
-		assert(Schema.SerializableArray(message))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+			assert(Schema.LabelString(event_name))
+			assert(Schema.SerializableArray(message))
+			message_debug_copy = Container.get_comparable_str(message)
+		end
 		assert(self.status == Sim.Status.started)
 	end
 
@@ -170,17 +193,20 @@ function Sim.Sim:broadcast(event_name, ...)
 		sys[event_name](sys, ...)
 	end
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
+		assert(Container.get_comparable_str(message) == message_debug_copy)
 	end
 end
 function Sim.Sim:broadcast_pcall(event_name, ...)
 	local message = {event_name, ...}
 
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+			assert(Schema.SerializableArray(message))
+		end
 		assert(Schema.LabelString(event_name))
-		assert(Schema.SerializableArray(message))
 		assert(self.status == Sim.Status.started)
 	end
 
@@ -198,14 +224,16 @@ function Sim.Sim:broadcast_pcall(event_name, ...)
 		end
 	end
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
 	return send_ok
 end
 function Sim.Sim:start()
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+		end
 		assert(self.status ~= Sim.Status.finalized)
 		assert(self.stopping == false)
 	end
@@ -218,33 +246,37 @@ function Sim.Sim:start()
 		self:broadcast("on_start")
 	end
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
 end
 function Sim.Sim:step()
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+		end
 		assert(self.status == Sim.Status.started)
 		assert(not self.stopping)
 	end
 
 	self:broadcast_pcall("on_step")
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
 end
 function Sim.Sim:stop()
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+		end
 		assert(self.status ~= Sim.Status.finalized)
 	end
 
 	self.stopping = true
 end
 function Sim.Sim:finalize()
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
 
@@ -253,31 +285,36 @@ function Sim.Sim:finalize()
 	end
 
 	self.status = Sim.Status.finalized
-
-	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
-	end
 end
 function Sim.Sim:running()
+	if expensive_debug_checks_enabled then
+		assert(Sim.Sim.Schema(self))
+	end
+
 	return self.status == Sim.Status.started and not self.stopping
 end
 function Sim.Sim:run()
 	if debug_checks_enabled then
-		assert(Sim.Sim.Schema(self))
+		if expensive_debug_checks_enabled then
+			assert(Sim.Sim.Schema(self))
+		end
+
 		assert(self.status == Sim.Status.new)
 	end
 
 	self:start()
+
 	while self:running() do
 		self:step()
 	end
+
 	self:finalize()
 end
 function Sim.Sim:on_step()
 	self.step_id = self.step_id + 1
 end
 function Sim.Sim:_cache_systems_for_event(event_name)
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 		assert(Schema.LabelString(event_name))
 	end
@@ -293,7 +330,7 @@ function Sim.Sim:_cache_systems_for_event(event_name)
 	end
 	self._event_listeners_cached[event_name] = event_systems
 
-	if debug_checks_enabled then
+	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
 	end
 

@@ -1,7 +1,6 @@
 local Shim = require("engine/core/shim")
 local Math = require("engine/core/math")
 local Debugging = require("engine/core/debugging")
-local Logging = require("engine/core/logging")
 local Testing = require("engine/core/testing")
 local Schema = require("engine/core/Schema")
 local Container = require("engine/core/container")
@@ -64,74 +63,13 @@ Entity.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
 		Schema.PositiveInteger, Schema.Mapping(Schema.LabelString, Schema.PositiveInteger)),
 	-- _sprite_game = Optional(Sprite.GameSys.Schema),  -- TODO once sprite sys is integrated
 })
-function Entity.WorldSys:add(entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Schema.Optional(Entity.Entity.ExistsSchema)(entity))
-		assert(self.sim.status == Sim.Status.started)
-	end
-
-	local entities = self.state.entities
-	local entity_id = next(self._entity_ids_free) or #entities + 1
-	entity = entity or {}
-
-	self:index(entity_id, entity)
-
-	if expensive_debug_checks_enabled then
-		assert(Schema.PositiveInteger(entity_id))
-		assert(Entity.WorldSys.Schema(self))
-	end
-
-	return entity_id, entity
-end
-function Entity.WorldSys:set(entity_id, state, entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Schema.PositiveInteger(entity_id))
-		assert(Entity.Entity.ExistsSchema(state))
-		assert(not state.destroyed)
-		assert(entity == nil or self.state.entities[entity_id] == entity)
-		assert(entity == nil or not entity.destroyed)
-		assert(self.sim.status == Sim.Status.started)
-	end
-
-	entity = entity or self:find(entity_id)
-
-	Container.update(entity, state)
-
-	self:index(entity_id, entity)
-
-	if expensive_debug_checks_enabled then
-		assert(Entity.Entity.Schema(entity))
-	end
-end
-function Entity.WorldSys:destroy(entity_id, entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Schema.PositiveInteger(entity_id))
-		assert(entity == nil or self.state.entities[entity_id] == entity)
-		assert(self.sim.status == Sim.Status.started)
-	end
-
-	entity = entity or self:find(entity_id)
-
-	for key, _ in pairs(entity) do
-		entity[key] = nil
-	end
-	entity.destroyed = true
-
-	self:index(entity_id, entity)
-
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Entity.Entity.DestroyedSchema(entity))
-	end
-end
 function Entity.WorldSys:index(entity_id, entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		end
 		assert(Schema.PositiveInteger(entity_id))
-		assert(Schema.Optional(Entity.Entity.Schema)(entity))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -228,48 +166,87 @@ function Entity.WorldSys:index_all()
 		assert(Entity.WorldSys.Schema(self))
 	end
 end
-function Entity.WorldSys:find(entity_id)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Schema.PositiveInteger(entity_id))
+function Entity.WorldSys:add(entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Entity.Entity.ExistsSchema)(entity))
+		end
 		assert(self.sim.status == Sim.Status.started)
 	end
 
-	local entity = self.state.entities[entity_id]
-	if entity == nil or entity.destroyed then
-		return nil
+	local entities = self.state.entities
+	local entity_id = next(self._entity_ids_free) or #entities + 1
+	entity = entity or {}
+
+	self:index(entity_id, entity)
+
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Entity.WorldSys.Schema(self))
+		end
+		assert(Schema.PositiveInteger(entity_id))
 	end
 
-	return entity
+	return entity_id, entity
 end
-function Entity.WorldSys:tag_is_set(entity_id, tags, entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
+function Entity.WorldSys:set(entity_id, state, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Entity.Entity.ExistsSchema(state))
+		end
 		assert(Schema.PositiveInteger(entity_id))
-		assert(Schema.Optional(Entity.Entity.Schema)(entity))
-		assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+		assert(not state.destroyed)
+		assert(entity == nil or self.state.entities[entity_id] == entity)
+		assert(entity == nil or not entity.destroyed)
 		assert(self.sim.status == Sim.Status.started)
 	end
 
 	entity = entity or self:find(entity_id)
-	local entity_tags = entity.tags
-	if entity_tags == nil then
-		return false
+
+	Container.update(entity, state)
+
+	self:index(entity_id, entity)
+
+	if expensive_debug_checks_enabled then
+		assert(Entity.Entity.Schema(entity))
+	end
+end
+function Entity.WorldSys:destroy(entity_id, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+		end
+		assert(Schema.PositiveInteger(entity_id))
+		assert(entity == nil or self.state.entities[entity_id] == entity)
+		assert(self.sim.status == Sim.Status.started)
 	end
 
-	for _, tag in ipairs(tags) do
-		if entity_tags[tag] ~= true then
-			return false
-		end
+	entity = entity or self:find(entity_id)
+
+	for key, _ in pairs(entity) do
+		entity[key] = nil
 	end
-	return true
-end
-function Entity.WorldSys:tag(entity_id, tags, entity)
+	entity.destroyed = true
+
+	self:index(entity_id, entity)
+
 	if expensive_debug_checks_enabled then
 		assert(Entity.WorldSys.Schema(self))
+		assert(Entity.Entity.DestroyedSchema(entity))
+	end
+end
+function Entity.WorldSys:tag(entity_id, tags, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		end
+
 		assert(Schema.PositiveInteger(entity_id))
-		assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
-		assert(Schema.Optional(Entity.Entity.Schema)(entity))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -320,11 +297,14 @@ function Entity.WorldSys:tag(entity_id, tags, entity)
 	end
 end
 function Entity.WorldSys:untag(entity_id, tags, entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		end
+
 		assert(Schema.PositiveInteger(entity_id))
-		assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
-		assert(Schema.Optional(Entity.Entity.Schema)(entity))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -387,10 +367,38 @@ function Entity.WorldSys:untag(entity_id, tags, entity)
 		self.sim:broadcast("on_entity_untag", entity_id, removed_tags, entity)
 	end
 end
-function Entity.WorldSys:tag_get_all(tag)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Schema.LabelString(tag))
+function Entity.WorldSys:has_tags(entity_id, tags, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+			assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+		end
+
+		assert(Schema.PositiveInteger(entity_id))
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	entity = entity or self:find(entity_id)
+	local entity_tags = entity.tags
+	if entity_tags == nil then
+		return false
+	end
+
+	for _, tag in ipairs(tags) do
+		if entity_tags[tag] ~= true then
+			return false
+		end
+	end
+	return true
+end
+function Entity.WorldSys:get_all_with_tag(tag)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.LabelString(tag))
+		end
+
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -400,11 +408,14 @@ function Entity.WorldSys:tag_get_all(tag)
 
 	return tag_entities
 end
-function Entity.WorldSys:bounds_get(entity_id, entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
+function Entity.WorldSys:get_bounds(entity_id, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		end
+
 		assert(Schema.PositiveInteger(entity_id))
-		assert(Schema.Optional(Entity.Entity.Schema)(entity))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -412,72 +423,236 @@ function Entity.WorldSys:bounds_get(entity_id, entity)
 
 	return entity.x or 0, entity.y or 0, entity.width or 0, entity.height or 0
 end
-function Entity.WorldSys:bounds_set(entity_id, x, y, width, height, entity)
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
+function Entity.WorldSys:set_bounds(entity_id, x, y, width, height, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		end
+
 		assert(Schema.PositiveInteger(entity_id))
 		assert(Schema.Integer(x))
 		assert(Schema.Integer(y))
 		assert(Schema.Integer(width))
 		assert(Schema.Integer(height))
-		assert(Schema.Optional(Entity.Entity.Schema)(entity))
 		assert(self.sim.status == Sim.Status.started)
 	end
 
 	entity = entity or self:find(entity_id)
+	local x1, y1 = x, y
+	local x2, y2 = x1 + (width), y1 + (height)
 
 	entity.x = x
 	entity.y = y
 	entity.width = width
 	entity.height = height
 
+	self._entity_index:set_bounds(entity_id, x1, y1, x2, y2)
+end
+function Entity.WorldSys:set_pos(entity_id, x, y, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		end
+
+		assert(Schema.PositiveInteger(entity_id))
+		assert(Schema.Integer(x))
+		assert(Schema.Integer(y))
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	entity = entity or self:find(entity_id)
+
+	local width, height = entity.width or 0, entity.height or 0
 	local x1, y1 = x, y
 	local x2, y2 = x1 + (width), y1 + (height)
 
+	entity.x = x
+	entity.y = y
+	entity.width = width
+	entity.height = height
+
 	self._entity_index:set_bounds(entity_id, x1, y1, x2, y2)
 end
-function Entity.WorldSys:bounds_index_tag(tag, allow_failure)
+function Entity.WorldSys:set_size(entity_id, width, height, entity)
 	if debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
-		assert(Schema.LabelString(tag))
-		assert(Schema.Optional(Schema.Boolean)(allow_failure))
-		assert(self.sim.status == Sim.Status.new)
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Entity.Entity.Schema)(entity))
+		end
+
+		assert(Schema.PositiveInteger(entity_id))
+		assert(Schema.Integer(width))
+		assert(Schema.Integer(height))
+		assert(self.sim.status == Sim.Status.started)
 	end
 
-	local tag_to_tag_id = self._tag_to_tag_id
-	local tag_id_to_tag = self._tag_id_to_tag
-	local tag_id = tag_to_tag_id[tag]
-	if tag_id ~= nil then
-		return tag_id
+	entity = entity or self:find(entity_id)
+
+	local x, y = entity.x or 0, entity.y or 0
+	local x1, y1 = x, y
+	local x2, y2 = x1 + (width), y1 + (height)
+
+	entity.x = x
+	entity.y = y
+	entity.width = width
+	entity.height = height
+
+	self._entity_index:set_bounds(entity_id, x1, y1, x2, y2)
+end
+function Entity.WorldSys:find(entity_id)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+		end
+
+		assert(Schema.PositiveInteger(entity_id))
+		assert(self.sim.status == Sim.Status.started)
 	end
 
-	tag_id = #tag_id_to_tag + 1
-	if tag_id > Entity.Entity.max_tag_id then
-		local msg = "Max tag ids reached, cannot add "..tag
-		if allow_failure == true then
-			Logging.warning(msg)
-			return
-		else
-			error(msg)
+	local entity = self.state.entities[entity_id]
+	if entity == nil or entity.destroyed then
+		return nil
+	end
+
+	return entity
+end
+function Entity.WorldSys:find_in(x, y, width, height, tags, exclude_entity_id)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Schema.NonEmptyArray(Schema.LabelString))(tags))
+		end
+
+		assert(Schema.Integer(x))
+		assert(Schema.Integer(y))
+		assert(Schema.Integer(width))
+		assert(Schema.Integer(height))
+		assert(Schema.Optional(Schema.PositiveInteger)(exclude_entity_id))
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	local tag_ids = {}
+	if tags ~= nil then
+		local tag_to_tag_id = self._tag_to_tag_id
+		for _, tag in ipairs(tags) do
+			tag_ids[#tag_ids + 1] = tag_to_tag_id[tag]
 		end
 	end
 
-	tag_id_to_tag[tag_id] = tag
-	tag_to_tag_id[tag] = tag_id
+	return self._entity_index:first(exclude_entity_id, x, y, x + width, y + height, Shim.unpack(tag_ids))
+end
+function Entity.WorldSys:find_all_in(x, y, width, height, tags, exclude_entity_id)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Schema.Array(Schema.LabelString))(tags))
+		end
 
-	return tag_id
+		assert(Schema.Integer(x))
+		assert(Schema.Integer(y))
+		assert(Schema.Integer(width))
+		assert(Schema.Integer(height))
+		assert(Schema.Optional(Schema.PositiveInteger)(exclude_entity_id))
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	local tag_ids = {}
+	if tags ~= nil then
+		local tag_to_tag_id = self._tag_to_tag_id
+		for _, tag in ipairs(tags) do
+			tag_ids[#tag_ids + 1] = tag_to_tag_id[tag]
+		end
+	end
+
+	return self._entity_index:all(exclude_entity_id, x, y, x + width, y + height, Shim.unpack(tag_ids))
+end
+function Entity.WorldSys:find_relative(entity_id, x, y, tags, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.Optional(Schema.NonEmptyArray(Schema.LabelString))(tags))
+		end
+
+		assert(Schema.Optional(Schema.Integer)(x))
+		assert(Schema.Optional(Schema.Integer)(y))
+		assert(Schema.PositiveInteger(entity_id))
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	entity = entity or self:find(entity_id)
+
+	x, y = (x or 0) + (entity.x or 0), (y or 0) + (entity.y or 0)
+	local width, height = entity.width or 0, entity.height or 0
+
+	local tag_ids = {}
+	if tags ~= nil then
+		local tag_to_tag_id = self._tag_to_tag_id
+		for _, tag in ipairs(tags) do
+			tag_ids[#tag_ids + 1] = tag_to_tag_id[tag]
+		end
+	end
+
+	return self._entity_index:first(entity_id, x, y, x + width, y + height, Shim.unpack(tag_ids))
+end
+function Entity.WorldSys:get_tags_bounds_indexed(tags)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+		end
+
+		assert(self.sim.status == Sim.Status.new or self.sim.status == Sim.Status.started)
+	end
+
+	local tag_to_tag_id = self._tag_to_tag_id
+	for _, tag in ipairs(tags) do
+		if tag_to_tag_id[tag] == nil then
+			return false
+		end
+	end
+	return true
+end
+function Entity.WorldSys:set_tags_bounds_indexed(tags)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.NonEmptyArray(Schema.LabelString)(tags))
+		end
+	end
+
+	assert(self.sim.status == Sim.Status.new)
+	assert(#self._tag_id_to_tag + #tags <= Entity.Entity.max_tag_id)
+
+	local tag_to_tag_id = self._tag_to_tag_id
+	local tag_id_to_tag = self._tag_id_to_tag
+
+	for _, tag in ipairs(tags) do
+		if tag_to_tag_id[tag] == nil then
+			local tag_id = #tag_id_to_tag + 1
+			tag_id_to_tag[tag_id] = tag
+			tag_to_tag_id[tag] = tag_id
+		end
+	end
 end
 function Entity.WorldSys:get_all_raw()
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+		end
+
 		assert(self.sim.status == Sim.Status.started)
 	end
 
 	return self.state.entities
 end
 function Entity.WorldSys:get_max_id()
-	if expensive_debug_checks_enabled then
-		assert(Entity.WorldSys.Schema(self))
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+		end
+
 		assert(self.sim.status == Sim.Status.started)
 	end
 
@@ -504,46 +679,6 @@ function Entity.WorldSys:on_start()
 end
 
 Entity.tests = Testing.add_suite("engine.entity", {
-	add = function()
-		local world = World.World.new()
-		local entity_world = world:require(Entity.WorldSys)
-		world:start()
-
-		local state = {x = 0, y = 0, width = 8, height = 8, tags = {hello = true}, blah = {1, 2, 3}}
-		local entity_id = entity_world:add(state)
-		Container.assert_equal(state, entity_world:find(entity_id))
-	end,
-	set = function()
-		local world = World.World.new()
-		local entity_world = world:require(Entity.WorldSys)
-		world:start()
-
-		Testing.assert_fails(function()
-			entity_world:set(0, {})
-		end)
-
-		local entity_id = entity_world:add{}
-		Container.assert_equal({}, entity_world:find(entity_id))
-
-		local state = {x = 0, y = 0, width = 8, height = 8, tags = {hello = true}, blah = {1, 2, 3}}
-		entity_world:set(entity_id, state)
-		Container.assert_equal(state, entity_world:find(entity_id))
-	end,
-	destroy = function()
-		local world = World.World.new()
-		local entity_world = world:require(Entity.WorldSys)
-		world:start()
-
-		local entity_id = entity_world:add{}
-		Container.assert_equal({}, entity_world:find(entity_id))
-
-		entity_world:destroy(entity_id)
-		Container.assert_equal(nil, entity_world:find(entity_id))
-
-		Testing.assert_fails(function()
-			entity_world:destroy(entity_id)
-		end)
-	end,
 	index_tags = function()
 		local TestSys = World.Sys.new_metatable("test")
 		local entity_index_patch = Testing.CallWatcher.patch(TestSys, "on_entity_index")
@@ -555,7 +690,7 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		local test_world = world:require(TestSys)
 
 		local tag = "hello"
-		entity_world:bounds_index_tag(tag)
+		entity_world:set_tags_bounds_indexed({tag})
 
 		world:start()
 
@@ -626,7 +761,79 @@ Entity.tests = Testing.add_suite("engine.entity", {
 			Container.assert_equal({entity_world._entity_index:get_bounds(entity_id)}, bounds)
 		end
 	end,
-	tag_is_set = function()
+	add = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+		world:start()
+
+		local state = {x = 0, y = 0, width = 8, height = 8, tags = {hello = true}, blah = {1, 2, 3}}
+		local entity_id = entity_world:add(state)
+		Container.assert_equal(state, entity_world:find(entity_id))
+	end,
+	set = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+		world:start()
+
+		Testing.assert_fails(function()
+			entity_world:set(0, {})
+		end)
+
+		local entity_id = entity_world:add{}
+		Container.assert_equal({}, entity_world:find(entity_id))
+
+		local state = {x = 0, y = 0, width = 8, height = 8, tags = {hello = true}, blah = {1, 2, 3}}
+		entity_world:set(entity_id, state)
+		Container.assert_equal(state, entity_world:find(entity_id))
+	end,
+	destroy = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+		world:start()
+
+		local entity_id = entity_world:add{}
+		Container.assert_equal({}, entity_world:find(entity_id))
+
+		entity_world:destroy(entity_id)
+		Container.assert_equal(nil, entity_world:find(entity_id))
+
+		Testing.assert_fails(function()
+			entity_world:destroy(entity_id)
+		end)
+	end,
+	tag_untag = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+		entity_world:set_tags_bounds_indexed({"yes"})
+		entity_world:set_tags_bounds_indexed({"no"})
+
+		world:start()
+
+		local entity_id, entity = entity_world:add{}
+		Container.assert_equal(entity.tags, nil)
+		Container.assert_equal(entity_world:get_all_with_tag("yes"), {})
+		Container.assert_equal(entity_world:get_all_with_tag("no"), {})
+		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
+
+		entity_world:tag(entity_id, {"yes", "no"}, entity)
+		Container.assert_equal(entity.tags, {yes = true, no = true})
+		Container.assert_equal(entity_world:get_all_with_tag("yes"), {entity})
+		Container.assert_equal(entity_world:get_all_with_tag("no"), {entity})
+		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1, 2})
+
+		entity_world:untag(entity_id, {"no"}, entity)
+		Container.assert_equal(entity.tags, {yes = true})
+		Container.assert_equal(entity_world:get_all_with_tag("yes"), {entity})
+		Container.assert_equal(entity_world:get_all_with_tag("no"), {})
+		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1})
+
+		entity_world:untag(entity_id, {"yes", "no"}, entity)
+		Container.assert_equal(entity.tags, {})
+		Container.assert_equal(entity_world:get_all_with_tag("yes"), {})
+		Container.assert_equal(entity_world:get_all_with_tag("no"), {})
+		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
+	end,
+	has_tags = function()
 		local world = World.World.new()
 		local entity_world = world:require(Entity.WorldSys)
 		world:start()
@@ -635,56 +842,24 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		local entity = entity_world:find(entity_id)
 		local tag = "t"
 		local tag2 = "u"
-		assert(not entity_world:tag_is_set(entity_id, {tag}))
-		assert(not entity_world:tag_is_set(entity_id, {tag, tag2}))
-		assert(not entity_world:tag_is_set(entity_id, {tag2}))
+		assert(not entity_world:has_tags(entity_id, {tag}))
+		assert(not entity_world:has_tags(entity_id, {tag, tag2}))
+		assert(not entity_world:has_tags(entity_id, {tag2}))
 
 		entity.tags = {t = true}
 		entity_world:index(entity_id, entity)
-		assert(entity_world:tag_is_set(entity_id, {tag}))
+		assert(entity_world:has_tags(entity_id, {tag}))
 
 		entity.tags[tag2] = true
 		entity_world:index(entity_id, entity)
-		assert(entity_world:tag_is_set(entity_id, {tag, tag2}))
-	end,
-	tag_untag = function()
-		local world = World.World.new()
-		local entity_world = world:require(Entity.WorldSys)
-		entity_world:bounds_index_tag("yes")
-		entity_world:bounds_index_tag("no")
-
-		world:start()
-
-		local entity_id, entity = entity_world:add{}
-		Container.assert_equal(entity.tags, nil)
-		Container.assert_equal(entity_world:tag_get_all("yes"), {})
-		Container.assert_equal(entity_world:tag_get_all("no"), {})
-		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
-
-		entity_world:tag(entity_id, {"yes", "no"}, entity)
-		Container.assert_equal(entity.tags, {yes = true, no = true})
-		Container.assert_equal(entity_world:tag_get_all("yes"), {entity})
-		Container.assert_equal(entity_world:tag_get_all("no"), {entity})
-		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1, 2})
-
-		entity_world:untag(entity_id, {"no"}, entity)
-		Container.assert_equal(entity.tags, {yes = true})
-		Container.assert_equal(entity_world:tag_get_all("yes"), {entity})
-		Container.assert_equal(entity_world:tag_get_all("no"), {})
-		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1})
-
-		entity_world:untag(entity_id, {"yes", "no"}, entity)
-		Container.assert_equal(entity.tags, {})
-		Container.assert_equal(entity_world:tag_get_all("yes"), {})
-		Container.assert_equal(entity_world:tag_get_all("no"), {})
-		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
+		assert(entity_world:has_tags(entity_id, {tag, tag2}))
 	end,
 	bounds_set_get = function()
 		local world = World.World.new()
 		local entity_world = world:require(Entity.WorldSys)
 		world:start()
 		local entity_id, entity = entity_world:add{}
-		Container.assert_equal({entity_world:bounds_get(entity_id, entity)}, {0, 0, 0, 0})
+		Container.assert_equal({entity_world:get_bounds(entity_id, entity)}, {0, 0, 0, 0})
 
 		local bounds_to_test = {
 			{0, 0, 0, 0},
@@ -697,9 +872,95 @@ Entity.tests = Testing.add_suite("engine.entity", {
 			{2^16, -2^16, 2^16 + 1, 2^16 + 1},
 		}
 		for _, bounds in ipairs(bounds_to_test) do
-			entity_world:bounds_set(entity_id, Shim.unpack(bounds))
-			Container.assert_equal({entity_world:bounds_get(entity_id)}, bounds)
+			entity_world:set_bounds(entity_id, Shim.unpack(bounds))
+			Container.assert_equal({entity_world:get_bounds(entity_id)}, bounds)
 		end
+	end,
+	find_in = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+		local tags = {"solid", "death"}
+		entity_world:set_tags_bounds_indexed(tags)
+
+		world:start()
+
+		local min_coord = -2^23
+		local max_size = 2^24
+		entity_world:find_in(min_coord, min_coord, max_size, max_size, nil, nil)
+		Container.assert_equal(entity_world:find_in(min_coord, min_coord, max_size, max_size, nil, nil), nil)
+		Container.assert_equal(entity_world:find_all_in(min_coord, min_coord, max_size, max_size, nil, nil), {})
+
+		local entity_id = entity_world:add{}
+		Container.assert_equal(entity_world:find_in(min_coord, min_coord, max_size, max_size, nil, nil), nil)
+
+		entity_world:set_pos(entity_id, 1, 1)
+		Container.assert_equal(entity_world:find_in(min_coord, min_coord, max_size, max_size, nil, nil), nil)
+
+		entity_world:set_bounds(entity_id, 0, 0, 1, 1)
+		Container.assert_equal(entity_world:find_in(min_coord, min_coord, max_size, max_size, nil, nil), entity_id)
+		Container.assert_equal(entity_world:find_all_in(min_coord, min_coord, max_size, max_size, nil, nil), {entity_id})
+
+		entity_world:destroy(entity_id)
+
+		local world_width = 3
+		local world_height = 3
+		for x = 1, world_width do
+			for y = 1, world_height do
+				entity_id = entity_world:add{x = x, y = y, width = 1, height = 1}
+				Container.assert_equal(entity_world:find_all_in(x, y, 1, 1, nil, nil), {entity_id})
+			end
+		end
+		assert(#entity_world:find_all_in(1, 1, 1, 1) == 1)
+		assert(#entity_world:find_all_in(1, 1, 2, 2) == 4)
+		assert(#entity_world:find_all_in(1, 1, world_width, world_height) == (world_width * world_height))
+		assert(#entity_world:find_all_in(1, 1, world_width, world_height, nil, entity_id) == (world_width * world_height) - 1)
+		assert(#entity_world:find_all_in(1, 1, world_width, world_height, tags, nil) == 0)
+		assert(#entity_world:find_all_in(1, 1, world_width, world_height, {"solid"}, nil) == 0)
+		assert(#entity_world:find_all_in(1, 1, world_width, world_height, {"death"}, nil) == 0)
+		entity_world:tag(entity_id, {"solid"})
+		Container.assert_equal(entity_world:find_all_in(1, 1, world_width, world_height, {"solid"}, nil), {entity_id})
+		assert(#entity_world:find_all_in(1, 1, world_width, world_height, tags, nil) == 0)
+		assert(#entity_world:find_all_in(1, 1, world_width, world_height, {"death"}, nil) == 0)
+
+		entity_world:tag(entity_id, {"death"})
+		Container.assert_equal(entity_world:find_all_in(1, 1, world_width, world_height, tags, nil), {entity_id})
+	end,
+	find_relative = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+		local tags = {"solid", "death"}
+		entity_world:set_tags_bounds_indexed(tags)
+
+		world:start()
+
+		local player_id = entity_world:add{x = 1, y = 1, width = 1, height = 1, tags = {solid = true}}
+		local wall_id = entity_world:add{x = 1, y = 2, width = 1, height = 1, tags = {solid = true}}
+		local death_id = entity_world:add{x = 2, y = 1, width = 1, height = 1, tags = {death = true}}
+
+		assert(entity_world:find_relative(player_id, 0, 1, {"solid"}) == wall_id)
+		assert(entity_world:find_relative(player_id, 1, 0, {"death"}) == death_id)
+
+		assert(entity_world:find_relative(player_id, 0, 0, {"solid"}) == nil)
+		assert(entity_world:find_relative(player_id, 0, 2, {"solid"}) == nil)
+		assert(entity_world:find_relative(player_id, 1, 0, {"solid"}) == nil)
+		assert(entity_world:find_relative(player_id, 1, 1, {"solid"}) == nil)
+		assert(entity_world:find_relative(player_id, 2, 0, {"solid"}) == nil)
+		assert(entity_world:find_relative(player_id, 0, 1, {"death"}) == nil)
+		assert(entity_world:find_relative(player_id, 0, 2, {"death"}) == nil)
+		assert(entity_world:find_relative(player_id, 1, 1, {"death"}) == nil)
+		assert(entity_world:find_relative(player_id, 2, 0, {"death"}) == nil)
+	end,
+	set_tags_bounds_indexed_too_many_fails = function()
+		local world = World.World.new()
+		local entity_world = world:require(Entity.WorldSys)
+
+		for i = 1, Entity.Entity.max_tag_id do
+			entity_world:set_tags_bounds_indexed({"tag"..i})
+		end
+
+		Testing.assert_fails(function()
+			entity_world:set_tags_bounds_indexed({"one_too_many"})
+		end)
 	end,
 	run_world = function()
 		local world = World.World.new()
@@ -773,18 +1034,6 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		world:step()
 		world:stop()
 		world:finalize()
-	end,
-	bounds_index_tag_too_many_tags = function()
-		local world = World.World.new()
-		local entity_world = world:require(Entity.WorldSys)
-
-		for i = 1, Entity.Entity.max_tag_id do
-			entity_world:bounds_index_tag("tag"..i)
-		end
-
-		Testing.assert_fails(function()
-			entity_world:bounds_index_tag("one_too_many")
-		end)
 	end,
 })
 

@@ -107,6 +107,10 @@ end
 
 Testing.test_suites = {}
 function Testing.assert_fails(fn, ...)
+	if not Debugging.debug_checks_enabled then
+		return
+	end
+
 	local debugger_enabled = Debugging.debugger_enabled
 	if debugger_enabled then
 		Debugging.set_debugger_enabled(false)
