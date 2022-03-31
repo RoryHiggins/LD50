@@ -1,29 +1,23 @@
-Lua TODO
---------------
-image.Component
-	image_name: str
-	x, y, width, height, z, r, g, b, a, translate_x, translate_y, scale_x, scale_y : num?
-image.WorldSys : world.Sys
-	add_image(image_name: str, image.Image)
-	find_image(image_name: str) : image.Image
-	draw_image(client.wrappers.VertexArray, image.Component)
-	set(entity.Entity, image.Component)
-	set_name(entity.Entity, image_name: str)
+text.WorldSys : world.Sys
+	set(entity.Entity, text.Entity)
+	set_text(entity.Entity, text: str)
 	remove(entity.Entity)
-	on_draw()  # draw the images of entities
+	on_draw()  # draw entity text components
 	state
-		images: {[str]: [image.Image]}
+		fonts: {[str]: text.Font}
+	_image_world: Image.WorldSys
+	_ascii_fonts: {[str]: client.wrappers.AsciiFont}
 
 animation.Animation : schema.SerializableObject
 	frames: [str]  # image names
-animation.Component : schema.SerializableObject
+animation.Entity : schema.SerializableObject
 	anim_name: str
 	anim_frame_id: num
 	anim_is_looping: bool
 animation.WorldSys : world.Sys
 	add_animation(anim_name: str, animation.Animation)
 	find_animation(anim_name: str) : animation.Animation|nil
-	set(entity.Entity, animation.Component)
+	set(entity.Entity, animation.Entity)
 	set_name(entity.Entity, anim_name: str)
 	set_frame_id(entity.Entity, frame_id: num)
 	get_ended(entity.Entity) : bool  # frame_id == #frames
@@ -31,29 +25,6 @@ animation.WorldSys : world.Sys
 	on_step()  # progress the animation of entities
 	_animation_game: animation.GameSys : game.Sys
 	_image_game: image.GameSys : game.Sys
-
-text.Font : schema.SerializableObject
-	filename: str
-	type = "ascii"  # only currently supported type
-text.Component : schema.SerializableObject
-	font_name: str
-	r, g, b, a, z, translate_x, translate_y, max_width, max_height: num?
-text.WorldSys : world.Sys
-	add_font(font_name: str, text.Font)
-	find_font(font_name: str) : text.Font|nil
-	draw_text(client.wrappers.VertexArray, text.Component)
-	set(entity.Entity, text.Component)
-	set_text(entity.Entity, text: str)
-	remove(entity.Entity)
-	on_draw()  # draw entity text components
-	state
-		fonts: 
-	_game_text: text.GameSys
-text.GameSys : game.Sys
-	load(text.Font)
-	unload(text.Font)
-	_ascii_font_by_filename: {[str]: client.wrappers.AsciiFont}
-	_texture_atlas: client.wrappers.TextureAtlas
 
 primitive.WorldSys
 	draw_triangle(x1, y1, x2, y2, x3, y3: num, r, g, b, a, z: num|nil)
@@ -89,12 +60,12 @@ music.WorldSys
 	state
 		audio_name: str
 
-camera_target.Component : schema.SerializableObject
+camera_target.Entity : schema.SerializableObject
 	camera_name: str
-	speed: num?
-	margin: num?
+	camera_speed: num?
+	camera_margin: num?
 camera_target.WorldSys : world.Sys
-	set(entity.Entity, camera_target.Component)
+	set(entity.Entity, camera_target.Entity)
 	remove(entity.Entity)
 	on_step()
 	on_entity_destroy()  # remove if named view removed

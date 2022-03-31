@@ -331,6 +331,14 @@ function Schema.NonEmptyString(x)
 	end
 	return false, Schema.error("Schema.NonEmptyString(%s): no match", x)
 end
+function Schema.BoundedString(min, max)
+	return function(x)
+		if type(x) == "string" and #x >= min and #x <= max then
+			return true
+		end
+		return false, Schema.error("Schema.BoundedString(%s): no match, min=%s, max=%s", x, min, max)
+	end
+end
 function Schema.NonEmptyArray(condition, opt_length)
 	assert(Schema.Function(condition))
 	assert(Schema.Optional(Schema.PositiveInteger)(opt_length))

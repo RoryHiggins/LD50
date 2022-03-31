@@ -84,7 +84,6 @@ static int odLuaBindings_odEntityIndex_add_to_vertex_array(lua_State* lua) {
 	int32_t vertex_count = 0;
 	const odVertex* vertices = odEntityIndex_get_all_vertices(entity_index, &vertex_count);
 
-
 	if ((vertices != nullptr) && !OD_CHECK(vertex_array->extend(vertices, vertex_count))) {
 		return luaL_error(lua, "vertex_array->extend(%d) failed", vertex_count);
 	}

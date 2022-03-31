@@ -16,11 +16,12 @@ local function main()
 	require('engine/engine/game')
 	require('engine/engine/image')
 	require('engine/engine/sim')
+	require('engine/engine/text')
 	require('engine/engine/world')
 	require('engine/lib/debugger/debugger')
 	require('engine/lib/json/json')
 	require("engine/core/testing").run_all()
-	require("engine/engine/image")
+	require("engine/engine/text")
 end
 local Debugging = require("engine/core/debugging")
 Debugging.debug_checks_enabled = true

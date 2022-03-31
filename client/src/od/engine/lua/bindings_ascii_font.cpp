@@ -85,6 +85,10 @@ static int odLuaBindings_odAsciiFont_init(lua_State* lua) {
 	}
 	font->char_last = char_last[0];
 
+	if (!OD_CHECK(odAsciiFont_check_valid(font))) {
+		return luaL_error(lua, "ascii font validation failed");
+	}
+
 	return 0;
 }
 static int odLuaBindings_odAsciiFont_new(lua_State* lua) {

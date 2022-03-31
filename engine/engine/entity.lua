@@ -25,12 +25,11 @@ Entity.Entity.ExistsSchema = Schema.AllOf(Schema.SerializableObject, Schema.Part
 	y = Schema.Optional(Schema.Integer),
 	width = Schema.Optional(Schema.NonNegativeInteger),
 	height = Schema.Optional(Schema.NonNegativeInteger),
-	image_name = Schema.Optional(Schema.LabelString),
-	z = Schema.Optional(Schema.Number),
 	r = Schema.Optional(Schema.BoundedInteger(0, 255)),
 	g = Schema.Optional(Schema.BoundedInteger(0, 255)),
 	b = Schema.Optional(Schema.BoundedInteger(0, 255)),
 	a = Schema.Optional(Schema.BoundedInteger(0, 255)),
+	z = Schema.Optional(Schema.Number),
 	translate_x = Schema.Optional(Schema.Number),
 	translate_y = Schema.Optional(Schema.Number),
 	scale_x = Schema.Optional(Schema.BoundedNumber(Math.epsilon, Math.integer_max)),
@@ -377,22 +376,6 @@ function Entity.WorldSys:has_tags(entity_id, tags, entity)
 	end
 	return true
 end
-function Entity.WorldSys:get_all_with_tag(tag)
-	if debug_checks_enabled then
-		if expensive_debug_checks_enabled then
-			assert(Entity.WorldSys.Schema(self))
-			assert(Schema.LabelString(tag))
-		end
-
-		assert(self.sim.status == Sim.Status.started)
-	end
-
-	local tag_to_entities = self._tag_to_entities
-	local tag_entities = tag_to_entities[tag] or {}
-	tag_to_entities[tag] = tag_entities
-
-	return tag_entities
-end
 function Entity.WorldSys:get_bounds(entity_id, entity)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
@@ -581,7 +564,7 @@ function Entity.WorldSys:find_relative(entity_id, x, y, tags, entity)
 
 	return self._entity_index:first(entity_id, x, y, x + width, y + height, Shim.unpack(tag_ids))
 end
-function Entity.WorldSys:get_tags_bounds_indexed(tags)
+function Entity.WorldSys:tag_bounds_index_get(tags)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(Entity.WorldSys.Schema(self))
@@ -599,7 +582,7 @@ function Entity.WorldSys:get_tags_bounds_indexed(tags)
 	end
 	return true
 end
-function Entity.WorldSys:set_tags_bounds_indexed(tags)
+function Entity.WorldSys:tag_bounds_index_add(tags)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(Entity.WorldSys.Schema(self))
@@ -620,6 +603,22 @@ function Entity.WorldSys:set_tags_bounds_indexed(tags)
 			tag_to_tag_id[tag] = tag_id
 		end
 	end
+end
+function Entity.WorldSys:get_all_tagged(tag)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.LabelString(tag))
+		end
+
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	local tag_to_entities = self._tag_to_entities
+	local tag_entities = tag_to_entities[tag] or {}
+	tag_to_entities[tag] = tag_entities
+
+	return tag_entities
 end
 function Entity.WorldSys:get_all_raw()
 	if debug_checks_enabled then
@@ -682,7 +681,8 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		local test_world = world:require(TestSys)
 
 		local tag = "hello"
-		entity_world:set_tags_bounds_indexed({tag})
+		entity_world:tag_bounds_index_add({tag})
+		assert(entity_world:tag_bounds_index_get({tag}) == true)
 
 		world:start()
 
@@ -796,33 +796,33 @@ Entity.tests = Testing.add_suite("engine.entity", {
 	tag_untag = function()
 		local world = World.World.new()
 		local entity_world = world:require(Entity.WorldSys)
-		entity_world:set_tags_bounds_indexed({"yes"})
-		entity_world:set_tags_bounds_indexed({"no"})
+		entity_world:tag_bounds_index_add({"yes"})
+		entity_world:tag_bounds_index_add({"no"})
 
 		world:start()
 
 		local entity_id, entity = entity_world:add{}
 		Container.assert_equal(entity.tags, nil)
-		Container.assert_equal(entity_world:get_all_with_tag("yes"), {})
-		Container.assert_equal(entity_world:get_all_with_tag("no"), {})
+		Container.assert_equal(entity_world:get_all_tagged("yes"), {})
+		Container.assert_equal(entity_world:get_all_tagged("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
 
 		entity_world:tag(entity_id, {"yes", "no"}, entity)
 		Container.assert_equal(entity.tags, {yes = true, no = true})
-		Container.assert_equal(entity_world:get_all_with_tag("yes"), {entity})
-		Container.assert_equal(entity_world:get_all_with_tag("no"), {entity})
+		Container.assert_equal(entity_world:get_all_tagged("yes"), {entity})
+		Container.assert_equal(entity_world:get_all_tagged("no"), {entity})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1, 2})
 
 		entity_world:untag(entity_id, {"no"}, entity)
 		Container.assert_equal(entity.tags, {yes = true})
-		Container.assert_equal(entity_world:get_all_with_tag("yes"), {entity})
-		Container.assert_equal(entity_world:get_all_with_tag("no"), {})
+		Container.assert_equal(entity_world:get_all_tagged("yes"), {entity})
+		Container.assert_equal(entity_world:get_all_tagged("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1})
 
 		entity_world:untag(entity_id, {"yes", "no"}, entity)
 		Container.assert_equal(entity.tags, {})
-		Container.assert_equal(entity_world:get_all_with_tag("yes"), {})
-		Container.assert_equal(entity_world:get_all_with_tag("no"), {})
+		Container.assert_equal(entity_world:get_all_tagged("yes"), {})
+		Container.assert_equal(entity_world:get_all_tagged("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
 	end,
 	has_tags = function()
@@ -872,7 +872,7 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		local world = World.World.new()
 		local entity_world = world:require(Entity.WorldSys)
 		local tags = {"solid", "death"}
-		entity_world:set_tags_bounds_indexed(tags)
+		entity_world:tag_bounds_index_add(tags)
 
 		world:start()
 
@@ -921,7 +921,7 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		local world = World.World.new()
 		local entity_world = world:require(Entity.WorldSys)
 		local tags = {"solid", "death"}
-		entity_world:set_tags_bounds_indexed(tags)
+		entity_world:tag_bounds_index_add(tags)
 
 		world:start()
 
@@ -947,11 +947,11 @@ Entity.tests = Testing.add_suite("engine.entity", {
 		local entity_world = world:require(Entity.WorldSys)
 
 		for i = 1, Entity.Entity.max_tag_id do
-			entity_world:set_tags_bounds_indexed({"tag"..i})
+			entity_world:tag_bounds_index_add({"tag"..i})
 		end
 
 		Testing.assert_fails(function()
-			entity_world:set_tags_bounds_indexed({"one_too_many"})
+			entity_world:tag_bounds_index_add({"one_too_many"})
 		end)
 	end,
 	run_world = function()

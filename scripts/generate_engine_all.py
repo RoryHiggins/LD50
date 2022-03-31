@@ -32,7 +32,7 @@ def main():
     run_main = ('require("engine/core/debugging").pcall(main)'
                 if args.debugger else "main()")
     entrypoint = (f'require("{to_lua_path(pathlib.Path(args.entrypoint))}")'
-                  if args.entrypoint else "")
+                  if args.entrypoint else "-- entrypoint")
 
     paths = pathlib.Path('engine').glob('**/*.lua')
     requires = '\n\t'.join(f"require('{to_lua_path(path)}')" for path in paths)
