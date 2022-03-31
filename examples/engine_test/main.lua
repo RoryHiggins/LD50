@@ -3,34 +3,34 @@ local World = require("engine/engine/world")
 local Client = require("engine/engine/client")
 local Camera = require("engine/engine/camera")
 local Controller = require("engine/engine/controller")
+local Entity = require("engine/engine/entity")
+local Image = require("engine/engine/image")
+local Text = require("engine/engine/text")
 
-local AsciiFont = Client.Wrappers.AsciiFont
-local EntityIndex = Client.Wrappers.EntityIndex
-
--- TODO move into GameSys.on_draw() once that is hooked up
 local ExampleWorld = World.Sys.new_metatable("engine_test_example")
 function ExampleWorld:on_init()
 	self._client_world = self.sim:require(Client.WorldSys)
 	self._camera_world = self.sim:require(Camera.WorldSys)
 	self._controller_world = self.sim:require(Controller.WorldSys)
+	self._entity_world = self.sim:require(Entity.WorldSys)
+	self._image_world = self.sim:require(Image.WorldSys)
+	self._text_world = self.sim:require(Text.WorldSys)
 
-	-- TODO use Sprite.GameSys to allocate once hooked up
-	self.sprites_u, self.sprites_v = self._client_world._context.texture_atlas:set_region_png_file{
-		id = 0, filename = "./examples/engine_test/data/sprites.png"}
-
-	-- TODO use Text.GameSys to allocate and Text.WorldSys to draw once hooked up
-	self.ascii_font = AsciiFont.new{
-		u1 = self.sprites_u, v1 = self.sprites_v + 160,
-		u2 = self.sprites_u + 64, v2 = self.sprites_v + 256,
-		char_w = 8, char_h = 8, char_first = ' ', char_last = '~',
+	local images = {
+		blank = {0, 0},
+		none = {8, 0},
+		wall = {16, 24},
 	}
 
-	self.entity_index = EntityIndex.new{}
+	self._image_world:set_batch(images, "./examples/engine_test/data/sprites.png", "png", 8)
+end
+function ExampleWorld:on_start()
 	for i = 1, 4 do
-		self.entity_index:set_collider(
-			i, (8 * i), 8, (8 * i) + 8, 16)
-		self.entity_index:set_sprite(
-			i, self.sprites_u + 16, self.sprites_v + 24, self.sprites_u + 24, self.sprites_v + 32)
+		self._entity_world:add{
+			x = (8 * i), y = 8, width = 8, height = 8,
+			image_name = "wall",
+			z = -1,
+		}
 	end
 end
 function ExampleWorld:on_step()
@@ -56,15 +56,9 @@ function ExampleWorld:on_draw()
 	vertex_array:add_line(0,7,8,7, 0,0,255,255, 0)
 
 	vertex_array:add_point(24,8, 255,255,0,255, 1)
-	self.entity_index:add_to_vertex_array{vertex_array = vertex_array}
 
 	vertex_array:add_rect(16,16,48,48, 0,0,255,255, 0)
-	self.ascii_font:add_text_to_vertex_array{
-		vertex_array = vertex_array,
-		str = "hello World!",
-		x = 16, y = 16, max_w = 32, max_h = 32,
-		color = {128,255,255,255}, depth = 0.0,
-	}
+	self._text_world:draw("default", "hello world!", 16,16, 32,32, 128,255,255,255)
 	vertex_array:add_rect_outline(16,16,48,48, 255,255,0,255, 0)
 end
 
@@ -72,6 +66,7 @@ local ExampleGame = Game.Sys.new_metatable("engine_test_example")
 function ExampleGame:on_init()
 	self._world_game = self.sim:require(World.GameSys)
 	self._client_game = self.sim:require(Client.GameSys)
+	self._image_game = self.sim:require(Image.GameSys)
 	self.sim:require(Controller.GameSys)
 
 	self._world_game:require_world_sys(ExampleWorld)
@@ -87,7 +82,6 @@ function ExampleGame:on_draw()
 	vertex_array:add_line(0,0,width,height, 255,255,0,255, 0)
 	vertex_array:add_triangle(40,0, 0,40, 40,40, 255,255,0,255)
 end
-
 
 local function main()
 	local state = {

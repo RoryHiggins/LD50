@@ -275,6 +275,18 @@ void odAtlas_init(odAtlas* atlas) {
 	}
 
 	odAtlas_destroy(atlas);
+
+	// start with a 1x1 px white texture
+	if (!OD_CHECK(odImage_init(&atlas->image, 1, 1))) {
+		return;
+	}
+
+	odColor* pixel = odImage_get(&atlas->image, 0, 0);
+	if (!OD_CHECK(pixel != nullptr)) {
+		return;
+	}
+
+	*pixel = *odColor_get_white();
 }
 void odAtlas_destroy(odAtlas* atlas) {
 	if (!OD_CHECK(atlas != nullptr)) {
@@ -357,6 +369,10 @@ bool odAtlas_set_region(odAtlas* atlas, odAtlasRegionId region_id,
 		|| !OD_CHECK(odInt32_fits_float(height))
 		|| !OD_CHECK(height > 0)
 		|| !OD_CHECK((src_image_width >= width) || (height == 0))) {
+		return false;
+	}
+
+	if (!OD_CHECK(odAtlas_ensure_count(atlas, static_cast<int32_t>(region_id + 1)))) {
 		return false;
 	}
 

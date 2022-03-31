@@ -1,13 +1,14 @@
 #include <od/platform/primitive.h>
 
 #include <cmath>
-#include <cstdlib>
+
+#include <algorithm>
 
 #include <od/core/debug.h>
 #include <od/core/bounds.h>
 #include <od/core/vertex.h>
 
-static int odTrianglePrimitive_compare(const void* triangle1, const void* triangle2);
+static bool odTrianglePrimitive_compare(const odTrianglePrimitive& triangle1, const odTrianglePrimitive& triangle2);
 
 bool odSpritePrimitive_check_valid(const odSpritePrimitive* sprite) {
 	if (!OD_DEBUG_CHECK(sprite != nullptr)) {
@@ -92,22 +93,12 @@ void odLinePrimitive_get_vertices(const odLinePrimitive* line, odVertex *out_ver
 	out_vertices[5].pos.y += is_horizontal_line;
 }
 
-static int odTrianglePrimitive_compare(const void* triangle1, const void* triangle2) {
-	if (!OD_DEBUG_CHECK(triangle1 != nullptr)
-		|| !OD_DEBUG_CHECK(triangle2 != nullptr)) {
-		return false;
+static bool odTrianglePrimitive_compare(const odTrianglePrimitive& triangle1, const odTrianglePrimitive& triangle2) {
+	if (triangle1.vertices[0].pos.z > triangle2.vertices[0].pos.z) {
+		return true;
 	}
-
-	float z1 = static_cast<const odTrianglePrimitive*>(triangle1)->vertices[0].pos.z;
-	float z2 = static_cast<const odTrianglePrimitive*>(triangle2)->vertices[0].pos.z;
-
-	if (z1 < z2) {
-		return -1;
-	} else if (z1 > z2) {
-		return 1;
-	}
-
-	return 0;
+	
+	return false;
 }
 void odTrianglePrimitive_sort_triangles(odTrianglePrimitive* triangles, int32_t triangles_count) {
 	if (!OD_DEBUG_CHECK((triangles_count == 0) || (triangles != nullptr))
@@ -115,11 +106,7 @@ void odTrianglePrimitive_sort_triangles(odTrianglePrimitive* triangles, int32_t 
 		return;
 	}
 
-	qsort(
-		triangles,
-		static_cast<size_t>(triangles_count),
-		sizeof(odTrianglePrimitive),
-		odTrianglePrimitive_compare);
+	std::stable_sort(triangles, triangles + triangles_count, odTrianglePrimitive_compare);
 }
 void odTrianglePrimitive_sort_vertices(odVertex* vertices, int32_t vertices_count) {
 	odTrianglePrimitive_sort_triangles(

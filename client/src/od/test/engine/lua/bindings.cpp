@@ -146,8 +146,8 @@ OD_TEST_FILTERED(odTest_odLuaBindings_odTextureAtlas, OD_TEST_FILTER_SLOW) {
 
 		local atlas = odClientWrapper.TextureAtlas.new{window = window}
 		local width, height = atlas:get_size()
-		assert(width == 0)
-		assert(height == 0)
+		assert(width == 1)
+		assert(height == 1)
 
 		assert(atlas:get_count() == 0)
 		atlas:set_region_png_file{id = 0, filename = './examples/engine_test/data/sprites.png'}

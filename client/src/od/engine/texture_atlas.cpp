@@ -15,7 +15,7 @@ bool odTextureAtlas_init(odTextureAtlas* atlas, odWindow* window) {
 
 	odTextureAtlas_destroy(atlas);
 
-	// start with a 1x1 px white texture for untextured primitives
+	// start with a 1x1 px white texture to match atlas
 	odColor white = *odColor_get_white();
 	if (!OD_CHECK(odTexture_init(&atlas->texture, window, &white, 1, 1))) {
 		return false;

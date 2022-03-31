@@ -21,7 +21,7 @@ local function main()
 	require('engine/lib/debugger/debugger')
 	require('engine/lib/json/json')
 	require("engine/core/testing").run_all()
-	require("engine/engine/text")
+	require("examples/engine_test/main")
 end
 local Debugging = require("engine/core/debugging")
 Debugging.debug_checks_enabled = true

@@ -186,6 +186,7 @@ function Client.WorldSys:draw()
 			target = self._render_target.render_texture,
 			color = {255, 255, 255, 255},
 		}
+		self._vertex_array:sort()
 		self._context.renderer:draw_vertex_array{
 			render_state = camera_render_state,
 			src = self._context.texture_atlas,
@@ -325,6 +326,7 @@ function Client.GameSys:draw()
 		return
 	end
 
+	-- self._vertex_array:sort()
 	self.context.renderer:draw_vertex_array{
 		render_state = self.context.render_state_ortho_2d,
 		src = self.context.texture_atlas,

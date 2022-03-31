@@ -643,8 +643,6 @@ static int odLuaBindings_odVertexArray_sort(lua_State* lua) {
 		return 0;
 	}
 
-	*vertex_array = odVertexArray{};
-
 	odTrianglePrimitive_sort_vertices(
 		vertex_array->begin(),
 		vertex_array->get_count()

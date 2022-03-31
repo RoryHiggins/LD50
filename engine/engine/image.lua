@@ -234,7 +234,12 @@ function Image.WorldSys:entity_index(entity_id, entity)
 	local entity_index = self._entity_world:get_entity_index()
 
 	local image_name = entity.image_name
+
 	if image_name ~= nil and self._allocator ~= nil then
+		if debug_checks_enabled then
+			assert(self._image_bounds[image_name] ~= nil)
+		end
+
 		local uv_bounds = self._image_bounds[image_name]
 
 		entity_index:set_sprite(
