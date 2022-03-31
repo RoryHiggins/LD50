@@ -1,7 +1,7 @@
 Lua TODO
 --------------
 image.Component
-	sprite_name: str
+	image_name: str
 	x, y, width, height, z, r, g, b, a, translate_x, translate_y, scale_x, scale_y : num?
 image.WorldSys : world.Sys
 	add_image(image_name: str, image.Image)

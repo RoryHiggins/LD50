@@ -25,7 +25,7 @@ Entity.Entity.ExistsSchema = Schema.AllOf(Schema.SerializableObject, Schema.Part
 	y = Schema.Optional(Schema.Integer),
 	width = Schema.Optional(Schema.NonNegativeInteger),
 	height = Schema.Optional(Schema.NonNegativeInteger),
-	sprite_name = Schema.Optional(Schema.LabelString),
+	image_name = Schema.Optional(Schema.LabelString),
 	z = Schema.Optional(Schema.Number),
 	r = Schema.Optional(Schema.BoundedInteger(0, 255)),
 	g = Schema.Optional(Schema.BoundedInteger(0, 255)),
@@ -60,7 +60,6 @@ Entity.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
 	-- for efficient cleanup of _tag_to_entities
 	_entity_id_to_tag_indices = Schema.Mapping(
 		Schema.PositiveInteger, Schema.Mapping(Schema.LabelString, Schema.PositiveInteger)),
-	-- _sprite_game = Optional(Sprite.GameSys.Schema),  -- TODO once sprite sys is integrated
 })
 function Entity.WorldSys:index(entity_id, entity)
 	if debug_checks_enabled then
@@ -118,22 +117,7 @@ function Entity.WorldSys:index(entity_id, entity)
 	local x1, y1 = entity.x or 0, entity.y or 0
 	local x2, y2 = x1 + (entity.width or 0), y1 + (entity.height or 0)
 
-	self._entity_index:set(
-		entity_id,
-		-- bounds
-		x1, y1, x2, y2,
-		-- sprite - TODO extract UVs once sprite sys hooked up
-		0, 0, 0, 0,
-		entity.r or 255, entity.g or 255, entity.b or 255, entity.a or 255,
-		entity.z or 0,
-		-- sprite transform - TODO extract once sprite sys hooked up
-		entity.scale_x or 1, 0, 0, 0,
-		0, entity.scale_y or 1, 0, 0,
-		0, 0, 1, 0,
-		entity.translate_x or 0, entity.translate_y or 0, 0, 1,
-		-- tags
-		Shim.unpack(bounds_indexed_tag_ids)
-	)
+	self._entity_index:set_collider(entity_id, x1, y1, x2, y2, Shim.unpack(bounds_indexed_tag_ids))
 
 	if entity.destroyed then
 		entity_to_entity_id[entity] = nil
@@ -150,6 +134,8 @@ function Entity.WorldSys:index_all()
 	if expensive_debug_checks_enabled then
 		assert(Entity.WorldSys.Schema(self))
 	end
+
+	Container.set_defaults(self.state, Entity.WorldSys.State.defaults)
 
 	self._entity_index = Client.Wrappers.EntityIndex.new{}
 	self._entity_ids_free = {}
@@ -656,6 +642,13 @@ function Entity.WorldSys:get_max_id()
 	end
 
 	return #self.state.entities
+end
+function Entity.WorldSys:get_entity_index()
+	if expensive_debug_checks_enabled then
+		assert(Entity.WorldSys.Schema(self))
+	end
+
+	return self._entity_index
 end
 function Entity.WorldSys:on_init()
 	Container.set_defaults(self.state, Entity.WorldSys.State.defaults)
