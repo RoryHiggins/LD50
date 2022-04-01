@@ -1,5 +1,5 @@
 local Debugging = require("engine/core/debugging")
-local Schema = require("engine/core/Schema")
+local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Testing = require("engine/core/testing")
 local World = require("engine/engine/world")
@@ -42,22 +42,22 @@ function Camera.Camera.new_ortho_2d(x, y, z)
 
 	return Container.update({}, Camera.Camera.defaults, {
 		transform = {
-			translate_x = x,
-			translate_y = y,
-			translate_z = z,
+			translate_x = -x,
+			translate_y = -y,
+			translate_z = -z,
 		}
 	})
 end
 
 Camera.WorldSys = World.Sys.new_metatable("camera")
-Camera.WorldSys.default_name = "default"
+Camera.WorldSys.default_camera_name = "default"
 Camera.WorldSys.State = {}
 Camera.WorldSys.State.Schema = Schema.Object{
 	cameras = Schema.Mapping(Schema.LabelString, Camera.Camera.Schema),
 }
 Camera.WorldSys.State.defaults = {
 	cameras = {
-		[Camera.WorldSys.default_name] = Camera.Camera.defaults,
+		[Camera.WorldSys.default_camera_name] = Camera.Camera.defaults,
 	},
 }
 Camera.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
@@ -103,6 +103,21 @@ function Camera.WorldSys:find(name)
 
 	return self.state.cameras[name]
 end
+function Camera.WorldSys:get_pos(name)
+	if debug_checks_enabled then
+		assert(Camera.WorldSys.Schema(self))
+		assert(Schema.LabelString(name))
+		assert(Camera.Camera.Schema(self.state.cameras[name]))
+	end
+
+	local camera = self.state.cameras[name]
+	if camera == nil then
+		return 0, 0
+	end
+
+	local transform = camera.transform
+	return -transform.translate_x, -transform.translate_y, -transform.translate_z
+end
 local function order_camera_depth_sorted(a, b)
 	-- return in draw order (bottom to top, aka max z value first)
 	return a.transform.translate_z > b.transform.translate_z
@@ -121,7 +136,7 @@ function Camera.WorldSys:get_default()
 		assert(Camera.WorldSys.Schema(self))
 	end
 
-	return self:find(self.default_name)
+	return self:find(self.default_camera_name)
 end
 
 Camera.tests = Testing.add_suite("engine.camera", {
@@ -131,15 +146,15 @@ Camera.tests = Testing.add_suite("engine.camera", {
 
 		camera_world:set("blah", Camera.Camera.defaults)
 		camera_world:set("blah", Camera.Camera.new_ortho_2d(1, 2, 3))
-		assert(camera_world:find("blah").transform.translate_x == 1)
-		assert(camera_world:find("blah").transform.translate_y == 2)
-		assert(camera_world:find("blah").transform.translate_z == 3)
+		assert(camera_world:find("blah").transform.translate_x == -1)
+		assert(camera_world:find("blah").transform.translate_y == -2)
+		assert(camera_world:find("blah").transform.translate_z == -3)
 		assert(Camera.Camera.Schema(camera_world:find("blah")))
 
 		camera_world:set_pos("blah2", 4, 5, 6)
-		assert(camera_world:find("blah2").transform.translate_x == 4)
-		assert(camera_world:find("blah2").transform.translate_y == 5)
-		assert(camera_world:find("blah2").transform.translate_z == 6)
+		assert(camera_world:find("blah2").transform.translate_x == -4)
+		assert(camera_world:find("blah2").transform.translate_y == -5)
+		assert(camera_world:find("blah2").transform.translate_z == -6)
 		assert(Camera.Camera.Schema(camera_world:find("blah2")))
 
 		assert(Camera.Camera.Schema(camera_world:get_default(camera_world.default_id)))

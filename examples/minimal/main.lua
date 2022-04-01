@@ -15,7 +15,7 @@ function ExampleWorld:on_step()
 	local camera = self._camera_world:get_default()
 	local move_x, move_y = self._controller_world:get_dirs(self._controller_world.default_id)
 	self._camera_world:set_pos(
-		self._camera_world.default_name,
+		self._camera_world.default_camera_name,
 		math.floor(camera.transform.translate_x + move_x),
 		math.floor(camera.transform.translate_y + move_y)
 	)

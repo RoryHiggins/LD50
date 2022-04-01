@@ -1,6 +1,6 @@
 local Debugging = require("engine/core/debugging")
 local Testing = require("engine/core/testing")
-local Schema = require("engine/core/Schema")
+local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Model = require("engine/core/model")
 local Sim = require("engine/engine/sim")
@@ -336,8 +336,8 @@ end
 
 Animation.tests = Testing.add_suite("engine.animation", {
 	run_game = function()
-		-- local game = Game.Game.new({client = {visible = false}})
-		local game = Game.Game.new()  -- to test with a non-headless client
+		local game = Game.Game.new({client = {visible = false}})
+		-- local game = Game.Game.new()  -- to test with a non-headless client
 
 		local world_game = game:require(World.GameSys)
 		game:require(Image.GameSys)
@@ -374,7 +374,7 @@ Animation.tests = Testing.add_suite("engine.animation", {
 		anim_world:entity_set(entity_id, anim_name, 0.2, true)
 		assert(anim_world:entity_get_stopped(entity_id) == false)
 
-		for _ = 1, 120 do
+		for _ = 1, 12 do
 			game:step()
 		end
 

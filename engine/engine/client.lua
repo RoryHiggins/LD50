@@ -1,5 +1,5 @@
 local Debugging = require("engine/core/debugging")
-local Schema = require("engine/core/Schema")
+local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Testing = require("engine/core/testing")
 local Game = require("engine/engine/game")
@@ -214,22 +214,6 @@ function Client.WorldSys:get_size()
 
 	return self.state.width, self.state.height
 end
-function Client.WorldSys:_get_mouse_pos()
-	if debug_checks_enabled then
-		assert(Client.WorldSys.Schema(self))
-	end
-
-	-- NOTE: for debug drawing only; not intended to be used in world behaviours
-
-	if self._context == nil then
-		return 0, 0
-	end
-
-	local mouse_x, mouse_y = self._context.mouse.x, self._context.mouse.y
-	local width, height = self:get_size()
-	local game_width, game_height = self._context.state.width, self._context.state.height
-	return ((mouse_x / game_width) * width), ((mouse_y / game_height) * height)
-end
 function Client.WorldSys:set_size(width, height)
 	if debug_checks_enabled then
 		assert(Client.WorldSys.Schema(self))
@@ -245,6 +229,72 @@ function Client.WorldSys:set_size(width, height)
 			self._context, self.state.width, self.state.height
 		)
 	end
+end
+function Client.WorldSys:camera_get_pos(camera_name)
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+		assert(Schema.LabelString(camera_name))
+		assert(Camera.Camera.Schema(self._camera_world:find(camera_name)))
+	end
+
+	return self._camera_world:get_pos(camera_name)
+end
+function Client.WorldSys:camera_get_size(camera_name)
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+		assert(Schema.LabelString(camera_name))
+		assert(Camera.Camera.Schema(self._camera_world:find(camera_name)))
+	end
+
+	local width, height = self.state.width, self.state.height
+	local camera = self._camera_world:find(camera_name)
+	if camera ~= nil then
+		local viewport = camera.viewport
+		if viewport ~= nil then
+			width, height = viewport.width, viewport.height
+		end
+	end
+	return width, height
+end
+function Client.WorldSys:camera_get_orig(camera_name)
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+		assert(Schema.LabelString(camera_name))
+		assert(Camera.Camera.Schema(self._camera_world:find(camera_name)))
+	end
+
+	local x, y = self:camera_get_pos(camera_name)
+	local width, height = self:camera_get_size(camera_name)
+	return x + (width / 2), y + (height / 2)
+end
+function Client.WorldSys:camera_set_orig(camera_name, orig_x, orig_y)
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+		assert(Schema.LabelString(camera_name))
+		assert(Camera.Camera.Schema(self._camera_world:find(camera_name)))
+	end
+
+	local width, height = self:camera_get_size(camera_name)
+	local x, y = orig_x - (width / 2), orig_y - (height / 2)
+	local _, _, z = self:camera_get_pos(camera_name)
+
+	self._camera_world:set_pos(camera_name, x, y, z)
+end
+function Client.WorldSys:_get_mouse_pos()
+	if debug_checks_enabled then
+		assert(Client.WorldSys.Schema(self))
+	end
+
+	-- NOTE: for debug drawing only; not intended to be used in world behaviours
+
+	if self._context == nil then
+		return 0, 0
+	end
+
+	local mouse_x, mouse_y = self._context.mouse.x, self._context.mouse.y
+	local width, height = self:get_size()
+	local game_width, game_height = self._context.state.width, self._context.state.height
+	return ((mouse_x / game_width) * width), ((mouse_y / game_height) * height)
 end
 function Client.WorldSys:on_init()
 	Container.set_defaults(self.state, Client.WorldSys.State.defaults)

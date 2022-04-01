@@ -1,6 +1,6 @@
 local Debugging = require("engine/core/debugging")
 local Testing = require("engine/core/testing")
-local Schema = require("engine/core/Schema")
+local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Model = require("engine/core/model")
 local Sim = require("engine/engine/sim")
