@@ -622,7 +622,7 @@ function Entity.WorldSys:find_tagged(tag)
 	local tag_entities = tag_to_entities[tag] or {}
 	tag_to_entities[tag] = tag_entities
 
-	local entity = next(tag_entities)
+	local _, entity = next(tag_entities)
 	if entity == nil then
 		return nil
 	end

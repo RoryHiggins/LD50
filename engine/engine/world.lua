@@ -1,4 +1,6 @@
+local json = require("engine/lib/json/json")
 local Debugging = require("engine/core/debugging")
+local Logging = require("engine/core/logging")
 local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Testing = require("engine/core/testing")
@@ -64,6 +66,25 @@ World.GameSys.Schema = Schema.AllOf(Game.Sys.Schema, Schema.PartialObject{
 	state = World.GameSys.State.Schema,
 	_world_systems = Schema.Array(World.Sys.MetatableSchema),
 })
+function World.GameSys:load(filename)
+	local file, err = io.open(filename, "r")
+	if file == nil then
+		Logging.error("failed to open save file for reading, filename=%s, err=%s", filename, err)
+		return
+	end
+	local state_json = file:read()
+	file:close()
+
+	local loaded_state = json.decode(state_json)
+	local state = {}
+	Container.update(state, loaded_state)
+
+	local world = self:new_world(state)
+	self:set(world)
+end
+function World.GameSys:save(filename)
+	return self.world:save(filename)
+end
 function World.GameSys:new_world(state)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then

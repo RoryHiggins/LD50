@@ -10,10 +10,10 @@ function Data.WorldSys:on_init()
 	local file_type = "png"
 	local grid_size = 8
 
-	-- local images = {
-	-- 	solid = {0, 24},
-	-- }
-	-- self._image:set_batch(images, filename, file_type, grid_size)
+	local images = {
+		solid = {0, 24},
+	}
+	self._image:set_batch(images, filename, file_type, grid_size)
 	self._animation:set_strip("player", 16,0, 72,8, filename, file_type, grid_size)
 end
 

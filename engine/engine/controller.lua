@@ -291,7 +291,7 @@ function Controller.GameSys:handle_input_changes()
 		end
 	end
 end
-function Controller.GameSys:on_world_set()
+function Controller.GameSys:on_world_start()
 	if debug_checks_enabled then
 		assert(Controller.GameSys.Schema(self))
 	end

@@ -289,31 +289,29 @@ function Sim.Sim:finalize()
 
 	self.status = Sim.Status.finalized
 end
-function Sim.Sim:save(filename, raise_error)
+function Sim.Sim:save(filename)
 	local dump_json = json.encode(self.state)
 
 	local file, err = io.open(filename, "w")
 	if file == nil then
 		Logging.warning("failed to open save file for writing, filename=%s, err=%s", filename, err)
-		assert(raise_error ~= true)
 		return false
 	end
 	file:write(dump_json)
 	file:close()
 	return true
 end
-function Sim.Sim:load(filename, raise_error)
+function Sim.Sim:load(filename)
 	local file, err = io.open(filename, "r")
 	if file == nil then
 		Logging.info("failed to open save file for reading, filename=%s, err=%s", filename, err)
-		assert(raise_error ~= true)
 		return false
 	end
 	local state_json = file:read()
 	file:close()
 
-	local state = json.decode(state_json)
-	Container.update(self.state, state)
+	local loaded_state = json.decode(state_json)
+	Container.update(self.state, loaded_state)
 	return true
 end
 function Sim.Sim:running()
