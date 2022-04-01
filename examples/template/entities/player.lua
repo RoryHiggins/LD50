@@ -17,13 +17,14 @@ function Player.WorldSys:on_start()
 		}
 	end
 
-	-- self._camera_target:entity_set_default_camera(entity_id)
+	self._camera_target:entity_set_default_camera(entity_id)
 end
 function Player.WorldSys:on_step()
 	local move_x, move_y = self._controller:get_dirs(self._controller.default_id)
 
 	for _, entity in ipairs(self._entity:get_all_tagged_raw(self.sys_name)) do
 		local entity_id = self._entity:find_id(entity)
+
 		self._entity:set_pos(
 			entity_id,
 			entity.x + move_x,

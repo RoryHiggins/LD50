@@ -1,6 +1,8 @@
+local Shim = require("engine/core/shim")
+
 local Math = {}
 
-local math_atan2 = math.atan2
+local math_atan2 = Shim.atan2
 
 local math_sqrt = math.sqrt
 

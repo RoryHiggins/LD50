@@ -36,7 +36,7 @@ for _, input_name in ipairs(Controller.InputName.enum_values) do
 	Controller.Controller.defaults.inputs[input_name] = Controller.Input.defaults
 end
 Controller.Controller.default_id = 1
-Controller.Controller.max_id = 4
+Controller.Controller.max_id = 1
 
 Controller.KeyboardKey = Model.AnyEnum(Shim.unpack(Client.Wrappers.Window.get_key_names()))
 

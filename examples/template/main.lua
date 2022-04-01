@@ -12,24 +12,28 @@ local function main()
 		world = {client = {width = 128, height = 96}},
 	}
 
-	local game_sim = Engine.Game.Game.new(state)
+	local game_save = "game.save.json"
+	local game = Engine.Game.Game.new(state)
+	game:load(game_save)
+
 	for _, SysModule in pairs(Engine.Systems) do
 		if type(SysModule) == "table" and SysModule.GameSys ~= nil then
-			game_sim:require(SysModule.GameSys)
+			game:require(SysModule.GameSys)
 		end
 	end
 	for _, SysModule in pairs(ExampleSystems) do
 		if type(SysModule) == "table" and SysModule.GameSys ~= nil then
-			game_sim:require(SysModule.GameSys)
+			game:require(SysModule.GameSys)
 		end
 	end
 
-	game_sim:require(Example.GameSys)
-	game_sim:run()
+	game:require(Example.GameSys)
+	game:run()
+
+	game:save("game.save.json")
 
 	if debug_checks_enabled then
-		game_sim._world:save("world.save.json")
-		game_sim:save("game.save.json")
+		game._world:save("world.save.json")
 	end
 end
 

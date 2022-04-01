@@ -200,6 +200,8 @@ function Image.WorldSys:set(image_name, image)
 
 		self._image_bounds[image_name] = self._allocator:get_image_bounds(image)
 	end
+
+	return image
 end
 function Image.WorldSys:set_batch(name_bounds_map, filename, file_type, grid_width, grid_height)
 	if debug_checks_enabled then
@@ -213,16 +215,21 @@ function Image.WorldSys:set_batch(name_bounds_map, filename, file_type, grid_wid
 		assert(Schema.Optional(Schema.NonNegativeInteger)(grid_height))
 	end
 
+	local images = {}
 	for image_name, image_bounds in pairs(name_bounds_map) do
-		self:set(image_name, {
+		local image = {
 			u = image_bounds[1],
 			v = image_bounds[2],
 			width = image_bounds[3] or grid_width,
 			height = image_bounds[4] or grid_height or grid_width,
 			filename = filename,
 			file_type = file_type or Image.FileType.png,
-		})
+		}
+		self:set(image_name, image)
+		images[#images + 1] = image
 	end
+
+	return images
 end
 function Image.WorldSys:find(image_name)
 	if debug_checks_enabled then

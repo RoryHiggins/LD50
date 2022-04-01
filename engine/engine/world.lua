@@ -165,7 +165,7 @@ function World.GameSys:on_step()
 	end
 end
 function World.GameSys:on_start()
-	self:set(self:new_world(self.state))
+	self:set(self:new_world(Container.deep_copy(self.state)))
 end
 
 World.tests = Testing.add_suite("engine.world", {
