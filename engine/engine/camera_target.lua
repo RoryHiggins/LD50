@@ -3,9 +3,6 @@ local Testing = require("engine/core/testing")
 local Logging = require("engine/core/logging")
 local Math = require("engine/core/math")
 local Schema = require("engine/core/schema")
-local Container = require("engine/core/container")
-local Model = require("engine/core/model")
-local Sim = require("engine/engine/sim")
 local Client = require("engine/engine/client")
 local World = require("engine/engine/world")
 local Camera = require("engine/engine/camera")
@@ -95,7 +92,7 @@ function CameraTarget.WorldSys:on_step()
 		end
 	end
 
-	local camera_target_entities = self._entity_world:get_all_tagged(self.tag)
+	local camera_target_entities = self._entity_world:get_all_tagged_raw(self.tag)
 
 	if expensive_debug_checks_enabled then
 		assert(Schema.Array(CameraTarget.Entity.Schema)(camera_target_entities))
@@ -106,7 +103,7 @@ function CameraTarget.WorldSys:on_step()
 		seen_cameras = {}
 	end
 
-	for _, entity in ipairs(self._entity_world:get_all_tagged(self.tag)) do
+	for _, entity in ipairs(self._entity_world:get_all_tagged_raw(self.tag)) do
 		local camera_name = entity.camera_name or self._camera_world.default_camera_name
 		local camera = self._camera_world:find(camera_name)
 
@@ -137,6 +134,9 @@ function CameraTarget.WorldSys:on_step()
 		end
 	end
 end
+
+CameraTarget.GameSys = Game.Sys.new_metatable("camera_target")
+CameraTarget.GameSys.WorldSys = CameraTarget.WorldSys
 
 CameraTarget.tests = Testing.add_suite("engine.camera_target", {
 	run_game = function()

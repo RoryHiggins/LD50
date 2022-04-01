@@ -60,7 +60,7 @@ function Serialization._get_strs(xs, out_strs, xs_type)
 			error("will not encode table with mixed key types")
 		end
 
-		if #xs < int_val_count then
+		if #xs > 0 and #xs < int_val_count then
 			error("cannot encode sparse table")
 		end
 

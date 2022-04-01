@@ -3,6 +3,7 @@ local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Testing = require("engine/core/testing")
 local World = require("engine/engine/world")
+local Game = require("engine/engine/game")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
 
@@ -42,9 +43,9 @@ function Camera.Camera.new_ortho_2d(x, y, z)
 
 	return Container.update({}, Camera.Camera.defaults, {
 		transform = {
-			translate_x = -x,
-			translate_y = -y,
-			translate_z = -z,
+			translate_x = -(x or 0),
+			translate_y = -(y or 0),
+			translate_z = -(z or 0),
 		}
 	})
 end
@@ -138,6 +139,9 @@ function Camera.WorldSys:get_default()
 
 	return self:find(self.default_camera_name)
 end
+
+Camera.GameSys = Game.Sys.new_metatable("camera")
+Camera.GameSys.WorldSys = Camera.WorldSys
 
 Camera.tests = Testing.add_suite("engine.camera", {
 	run = function()

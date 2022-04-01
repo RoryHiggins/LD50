@@ -220,6 +220,7 @@ function Controller.WorldSys:on_input_set(controller_id, input_name, held)
 end
 
 Controller.GameSys = Game.Sys.new_metatable("controller")
+Controller.GameSys.WorldSys = Controller.WorldSys
 Controller.GameSys.default_id = Controller.Controller.default_id
 Controller.GameSys.State = {}
 Controller.GameSys.State.Schema = Schema.Object{
@@ -248,7 +249,6 @@ function Controller.GameSys:on_init()
 	Container.set_defaults(self.state, Controller.GameSys.State.defaults)
 
 	self._world_game = self.sim:require(World.GameSys)
-	self._world_game:require_world_sys(Controller.WorldSys)
 
 	if debug_checks_enabled then
 		assert(Controller.GameSys.Schema(self))

@@ -1,3 +1,4 @@
+local json = require("engine/lib/json/json")
 local Debugging = require("engine/core/debugging")
 local Logging = require("engine/core/logging")
 local Testing = require("engine/core/testing")
@@ -119,6 +120,10 @@ function Sim.Sim:require(sys_metatable)
 	local sys_name = sys_metatable.sys_name
 	local sys = self._systems[sys_name]
 	if sys ~= nil then
+		if getmetatable(sys) ~= sys_metatable then
+			Logging.error("requested metatable doesn't match existing for sys_name=%s", sys_name)
+		end
+
 		Logging.trace("returning existing system %s", sys_name)
 		return sys
 	end
@@ -130,6 +135,7 @@ function Sim.Sim:require(sys_metatable)
 		state = self.state[sys_name] or {},
 		_is_sys_instance = true,
 	}
+	self.state[sys_name] = sys.state
 	setmetatable(sys, sys_metatable)
 
 	-- register name _before_ init, to tolerate circular dependencies
@@ -282,6 +288,13 @@ function Sim.Sim:finalize()
 	end
 
 	self.status = Sim.Status.finalized
+end
+function Sim.Sim:save(filename)
+	local dump_json = json.encode(self.state)
+
+	local file = io.open(filename, "w")
+	file:write(dump_json)
+	file:close()
 end
 function Sim.Sim:running()
 	if expensive_debug_checks_enabled then

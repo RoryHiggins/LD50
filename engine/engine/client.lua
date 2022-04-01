@@ -318,6 +318,7 @@ function Client.WorldSys:on_init()
 end
 
 Client.GameSys = Game.Sys.new_metatable("client")
+Client.GameSys.WorldSys = Client.WorldSys
 Client.GameSys.State = {}
 Client.GameSys.State.Schema = Client.Context.State.Schema
 Client.GameSys.State.defaults = Client.Context.State.defaults
@@ -388,7 +389,6 @@ function Client.GameSys:on_init()
 
 	self._vertex_array = Client.Wrappers.VertexArray.new{}
 	self._world_game = self.sim:require(World.GameSys)
-	self._world_game:require_world_sys(Client.WorldSys)
 
 	if self.state.visible then
 		self.context = Client.Context.new(self.state)

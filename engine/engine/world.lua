@@ -80,6 +80,12 @@ function World.GameSys:new_world(state)
 		world:require(sys_metatable)
 	end
 
+	for _, sys in ipairs(self.sim._event_listeners_ordered) do
+		if sys.WorldSys ~= nil then
+			world:require(sys.WorldSys)
+		end
+	end
+
 	return world
 end
 function World.GameSys:reset()
@@ -160,9 +166,6 @@ function World.GameSys:on_step()
 end
 function World.GameSys:on_start()
 	self:set(self:new_world(self.state))
-end
-function World.GameSys:on_finalize()
-	self:reset()
 end
 
 World.tests = Testing.add_suite("engine.world", {

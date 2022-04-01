@@ -5,8 +5,9 @@ local Testing = require("engine/core/testing")
 local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Sim = require("engine/engine/sim")
-local Client = require("engine/engine/client")
+local Game = require("engine/engine/game")
 local World = require("engine/engine/world")
+local Client = require("engine/engine/client")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
 local expensive_debug_checks_enabled = Debugging.expensive_debug_checks_enabled
@@ -607,7 +608,28 @@ end
 function Entity.WorldSys:find_id(entity)
 	return self._entity_to_entity_id[entity]
 end
-function Entity.WorldSys:get_all_tagged(tag)
+function Entity.WorldSys:find_tagged(tag)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.LabelString(tag))
+		end
+
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	local tag_to_entities = self._tag_to_entities
+	local tag_entities = tag_to_entities[tag] or {}
+	tag_to_entities[tag] = tag_entities
+
+	local entity = next(tag_entities)
+	if entity == nil then
+		return nil
+	end
+
+	return self._entity_to_entity_id[entity], entity
+end
+function Entity.WorldSys:get_all_tagged_raw(tag)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(Entity.WorldSys.Schema(self))
@@ -622,6 +644,24 @@ function Entity.WorldSys:get_all_tagged(tag)
 	tag_to_entities[tag] = tag_entities
 
 	return tag_entities
+end
+function Entity.WorldSys:get_all_tagged(tag)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Entity.WorldSys.Schema(self))
+			assert(Schema.LabelString(tag))
+		end
+
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	local entity_to_entity_id = self._entity_to_entity_id
+	local entity_by_id = {}
+	for _, entity in ipairs(self:get_all_tagged_raw(tag)) do
+		local entity_id = entity_to_entity_id[entity]
+		entity_by_id[entity_id] = entity
+	end
+	return entity_by_id
 end
 function Entity.WorldSys:get_all_raw()
 	if debug_checks_enabled then
@@ -671,6 +711,9 @@ end
 function Entity.WorldSys:on_start()
 	self:index_all()
 end
+
+Entity.GameSys = Game.Sys.new_metatable("entity")
+Entity.GameSys.WorldSys = Entity.WorldSys
 
 Entity.tests = Testing.add_suite("engine.entity", {
 	index_tags = function()
@@ -806,32 +849,32 @@ Entity.tests = Testing.add_suite("engine.entity", {
 
 		local entity_id, entity = entity_world:add{}
 		Container.assert_equal(entity.tags, nil)
-		Container.assert_equal(entity_world:get_all_tagged("yes"), {})
-		Container.assert_equal(entity_world:get_all_tagged("no"), {})
+		Container.assert_equal(entity_world:get_all_tagged_raw("yes"), {})
+		Container.assert_equal(entity_world:get_all_tagged_raw("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
 
 		entity_world:tag(entity_id, {"yes", "no"}, entity)
 		Container.assert_equal(entity.tags, {yes = true, no = true})
-		Container.assert_equal(entity_world:get_all_tagged("yes"), {entity})
-		Container.assert_equal(entity_world:get_all_tagged("no"), {entity})
+		Container.assert_equal(entity_world:get_all_tagged_raw("yes"), {entity})
+		Container.assert_equal(entity_world:get_all_tagged_raw("no"), {entity})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1, 2})
 
 		entity_world:untag(entity_id, {"no"}, entity)
 		Container.assert_equal(entity.tags, {yes = true})
-		Container.assert_equal(entity_world:get_all_tagged("yes"), {entity})
-		Container.assert_equal(entity_world:get_all_tagged("no"), {})
+		Container.assert_equal(entity_world:get_all_tagged_raw("yes"), {entity})
+		Container.assert_equal(entity_world:get_all_tagged_raw("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {1})
 
 		entity_world:untag(entity_id, {"yes", "no"}, entity)
 		Container.assert_equal(entity.tags, {})
-		Container.assert_equal(entity_world:get_all_tagged("yes"), {})
-		Container.assert_equal(entity_world:get_all_tagged("no"), {})
+		Container.assert_equal(entity_world:get_all_tagged_raw("yes"), {})
+		Container.assert_equal(entity_world:get_all_tagged_raw("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
 
 		entity_world:untag(entity_id, {"yes", "no", "maybe"}, entity)
 		Container.assert_equal(entity.tags, {})
-		Container.assert_equal(entity_world:get_all_tagged("yes"), {})
-		Container.assert_equal(entity_world:get_all_tagged("no"), {})
+		Container.assert_equal(entity_world:get_all_tagged_raw("yes"), {})
+		Container.assert_equal(entity_world:get_all_tagged_raw("no"), {})
 		Container.assert_equal({entity_world._entity_index:get_tags(entity_id)}, {})
 	end,
 	has_tags = function()

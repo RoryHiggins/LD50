@@ -10,5 +10,6 @@ coverage.txt
 *.gcov
 *.gcda
 *.sublime-workspace
+*.save.json
 
 odFile_test_*

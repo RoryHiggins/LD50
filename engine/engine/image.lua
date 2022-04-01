@@ -1,6 +1,5 @@
 local Debugging = require("engine/core/debugging")
 local Testing = require("engine/core/testing")
-local Logging = require("engine/core/logging")
 local Schema = require("engine/core/schema")
 local Container = require("engine/core/container")
 local Model = require("engine/core/model")
@@ -412,6 +411,7 @@ function Image.WorldSys:on_entity_index(entity_id, entity)
 end
 
 Image.GameSys = Game.Sys.new_metatable("image")
+Image.GameSys.WorldSys = Image.WorldSys
 Image.GameSys.Schema = Schema.AllOf(Game.Sys.Schema, Schema.PartialObject{
 	allocator = Schema.Optional(Image.Allocator.Schema),
 })
@@ -433,9 +433,8 @@ function Image.GameSys:load(filename, file_type)
 end
 function Image.GameSys:on_init()
 	local client_game = self.sim:require(Client.GameSys)
-	local world_game = self.sim:require(World.GameSys)
-	world_game:require_world_sys(Image.WorldSys)
-	world_game:require_world_sys(Entity.WorldSys)
+	self.sim:require(World.GameSys)
+	self.sim:require(Entity.GameSys)
 
 	if client_game.context ~= nil then
 		self.allocator = Image.Allocator.new(client_game.context.texture_atlas)

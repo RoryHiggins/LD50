@@ -118,6 +118,35 @@ function Animation.WorldSys:set_frames(anim_name, frame_bounds_array, filename, 
 
 	self:set(anim_name, {frames = frames})
 end
+function Animation.WorldSys:set_strip(anim_name, u, v, width, height, filename, file_type, grid_width, grid_height)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Animation.WorldSys.Schema(self))
+		end
+		assert(Schema.LabelString(anim_name))
+		assert(Schema.NonNegativeInteger(u))
+		assert(Schema.NonNegativeInteger(v))
+		assert(Schema.NonNegativeInteger(width))
+		assert(Schema.NonNegativeInteger(height))
+		assert(Schema.String(filename))
+		assert(Schema.Optional(Image.FileType.Schema)(file_type))
+		assert(Schema.NonNegativeInteger(grid_width))
+		assert(Schema.Optional(Schema.NonNegativeInteger)(grid_height))
+	end
+
+	grid_height = grid_height or grid_width
+
+	local frame_bounds = {}
+	local cols = math.floor(width / grid_width)
+	local rows = math.floor(height / grid_height)
+	for row = 0, rows - 1 do
+		for col = 0, cols - 1 do
+			frame_bounds[#frame_bounds + 1] = {u + (col * grid_width), v + (row * grid_height)}
+		end
+	end
+
+	self:set_frames(anim_name, frame_bounds, filename, file_type, grid_width, grid_height)
+end
 function Animation.WorldSys:find(anim_name)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
@@ -298,7 +327,7 @@ function Animation.WorldSys:on_init()
 	end
 end
 function Animation.WorldSys:on_step()
-	for _, entity in ipairs(self._entity_world:get_all_tagged(self.tag)) do
+	for _, entity in ipairs(self._entity_world:get_all_tagged_raw(self.tag)) do
 		local anim_name = entity.anim_name
 		if anim_name ~= nil then
 			local animation = self:find(anim_name)
@@ -333,6 +362,9 @@ function Animation.WorldSys:on_entity_index(entity_id, entity)
 
 	self:entity_index(entity_id, entity)
 end
+
+Animation.GameSys = Game.Sys.new_metatable("animation")
+Animation.GameSys.WorldSys = Animation.WorldSys
 
 Animation.tests = Testing.add_suite("engine.animation", {
 	run_game = function()
