@@ -1,5 +1,6 @@
 local Debugging = require("engine/core/debugging")
 local Testing = require("engine/core/testing")
+local Logging = require("engine/core/logging")
 local Schema = require("engine/core/Schema")
 local Container = require("engine/core/container")
 local Model = require("engine/core/model")
@@ -143,6 +144,7 @@ Image.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
 	_client_world = Client.WorldSys.Schema,
 	_entity_world = Entity.WorldSys.Schema,
 	_image_bounds = Schema.Mapping(Schema.LabelString, Schema.BoundedArray(Schema.Integer, 4, 4)),
+	_entity_reindex_required = Schema.Boolean,
 })
 function Image.WorldSys:index(image_name, image)
 	if debug_checks_enabled then
@@ -162,6 +164,8 @@ function Image.WorldSys:index(image_name, image)
 
 		self._image_bounds[image_name] = self._allocator:get_image_bounds(image)
 	end
+
+	self._entity_reindex_required = true
 end
 function Image.WorldSys:index_all()
 	if expensive_debug_checks_enabled then
@@ -171,10 +175,13 @@ function Image.WorldSys:index_all()
 	Container.set_defaults(self.state, Image.WorldSys.State.defaults)
 
 	self._image_bounds = {}
+	self._entity_reindex_required = true
 
 	for image_name, image in pairs(self.state.images) do
 		self:index(image_name, image)
 	end
+
+	self._entity_reindex_required = true
 end
 function Image.WorldSys:set(image_name, image)
 	if debug_checks_enabled then
@@ -185,10 +192,17 @@ function Image.WorldSys:set(image_name, image)
 		assert(Schema.LabelString(image_name))
 	end
 
-	self:index(image_name, image)
-	return image
+	image = image or self.state.images[image_name]
+
+	self.state.images[image_name] = image
+
+	if self._allocator ~= nil then
+		self._allocator:load(image.filename, image.file_type)
+
+		self._image_bounds[image_name] = self._allocator:get_image_bounds(image)
+	end
 end
-function Image.WorldSys:set_batch(name_bounds_map, filename, file_type, grid_size)
+function Image.WorldSys:set_batch(name_bounds_map, filename, file_type, grid_width, grid_height)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(Image.WorldSys.Schema(self))
@@ -196,15 +210,16 @@ function Image.WorldSys:set_batch(name_bounds_map, filename, file_type, grid_siz
 		end
 		assert(Schema.String(filename))
 		assert(Schema.Optional(Image.FileType.Schema)(file_type))
-		assert(Schema.Optional(Schema.NonNegativeInteger)(grid_size))
+		assert(Schema.Optional(Schema.NonNegativeInteger)(grid_width))
+		assert(Schema.Optional(Schema.NonNegativeInteger)(grid_height))
 	end
 
 	for image_name, image_bounds in pairs(name_bounds_map) do
 		self:set(image_name, {
 			u = image_bounds[1],
 			v = image_bounds[2],
-			width = image_bounds[3] or grid_size,
-			height = image_bounds[4] or grid_size,
+			width = image_bounds[3] or grid_width,
+			height = image_bounds[4] or grid_height or grid_width,
 			filename = filename,
 			file_type = file_type or Image.FileType.png,
 		})
@@ -234,9 +249,9 @@ function Image.WorldSys:entity_index(entity_id, entity)
 	local entity_index = self._entity_world:get_entity_index()
 
 	local image_name = entity.image_name
-
 	if image_name ~= nil and self._allocator ~= nil then
 		if debug_checks_enabled then
+			assert(self:find(image_name) ~= nil)
 			assert(self._image_bounds[image_name] ~= nil)
 		end
 
@@ -267,7 +282,22 @@ function Image.WorldSys:entity_index(entity_id, entity)
 		)
 	end
 end
-function Image.WorldSys:entity_set_image_name(entity_id, image_name, entity)
+function Image.WorldSys:entity_index_all()
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Image.WorldSys.Schema(self))
+		end
+	end
+
+	for entity_id, entity in ipairs(self._entity_world:get_all_raw()) do
+		if entity.destroyed ~= true then
+			self:entity_index(entity_id, entity)
+		end
+	end
+
+	self._entity_reindex_required = false
+end
+function Image.WorldSys:entity_set(entity_id, image_name, entity)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(Image.WorldSys.Schema(self))
@@ -297,7 +327,7 @@ function Image.WorldSys:entity_unset(entity_id, entity)
 		assert(self.sim.status == Sim.Status.started)
 	end
 
-	self:entity_set_image_name(entity_id, nil, entity)
+	self:entity_set(entity_id, nil, entity)
 end
 function Image.WorldSys:draw(image_name, x, y, width, height, r, g, b, a, z)
 	if debug_checks_enabled then
@@ -344,6 +374,8 @@ function Image.WorldSys:on_init()
 	self._client_world = self.sim:require(Client.WorldSys)
 	self._entity_world = self.sim:require(Entity.WorldSys)
 
+	self._entity_reindex_required = true
+
 	self:index_all()
 
 	if expensive_debug_checks_enabled then
@@ -357,6 +389,10 @@ function Image.WorldSys:on_draw()
 		end
 
 		assert(self.sim.status == Sim.Status.started)
+	end
+
+	if self._entity_reindex_required == true then
+		self:entity_index_all()
 	end
 
 	local vertex_array = self._client_world:get_vertex_array()
@@ -465,7 +501,7 @@ Image.tests = Testing.add_suite("engine.entity", {
 				image_name = "blank",
 			}
 			image_world:entity_index(entity_id)
-			image_world:entity_set_image_name(entity_id, "wall")
+			image_world:entity_set(entity_id, "wall")
 			image_world:index_all()
 			game:step()
 		end

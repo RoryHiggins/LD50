@@ -84,7 +84,7 @@ Text.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
 	_image_world = Image.WorldSys.Schema,
 	_ascii_fonts = Schema.Mapping(Schema.LabelString, Client.Wrappers.Schema("AsciiFont")),
 })
-local image_name_template = "font_%s"
+local font_image_name_template = "font_%s"
 function Text.WorldSys:draw(font_name, text, x, y, max_width, max_height, r, g, b, a, z)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
@@ -133,7 +133,7 @@ function Text.WorldSys:font_index(font_name, font)
 
 	self.state.fonts[font_name] = font
 
-	local image_name = string.format(image_name_template, font_name)
+	local image_name = string.format(font_image_name_template, font_name)
 	local image = Text.Font.to_image(font)
 	self._image_world:set(image_name, image)
 
@@ -163,7 +163,7 @@ function Text.WorldSys:font_index_all()
 		self:font_index(font_name, font)
 	end
 end
-function Text.WorldSys:font_add(font_name, font)
+function Text.WorldSys:font_set(font_name, font)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(Text.WorldSys.Schema(self))
@@ -184,6 +184,7 @@ function Text.WorldSys:font_find(font_name)
 
 	return self.state.fonts[font_name]
 end
+local text_tag = Text.WorldSys.tag
 function Text.WorldSys:entity_set_text(entity_id, text, entity)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
@@ -197,9 +198,14 @@ function Text.WorldSys:entity_set_text(entity_id, text, entity)
 	entity = entity or self._entity_world:find(entity_id)
 
 	entity.text = text
-
-	if entity.tags == nil or entity.tags["text"] ~= true then
-		self._entity_world:tag(entity, {"text"})
+	if text ~= nil then
+		if entity.tags == nil or entity.tags[text_tag] ~= true then
+			self._entity_world:tag(entity_id, {text_tag}, entity)
+		end
+	else
+		if entity.tags ~= nil and entity.tags[text_tag] == true then
+			self._entity_world:untag(entity_id, {text_tag}, entity)
+		end
 	end
 end
 function Text.WorldSys:entity_unset(entity_id, entity)
@@ -213,11 +219,7 @@ function Text.WorldSys:entity_unset(entity_id, entity)
 
 	entity = entity or self._entity_world:find(entity_id)
 
-	entity.text = nil
-
-	if entity.tags ~= nil and entity.tags["text"] == true then
-		self._entity_world:untag(entity, {"text"})
-	end
+	self:entity_set(entity_id, nil, entity)
 end
 function Text.WorldSys:on_init()
 	Container.set_defaults(self.state, Text.WorldSys.State.defaults)
@@ -295,7 +297,7 @@ Text.tests = Testing.add_suite("engine.text", {
 			x = 32, y = 32,
 		})
 
-		text_world:font_add("test", {
+		text_world:font_set("test", {
 			filename = "./examples/engine_test/data/sprites.png",
 			file_type = "png",
 			font_type = "ascii",

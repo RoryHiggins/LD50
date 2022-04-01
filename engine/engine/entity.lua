@@ -604,6 +604,9 @@ function Entity.WorldSys:tag_bounds_index_add(tags)
 		end
 	end
 end
+function Entity.WorldSys:find_id(entity)
+	return self._entity_to_entity_id[entity]
+end
 function Entity.WorldSys:get_all_tagged(tag)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then

@@ -173,13 +173,11 @@ end
 function Sim.Sim:broadcast(event_name, ...)
 	local message = {event_name, ...}
 
-	local message_debug_copy
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(Sim.Sim.Schema(self))
 			assert(Schema.LabelString(event_name))
 			assert(Schema.SerializableArray(message))
-			message_debug_copy = Container.get_comparable_str(message)
 		end
 		assert(self.status == Sim.Status.started)
 	end
@@ -195,7 +193,6 @@ function Sim.Sim:broadcast(event_name, ...)
 
 	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
-		assert(Container.get_comparable_str(message) == message_debug_copy)
 	end
 end
 function Sim.Sim:broadcast_pcall(event_name, ...)
