@@ -1,17 +1,8 @@
 local Debugging = require("engine/core/debugging")
-local Testing = require("engine/core/testing")
-local Schema = require("engine/core/schema")
-local Container = require("engine/core/container")
 local World = require("engine/engine/world")
 local Game = require("engine/engine/game")
-local Entity = require("engine/engine/entity")
-local Client = require("engine/engine/client")
-local Controller = require("engine/engine/controller")
-local Image = require("engine/engine/image")
-local Text = require("engine/engine/text")
 
 local debug_checks_enabled = Debugging.debug_checks_enabled
-local expensive_debug_checks_enabled = Debugging.expensive_debug_checks_enabled
 
 local Debug = {}
 

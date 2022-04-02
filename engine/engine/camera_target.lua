@@ -23,7 +23,6 @@ CameraTarget.Entity.Schema = Schema.AllOf(Entity.Entity.Schema, Schema.PartialOb
 })
 
 CameraTarget.WorldSys = World.Sys.new_metatable("camera_target")
-CameraTarget.WorldSys.tag = "camera_target"
 CameraTarget.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
 	_client_world = Client.WorldSys.Schema,
 	_camera_world = Camera.WorldSys.Schema,
@@ -45,10 +44,10 @@ function CameraTarget.WorldSys:entity_set(entity_id, camera_name, speed, entity)
 	entity.camera_name = camera_name
 	if camera_name == nil then
 		entity.camera_speed = nil
-		self._entity_world:untag(entity_id, {self.tag}, entity)
+		self._entity_world:untag(entity_id, {self.sys_name}, entity)
 	else
 		entity.camera_speed = speed
-		self._entity_world:tag(entity_id, {self.tag}, entity)
+		self._entity_world:tag(entity_id, {self.sys_name}, entity)
 	end
 end
 function CameraTarget.WorldSys:entity_set_default_camera(entity_id, speed, entity)
@@ -85,17 +84,17 @@ function CameraTarget.WorldSys:on_init()
 		assert(CameraTarget.WorldSys.Schema(self))
 	end
 end
-function CameraTarget.WorldSys:on_step()
+function CameraTarget.WorldSys:on_step_end()
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
 			assert(CameraTarget.WorldSys.Schema(self))
 		end
 	end
 
-	local camera_target_entities = self._entity_world:get_all_tagged_raw(self.tag)
+	local target_entities = self._entity_world:get_all_tagged_array(self.sys_name)
 
 	if expensive_debug_checks_enabled then
-		assert(Schema.Array(CameraTarget.Entity.Schema)(camera_target_entities))
+		assert(Schema.Array(CameraTarget.Entity.Schema)(target_entities))
 	end
 
 	local seen_cameras
@@ -103,7 +102,7 @@ function CameraTarget.WorldSys:on_step()
 		seen_cameras = {}
 	end
 
-	for _, entity in ipairs(self._entity_world:get_all_tagged_raw(self.tag)) do
+	for _, entity in ipairs(target_entities) do
 		local camera_name = entity.camera_name or self._camera_world.default_camera_name
 		local camera = self._camera_world:find(camera_name)
 

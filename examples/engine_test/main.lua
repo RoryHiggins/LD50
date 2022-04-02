@@ -72,9 +72,9 @@ function ExampleGame:on_init()
 	self._world_game:require_world_sys(ExampleWorld)
 
 	self._music = Client.Wrappers.Music.new_file{
-		filename = 'examples/engine_test/data/100ms_sine_440hz_22050hz_s16.ogg'
+		filename = './ld50/data/sea_ambient.ogg'
 	}
-	self._music:play{volume = 0.02, loop_forever = true}
+	self._music:play{volume = 0.5, loop_forever = true}
 end
 function ExampleGame:on_draw()
 	local width, height = self._client_game:get_size()

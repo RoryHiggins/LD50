@@ -152,6 +152,7 @@ Client.WorldSys.State.defaults = {
 }
 Client.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{
 	state = Client.WorldSys.State.Schema,
+	clear_color = Schema.BoundedArray(Schema.BoundedInteger(0, 255), 4, 4),
 	_camera_world = Camera.WorldSys.Schema,
 	_vertex_array = Client.Wrappers.Schema("VertexArray"),
 	_context = Schema.Optional(Client.Context.Schema),
@@ -184,7 +185,7 @@ function Client.WorldSys:draw()
 
 		self._context.renderer:clear{
 			target = self._render_target.render_texture,
-			color = {255, 255, 255, 255},
+			color = self.clear_color,
 		}
 		self._vertex_array:sort()
 		self._context.renderer:draw_vertex_array{
@@ -299,6 +300,7 @@ end
 function Client.WorldSys:on_init()
 	Container.set_defaults(self.state, Client.WorldSys.State.defaults)
 
+	self.clear_color = {255, 255, 255, 255}
 	self._camera_world = self.sim:require(Camera.WorldSys)
 	self._vertex_array = Client.Wrappers.VertexArray.new{}
 

@@ -87,10 +87,12 @@ Controller.ControllerBindings.defaults_default_controller.inputs[Controller.Inpu
 Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.a] = {bindings = {
 	{type = "keyboard", keyboard_key = "z"},
 	{type = "keyboard", keyboard_key = "return"},
+	{type = "keyboard", keyboard_key = "space"},
 }}
 Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.b] = {bindings = {
 	{type = "keyboard", keyboard_key = "x"},
 	{type = "keyboard", keyboard_key = "backspace"},
+	{type = "keyboard", keyboard_key = "escape"},
 }}
 
 Controller.WorldSys = World.Sys.new_metatable("controller")
@@ -98,9 +100,11 @@ Controller.WorldSys.default_id = Controller.Controller.default_id
 Controller.WorldSys.State = {}
 Controller.WorldSys.State.Schema = Schema.Object{
 	controllers = Schema.BoundedArray(Controller.Controller.Schema, 1, Controller.Controller.max_id),
+	input_changes = Schema.SerializableArray,
 }
 Controller.WorldSys.State.defaults = {
-	controllers = {}
+	controllers = {},
+	input_changes = {},
 }
 for i = 1, Controller.Controller.max_id do
 	Controller.WorldSys.State.defaults.controllers[i] = Controller.Controller.defaults
@@ -199,6 +203,21 @@ function Controller.WorldSys:get_released(controller_id, input_name)
 
 	return not self:get_held(controller_id, input_name) and self:get_toggled(controller_id, input_name)
 end
+function Controller.WorldSys:get_pressed_repeating(controller_id, input_name, repeat_step_count)
+	if debug_checks_enabled then
+		assert(Controller.WorldSys.Schema(self))
+		assert(Schema.BoundedInteger(1, Controller.Controller.max_id)(controller_id))
+		assert(Controller.InputName.Schema(input_name))
+		assert(Schema.PositiveInteger(repeat_step_count))
+	end
+
+	if not self:get_held(controller_id, input_name) then
+		return false
+	end
+
+	local steps_since_press = self.sim.step_id - self.state.controllers[controller_id].inputs[input_name].step_id
+	return steps_since_press % repeat_step_count == 0
+end
 function Controller.WorldSys:on_init()
 	Container.set_defaults(self.state, Controller.WorldSys.State.defaults)
 
@@ -214,9 +233,16 @@ function Controller.WorldSys:on_input_set(controller_id, input_name, held)
 		assert(Schema.Boolean(held))
 	end
 
-	local input = self.state.controllers[controller_id].inputs[input_name]
-	input.held = held
-	input.step_id = self.sim.step_id
+	self.state.input_changes[#self.state.input_changes + 1] = {controller_id, input_name, held}
+end
+function Controller.WorldSys:on_step()
+	for _, input_change in ipairs(self.state.input_changes) do
+		local controller_id, input_name, held = input_change[1], input_change[2], input_change[3]
+		local input = self.state.controllers[controller_id].inputs[input_name]
+		input.held = held
+		input.step_id = self.sim.step_id
+	end
+	self.state.input_changes = {}
 end
 
 Controller.GameSys = Game.Sys.new_metatable("controller")
@@ -298,7 +324,7 @@ function Controller.GameSys:on_world_start()
 
 	self:handle_input_changes()
 end
-function Controller.GameSys:on_step()
+function Controller.GameSys:on_step_begin()
 	if debug_checks_enabled then
 		assert(Controller.GameSys.Schema(self))
 	end
@@ -329,6 +355,7 @@ Controller.tests = Testing.add_suite("engine.controller", {
 		assert(controller_world:get_dir_y(controller_world.default_id) == 0)
 
 		controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, true)
+		world:step()
 		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == true)
 		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
 		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == true)
@@ -345,6 +372,7 @@ Controller.tests = Testing.add_suite("engine.controller", {
 		assert(controller_world:get_dir_y(controller_world.default_id) == -1)
 
 		controller_world:on_input_set(controller_world.default_id, Controller.InputName.up, false)
+		world:step()
 		assert(controller_world:get_held(controller_world.default_id, Controller.InputName.up) == false)
 		assert(controller_world:get_toggled(controller_world.default_id, Controller.InputName.up) == true)
 		assert(controller_world:get_pressed(controller_world.default_id, Controller.InputName.up) == false)

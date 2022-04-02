@@ -1,8 +1,12 @@
 local Engine = require("engine/engine")
-local ExampleSystems = require("examples/template/systems")
+local ExampleSystems = require("ld50/systems")
 
-local Example = {}
-Example.GameSys = Engine.Game.Sys.new_metatable("example")
+local LD50 = {}
+LD50.GameSys = Engine.Game.Sys.new_metatable("ld50")
+LD50.GameSys.WorldSys = Engine.World.Sys.new_metatable("ld50")
+function LD50.GameSys.WorldSys:on_init()
+	self.sim:require(Engine.Client.WorldSys).clear_color = {57, 120, 168, 255}
+end
 
 local debug_checks_enabled = Engine.Core.Debugging.debug_checks_enabled
 
@@ -14,7 +18,7 @@ local function main()
 
 	local game_save = "game.save.json"
 	local game = Engine.Game.Game.new(state)
-	game:load(game_save)
+	-- game:load(game_save)
 
 	for _, SysModule in pairs(Engine.Systems) do
 		if type(SysModule) == "table" and SysModule.GameSys ~= nil then
@@ -27,10 +31,16 @@ local function main()
 		end
 	end
 
-	game:require(Example.GameSys)
+	game:require(LD50.GameSys)
+
+	game.music = Engine.Client.Wrappers.Music.new_file{
+		filename = './ld50/data/sea_ambient.ogg'
+	}
+	game.music:play{volume = 1, loop_forever = true}
+
 	game:run()
 
-	game:save("game.save.json")
+	game:save(game_save)
 
 	if debug_checks_enabled then
 		game._world:save("world.save.json")

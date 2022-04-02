@@ -244,13 +244,13 @@ function Text.WorldSys:on_draw()
 		assert(self.sim.status == Sim.Status.started)
 	end
 
-	local text_entities = self._entity_world:get_all_tagged_raw(self.tag)
+	local text_entities = self._entity_world:get_all_tagged_array(self.tag)
 
 	if expensive_debug_checks_enabled then
 		assert(Schema.Array(Text.Entity.Schema)(text_entities))
 	end
 
-	for _, entity in ipairs(self._entity_world:get_all_tagged_raw(self.tag)) do
+	for _, entity in ipairs(self._entity_world:get_all_tagged_array(self.tag)) do
 		if entity.text ~= nil then
 			self:draw(
 				entity.font_name or self.font_default_name,

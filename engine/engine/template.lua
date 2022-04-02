@@ -40,6 +40,40 @@ function Template.WorldSys:set(template_name, template)
 
 	self.state.templates[template_name] = template
 end
+function Template.WorldSys:update(template_name, template)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Template.WorldSys.Schema(self))
+			assert(Schema.Optional(Template.Template.Schema)(template))
+		end
+		assert(Schema.LabelString(template_name))
+	end
+
+	self.state.templates[template_name] = self.state.templates[template_name] or {}
+	Container.update(self.state.templates[template_name], template)
+end
+function Template.WorldSys:set_defaults(template_name, template)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Template.WorldSys.Schema(self))
+			assert(Schema.Optional(Template.Template.Schema)(template))
+		end
+		assert(Schema.LabelString(template_name))
+	end
+
+	self.state.templates[template_name] = self.state.templates[template_name] or {}
+	Container.set_defaults(self.state.templates[template_name], template)
+end
+function Template.WorldSys:find(template_name)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Template.WorldSys.Schema(self))
+		end
+		assert(Schema.LabelString(template_name))
+	end
+
+	return self.state.templates[template_name]
+end
 function Template.WorldSys:instantiate(template_name, entity)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then

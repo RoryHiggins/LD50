@@ -335,6 +335,26 @@ function Image.WorldSys:entity_unset(entity_id, entity)
 
 	self:entity_set(entity_id, nil, entity)
 end
+function Image.WorldSys:filename_get_size(filename, file_type)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Image.WorldSys.Schema(self))
+		end
+		assert(Schema.String(filename))
+		assert(Schema.Optional(Image.FileType.Schema)(file_type))
+	end
+
+	if self._allocator == nil then
+		return 0, 0
+	end
+
+	local region = self._allocator:load(filename, file_type)
+	if region == nil then
+		return 0, 0
+	end
+
+	return region.width, region.height
+end
 function Image.WorldSys:draw(image_name, x, y, width, height, r, g, b, a, z)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then

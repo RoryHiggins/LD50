@@ -12,9 +12,15 @@
 			"shell_cmd": "start cmd /c \"make engine_test_minimal LUACHECK=luacheck.bat ENGINE_TEST_ENTRYPOINT=\"$file\" && pause || pause\"",
 			"working_dir": "$project_path",
 		},
+		// {
+		// 	"name": "DEBUG run lua engine minimal tests",
+		// 	"shell_cmd": "start cmd /c \"make engine_test_minimal && pause || pause\"",
+		// 	"working_dir": "$project_path",
+		// },
 		{
-			"name": "DEBUG run lua engine minimal tests",
-			"shell_cmd": "start cmd /c \"make engine_test_minimal && pause || pause\"",
+			"name": "DEBUG run ld50",
+			// "shell_cmd": "start cmd /c \".\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test --lua-client $file && pause || pause\"",
+			"shell_cmd": "start cmd /c \"make engine_test_minimal LUACHECK=luacheck.bat ENGINE_TEST_ENTRYPOINT=\"./ld50/main.lua\" && pause || pause\"",
 			"working_dir": "$project_path",
 		},
 		{

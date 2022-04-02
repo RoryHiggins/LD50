@@ -26,11 +26,12 @@ local function main()
 	require('engine/engine/world')
 	require('engine/lib/debugger/debugger')
 	require('engine/lib/json/json')
+	require('engine/lib/json_old/json')
 	require("engine/core/testing").run_all()
-	require("examples/template/main")
+	require("ld50/main")
 end
 local Debugging = require("engine/core/debugging")
 Debugging.debug_checks_enabled = true
-Debugging.expensive_debug_checks_enabled = true
+Debugging.expensive_debug_checks_enabled = false
 Debugging.set_debugger_enabled(true)
 require("engine/core/debugging").pcall(main)

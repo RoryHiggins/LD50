@@ -327,7 +327,7 @@ function Animation.WorldSys:on_init()
 	end
 end
 function Animation.WorldSys:on_step()
-	for _, entity in ipairs(self._entity_world:get_all_tagged_raw(self.tag)) do
+	for _, entity in ipairs(self._entity_world:get_all_tagged_array(self.tag)) do
 		local anim_name = entity.anim_name
 		if anim_name ~= nil then
 			local animation = self:find(anim_name)

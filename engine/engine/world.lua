@@ -72,7 +72,7 @@ function World.GameSys:load(filename)
 		Logging.error("failed to open save file for reading, filename=%s, err=%s", filename, err)
 		return
 	end
-	local state_json = file:read()
+	local state_json = file:read("*a")
 	file:close()
 
 	local loaded_state = json.decode(state_json)
@@ -185,7 +185,7 @@ function World.GameSys:on_step()
 		self.world:step()
 	end
 end
-function World.GameSys:on_start()
+function World.GameSys:on_start_begin()
 	self:set(self:new_world(Container.deep_copy(self.state)))
 end
 

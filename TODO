@@ -53,7 +53,7 @@ better history:
 Client TODOs
 ============
 Small important TODOs
-	Allocate 1x1 white pixel at topleft of texture atlas
+	Make audio resilient to no sound driver (no speakers or headphones plugged in)
 
 Big TODOs
 	Unicode font loading, unicode text rendering

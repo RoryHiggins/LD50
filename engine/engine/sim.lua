@@ -246,7 +246,9 @@ function Sim.Sim:start()
 	self.status = Sim.Status.started
 
 	if old_status == Sim.Status.new then
+		self:broadcast("on_start_begin")
 		self:broadcast("on_start")
+		self:broadcast("on_start_end")
 	end
 
 	if expensive_debug_checks_enabled then
@@ -262,7 +264,9 @@ function Sim.Sim:step()
 		assert(not self.stopping)
 	end
 
+	self:broadcast_pcall("on_step_begin")
 	self:broadcast_pcall("on_step")
+	self:broadcast_pcall("on_step_end")
 
 	if expensive_debug_checks_enabled then
 		assert(Sim.Sim.Schema(self))
@@ -284,13 +288,15 @@ function Sim.Sim:finalize()
 	end
 
 	if self.status == Sim.Status.started then
+		self:broadcast_pcall("on_finalize_begin")
 		self:broadcast_pcall("on_finalize")
+		self:broadcast_pcall("on_finalize_end")
 	end
 
 	self.status = Sim.Status.finalized
 end
 function Sim.Sim:save(filename)
-	local dump_json = json.encode(self.state)
+	local dump_json = json.encode(self.state, {indent = true})
 
 	local file, err = io.open(filename, "w")
 	if file == nil then
@@ -307,7 +313,7 @@ function Sim.Sim:load(filename)
 		Logging.info("failed to open save file for reading, filename=%s, err=%s", filename, err)
 		return false
 	end
-	local state_json = file:read()
+	local state_json = file:read("*a")
 	file:close()
 
 	local loaded_state = json.decode(state_json)
@@ -338,7 +344,7 @@ function Sim.Sim:run()
 
 	self:finalize()
 end
-function Sim.Sim:on_step()
+function Sim.Sim:on_step_begin()
 	self.step_id = self.step_id + 1
 end
 function Sim.Sim:_cache_systems_for_event(event_name)
