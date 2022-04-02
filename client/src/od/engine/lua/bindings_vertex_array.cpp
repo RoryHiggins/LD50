@@ -133,7 +133,7 @@ static int odLuaBindings_odVertexArray_add_triangle(lua_State* lua) {
 		return luaL_error(lua, "odLua_get_userdata_typed(%s) failed", OD_LUA_BINDINGS_VERTEX_ARRAY);
 	}
 
-	float depth = static_cast<uint8_t>(lua_tonumber(lua, depth_index));
+	float depth = static_cast<float>(lua_tonumber(lua, depth_index));
 
 	odTrianglePrimitive triangle{};
 	triangle.vertices[0].pos.x = static_cast<float>(luaL_checknumber(lua, x1_index));
@@ -238,7 +238,7 @@ static int odLuaBindings_odVertexArray_add_sprite(lua_State* lua) {
 		sprite.color.a = static_cast<uint8_t>(lua_tonumber(lua, a_index));
 	}
 
-	sprite.depth = static_cast<uint8_t>(lua_tonumber(lua, depth_index));
+	sprite.depth = static_cast<float>(lua_tonumber(lua, depth_index));
 
 	for (int i = r_index; i <= a_index; i++) {
 		if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(luaL_checknumber(lua, i))))) {
@@ -308,7 +308,7 @@ static int odLuaBindings_odVertexArray_add_rect(lua_State* lua) {
 		sprite.color.a = static_cast<uint8_t>(lua_tonumber(lua, a_index));
 	}
 
-	sprite.depth = static_cast<uint8_t>(lua_tonumber(lua, depth_index));
+	sprite.depth = static_cast<float>(lua_tonumber(lua, depth_index));
 
 	for (int i = r_index; i <= a_index; i++) {
 		if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(luaL_checknumber(lua, i))))) {
@@ -374,7 +374,7 @@ static int odLuaBindings_odVertexArray_add_rect_outline(lua_State* lua) {
 		line.color.a = static_cast<uint8_t>(lua_tonumber(lua, a_index));
 	}
 
-	line.depth = static_cast<uint8_t>(lua_tonumber(lua, depth_index));
+	line.depth = static_cast<float>(lua_tonumber(lua, depth_index));
 
 	for (int i = r_index; i <= a_index; i++) {
 		if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(luaL_checknumber(lua, i))))) {
@@ -471,7 +471,7 @@ static int odLuaBindings_odVertexArray_add_line(lua_State* lua) {
 		line.color.a = static_cast<uint8_t>(lua_tonumber(lua, a_index));
 	}
 
-	line.depth = static_cast<uint8_t>(lua_tonumber(lua, depth_index));
+	line.depth = static_cast<float>(lua_tonumber(lua, depth_index));
 
 	for (int i = r_index; i <= a_index; i++) {
 		if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(luaL_checknumber(lua, i))))) {
@@ -539,7 +539,7 @@ static int odLuaBindings_odVertexArray_add_point(lua_State* lua) {
 		sprite.color.a = static_cast<uint8_t>(lua_tonumber(lua, a_index));
 	}
 
-	sprite.depth = static_cast<uint8_t>(lua_tonumber(lua, depth_index));
+	sprite.depth = static_cast<float>(lua_tonumber(lua, depth_index));
 
 	for (int i = r_index; i <= a_index; i++) {
 		if (!OD_DEBUG_CHECK(odFloat_is_precise_uint8(static_cast<float>(luaL_checknumber(lua, i))))) {

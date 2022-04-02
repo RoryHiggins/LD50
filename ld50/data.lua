@@ -4,29 +4,52 @@ local Core = Engine.Core
 
 local math_floor = math.floor
 
+local filename = "./ld50/data/sprites.png"
 local default_tileset = {
-	filename = "./ld50/data/sprites.png",
+	filename = filename,
 	file_type = "png",
 	tile_width = 8,
 	tile_height = 8,
 	tiles = {
+		-- entities
 		player = {0, 8},
 		tree = {8, 8},
+		tree_empty = {16, 8},
+		fresh_water = {24, 8},
+		fresh_water_empty = {32, 8},
+		wood = {40, 8},
+		rock = {48, 8},
+		shelter = {56, 8},
+		fire = {64, 8},
+
+		player_night = {0, 24},
+		tree_night = {8, 24},
+		tree_empty_night = {16, 24},
+		fresh_water_night = {24, 24},
+		fresh_water_empty_night = {32, 24},
+		wood_night = {40, 24},
+		rock_night = {48, 24},
+		shelter_night = {56, 24},
+		fire_night = {64, 24},
 
 		-- terrain
 		water = {8, 0},
 		sand = {16, 0},
 		grass = {24, 0},
 
+		water_night = {8, 16},
+		sand_night = {16, 16},
+		grass_night = {24, 16},
+
 		-- decoration
-		dirt_1 = {0, 24},
-		dirt_2 = {8, 24},
-		dirt_3 = {16, 24},
-		dirt_4 = {24, 24},
-		dirt_5 = {32, 24},
-		dirt_6 = {40, 24},
-		dirt_7 = {48, 24},
-		dirt_8 = {56, 24},
+		dirt_1 = {0, 112},
+		dirt_2 = {8, 112},
+		dirt_3 = {16, 112},
+		dirt_4 = {24, 112},
+		dirt_5 = {32, 112},
+		dirt_6 = {40, 112},
+		dirt_7 = {48, 112},
+		dirt_8 = {56, 112},
 		terrain_mix_n_1 = {16, 72},
 		terrain_mix_n_2 = {24, 72},
 		terrain_mix_n_3 = {32, 72},
@@ -47,53 +70,85 @@ local default_tileset = {
 		terrain_mix_e_3 = {8, 88},
 		terrain_mix_e_4 = {8, 96},
 		terrain_mix_e_5 = {8, 104},
+
+		blackout_full = {64, 112},
+		blackout_half_1 = {72, 112},
+		blackout_half_2 = {80, 112},
+
+		-- ui
+		thirst_1 = {0, 144},
+		thirst_2 = {8, 144},
+		thirst_3 = {16, 144},
+		thirst_4 = {24, 144},
+		temperature_1 = {0, 152},
+		temperature_2 = {8, 152},
+		temperature_3 = {16, 152},
+		temperature_4 = {24, 152},
+		hunger_2 = {8, 160},
+		hunger_1 = {0, 160},
+		hunger_3 = {16, 160},
+		hunger_4 = {24, 160},
+		health_1 = {0, 168},
+		health_2 = {8, 168},
+		health_3 = {16, 168},
+		health_4 = {24, 168},
+		ellipsis = {0, 176},
 	},
 	animations = {
-		tide_nw = {{0, 32}, {32, 32}},
-		tide_n = {{8, 32}, {40, 32}},
-		tide_ne = {{16, 32}, {48, 32}},
-		tide_w = {{0, 40}, {32, 40}},
-		tide_e = {{16, 40}, {48, 40}},
-		tide_sw = {{0, 48}, {32, 48}},
-		tide_s = {{8, 48}, {40, 48}},
-		tide_se = {{16, 48}, {48, 48}},
+		tide_nw = {{0, 32}, {0, 32}, {0 + 32, 32}, {0 + 64, 32}, {0 + 64, 32}, {0 + 32, 32}},
+		tide_n = {{8, 32}, {8, 32}, {8 + 32, 32}, {8 + 64, 32}, {8 + 64, 32}, {8 + 32, 32}},
+		tide_ne = {{16, 32}, {16, 32}, {16 + 32, 32}, {16 + 64, 32}, {16 + 64, 32}, {16 + 32, 32}},
+		tide_w = {{0, 40}, {0, 40}, {0 + 32, 40}, {0 + 64, 40}, {0 + 64, 40}, {0 + 32, 40}},
+		tide_e = {{16, 40}, {16, 40}, {16 + 32, 40}, {16 + 64, 40}, {16 + 64, 40}, {16 + 32, 40}},
+		tide_sw = {{0, 48}, {0, 48}, {0 + 32, 48}, {0 + 64, 48}, {0 + 64, 48}, {0 + 32, 48}},
+		tide_s = {{8, 48}, {8, 48}, {8 + 32, 48}, {8 + 64, 48}, {8 + 64, 48}, {8 + 32, 48}},
+		tide_se = {{16, 48}, {16, 48}, {16 + 32, 48}, {16 + 64, 48}, {16 + 64, 48}, {16 + 32, 48}},
 
-		tide_nsw = {{0, 56}, {32, 56}},
-		tide_ns = {{8, 56}, {40, 56}},
-		tide_nse = {{16, 56}, {48, 56}},
+		tide_nsw = {{0, 56}, {0, 56}, {0 + 32, 56}, {0 + 64, 56}, {0 + 64, 56}, {0 + 32, 56}},
+		tide_ns = {{8, 56}, {8, 56}, {8 + 32, 56}, {8 + 64, 56}, {8 + 64, 56}, {8 + 32, 56}},
+		tide_nse = {{16, 56}, {16, 56}, {16 + 32, 56}, {16 + 64, 56}, {16 + 64, 56}, {16 + 32, 56}},
 
-		tide_nwe = {{24, 32}, {56, 32}},
-		tide_we = {{24, 40}, {56, 40}},
-		tide_swe = {{24, 48}, {56, 48}},
+		tide_nwe = {{24, 32}, {24, 32}, {24 + 32, 32}, {24 + 64, 32}, {24 + 64, 32}, {24 + 32, 32}},
+		tide_we = {{24, 40}, {24, 40}, {24 + 32, 40}, {24 + 64, 40}, {24 + 64, 40}, {24 + 32, 40}},
+		tide_swe = {{24, 48}, {24, 48}, {24 + 32, 48}, {24 + 64, 48}, {24 + 64, 48}, {24 + 32, 48}},
 
-		tide_nswe = {{0, 64}, {32, 64}},
+		tide_nswe = {{0, 64}, {0, 64}, {0 + 32, 64}, {0 + 64, 64}, {0 + 64, 64}, {0 + 32, 64}},
 	},
 	tile_defaults = {
 		-- entities
 		player = {
-			tags = {solid = true},
+			tags = {solid = true, light = true},
 		},
 		tree = {
-			tags = {solid = true},
+			tags = {solid = true, fruit = true},
+		},
+		fire = {
+			tags = {light = true}
 		},
 
 		-- terrain
 		sand = {
 			tags = {terrain = true},
 			dirt_color = {191, 121, 88, 255},
-			tide_color = {255, 255, 255, 255},
+			night_dirt_color = {90, 83, 83, 255},
 			terrain_color = {244, 204, 161, 255},
+			night_terrain_color = {125, 112, 113, 255},
 		},
 		grass = {
 			tags = {terrain = true},
 			dirt_color = {57, 123, 68, 255},
+			night_dirt_color = {60, 89, 86, 255},
 			terrain_color = {113, 170, 52, 255},
+			night_terrain_color = {57, 123, 68, 255},
 		},
 		water = {
 			tags = {solid = true},
 		},
 	},
-	bounds_indexed_tags = {"solid", "terrain", "water", "sand", "grass", "player"},
+	bounds_indexed_tags = {
+		"solid", "terrain", "water", "sand", "grass", "player", "light", "shelter", "fruit", "tree",
+		"rock", "wood", "fresh_water",
+	},
 	loaded = false,
 	index_tile_name = {}
 }
@@ -112,7 +167,6 @@ function Data.WorldSys:load_tileset(tileset)
 	local cols, rows = (tilemap_width / tileset.tile_width), (tilemap_height / tileset.tile_height)
 	assert(Core.Schema.PositiveInteger(cols))
 	assert(Core.Schema.PositiveInteger(rows))
-	assert(Core.Schema.SerializableObject(tileset))
 
 	for tile_name, uv in pairs(tileset.tiles) do
 		local col = (uv[1] / tileset.tile_width)
@@ -127,11 +181,18 @@ function Data.WorldSys:load_tileset(tileset)
 		tileset.tiles, tileset.filename, tileset.file_type, tileset.tile_width, tileset.tile_height
 	)
 	for tile_name, _ in pairs(tileset.tiles) do
+		local night_image_name = tile_name.."_night"
+		if tileset.tiles[night_image_name] == nil then
+			night_image_name = nil
+		end
+
 		self._template:set_defaults(tile_name, {
 			width = tileset.tile_width,
 			height = tileset.tile_height,
 			tags = {[tile_name] = true},
 			image_name = tile_name,
+			day_image_name = tile_name,
+			night_image_name = night_image_name,
 		})
 	end
 	for anim_name, frame_bounds in pairs(tileset.animations) do
@@ -148,10 +209,10 @@ function Data.WorldSys:load_tileset(tileset)
 
 	return tileset
 end
-function Data.WorldSys:load_tilemap(filename, tileset)
-	local file, err = io.open(filename, "r")
+function Data.WorldSys:load_tilemap(src_filename, tileset)
+	local file, err = io.open(src_filename, "r")
 	if file == nil then
-		Core.Logging.info("failed to open save file for reading, filename=%s, err=%s", filename, err)
+		Core.Logging.info("failed to open save file for reading, filename=%s, err=%s", src_filename, err)
 		return false
 	end
 	local tilemap_json = file:read("*a")
@@ -188,7 +249,7 @@ function Data.WorldSys:load_tilemap(filename, tileset)
 				local x = start_x + (col * tile_width)
 				local y = start_y + (row * tile_height)
 
-				self._template:instantiate(tile_name, {x = x, y = y, z = (-i * 100) + 1, a = a})
+				self._template:instantiate(tile_name, {x = x, y = y, z = (-i * 2) + 1, a = a})
 			end
 		end
 	end
@@ -198,12 +259,19 @@ function Data.WorldSys:on_init()
 	self._animation = self.sim:require(Engine.Animation.WorldSys)
 	self._template = self.sim:require(Engine.Template.WorldSys)
 	self._entity = self.sim:require(Engine.Entity.WorldSys)
+	self._text = self.sim:require(Engine.Text.WorldSys)
 
 	self.tileset = self:load_tileset(default_tileset)
+
+	self._text:font_set(self._text.font_default_name, {
+		filename = filename, file_type = "png", font_type = "ascii",
+		u = 192, v = 160, width = 64, height = 96,
+		char_width = 8, char_height = 8,
+		ascii_char_first = ' ', ascii_char_last = '~',
+	})
 end
 function Data.WorldSys:on_start_begin()
 	self:load_tilemap("./ld50/data/map.json", self.tileset)
-	-- self:load_tilemap("./ld50/data/map_min.json", self.tileset)
 end
 
 Data.GameSys = Engine.Game.Sys.new_metatable("data")

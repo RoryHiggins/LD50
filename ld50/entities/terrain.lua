@@ -13,6 +13,9 @@ function Terrain.WorldSys:on_start()
 		{"e", 8, 0},
 	}
 
+	local tide_color = {57, 120, 168, 255}
+	local night_tide_color = {57, 71, 120, 255}
+
 	for entity_id, entity in pairs(self._entity:get_all_tagged(self.sys_name)) do
 		if entity.dirt_color ~= nil then
 			self._entity:add{
@@ -20,6 +23,8 @@ function Terrain.WorldSys:on_start()
 				width = entity.width, height = entity.height,
 				image_name = "dirt_"..math.random(1, 8),
 				tags = {animation = true},
+				day_color = entity.dirt_color,
+				night_color = entity.night_dirt_color or entity.dirt_color,
 				r = entity.dirt_color[1],
 				g = entity.dirt_color[2],
 				b = entity.dirt_color[3],
@@ -38,8 +43,14 @@ function Terrain.WorldSys:on_start()
 			self._entity:add{
 				x = entity.x, y = entity.y, z = entity.z - 1, width = entity.width, height = entity.height,
 				anim_name = tide_anim_name,
-				anim_speed = 0.01,
+				anim_speed = 0.02,
 				tags = {animation = true},
+				day_color = tide_color,
+				night_color = night_tide_color,
+				r = tide_color[1],
+				g = tide_color[2],
+				b = tide_color[3],
+				a = tide_color[4],
 			}
 		end
 
@@ -54,6 +65,8 @@ function Terrain.WorldSys:on_start()
 					x = entity.x + x, y = entity.y + y, z = entity.z - 1,
 					width = entity.width, height = entity.height,
 					image_name = "terrain_mix_"..dir.."_"..math.random(1, 5),
+					day_color = entity.terrain_color,
+					night_color = entity.night_terrain_color or entity.terrain_color,
 					r = entity.terrain_color[1],
 					g = entity.terrain_color[2],
 					b = entity.terrain_color[3],

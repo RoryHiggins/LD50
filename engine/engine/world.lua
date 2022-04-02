@@ -181,9 +181,11 @@ function World.GameSys:on_init()
 	end
 end
 function World.GameSys:on_step()
-	if self.world ~= nil then
-		self.world:step()
+	if self.world == nil or self.world.stopping == true or self.world.status == Sim.Status.finalized then
+		self:set(self:new_world(Container.deep_copy(self.state)))
 	end
+
+	self.world:step()
 end
 function World.GameSys:on_start_begin()
 	self:set(self:new_world(Container.deep_copy(self.state)))

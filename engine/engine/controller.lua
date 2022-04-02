@@ -92,7 +92,6 @@ Controller.ControllerBindings.defaults_default_controller.inputs[Controller.Inpu
 Controller.ControllerBindings.defaults_default_controller.inputs[Controller.InputName.b] = {bindings = {
 	{type = "keyboard", keyboard_key = "x"},
 	{type = "keyboard", keyboard_key = "backspace"},
-	{type = "keyboard", keyboard_key = "escape"},
 }}
 
 Controller.WorldSys = World.Sys.new_metatable("controller")

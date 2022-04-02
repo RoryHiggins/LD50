@@ -322,6 +322,26 @@ function Image.WorldSys:entity_set(entity_id, image_name, entity)
 
 	self:entity_index(entity_id, entity)
 end
+function Image.WorldSys:entity_set_color(entity_id, r, g, b, a, entity)
+	if debug_checks_enabled then
+		if expensive_debug_checks_enabled then
+			assert(Image.WorldSys.Schema(self))
+			assert(Schema.Optional(Image.Entity.Schema)(entity))
+		end
+		assert(Schema.PositiveInteger(entity_id))
+		assert(Schema.Optional(Schema.BoundedInteger)(r, 0, 255))
+		assert(Schema.Optional(Schema.BoundedInteger)(g, 0, 255))
+		assert(Schema.Optional(Schema.BoundedInteger)(b, 0, 255))
+		assert(Schema.Optional(Schema.BoundedInteger)(a, 0, 255))
+
+		assert(self.sim.status == Sim.Status.started)
+	end
+
+	entity = entity or self._entity_world:find(entity_id)
+
+	entity.r, entity.g, entity.b, entity.a = r, g, b, a
+	self:entity_index(entity_id, entity)
+end
 function Image.WorldSys:entity_unset(entity_id, entity)
 	if debug_checks_enabled then
 		if expensive_debug_checks_enabled then
