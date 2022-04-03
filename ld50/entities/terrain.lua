@@ -14,7 +14,7 @@ function Terrain.WorldSys:on_start()
 	}
 
 	local tide_color = {57, 120, 168, 255}
-	local night_tide_color = {57, 71, 120, 255}
+	local night_tide_color = {57, 49, 75, 255}
 
 	for entity_id, entity in pairs(self._entity:get_all_tagged(self.sys_name)) do
 		if entity.dirt_color ~= nil then

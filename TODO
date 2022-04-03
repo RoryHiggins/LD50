@@ -1,4 +1,3 @@
-Saving, loading
 
 World progression
 
@@ -52,8 +51,9 @@ better history:
 
 Client TODOs
 ============
-Small important TODOs
+Important TODOs
 	Make audio resilient to no sound driver (no speakers or headphones plugged in)
+	More test coverage of entity index using lua wrapper - set_pos in particular.    possible bug with clearing colliders?
 
 Big TODOs
 	Unicode font loading, unicode text rendering

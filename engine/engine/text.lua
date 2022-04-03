@@ -69,12 +69,12 @@ Text.WorldSys.State.Schema = Schema.Object{
 }
 Text.WorldSys.State.defaults = {
 	fonts = {
-		[Text.WorldSys.font_default_name] = {
-			filename = "./engine/data/font.png", file_type = "png", font_type = "ascii",
-			u = 0, v = 0, width = 64, height = 96,
-			char_width = 8, char_height = 8,
-			ascii_char_first = ' ', ascii_char_last = '~',
-		}
+		-- [Text.WorldSys.font_default_name] = {
+		-- 	filename = "./engine/data/font.png", file_type = "png", font_type = "ascii",
+		-- 	u = 0, v = 0, width = 64, height = 96,
+		-- 	char_width = 8, char_height = 8,
+		-- 	ascii_char_first = ' ', ascii_char_last = '~',
+		-- }
 	},
 }
 Text.WorldSys.Schema = Schema.AllOf(World.Sys.Schema, Schema.PartialObject{

@@ -40,11 +40,11 @@
 			"shell_cmd": "start cmd /c \"make engine_test LUACHECK=luacheck.bat && pause || pause\"",
 			"working_dir": "$project_path",
 		},
-		// {
-		// 	"name": "DEBUG generate client and rebuild shared",
-		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_GENERATE_ARGS='-D BUILD_SHARED_LIBS=1'",
-		// 	"working_dir": "$project_path",
-		// },
+		{
+			"name": "DEBUG generate client and rebuild shared",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_ANY && make TARGET=DEBUG CMAKE_GENERATE_ARGS='-D BUILD_SHARED_LIBS=1'",
+			"working_dir": "$project_path",
+		},
 		// {
 		// 	"name": "DEBUG build client and run fast tests",
 		// 	"shell_cmd": "ninja -C .\\build\\DEBUG_ANY od_client.exe && .\\build\\DEBUG_ANY\\od_client.exe --test --no-slow-test",

@@ -92,7 +92,10 @@ local default_tileset = {
 		health_2 = {8, 168},
 		health_3 = {16, 168},
 		health_4 = {24, 168},
-		ellipsis = {0, 176},
+		time_day = {8, 184},
+		time_evening = {16, 184},
+		time_night = {24, 184},
+		prompt = {0, 176},
 	},
 	animations = {
 		tide_nw = {{0, 32}, {0, 32}, {0 + 32, 32}, {0 + 64, 32}, {0 + 64, 32}, {0 + 32, 32}},
@@ -117,7 +120,7 @@ local default_tileset = {
 	tile_defaults = {
 		-- entities
 		player = {
-			tags = {solid = true, light = true},
+			tags = {solid = true},
 		},
 		tree = {
 			tags = {solid = true, fruit = true},
@@ -137,17 +140,20 @@ local default_tileset = {
 		grass = {
 			tags = {terrain = true},
 			dirt_color = {57, 123, 68, 255},
-			night_dirt_color = {60, 89, 86, 255},
+			night_dirt_color = {48, 44, 46, 255},
 			terrain_color = {113, 170, 52, 255},
-			night_terrain_color = {57, 123, 68, 255},
+			night_terrain_color = {60, 89, 86, 255},
 		},
 		water = {
+			tags = {solid = true},
+		},
+		fresh_water = {
 			tags = {solid = true},
 		},
 	},
 	bounds_indexed_tags = {
 		"solid", "terrain", "water", "sand", "grass", "player", "light", "shelter", "fruit", "tree",
-		"rock", "wood", "fresh_water",
+		"rock", "wood", "fresh_water", "fire",
 	},
 	loaded = false,
 	index_tile_name = {}

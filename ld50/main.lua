@@ -4,9 +4,6 @@ local ExampleSystems = require("ld50/systems")
 local LD50 = {}
 LD50.GameSys = Engine.Game.Sys.new_metatable("ld50")
 LD50.GameSys.WorldSys = Engine.World.Sys.new_metatable("ld50")
--- function LD50.GameSys.WorldSys:on_init()
--- 	-- self.sim:require(Engine.Client.WorldSys).clear_color = {57, 120, 168, 255}
--- end
 
 local debug_checks_enabled = Engine.Core.Debugging.debug_checks_enabled
 
