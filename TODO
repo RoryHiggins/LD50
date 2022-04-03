@@ -54,6 +54,7 @@ Client TODOs
 Important TODOs
 	Make audio resilient to no sound driver (no speakers or headphones plugged in)
 	More test coverage of entity index using lua wrapper - set_pos in particular.    possible bug with clearing colliders?
+		LD50 launch bug likely related: finding "fire" tag even though fire destroyed...
 	Text: break on word that would cross a line break and could fit on a line
 	Text: skip whitespace carried across a line break
 

@@ -21,7 +21,7 @@ Entity.Entity.DestroyedSchema = Schema.Object{
 }
 Entity.Entity.ExistsSchema = Schema.AllOf(Schema.SerializableObject, Schema.PartialObject{
 	destroyed = Schema.Nil,
-	tags = Schema.Optional(Schema.Mapping(Schema.LabelString, Schema.Const(true))),
+	tags = Schema.Optional(Schema.Mapping(Schema.LabelString, Schema.Boolean)),
 	x = Schema.Optional(Schema.Integer),
 	y = Schema.Optional(Schema.Integer),
 	width = Schema.Optional(Schema.NonNegativeInteger),
@@ -309,12 +309,14 @@ function Entity.WorldSys:untag(entity_id, tags, entity)
 	local tag_to_tag_id = self._tag_to_tag_id
 	local removed_bounds_indexed_tag_ids = {}
 	local removed_tags = {}
+	local has_removed_bounds_indexed_tag_ids = false
 	for _, tag in ipairs(tags) do
 		local tag_index = entity_tag_indices[tag]
 		if tag_index ~= nil then
 			local tag_id = tag_to_tag_id[tag]
 			if tag_id ~= nil then
 				removed_bounds_indexed_tag_ids[tag_id] = true
+				has_removed_bounds_indexed_tag_ids = true
 			end
 
 			local tag_entities = tag_to_entities[tag]
@@ -337,9 +339,10 @@ function Entity.WorldSys:untag(entity_id, tags, entity)
 		end
 	end
 
-	if #removed_bounds_indexed_tag_ids > 0 then
+	if has_removed_bounds_indexed_tag_ids then
 		local bounds_indexed_tag_ids = {}
-		for _, tag_id in ipairs({self._entity_index:get_tags(entity_id)}) do
+		local current_tag_ids = {self._entity_index:get_tags(entity_id)}
+		for _, tag_id in ipairs(current_tag_ids) do
 			if removed_bounds_indexed_tag_ids[tag_id] ~= true then
 				bounds_indexed_tag_ids[#bounds_indexed_tag_ids + 1] = tag_id
 			end

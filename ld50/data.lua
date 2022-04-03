@@ -291,6 +291,7 @@ function Data.WorldSys:on_init()
 end
 function Data.WorldSys:on_start_begin()
 	self:load_tilemap("./ld50/data/map.json", self.tileset)
+	-- self:load_tilemap("./ld50/data/map_test.json", self.tileset)
 end
 
 Data.GameSys = Engine.Game.Sys.new_metatable("data")

@@ -9,7 +9,7 @@ local debug_checks_enabled = Engine.Core.Debugging.debug_checks_enabled
 
 local function main()
 	local state = {
-		client = {width = 1024, height = 768, title = "LD50"},
+		client = {width = 1024, height = 768},
 		world = {client = {width = 128, height = 96}},
 	}
 

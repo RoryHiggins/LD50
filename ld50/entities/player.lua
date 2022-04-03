@@ -27,9 +27,6 @@ Player.WorldSys.State.defaults = {
 	wood = 0,
 	rock = 0,
 
-	-- wood = 20,  -- for testing
-	-- rock = 20,
-
 	-- progression
 	turn_id = 0,
 	is_nighttime = false,
@@ -50,6 +47,10 @@ Player.WorldSys.State.defaults = {
 	turns_per_day = level_threshold,  -- makes the math so much easier...
 	fraction_of_day_is_nighttime = 0.4,
 	prompt_toggle_steps = 30,
+
+	-- wood = 20,  -- for testing
+	-- rock = 20,
+	-- fraction_of_day_is_nighttime = 0.8,
 }
 -- rendering
 function Player.WorldSys:draw_dialog_ui()
