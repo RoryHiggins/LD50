@@ -15,8 +15,8 @@ local default_tileset = {
 		player = {0, 8},
 		tree = {8, 8},
 		tree_empty = {16, 8},
-		fresh_water = {24, 8},
-		fresh_water_empty = {32, 8},
+		puddle = {24, 8},
+		puddle_empty = {32, 8},
 		wood = {40, 8},
 		rock = {48, 8},
 		shelter = {56, 8},
@@ -25,8 +25,8 @@ local default_tileset = {
 		player_night = {0, 24},
 		tree_night = {8, 24},
 		tree_empty_night = {16, 24},
-		fresh_water_night = {24, 24},
-		fresh_water_empty_night = {32, 24},
+		puddle_night = {24, 24},
+		puddle_empty_night = {32, 24},
 		wood_night = {40, 24},
 		rock_night = {48, 24},
 		shelter_night = {56, 24},
@@ -71,9 +71,11 @@ local default_tileset = {
 		terrain_mix_e_4 = {8, 96},
 		terrain_mix_e_5 = {8, 104},
 
+		-- ambience
 		blackout_full = {64, 112},
 		blackout_half_1 = {72, 112},
 		blackout_half_2 = {80, 112},
+		rain = {88, 112},
 
 		-- ui
 		thirst_1 = {0, 144},
@@ -123,7 +125,7 @@ local default_tileset = {
 			tags = {solid = true},
 		},
 		tree = {
-			tags = {solid = true, fruit = true},
+			tags = {solid = true, food = true, food_spawn = true},
 		},
 		fire = {
 			tags = {light = true}
@@ -147,13 +149,19 @@ local default_tileset = {
 		water = {
 			tags = {solid = true},
 		},
-		fresh_water = {
-			tags = {solid = true},
+		puddle = {
+			tags = {fresh_water = true, fresh_water_spawn = true},
+		},
+		wood = {
+			tags = {wood_spawn = true},
+		},
+		rock = {
+			tags = {rock_spawn = true},
 		},
 	},
 	bounds_indexed_tags = {
-		"solid", "terrain", "water", "sand", "grass", "player", "light", "shelter", "fruit", "tree",
-		"rock", "wood", "fresh_water", "fire",
+		"solid", "terrain", "water", "sand", "grass", "player", "light", "shelter", "food", "tree",
+		"rock", "wood", "puddle", "fresh_water", "fire",
 	},
 	loaded = false,
 	index_tile_name = {}

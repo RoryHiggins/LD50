@@ -4,30 +4,47 @@ local Math = Engine.Core.Math
 
 local level_threshold = 100
 local level_thresholds = 4
+local level_threshold_min = 0
+local level_threshold_low = level_threshold
+local level_threshold_mid = math.floor((level_thresholds / 2) * level_threshold)
+local level_threshold_high = (level_thresholds - 1) * level_threshold
+local level_threshold_max = (level_thresholds * level_threshold) - 1
+local level_threshold_danger_low = level_threshold_low - math.floor(level_threshold / 2)
+local level_threshold_danger_high = level_threshold_high + math.floor(level_threshold / 2)
 
 local Player = {}
 Player.WorldSys = Engine.World.Sys.new_metatable("player")
 Player.WorldSys.State = {}
 Player.WorldSys.State.defaults = {
-	-- actual state
-	health = 350,
-	hunger = 300,
-	thirst = 200,
-	temperature = 200,
+	-- status
+	health = level_threshold_max,
+	hunger = level_threshold_min,
+	thirst = level_threshold_low,
+	temperature = level_threshold_mid,
+	resting = false,
+	sheltered = false,
+	dead = false,
 
+	-- resources
 	wood = 0,
 	rock = 0,
 
+	-- progression
+	turn_id = 0,
+	is_nighttime = false,
+
+	-- dialog
 	dialog_stack = {},
 	dialog_choice = 1,
-
-	is_nighttime = false,
-	turn_id = 0,
+	eat_done = false,
+	drink_done = false,
+	tree_rest_done = false,
+	make_fire_done = false,
 
 	-- configuration
 	day_clear_color = {57, 120, 168, 255},
 	night_clear_color = {57, 49, 75, 255},
-	turns_per_day = 140,
+	turns_per_day = level_threshold,  -- makes the math so much easier...
 	fraction_of_day_is_nighttime = 0.4,
 	prompt_toggle_steps = 30,
 }
@@ -38,7 +55,7 @@ function Player.WorldSys:draw_dialog_ui()
 		local z = -100
 		local width, height = self._client:camera_get_size("default")
 
-		local text = "z=action"
+		local text = "action:z"
 		self._text:draw(
 			self._text.font_default_name, text, x + width - 64, y + height - 8, nil, nil,
 			255, 255, 255, 255, z)
@@ -79,7 +96,7 @@ function Player.WorldSys:draw_dialog_ui()
 		if self.state.dialog_choice == i then
 			text = ">"..text
 		else
-			text = " "..text
+			text = "-"..text
 		end
 
 		self._text:draw(
@@ -97,31 +114,31 @@ function Player.WorldSys:draw_dialog_ui()
 			"prompt", ellipsis_x, ellipsis_y, 8, 8, dialog_r, dialog_g, dialog_b, dialog_a, dialog_z)
 		end
 end
-function Player.WorldSys:draw_blackout()
+function Player.WorldSys:draw_fog()
+	local _, entity = self._entity:find_tagged(self.sys_name)
+	local player_x, player_y = entity.x or 0, entity.y or 0
+
+	local start_x, start_y = self._client:camera_get_pos("default")
+	local width, height = self._client:camera_get_size("default")
+	start_x, start_y = math.floor(start_x / 8) * 8, math.floor(start_y / 8) * 8
+
+	local light_tags = {"light"}
+	local dim_dist = 8
+	local sight_night = 40
+	local dim_sight_night = 20
+	local blackout_half_image = "blackout_half_"..(1 + (math.floor(self.sim.step_id / 10) % 2))
+	local image_world = self._image
+
 	if self.state.is_nighttime then
-		local _, entity = self._entity:find_tagged(self.sys_name)
-		local player_x, player_y = entity.x or 0, entity.y or 0
+		local r,g,b,a = 48,44,46,255
 
-		local start_x, start_y = self._client:camera_get_pos("default")
-		local width, height = self._client:camera_get_size("default")
-		start_x, start_y = math.floor(start_x / 8) * 8, math.floor(start_y / 8) * 8
-
-		local light_tags = {"light"}
-		local dim_dist = 8
-		local sight = 40
-		local dim_sight = 20
-		local blackout_half_image = "blackout_half_"..(1 + (math.floor(self.sim.step_id / 10) % 2))
-		local image_world = self._image
 		for x = start_x, start_x + width, 8 do
 			for y = start_y, start_y + height, 8 do
-				if Math.distance(x, y, player_x, player_y) >= sight then
-					image_world:draw("blackout_full", x, y, 8, 8, 255,255,255,255, -99)
+				if Math.distance(x, y, player_x, player_y) >= sight_night then
+					image_world:draw("blackout_full", x, y, 8, 8, r,g,b,a, -99)
 				elseif self._entity:find_in(x + 4 - dim_dist, y + 4 - dim_dist, dim_dist * 2, dim_dist * 2, light_tags) == nil
-				and Math.distance(x, y, player_x, player_y) >= dim_sight then
-						image_world:draw(blackout_half_image, x, y, 8, 8, 255,255,255,255, -99)
-					-- end
-				-- else
-				-- 	image_world:draw("blackout_full", x, y, 8, 8, 255,255,255,255, -99)
+				and Math.distance(x, y, player_x, player_y) >= dim_sight_night then
+					image_world:draw(blackout_half_image, x, y, 8, 8, r,g,b,a, -99)
 				end
 			end
 		end
@@ -163,22 +180,26 @@ function Player.WorldSys:draw_status_ui()
 		"hunger_"..self:get_attr_level(self.state.hunger), status_x + 24, status_y, 8, 8, 255,255,255,255, status_z)
 
 	if self.sim.step_id % self.state.prompt_toggle_steps < (self.state.prompt_toggle_steps / 2) then
-		if self.state.health <= level_threshold then
-			vertex_array:add_rect(
-				status_x, status_y, status_x + 8, status_y + 8, 255,0,0,255, ui_z - 1)
-		end
-		if self.state.temperature <= level_threshold
-		or self.state.temperature >= (level_thresholds - 1) * level_threshold then
+		local health_loss = false
+		if self.state.temperature <= level_threshold_danger_low
+		or self.state.temperature >= level_threshold_danger_high then
+			health_loss = true
 			vertex_array:add_rect(
 				status_x + 8, status_y, status_x + 16, status_y + 8, 255,0,0,255, ui_z - 1)
 		end
-		if self.state.thirst <= level_threshold then
+		if self.state.thirst >= level_threshold_danger_high then
+			health_loss = true
 			vertex_array:add_rect(
 				status_x + 16, status_y, status_x + 24, status_y + 8, 255,0,0,255, ui_z - 1)
 		end
-		if self.state.hunger <= level_threshold then
+		if self.state.hunger >= level_threshold_danger_high then
+			health_loss = true
 			vertex_array:add_rect(
 				status_x + 24, status_y, status_x + 32, status_y + 8, 255,0,0,255, ui_z - 1)
+		end
+		if health_loss then
+			vertex_array:add_rect(
+				status_x, status_y, status_x + 8, status_y + 8, 255,0,0,255, ui_z - 1)
 		end
 	end
 
@@ -225,14 +246,15 @@ function Player.WorldSys:clear_dialog()
 		self:pop_dialog()
 	end
 end
-function Player.WorldSys:perform_dialog_action(action)
+function Player.WorldSys:perform_dialog_action(action, args)
 	assert(type(action) == "string")
 
 	if self[action] then
-		self[action](self)
+		self[action](self, Engine.Core.Shim.unpack(args or {}))
 	else
 		Engine.Core.Logging.warning("Unknown action=%s", action)
-		self:pop_dialog()
+		self:clear_dialog()
+		self:push_dialog("I cant do that right now")
 	end
 end
 function Player.WorldSys:noop_dialog()
@@ -265,11 +287,13 @@ function Player.WorldSys:step_dialog()
 		if #dialog.choices == 0 then
 			pop_dialog = true
 		else
-			self:perform_dialog_action(dialog.choices[self.state.dialog_choice].action)
+			self:perform_dialog_action(
+				dialog.choices[self.state.dialog_choice].action,
+				dialog.choices[self.state.dialog_choice].args)
 		end
 	end
 
-	if self._controller:get_pressed(1, "b") then
+	if self._controller:get_pressed(1, "b") and not self.state.dead then
 		pop_dialog = true
 	end
 
@@ -290,96 +314,100 @@ end
 
 -- attribute actions
 function Player.WorldSys:get_attr_level(attribute_value)
-	return math.floor(attribute_value / level_threshold)
+	return math.floor(attribute_value / level_threshold) + 1
 end
 function Player.WorldSys:clamped_attr_add(attribute_value, amount)
 	return Math.clamp(
 		attribute_value + amount, 0, level_threshold * level_thresholds - 1
 	)
 end
-function Player.WorldSys:add_hunger(amount)
-	local hunger_level = self.state.hunger * level_threshold
-
+function Player.WorldSys:offset_hunger(amount)
 	local hunger_after = self:clamped_attr_add(self.state.hunger, amount)
-	local hunger_level_after = hunger_after * level_threshold
-	local hunger_warning_fraction = 0.75
-	if (hunger_level / level_thresholds) < hunger_warning_fraction then
-		if (hunger_level_after / level_thresholds) >= hunger_warning_fraction then
+	if self.state.hunger < level_threshold_high and hunger_after >= level_threshold_high then
+		if not self.state.eat_done then
 			self:push_dialog("maybe those trees will have fruit")
-			self:push_dialog("starving...")
 		end
+		self:push_dialog("starving...")
 	end
 	self.state.hunger = hunger_after
 end
-function Player.WorldSys:add_thirst(amount)
-	local thirst_level = self.state.thirst * level_threshold
-
+function Player.WorldSys:offset_thirst(amount)
 	local thirst_after = self:clamped_attr_add(self.state.thirst, amount)
-	local thirst_level_after = thirst_after * level_threshold
-	local thirst_warning_fraction = 0.75
-	if (thirst_level / level_thresholds) < thirst_warning_fraction then
-		if (thirst_level_after / level_thresholds) >= thirst_warning_fraction then
+	if self.state.thirst < level_threshold_high and thirst_after >= level_threshold_high then
+		if not self.state.drink_done then
 			self:push_dialog("must be fresh water somewhere")
-			self:push_dialog("so thirsty")
 		end
+		self:push_dialog("so thirsty")
 	end
 	self.state.thirst = thirst_after
 end
-function Player.WorldSys:add_health(amount)
-	local health_level = self.state.health * level_threshold
-
-	local health_after = self:clamped_attr_add(self.state.health, amount)
-	local health_level_after = health_after * level_threshold
-	local health_warning_fraction = 0.25
-	if (health_level / level_thresholds) > health_warning_fraction then
-		if (health_level_after / level_thresholds) <= health_warning_fraction then
-			self:push_dialog("i cant much more take this")
+function Player.WorldSys:offset_temperature(amount)
+	local temperature_after = self:clamped_attr_add(self.state.temperature, amount)
+	if self.state.temperature < level_threshold_high and temperature_after >= level_threshold_high then
+		if not self.state.tree_rest_done then
+			self:push_dialog("maybe i can find shelter to rest at")
 		end
+
+		self:push_dialog("too hot... need to cool down")
 	end
+	if self.state.temperature > level_threshold_low and temperature_after <= level_threshold_low then
+		if not self.state.make_fire_done then
+			self:push_dialog("maybe i can make a fire")
+		end
+		self:push_dialog("its freezing")
+	end
+	self.state.temperature = temperature_after
+end
+function Player.WorldSys:offset_health(amount)
+	local health_after = self:clamped_attr_add(self.state.health, amount)
 
 	if health_after == 0 then
+		self.state.dead = true
 		self:clear_dialog()
-		self:push_dialog("so this is the end", {
+		self:push_dialog("you passed away.  try again?", {
 			{action = "restart", text = "try again"},
 			{action = "quit", text = "quit"},
 		})
+		self:push_dialog("so this is how it ends")
+	elseif self.state.health > level_threshold_low and health_after <= level_threshold_low then
+		self:push_dialog("i cant much more take this")
 	end
 
 	self.state.health = health_after
 end
-function Player.WorldSys:add_temperature(amount)
-	local health_level = self.state.health * level_threshold
 
-	local health_after = self:clamped_attr_add(self.state.health, amount)
-	local health_level_after = health_after * level_threshold
-	local hot_warning_fraction = 0.75
-	if (health_level / level_thresholds) < hot_warning_fraction then
-		if (health_level_after / level_thresholds) >= hot_warning_fraction then
-			self:push_dialog("maybe i can find some shelter from the sun")
-			self:push_dialog("too hot")
-		end
-	end
-	local cold_warning_fraction = 0.25
-	if (health_level / level_thresholds) > cold_warning_fraction then
-		if (health_level_after / level_thresholds) <= cold_warning_fraction then
-			self:push_dialog("maybe i can make a fire")
-			self:push_dialog("its freezing")
-		end
-	end
+-- resource actions
+function Player.WorldSys:wood_take(entity_id)
+	self._entity:set(entity_id, {a = 0, tags = {wood = false}})
+	self.state.wood = self.state.wood + 1
+	self:clear_dialog()
+	self:end_turn()
+end
+function Player.WorldSys:rock_take(entity_id)
+	self._entity:set(entity_id, {a = 0, tags = {rock = false}})
+	self.state.rock = self.state.rock + 1
+	self:clear_dialog()
+	self:end_turn()
+end
+function Player.WorldSys:puddle_drink(entity_id)
+	self._entity:set(entity_id, {tags = {fresh_water = false}})
+	self:offset_thirst(-level_threshold)
+	self:clear_dialog()
 
-	if health_after == 0 then
-		self:clear_dialog()
-		self:push_dialog("so this is the end", {
-			{action = "restart", text = "try again"},
-			{action = "quit", text = "quit"},
-		})
-	end
+	self.state.drink_done = true
+	self:end_turn(5)
+end
+function Player.WorldSys:tree_eat_fruit(entity_id)
+	self._entity:set(entity_id, {tags = {food = false}})
+	self:offset_thirst(-level_threshold)
+	self:clear_dialog()
 
-	self.state.health = health_after
+	self.state.drink_done = true
+	self:end_turn(5)
 end
 
 -- action menus
-function Player.WorldSys:push_interact_dialogue()
+function Player.WorldSys:find_in_range(tags)
 	local _, entity = self._entity:find_tagged(self.sys_name)
 	local x, y = entity.x or 0, entity.y or 0
 
@@ -388,33 +416,40 @@ function Player.WorldSys:push_interact_dialogue()
 	local range_width = 10
 	local range_height = 10
 
+	local entity_near = self._entity:find_in(range_x, range_y, range_width, range_height, tags)
+	return entity_near
+end
+function Player.WorldSys:push_interact_dialogue()
 	local choices = {}
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"fresh_water"}) ~= nil then
-		choices[#choices + 1] = {action = "drink_water", text = "drink(puddle)"}
+	local wood_near = self:find_in_range{"wood"}
+	local rock_near = self:find_in_range{"rock"}
+	local puddle_fresh_water_near = self:find_in_range{"puddle", "fresh_water"}
+	local tree_fruit_near = self:find_in_range{"tree", "food"}
+	local tree_near = self:find_in_range{"tree"}
+	local shelter_near = self:find_in_range{"shelter"}
+	local fire_near = self:find_in_range{"fire"}
+
+	if wood_near ~= nil then
+		choices[#choices + 1] = {action = "wood_take", text = "wood:take", args = {wood_near}}
 	end
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"fruit"}) ~= nil then
-		choices[#choices + 1] = {action = "eat_fruit", text = "eat(fruit)"}
+	if rock_near ~= nil then
+		choices[#choices + 1] = {action = "rock_take", text = "rock:take", args = {rock_near}}
 	end
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"wood"}) ~= nil then
-		choices[#choices + 1] = {action = "take_wood", text = "take(wood)"}
+	if puddle_fresh_water_near ~= nil then
+		choices[#choices + 1] = {action = "puddle_drink", text = "puddle:drink", args = {puddle_fresh_water_near}}
 	end
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"rock"}) ~= nil then
-		choices[#choices + 1] = {action = "take_rock", text = "take(rock)"}
+	if tree_fruit_near ~= nil then
+		choices[#choices + 1] = {action = "tree_eat_fruit", text = "tree:eat fruit", args = {tree_fruit_near}}
 	end
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"shelter"}) ~= nil
-	and not self.state.is_nighttime then
-		choices[#choices + 1] = {action = "take_shelter", text = "use(shelter)"}
+	if tree_near then
+		choices[#choices + 1] = {action = "tree_rest", text = "tree:rest", args = {tree_near}}
 	end
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"shelter"}) ~= nil
-	and self.state.is_nighttime then
-		choices[#choices + 1] = {action = "rest_shelter", text = "rest(shelter)"}
+	if shelter_near then
+		choices[#choices + 1] = {action = "shelter_rest", text = "shelter:rest", args = {shelter_near}}
+		choices[#choices + 1] = {action = "shelter_scrap", text = "shelter:scrap", args = {shelter_near}}
 	end
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"fire"}) ~= nil
-	and self.state.is_nighttime then
-		choices[#choices + 1] = {action = "rest_fire", text = "rest(fire)"}
-	end
-	if self._entity:find_in(range_x, range_y, range_width, range_height, {"shelter"}) ~= nil then
-		choices[#choices + 1] = {action = "scrap_shelter", text = "scrap(shelter)"}
+	if fire_near and self.state.is_nighttime then
+		choices[#choices + 1] = {action = "fire_rest", text = "fire:rest", args = {fire_near}}
 	end
 
 	choices[#choices + 1] = {action = "pop_dialog", text = "back"}
@@ -437,19 +472,18 @@ function Player.WorldSys:push_root_action_dialogue()
 end
 
 -- progression
-
 function Player.WorldSys:is_nighttime_at_turn(turn_id)
 	return ((turn_id % self.state.turns_per_day)
 			> (self.state.turns_per_day * (1 - self.state.fraction_of_day_is_nighttime)))
 end
 function Player.WorldSys:is_evening_at_turn(turn_id)
 	return ((turn_id % self.state.turns_per_day)
-			> (self.state.turns_per_day * 0.75 * (1 - self.state.fraction_of_day_is_nighttime)))
+			> (self.state.turns_per_day * 0.66 * (1 - self.state.fraction_of_day_is_nighttime)))
 end
 function Player.WorldSys:get_day_count_at_turn(turn_id)
 	return math.floor(turn_id / self.state.turns_per_day) + 1
 end
-function Player.WorldSys:enforce_day_night_cycle()
+function Player.WorldSys:check_day_night_cycle()
 	local should_be_nighttime = self:is_nighttime_at_turn(self.state.turn_id)
 	if should_be_nighttime ~= self.state.is_nighttime then
 		for entity_id, entity in ipairs(self._entity:get_all_raw()) do
@@ -485,12 +519,62 @@ function Player.WorldSys:enforce_day_night_cycle()
 		end
 
 		self.state.is_nighttime = should_be_nighttime
+		self.sim:broadcast("on_set_is_nighttime", self.state.is_nighttime)
 	end
 end
-function Player.WorldSys:end_turn()
-	self.state.turn_id = self.state.turn_id + 1
+function Player.WorldSys:end_turn(count)
+	count = count or 1
 
-	self:enforce_day_night_cycle()
+	for _ = 1, count do
+		self.state.turn_id = self.state.turn_id + 1
+
+		local night = self:is_nighttime_at_turn(self.state.turn_id)
+		local evening = self:is_evening_at_turn(self.state.turn_id)
+		local day = not night and not evening
+
+		self:offset_hunger(1)
+		self:offset_thirst(1)
+
+		local cold = self.state.temperature < level_threshold_mid
+		local hot = self.state.temperature > level_threshold_mid
+		if day and not self.state.sheltered then
+			if cold then
+				self:offset_temperature(20)
+			else
+				self:offset_temperature(4)
+			end
+		elseif night and not self.state.sheltered then
+			if hot then
+				self:offset_temperature(-20)
+			else
+				self:offset_temperature(-10)
+			end
+		end
+
+		local damage = 0
+		if self.state.hunger >= level_threshold_danger_high then
+			damage = damage + 2
+		end
+		if self.state.thirst >= level_threshold_danger_high then
+			damage = damage + 4
+		end
+		if self.state.temperature >= level_threshold_danger_high then
+			damage = damage + 4
+		end
+		if self.state.temperature <= level_threshold_danger_low then
+			damage = damage + 8
+		end
+
+		if damage > 0 then
+			self:offset_health(-damage)
+		else
+			self:offset_health(1)
+		end
+
+		self.sim:broadcast("on_player_end_turn", self.state.turn_id)
+	end
+
+	self:check_day_night_cycle()
 end
 
 -- events
@@ -578,7 +662,7 @@ function Player.WorldSys:on_step()
 	)
 end
 function Player.WorldSys:on_draw()
-	self:draw_blackout()
+	self:draw_fog()
 	self:draw_dialog_ui()
 	self:draw_status_ui()
 end

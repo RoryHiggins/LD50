@@ -94,6 +94,11 @@ bool odAsciiFont_text_get_vertices(const odAsciiFont* font, const odAsciiTextPri
 		if (char_cur == '\r') {
 			continue;
 		}
+
+		if (char_cur == '\t') {
+			char_cur = ' ';
+		}
+
 		if (char_cur == '\n') {
 			sprite_cur.bounds.x1 = text->max_bounds.x1;
 			sprite_cur.bounds.x2 = text->max_bounds.x1 + static_cast<float>(font->char_width);
@@ -102,8 +107,8 @@ bool odAsciiFont_text_get_vertices(const odAsciiFont* font, const odAsciiTextPri
 			sprite_cur.bounds.y2 += static_cast<float>(font->char_height);
 			continue;
 		}
-		if (char_cur == '\t') {
-			char_cur = ' ';
+		if ((char_cur == ' ') && (sprite_cur.bounds.x1 == text->max_bounds.x1)) {
+			continue;
 		}
 		if (!OD_CHECK(char_cur >= font->char_first) || !OD_CHECK(char_cur <= font->char_last)) {
 			char_cur = ' ';

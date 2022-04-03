@@ -86,7 +86,7 @@ function Entity.WorldSys:index(entity_id, entity)
 	local entity_tags = entity.tags or {}
 	local removed_tags = {}
 	for tag, _ in pairs(entity_tag_indices) do
-		if entity_tags[tag] == nil then
+		if entity_tags[tag] ~= true then
 			removed_tags[#removed_tags + 1] = tag
 		end
 	end
@@ -506,6 +506,10 @@ function Entity.WorldSys:find_in(x, y, width, height, tags, exclude_entity_id)
 	if tags ~= nil then
 		local tag_to_tag_id = self._tag_to_tag_id
 		for _, tag in ipairs(tags) do
+			if debug_checks_enabled then
+				assert(Schema.NonNegativeInteger(tag_to_tag_id[tag]))
+			end
+
 			tag_ids[#tag_ids + 1] = tag_to_tag_id[tag]
 		end
 	end
