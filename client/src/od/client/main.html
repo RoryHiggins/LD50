@@ -52,7 +52,11 @@
 				monitorRunDependencies: function(/*left*/) {}
 			};
 			Module.setStatus('Downloading...');
-			Module.arguments = window.location.search.substr(1).split('&');
+			Module.arguments = [];
+			Module.arguments.push("--lua-client")
+			Module.arguments.push("./ld50/main.lua")
+			Module.arguments = Module.arguments.concat(window.location.search.substr(1).split('&'));
+			console.log(Module.arguments);
 			window.onerror = function(event) {
 				console.log("window.onerror");
 			};

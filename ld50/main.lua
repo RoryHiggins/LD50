@@ -9,11 +9,11 @@ local debug_checks_enabled = Engine.Core.Debugging.debug_checks_enabled
 
 local function main()
 	local state = {
-		client = {width = 1024, height = 768},
+		client = {width = 1024, height = 768, title = "LD50"},
 		world = {client = {width = 128, height = 96}},
 	}
 
-	local game_save = "game.save.json"
+	-- local game_save = "game.save.json"
 	local game = Engine.Game.Game.new(state)
 	-- game:load(game_save)
 
@@ -37,7 +37,7 @@ local function main()
 
 	game:run()
 
-	game:save(game_save)
+	-- game:save(game_save)
 
 	if debug_checks_enabled then
 		game._world:save("world.save.json")

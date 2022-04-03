@@ -9,7 +9,7 @@ Fire.GameSys.WorldSys.State.defaults = {
 	is_raining = false,
 	turn_id = 0,
 
-	fire_burn_length = 150,
+	fire_burn_length = 80,
 	-- fire_burn_length = 15,  -- for testing
 }
 function Fire.GameSys.WorldSys:on_init()

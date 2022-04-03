@@ -26,7 +26,6 @@ local function main()
 	require('engine/engine/world')
 	require('engine/lib/debugger/debugger')
 	require('engine/lib/json/json')
-	require('engine/lib/json_old/json')
 	require("engine/core/testing").run_all()
 	require("ld50/main")
 end

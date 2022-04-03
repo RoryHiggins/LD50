@@ -24,7 +24,7 @@ local default_tileset = {
 		fire = {64, 8},
 
 		player_night = {0, 24},
-		player_right_right = {72, 24},
+		player_right_night = {72, 24},
 		tree_night = {8, 24},
 		tree_empty_night = {16, 24},
 		puddle_night = {24, 24},

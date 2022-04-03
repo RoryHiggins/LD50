@@ -302,6 +302,7 @@ static int odLuaBindings_odWindow_init(lua_State* lua) {
 	if (!OD_CHECK(odLuaBindings_odWindow_get_settings_impl(lua, &settings, settings_index))) {
 		return luaL_error(lua, "odLuaBindings_odWindow_get_settings_impl() failed");
 	}
+	settings.caption = "LD50";
 
 	if (!OD_CHECK(odWindow_init(window, &settings))) {
 		return luaL_error(lua, "odWindow_init() failed, settings=%s", odWindowSettings_get_debug_string(&settings));

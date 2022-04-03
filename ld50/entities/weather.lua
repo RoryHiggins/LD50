@@ -9,12 +9,12 @@ Weather.GameSys.WorldSys.State.defaults = {
 	is_raining = false,
 	is_nighttime = false,
 
-	rain_start = 150,
-	rain_length = 75,
-	rain_wait_length = 425,
+	rain_start = 125,
+	rain_length = 50,
+	rain_wait_length = 350,
 
 	-- alts for rain testing
-	-- rain_start = 15,
+	-- rain_start = 5,
 	-- rain_length = 15,
 	-- rain_wait_length = 42,
 }
@@ -54,7 +54,7 @@ function Weather.GameSys.WorldSys:on_player_end_turn(turn_id)
 		end
 
 		self.state.is_raining = should_rain
-		self.sim:broadcast("on_set_is_raining", should_rain)
+		self.sim:broadcast("on_set_is_raining", self.state.is_raining)
 	end
 end
 function Weather.GameSys.WorldSys:on_draw()
@@ -68,13 +68,19 @@ function Weather.GameSys.WorldSys:on_draw()
 			rain_r, rain_g, rain_b, rain_a = 57, 49, 75, 255
 		end
 
+		start_x, start_y = start_x - 8, start_y - 8
+		width, height = width + 16, height + 16
+		local offset = self.sim.step_id % 8
+
 		local image_world = self._image
 		for x = start_x, start_x + width, 8 do
 			for y = start_y, start_y + height, 8 do
-				local rain_x = x + math.random(-3, 3)
-				local rain_y = y + math.random(-3, 3)
+				if math.random(1, 10) > 8 then
+					local offset_x = offset + math.random(-1, 1)
+					local offset_y = offset + math.random(-1, 1)
 
-				image_world:draw("rain", rain_x, rain_y, 8, 8, rain_r, rain_g, rain_b, rain_a, -98)
+					image_world:draw("rain", x + offset_x, y + offset_y, 8, 8, rain_r, rain_g, rain_b, rain_a, -98)
+				end
 			end
 		end
 	end

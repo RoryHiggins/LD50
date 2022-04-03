@@ -202,7 +202,9 @@ else()
 			PRIVATE
 			${od_emscripten_common_params}
 			"SHELL:-s WASM=1" "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s NO_EXIT_RUNTIME=0"
-			"SHELL:-s NO_FILESYSTEM=0" "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/../examples/@examples/"
+			"SHELL:-s NO_FILESYSTEM=0"
+			"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/../ld50/@ld50/"
+			"SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/../engine/@engine/"
 		)
 		if("${CMAKE_BUILD_TYPE}" STREQUAL DEBUG)
 			target_link_options(

@@ -125,17 +125,29 @@
 		// 	"working_dir": "$project_path",
 		// },
 
-		// {
-		// 	"name": "Emscripten debug generate client and rebuild",
-		// 	"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S .\\client -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
-		// 	"working_dir": "$project_path",
-		// },
-		// {
-		// 	"name": "Emscripten debug build client and host",
-		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && cp -rf .\\client\\ .\\build\\DEBUG_EMSCRIPTEN_ANY && echo 'hosting server' && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
-		// 	"working_dir": "$project_path",
-		// 	// 
-		// },
+		{
+			"name": "Emscripten debug generate client and rebuild",
+			"shell_cmd": "rm -rf .\\build\\DEBUG_EMSCRIPTEN_ANY && emcmake cmake -S .\\client -B .\\build\\DEBUG_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=DEBUG && cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Emscripten debug build client and host",
+			"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY && cp -rf .\\client\\ .\\build\\DEBUG_EMSCRIPTEN_ANY && echo 'hosting server' && python3 -m http.server -d .\\build\\DEBUG_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+			// 
+		},
+
+		{
+			"name": "Emscripten release generate client and rebuild",
+			"shell_cmd": "rm -rf .\\build\\RELEASE_EMSCRIPTEN_ANY && emcmake cmake -S .\\client -B .\\build\\RELEASE_EMSCRIPTEN_ANY -D CMAKE_BUILD_TYPE=RELEASE && cmake --build .\\build\\RELEASE_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+		},
+		{
+			"name": "Emscripten release build client and host",
+			"shell_cmd": "cmake --build .\\build\\RELEASE_EMSCRIPTEN_ANY && cp -rf .\\client\\ .\\build\\RELEASE_EMSCRIPTEN_ANY && echo 'hosting server' && python3 -m http.server -d .\\build\\RELEASE_EMSCRIPTEN_ANY",
+			"working_dir": "$project_path",
+			// 
+		},
 		// {
 		// 	"name": "Emscripten debug build client",
 		// 	"shell_cmd": "cmake --build .\\build\\DEBUG_EMSCRIPTEN_ANY",
