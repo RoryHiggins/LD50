@@ -12,6 +12,11 @@ Weather.GameSys.WorldSys.State.defaults = {
 	rain_start = 150,
 	rain_length = 75,
 	rain_wait_length = 425,
+
+	-- alts for rain testing
+	-- rain_start = 15,
+	-- rain_length = 15,
+	-- rain_wait_length = 42,
 }
 function Weather.GameSys.WorldSys:on_init()
 	Engine.Core.Container.set_defaults(self.state, Weather.GameSys.WorldSys.State.defaults)

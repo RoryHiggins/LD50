@@ -20,18 +20,21 @@ Player.WorldSys.State.defaults = {
 	health = level_threshold_max,
 	hunger = level_threshold_min,
 	thirst = level_threshold_low,
-	temperature = level_threshold_mid,
-	resting = false,
-	sheltered = false,
+	temperature = level_threshold_low,
+	is_resting = false,
 	dead = false,
 
 	-- resources
 	wood = 0,
 	rock = 0,
 
+	-- wood = 20,  -- for testing
+	-- rock = 20,
+
 	-- progression
 	turn_id = 0,
 	is_nighttime = false,
+	is_raining = false,
 
 	-- dialog
 	dialog_stack = {},
@@ -254,11 +257,22 @@ function Player.WorldSys:perform_dialog_action(action, args)
 	else
 		Engine.Core.Logging.warning("Unknown action=%s", action)
 		self:clear_dialog()
-		self:push_dialog("I cant do that right now")
+		self:push_dialog("i cant do that right now")
 	end
 end
 function Player.WorldSys:noop_dialog()
 end
+--[[function Player.WorldSys:dont_want_that_dialog()
+	self:clear_dialog()
+
+	local refusals = {
+		"i dont want that",
+		"how about no",
+		"what am i even thinking",
+	}
+	local refusal = refusals[math.random(1, #refusals)]
+	self:push_dialog(refusal)
+end--]]
 function Player.WorldSys:step_dialog()
 	if #self.state.dialog_stack == 0 then
 		return true
@@ -268,37 +282,41 @@ function Player.WorldSys:step_dialog()
 	assert(dialog.text ~= nil)
 	assert(dialog.choices ~= nil)
 
-	if self._controller:get_pressed(1, "up") then
+	if self._controller:get_pressed(1, "up") and #dialog.choices > 0 then
 		self.state.dialog_choice = self.state.dialog_choice - 1
 		if self.state.dialog_choice < 1 then
 			self.state.dialog_choice = #dialog.choices
 		end
+		self.audio:play{}
+		return false
 	end
-	if self._controller:get_pressed(1, "down") then
+	if self._controller:get_pressed(1, "down") and #dialog.choices > 0 then
 		self.state.dialog_choice = self.state.dialog_choice + 1
 		if self.state.dialog_choice > #dialog.choices then
 			self.state.dialog_choice = 1
 		end
+		self.audio:play{}
+		return false
 	end
+
 	self.state.dialog_choice = Math.clamp(self.state.dialog_choice, 1, #dialog.choices)
 
-	local pop_dialog = false
 	if self._controller:get_pressed(1, "a") then
 		if #dialog.choices == 0 then
-			pop_dialog = true
+			self:pop_dialog()
 		else
 			self:perform_dialog_action(
 				dialog.choices[self.state.dialog_choice].action,
 				dialog.choices[self.state.dialog_choice].args)
 		end
+		self.audio:play{}
+		return false
 	end
 
 	if self._controller:get_pressed(1, "b") and not self.state.dead then
-		pop_dialog = true
-	end
-
-	if pop_dialog == true then
 		self:pop_dialog()
+		self.audio:play{}
+		return
 	end
 
 	return false
@@ -345,12 +363,12 @@ function Player.WorldSys:offset_temperature(amount)
 	local temperature_after = self:clamped_attr_add(self.state.temperature, amount)
 	if self.state.temperature < level_threshold_high and temperature_after >= level_threshold_high then
 		if not self.state.tree_rest_done then
-			self:push_dialog("maybe i can find shelter to rest at")
+			self:push_dialog("maybe i can find water or a tree with some shade")
 		end
 
 		self:push_dialog("too hot... need to cool down")
 	end
-	if self.state.temperature > level_threshold_low and temperature_after <= level_threshold_low then
+	if self.state.temperature >= level_threshold_low and temperature_after < level_threshold_low then
 		if not self.state.make_fire_done then
 			self:push_dialog("maybe i can make a fire")
 		end
@@ -369,7 +387,7 @@ function Player.WorldSys:offset_health(amount)
 			{action = "quit", text = "quit"},
 		})
 		self:push_dialog("so this is how it ends")
-	elseif self.state.health > level_threshold_low and health_after <= level_threshold_low then
+	elseif self.state.health >= level_threshold_low and health_after < level_threshold_low then
 		self:push_dialog("i cant much more take this")
 	end
 
@@ -378,47 +396,192 @@ end
 
 -- resource actions
 function Player.WorldSys:wood_take(entity_id)
+	if entity_id == nil then
+		self:push_dialog("what wood?")
+		return
+	end
+
 	self._entity:set(entity_id, {a = 0, tags = {wood = false}})
 	self.state.wood = self.state.wood + 1
+
 	self:clear_dialog()
 	self:end_turn()
 end
 function Player.WorldSys:rock_take(entity_id)
+	if entity_id == nil then
+		self:push_dialog("what rock?")
+		return
+	end
+
 	self._entity:set(entity_id, {a = 0, tags = {rock = false}})
 	self.state.rock = self.state.rock + 1
 	self:clear_dialog()
 	self:end_turn()
 end
 function Player.WorldSys:puddle_drink(entity_id)
+	if entity_id == nil then
+		self:push_dialog("what puddle?")
+		return
+	end
+
 	self._entity:set(entity_id, {tags = {fresh_water = false}})
 	self:offset_thirst(-level_threshold)
+
+	local hot = self.state.temperature > level_threshold_mid
+	if hot then
+		self:offset_temperature(-100)
+	end
+
 	self:clear_dialog()
 
 	self.state.drink_done = true
+	self:push_dialog("better than the tap water at home")
 	self:end_turn(5)
 end
 function Player.WorldSys:tree_eat_fruit(entity_id)
+	if entity_id == nil then
+		self:push_dialog("what fruit?")
+		return
+	end
+
 	self._entity:set(entity_id, {tags = {food = false}})
 	self:offset_thirst(-level_threshold)
 	self:clear_dialog()
 
 	self.state.drink_done = true
+	self:push_dialog("disgusting, but im still alive")
 	self:end_turn(5)
 end
 
--- action menus
-function Player.WorldSys:find_in_range(tags)
+-- build actions
+function Player.WorldSys:fire_make()
 	local _, entity = self._entity:find_tagged(self.sys_name)
-	local x, y = entity.x or 0, entity.y or 0
+	local x, y, z = entity.x or 0, entity.y or 0, (entity.z + 1) or -2
 
-	local range_x = x - 1
-	local range_y = y - 1
-	local range_width = 10
-	local range_height = 10
+	if self.state.wood < 1 then
+		self:push_dialog("need to find more wood first")
+		return
+	end
+	if self.state.rock < 1 then
+		self:push_dialog("should find another sturdy trusty rock")
+		return
+	end
+	if self._entity:find_in(x, y, 8, 8, {"fire"}) ~= nil then
+		self:push_dialog("this fire has enough tinder already")
+		return
+	end
 
-	local entity_near = self._entity:find_in(range_x, range_y, range_width, range_height, tags)
-	return entity_near
+	self._template:instantiate("fire", {x = x, y = y, z = z, turn_id = self.state.turn_id})
+	self.state.wood = self.state.wood - 1
+	self.state.rock = self.state.rock - 1
+
+	self:clear_dialog()
+	self:push_dialog("this fire will have to do")
+	self:end_turn(5)
 end
+function Player.WorldSys:shelter_make()
+	local _, entity = self._entity:find_tagged(self.sys_name)
+	local x, y, z = entity.x or 0, entity.y or 0, (entity.z + 1) or -2
+
+	if self.state.wood < 8 then
+		self:push_dialog("need to find more wood first")
+		return
+	end
+	if self.state.rock < 8 then
+		self:push_dialog("should find another sturdy trusty rock")
+		return
+	end
+	if self._entity:find_in(x, y, 8, 8, {"shelter"}) ~= nil then
+		self:push_dialog("this shelter is already sturdy enough")
+		return
+	end
+
+	self._template:instantiate("shelter", {x = x, y = y, z = z, turn_id = self.state.turn_id})
+	self.state.wood = self.state.wood - 8
+	self.state.rock = self.state.rock - 8
+
+	self:clear_dialog()
+	self:push_dialog("this shelter looks sturdy enough")
+	self:end_turn(10)
+end
+function Player.WorldSys:shelter_scrap(entity_id)
+	if entity_id == nil then
+		self:push_dialog("what shelter?")
+		return
+	end
+
+	self._entity:destroy(entity_id)
+
+	self.state.wood = self.state.wood + 8
+	self.state.rock = self.state.rock + 8
+	self:clear_dialog()
+	self:end_turn(5)
+end
+function Player.WorldSys:fire_scrap(entity_id)
+	if entity_id == nil then
+		self:push_dialog("what fire?")
+		return
+	end
+
+	self._entity:destroy(entity_id)
+
+	self.state.wood = self.state.wood + 1
+	self.state.rock = self.state.rock + 1
+	self:clear_dialog()
+	self:end_turn(2)
+end
+
+-- recovery actions
+function Player.WorldSys:rest()
+	if not self:is_in_shelter() then
+		self:push_dialog("i need somewhere sheltered to rest")
+		return
+	end
+
+	if not self:is_nighttime_at_turn(self.state.turn_id) then
+		self:push_dialog("too bright for any rest, lets wait for night")
+		return
+	end
+
+	self:clear_dialog()
+	while self.state.is_nighttime do
+		self:end_turn()
+	end
+end
+function Player.WorldSys:cool_off()
+	if not self:is_in_shade() then
+		self:push_dialog("i need somewhere in the shade to cool off")
+		return
+	end
+
+	if self:is_nighttime_at_turn(self.state.turn_id) then
+		self:push_dialog("its already cold enough outside")
+		return
+	end
+
+	self:clear_dialog()
+	while not self:is_nighttime_at_turn(self.state.turn_id) and (self.state.temperature >= level_threshold_mid + 50) do
+		self:end_turn()
+	end
+end
+function Player.WorldSys:warm_up()
+	if not self:is_in_shelter() then
+		self:push_dialog("i need somewhere sheltered to warm up")
+		return
+	end
+
+	if not self:is_nighttime_at_turn(self.state.turn_id) then
+		self:push_dialog("its already warm enough outside")
+		return
+	end
+
+	self:clear_dialog()
+	while self:is_nighttime_at_turn(self.state.turn_id) and (self.state.temperature <= level_threshold_mid - 50) do
+		self:end_turn()
+	end
+end
+
+-- action menus
 function Player.WorldSys:push_interact_dialogue()
 	local choices = {}
 	local wood_near = self:find_in_range{"wood"}
@@ -428,6 +591,12 @@ function Player.WorldSys:push_interact_dialogue()
 	local tree_near = self:find_in_range{"tree"}
 	local shelter_near = self:find_in_range{"shelter"}
 	local fire_near = self:find_in_range{"fire"}
+
+	local hot = self.state.temperature >= level_threshold_high
+	local cold = self.state.temperature <= level_threshold_low
+	local night = self:is_nighttime_at_turn(self.state.turn_id)
+	local evening = self:is_evening_at_turn(self.state.turn_id)
+	local day = not night and not evening
 
 	if wood_near ~= nil then
 		choices[#choices + 1] = {action = "wood_take", text = "wood:take", args = {wood_near}}
@@ -442,14 +611,30 @@ function Player.WorldSys:push_interact_dialogue()
 		choices[#choices + 1] = {action = "tree_eat_fruit", text = "tree:eat fruit", args = {tree_fruit_near}}
 	end
 	if tree_near then
-		choices[#choices + 1] = {action = "tree_rest", text = "tree:rest", args = {tree_near}}
+		if hot and day then
+			choices[#choices + 1] = {action = "cool_off", text = "tree:cool off", args = {tree_near}}
+		end
 	end
 	if shelter_near then
-		choices[#choices + 1] = {action = "shelter_rest", text = "shelter:rest", args = {shelter_near}}
+		if night then
+			choices[#choices + 1] = {action = "rest", text = "shelter:rest", args = {shelter_near}}
+		end
+		if cold and night then
+			choices[#choices + 1] = {action = "warm_up", text = "shelter:warm up", args = {shelter_near}}
+		end
+		if hot and day then
+			choices[#choices + 1] = {action = "cool_off", text = "shelter:cooloff", args = {shelter_near}}
+		end
 		choices[#choices + 1] = {action = "shelter_scrap", text = "shelter:scrap", args = {shelter_near}}
 	end
-	if fire_near and self.state.is_nighttime then
-		choices[#choices + 1] = {action = "fire_rest", text = "fire:rest", args = {fire_near}}
+	if fire_near then
+		if night then
+			choices[#choices + 1] = {action = "rest", text = "fire:rest", args = {fire_near}}
+		end
+		if cold and night then
+			choices[#choices + 1] = {action = "warm_up", text = "fire:warm up", args = {fire_near}}
+		end
+		choices[#choices + 1] = {action = "fire_scrap", text = "fire:scrap", args = {fire_near}}
 	end
 
 	choices[#choices + 1] = {action = "pop_dialog", text = "back"}
@@ -458,8 +643,8 @@ function Player.WorldSys:push_interact_dialogue()
 end
 function Player.WorldSys:push_make_dialogue()
 	self:push_dialog("what to make..", {
-		{action = "make_fire", text = "W1R1 fire"},
-		{action = "make_shelter", text = "W8R1 shelter"},
+		{action = "fire_make", text = "W1R1 fire"},
+		{action = "shelter_make", text = "W8R8 shelter"},
 		{action = "pop_dialog", text = "back"},
 	})
 end
@@ -472,6 +657,28 @@ function Player.WorldSys:push_root_action_dialogue()
 end
 
 -- progression
+function Player.WorldSys:find_in_range(tags)
+	local _, entity = self._entity:find_tagged(self.sys_name)
+	local x, y = entity.x or 0, entity.y or 0
+
+	local range_x = x - 1
+	local range_y = y - 1
+	local range_width = 10
+	local range_height = 10
+
+	local entity_near = self._entity:find_in(range_x, range_y, range_width, range_height, tags)
+	return entity_near
+end
+function Player.WorldSys:is_in_shade()
+	if self:is_nighttime_at_turn(self.state.turn_id) then
+		return self:find_in_range({"fire"}) ~= nil
+	else
+		return self:find_in_range({"tree"}) ~= nil
+	end
+end
+function Player.WorldSys:is_in_shelter()
+	return self:is_in_shade() or self:find_in_range({"shelter"}) ~= nil
+end
 function Player.WorldSys:is_nighttime_at_turn(turn_id)
 	return ((turn_id % self.state.turns_per_day)
 			> (self.state.turns_per_day * (1 - self.state.fraction_of_day_is_nighttime)))
@@ -533,22 +740,33 @@ function Player.WorldSys:end_turn(count)
 		local day = not night and not evening
 
 		self:offset_hunger(1)
-		self:offset_thirst(1)
+
+		if self.state.is_raining then
+			self:offset_thirst(-1)
+		else
+			self:offset_thirst(1)
+		end
+
+		local rapid_temperature_change = 25
+		local fast_temperature_change = 12
+		local temperature_change = 7
 
 		local cold = self.state.temperature < level_threshold_mid
 		local hot = self.state.temperature > level_threshold_mid
-		if day and not self.state.sheltered then
+		if cold and day and not self.state.is_raining then
+			self:offset_temperature(rapid_temperature_change)
+		elseif (hot or (self.state.is_raining)) and night then
+			self:offset_temperature(-rapid_temperature_change)
+		elseif self:is_in_shade() or (day and self.state.is_raining) then
 			if cold then
-				self:offset_temperature(20)
-			else
-				self:offset_temperature(4)
+				self:offset_temperature(temperature_change)
+			elseif hot then
+				self:offset_temperature(-temperature_change)
 			end
-		elseif night and not self.state.sheltered then
-			if hot then
-				self:offset_temperature(-20)
-			else
-				self:offset_temperature(-10)
-			end
+		elseif day then
+			self:offset_temperature(temperature_change)
+		elseif night then
+			self:offset_temperature(-fast_temperature_change)
 		end
 
 		local damage = 0
@@ -565,11 +783,11 @@ function Player.WorldSys:end_turn(count)
 			damage = damage + 8
 		end
 
-		if damage > 0 then
-			self:offset_health(-damage)
-		else
-			self:offset_health(1)
+		if damage == 0 then
+			damage = damage - 1
 		end
+
+		self:offset_health(-damage)
 
 		self.sim:broadcast("on_player_end_turn", self.state.turn_id)
 	end
@@ -598,6 +816,9 @@ function Player.WorldSys:on_init()
 	})
 
 	self._client.clear_color = self.state.day_clear_color
+
+	self.audio = Engine.Client.Wrappers.Audio.new_wav_file{filename = './ld50/data/menu_navigate.wav'}
+	self.audio:set_volume{volume = 0.25}
 end
 function Player.WorldSys:on_start()
 	local entity_id = self._entity:find_tagged(self.sys_name)
@@ -605,7 +826,7 @@ function Player.WorldSys:on_start()
 	self._camera_target:entity_set_default_camera(entity_id)
 
 	self:push_dialog("i must find supplies for a fire\n(W1R1)")
-	self:push_dialog("where did I end up...")
+	self:push_dialog("where did i end up...")
 end
 function Player.WorldSys:on_step()
 	if self:step_dialog() == false then
@@ -635,12 +856,28 @@ function Player.WorldSys:on_step()
 		local entity_id = self._entity:find_id(entity)
 
 		if self._entity:find_relative(entity_id, move_x, move_y, {"solid"}) == nil then
-			self._entity:set_pos(
-				entity_id,
-				entity.x + move_x,
-				entity.y + move_y
-			)
-			is_turn = is_turn or (move_x ~= 0) or (move_y ~= 0)
+			if (move_x ~= 0) or (move_y ~= 0) then
+				local base_image_name = "player"
+				if move_x > 0 or (move_x == 0 and entity.day_image_name == "player_right") then
+					base_image_name = "player_right"
+				end
+				local night_image_name = base_image_name.."_night"
+
+				local image_name = base_image_name
+				if entity.image_name == entity.night_image_name then
+					image_name = night_image_name
+				end
+
+				self._entity:set(entity_id, {
+					x = entity.x + move_x,
+					y = entity.y + move_y,
+					image_name = image_name,
+					day_image_name = base_image_name,
+					night_image_name = night_image_name,
+				})
+
+				is_turn = true
+			end
 		end
 	end
 
@@ -660,11 +897,17 @@ function Player.WorldSys:on_step()
 	self.state.temperature = Math.clamp(
 		self.state.temperature, 0, level_threshold * level_thresholds
 	)
+
+	self.state.wood = Math.clamp(self.state.wood, 0, 99)
+	self.state.rock = Math.clamp(self.state.rock, 0, 99)
 end
 function Player.WorldSys:on_draw()
 	self:draw_fog()
 	self:draw_dialog_ui()
 	self:draw_status_ui()
+end
+function Player.WorldSys:on_set_is_raining(is_raining)
+	self.state.is_raining = is_raining
 end
 
 Player.GameSys = Engine.Game.Sys.new_metatable(Player.WorldSys.sys_name)

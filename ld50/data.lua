@@ -13,6 +13,7 @@ local default_tileset = {
 	tiles = {
 		-- entities
 		player = {0, 8},
+		player_right = {72, 8},
 		tree = {8, 8},
 		tree_empty = {16, 8},
 		puddle = {24, 8},
@@ -23,6 +24,7 @@ local default_tileset = {
 		fire = {64, 8},
 
 		player_night = {0, 24},
+		player_right_right = {72, 24},
 		tree_night = {8, 24},
 		tree_empty_night = {16, 24},
 		puddle_night = {24, 24},
@@ -126,6 +128,9 @@ local default_tileset = {
 		},
 		tree = {
 			tags = {solid = true, food = true, food_spawn = true},
+		},
+		tree_empty = {
+			tags = {solid = true, tree = true},
 		},
 		fire = {
 			tags = {light = true}

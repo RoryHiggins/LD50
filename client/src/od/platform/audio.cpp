@@ -61,7 +61,7 @@ bool odAudioPlaybackId_check_valid(odAudioPlaybackId playback_id) {
 
 const odAudioPlaybackSettings* odAudioPlaybackSettings_get_defaults() {
 	static const odAudioPlaybackSettings settings{
-		/*loop_count*/ 1,
+		/*loop_count*/ 0,
 		/*cutoff_time_ms*/ 0,
 		/*fadein_time_ms*/ 0,
 		/*volume*/ 1.0f,

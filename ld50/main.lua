@@ -33,7 +33,7 @@ local function main()
 	game.music = Engine.Client.Wrappers.Music.new_file{
 		filename = './ld50/data/sea_ambient.ogg'
 	}
-	game.music:play{volume = 0.4, loop_forever = true}
+	game.music:play{volume = 0.3, loop_forever = true}
 
 	game:run()
 
